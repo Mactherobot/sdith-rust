@@ -6,6 +6,8 @@ use crypto_bigint::{
 };
 
 #[macro_export]
+
+/// Converts a U256 to u64. Useful for more readable assertions in tests.
 macro_rules! u256_to_u64 {
     ($value:expr) => {{
         let result = u64::from_str_radix($value.to_string().as_str(), 16)
