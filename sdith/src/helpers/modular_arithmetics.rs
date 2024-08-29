@@ -30,6 +30,7 @@ pub fn pow_mod(base: &U256, exponent: &U256, modulus: &U256) -> U256 {
 }
 
 /// Computes `lhs / rhs mod modulus` by finding the modular inverse of `rhs` and multiplying it with `lhs`
+/// TODO: Is this necessary? Can't we just divide?
 pub fn div_mod(lhs: &U256, rhs: &U256, modulus: &U256) -> U256 {
     let dyn_residue_lhs = DynResidue::new(lhs, DynResidueParams::new(modulus));
     let dyn_residue_rhs = DynResidue::new(rhs, DynResidueParams::new(modulus));
