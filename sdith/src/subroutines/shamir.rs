@@ -1,6 +1,5 @@
+use crate::helpers::modular_arithmetics::{div_mod, evaluate_polynomial, mul_mod};
 use crypto_bigint::{rand_core::OsRng, NonZero, RandomMod, U256};
-
-use crate::modular_arithmetics::{div_mod, evaluate_polynomial, mul_mod};
 
 /// Share a secret `v` among `n` parties using Shamir's secret sharing scheme.
 ///
