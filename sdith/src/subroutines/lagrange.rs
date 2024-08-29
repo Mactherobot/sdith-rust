@@ -1,4 +1,9 @@
-// Imagine you have a set of data points. These points represent the values of a function at specific points. Your goal is to find a polynomial that passes exactly through all these points. Lagrange interpolation is a method to construct such a polynomial.
+// Imagine you have a set of data points. These points represent the values of a function at specific points. 
+// Your goal is to find a polynomial that passes exactly through all these points. Lagrange interpolation is a method to 
+// construct such a polynomial.
+
+
+// Might not be necessary
 
 use std::iter;
 
