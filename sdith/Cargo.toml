@@ -4,4 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+crypto-bigint = "0.5.5"
+modular = "1.0.0"
 num-traits = "0.2.19"
+polynomen = "1.1.0"
+rand = "0.8.5"
+ring = "0.17.8"

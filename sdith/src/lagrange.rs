@@ -11,11 +11,6 @@ pub(crate) fn lagrange_interpolation(
     x_value: &f64,
     weights: Option<Vec<f64>>,
 ) -> f64 {
-    assert!(
-        x_value > &points.first().expect("Must not be empty.").0
-            && x_value < &points.last().expect("Must not be empty.").0
-    );
-
     let x_points: Vec<f64> = points.iter().map(|(x, _)| *x).collect();
     let weights: Vec<f64> = weights.unwrap_or(_newton_calculate_weights(&x_points));
     let numerator = _newton_calculate_numerator(&x_points, x_value);
