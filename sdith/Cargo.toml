@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 crypto-bigint = "0.5.5"
+matrix = "0.22.0"
 modular = "1.0.0"
 num-traits = "0.2.19"
 polynomen = "1.1.0"
