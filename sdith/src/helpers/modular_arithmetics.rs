@@ -41,6 +41,7 @@ pub fn div_mod(lhs: &U256, rhs: &U256, modulus: &U256) -> U256 {
     panic!("No inverse exists for the given rhs");
 }
 
+/// Polynomial evaluation basic. Probably use Horner's method instead [`evaluate_polynomial_horner`]
 pub fn evaluate_polynomial(coeffs: &Vec<U256>, x: &U256, modulus: &U256) -> U256 {
     assert!(coeffs.len() > 0 && coeffs.len() < u32::MAX as usize);
     let mut coeffs = coeffs.iter().enumerate();
@@ -54,6 +55,28 @@ pub fn evaluate_polynomial(coeffs: &Vec<U256>, x: &U256, modulus: &U256) -> U256
         )
     }
     return result;
+}
+
+/// Evaluates a polynomial using Horner's method https://en.wikipedia.org/wiki/Horner%27s_method
+///
+/// b_n = a_n
+///
+/// b_{n-1} = a_{n-1} + b_n * x
+///
+/// ...
+///
+/// b_0 = a_0 + b_1 * x
+///
+/// b_0 = p(x)
+pub fn evaluate_polynomial_horner(coeffs: &Vec<U256>, x: &U256, modulus: &U256) -> U256 {
+    assert!(coeffs.len() > 0 && coeffs.len() < u32::MAX as usize);
+    let degree = coeffs.len() - 1;
+    let mut acc = coeffs[degree].clone();
+    for i in (0..degree).rev() {
+        acc = mul_mod(&acc, x, modulus);
+        acc = acc.add_mod(&coeffs[i], modulus);
+    }
+    return acc;
 }
 
 #[cfg(test)]
@@ -120,4 +143,53 @@ mod test {
             U256::from(2_u32)
         );
     }
+
+    #[test]
+    fn test_evaluate_polynomial_horner() {
+        // f(x) = 1 + 2x + 3x^2
+        let coeffs = vec![U256::from(1_u32), U256::from(2_u32), U256::from(3_u32)];
+        // f(2) mod 5 = 1 + 2*2 + 3*2^2 mod 5 = 2
+        let x = U256::from(2_u32);
+        let modulus = U256::from(5_u32);
+
+        assert_eq!(
+            evaluate_polynomial_horner(&coeffs, &x, &modulus),
+            U256::from(2_u32)
+        );
+    }
+}
+
+fn nlz(mut x: u32) -> u32 {
+    let mut n: u32;
+
+    if x == 0 {
+        return 32;
+    };
+    n = 1;
+    if (x >> 16) == 0 {
+        n = n + 16;
+        x = x << 16;
+    }
+    if (x >> 24) == 0 {
+        n = n + 8;
+        x = x << 8;
+    }
+    if (x >> 28) == 0 {
+        n = n + 4;
+        x = x << 4;
+    }
+    if (x >> 30) == 0 {
+        n = n + 2;
+        x = x << 2;
+    }
+    n = n - (x >> 31);
+
+    return n;
+}
+
+pub fn ceil_log2(x: u32) -> u32 {
+    if x == 0 {
+        return 0;
+    }
+    return 32 - nlz(x - 1);
 }

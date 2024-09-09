@@ -1,8 +1,10 @@
-use crate::constants::{COMMITMENT_SALT_SIZE, HASH_SIZE};
+use crate::constants::PARAM_DIGEST_SIZE;
 
 use super::hashing::get_hasher_with_prefix;
 
-pub type Commitment = [u8; HASH_SIZE];
+/// A hash is a fixed-size array of bytes.
+/// The size of the hash is determined by the security parameter λ.
+pub type Hash = [u8; PARAM_DIGEST_SIZE];
 
 pub const COMMITMENT_HASH_PREFIX: [u8; 1] = [0];
 
@@ -11,31 +13,18 @@ pub const COMMITMENT_HASH_PREFIX: [u8; 1] = [0];
 /// corresponding digest.
 ///
 ///
-pub fn commit_share(
-    salt: &[u8; COMMITMENT_SALT_SIZE],
-    e: usize,
-    i: usize,
-    share: &[u8],
-) -> Commitment {
+pub fn commit_share(salt: &Hash, e: u16, i: u16, share: &[u8]) -> Hash {
     // get e_0, e_1 such that e = e_0 + 256 * e_1
-    let e_0: u8 = (e & 0xFF).try_into().unwrap();
-    let e_1: u8 = (e >> 8_u8).try_into().unwrap();
-
-    // get i_0, e_1 such that i = e_0 + 256 * e_1
-    let i_0: u8 = (i & 0xFF).try_into().unwrap();
-    let i_1: u8 = (i >> 8_u8).try_into().unwrap();
+    let [e_0, e_1] = e.to_le_bytes();
+    // get i_0, i_1 such that i = i_0 + 256 * i_1
+    let [i_0, i_1] = i.to_le_bytes();
 
     let mut hasher = get_hasher_with_prefix(&COMMITMENT_HASH_PREFIX);
 
-    let mut data_bytes: Vec<u8> = Vec::with_capacity(salt.len() + 4 + share.len());
-    data_bytes.extend_from_slice(salt);
-    data_bytes.push(e_0);
-    data_bytes.push(e_1);
-    data_bytes.push(i_0);
-    data_bytes.push(i_1);
-    data_bytes.extend_from_slice(&share);
+    hasher.update(salt);
+    hasher.update(&[e_0, e_1, i_0, i_1]);
+    hasher.update(share);
 
-    hasher.update(data_bytes.as_slice());
     let result = hasher.finalize_reset();
     if let Ok(result) = (*result).try_into() {
         result
