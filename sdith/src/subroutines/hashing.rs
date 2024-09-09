@@ -1,57 +1,75 @@
-use sha3::{digest::DynDigest, Digest};
+use tiny_keccak::{Hasher, Sha3};
 
-use crate::constants::{Hash, PARAM_HASH_BIT_SIZE};
+use crate::constants::{Hash, PARAM_DIGEST_SIZE};
 
 pub const HASH_PREFIX_CHALLENGE_1: [u8; 1] = [1];
 pub const HASH_PREFIX_CHALLENGE_2: [u8; 1] = [2];
 
-pub fn get_hasher() -> Box<dyn DynDigest> {
-    match PARAM_HASH_BIT_SIZE {
-        256 => Box::new(sha3::Sha3_256::default()),
-        384 => Box::new(sha3::Sha3_384::default()),
-        512 => Box::new(sha3::Sha3_512::default()),
-        _ => panic!("Unsupported hash size: {} = 2λ", PARAM_HASH_BIT_SIZE),
-    }
+pub fn get_hasher() -> Sha3 {
+    return Sha3::v256();
 }
 
-pub fn get_hasher_with_prefix(prefix: &[u8]) -> Box<dyn DynDigest> {
-    match PARAM_HASH_BIT_SIZE {
-        256 => Box::new(sha3::Sha3_256::new_with_prefix(prefix)),
-        384 => Box::new(sha3::Sha3_384::new_with_prefix(prefix)),
-        512 => Box::new(sha3::Sha3_512::new_with_prefix(prefix)),
-        _ => panic!("Unsupported hash size: {} = 2λ", PARAM_HASH_BIT_SIZE),
-    }
+pub fn get_hasher_with_prefix(prefix: &[u8]) -> Sha3 {
+    let mut hasher = Sha3::v256();
+    hasher.update(prefix);
+    hasher
 }
 
-// Hash bytes with dynamically selected hash size by security parameter LAMBDA
-pub fn hash_data(data: &[u8], hasher: &mut dyn DynDigest) -> Hash {
+pub fn hash_finalize(hasher: Sha3) -> Hash {
+    let result: &mut Hash = &mut [0_u8; PARAM_DIGEST_SIZE];
+    hasher.finalize(result);
+
+    *result
+}
+
+pub fn hash(data: &[u8]) -> Hash {
+    let mut hasher = get_hasher();
     hasher.update(data);
-    hash_finalize(hasher)
-}
-
-pub fn hash_finalize(hasher: &mut dyn DynDigest) -> Hash {
-    let result = hasher.finalize_reset();
-    if let Ok(result) = (*result).try_into() {
-        result
-    } else {
-        panic!("Hash output size mismatch")
-    }
+    return hash_finalize(hasher);
 }
 
 // Fiat-Shamir Hashes p26 of the spec
 
 /// Hash_1 (data) = Hash(1 ∥ data)
 pub fn hash_1(data: &[u8]) -> Hash {
-    let mut hasher = get_hasher();
-    let binding = [&HASH_PREFIX_CHALLENGE_1.clone(), data].concat();
-    let data: &[u8] = binding.as_slice();
-    return hash_data(data, &mut *hasher);
+    let mut hasher = get_hasher_with_prefix(&HASH_PREFIX_CHALLENGE_1.clone());
+    hasher.update(data);
+    return hash_finalize(hasher);
 }
 
 /// Hash_2 (data) = Hash(2 ∥ data)
 pub fn hash_2(data: &[u8]) -> Hash {
-    let mut hasher = get_hasher();
-    let binding = [&HASH_PREFIX_CHALLENGE_2.clone(), data].concat();
-    let data: &[u8] = binding.as_slice();
-    return hash_data(data, &mut *hasher);
+    let mut hasher = get_hasher_with_prefix(&HASH_PREFIX_CHALLENGE_2.clone());
+    hasher.update(data);
+    return hash_finalize(hasher);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_hash_prefix() {}
+
+    #[test]
+    fn test_hash_1() {
+        let data_1 = [2, 3, 4, 5];
+        let data_2 = [1, 2, 3, 4, 5];
+        let hash_1 = hash_1(&data_1);
+        assert!(hash_1.len() == PARAM_DIGEST_SIZE);
+        let hash = hash(&data_2);
+        assert!(hash.len() == PARAM_DIGEST_SIZE);
+        assert_eq!(hash_1, hash);
+    }
+
+    #[test]
+    fn test_hash_2() {
+        let data_1 = [3, 4, 5, 6];
+        let data_2 = [2, 3, 4, 5, 6];
+        let hash_2 = hash_2(&data_1);
+        assert!(hash_2.len() == PARAM_DIGEST_SIZE);
+        let hash = hash(&data_2);
+        assert!(hash.len() == PARAM_DIGEST_SIZE);
+        assert_eq!(hash_2, hash);
+    }
 }

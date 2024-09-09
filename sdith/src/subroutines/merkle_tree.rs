@@ -1,3 +1,5 @@
+use tiny_keccak::Hasher;
+
 use crate::{
     constants::{CommitmentsArray, PARAM_LOG_NB_PARTIES, PARAM_NB_PARTIES},
     helpers::modular_arithmetics::ceil_log2,
@@ -38,8 +40,6 @@ impl MerkleTree {
             nodes[first_index + i] = commitments[i];
         }
 
-        let mut hasher = get_hasher();
-
         for _h in 0..=height {
             first_index = first_index >> 1;
             last_index = last_index >> 1;
@@ -54,7 +54,7 @@ impl MerkleTree {
                     break;
                 }
 
-                hasher.reset();
+                let mut hasher = get_hasher();
                 hasher.update(&[HASH_PREFIX_MERKLE_TREE]);
 
                 if let Some(salt) = salt {
@@ -63,7 +63,7 @@ impl MerkleTree {
                 hasher.update(&nodes[left_child_index]);
                 hasher.update(&nodes[right_child_index]);
 
-                nodes[parent_index] = hash_finalize(&mut *hasher);
+                nodes[parent_index] = hash_finalize(hasher);
                 parent_index += 1;
             }
         }
@@ -87,6 +87,8 @@ impl MerkleTree {
 
 #[cfg(test)]
 mod test {
+    use tiny_keccak::Hasher;
+
     use super::*;
     use crate::constants::PARAM_NB_PARTIES;
 
@@ -103,8 +105,7 @@ mod test {
         hasher.update(&2_u16.to_le_bytes());
         hasher.update(&tree.nodes[1]);
         hasher.update(&tree.nodes[2]);
-        let root = hash_finalize(&mut *hasher);
+        let root = hash_finalize(hasher);
         assert_eq!(tree.nodes[0], root);
-
     }
 }

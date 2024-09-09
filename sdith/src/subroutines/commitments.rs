@@ -1,6 +1,8 @@
+use tiny_keccak::Hasher;
+
 use crate::constants::PARAM_DIGEST_SIZE;
 
-use super::hashing::get_hasher_with_prefix;
+use super::hashing::{get_hasher_with_prefix, hash_finalize};
 
 /// A hash is a fixed-size array of bytes.
 /// The size of the hash is determined by the security parameter λ.
@@ -25,10 +27,5 @@ pub fn commit_share(salt: &Hash, e: u16, i: u16, share: &[u8]) -> Hash {
     hasher.update(&[e_0, e_1, i_0, i_1]);
     hasher.update(share);
 
-    let result = hasher.finalize_reset();
-    if let Ok(result) = (*result).try_into() {
-        result
-    } else {
-        panic!("Hash output size mismatch")
-    }
+    hash_finalize(hasher)
 }
