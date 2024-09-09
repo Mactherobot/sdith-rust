@@ -9,5 +9,4 @@ modular = "1.0.0"
 num-traits = "0.2.19"
 polynomen = "1.1.0"
 rand = "0.8.5"
-ring = "0.17.8"
-sha3 = "0.10.8"
+tiny-keccak = { version = "2.0.2", features = ["shake", "sha3"] }
