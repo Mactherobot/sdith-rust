@@ -1,2 +1,2 @@
 pub (crate) mod modular_arithmetics;
-mod gf256;
+pub (crate) mod gf256;

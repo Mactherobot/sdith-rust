@@ -114,7 +114,7 @@ pub(crate) fn div(a: u8, b: &u8) -> u8 {
     mul(a, &mul_inverse_lookup(b))
 }
 
-pub fn evaluate_polynomial_horner(coeffs: &Vec<u8>, x: &u8) -> u8 {
+pub(crate) fn evaluate_polynomial_horner(coeffs: &Vec<u8>, x: &u8) -> u8 {
     assert!(coeffs.len() > 0 && coeffs.len() < u32::MAX as usize);
     let degree = coeffs.len() - 1;
     let mut acc = coeffs[degree].clone();
