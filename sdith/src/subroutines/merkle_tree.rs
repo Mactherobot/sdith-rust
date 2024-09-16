@@ -1,9 +1,6 @@
 use tiny_keccak::Hasher;
 
-use crate::{
-    constants::{CommitmentsArray, PARAM_LOG_NB_PARTIES, PARAM_NB_PARTIES},
-    helpers::modular_arithmetics::ceil_log2,
-};
+use crate::constants::{CommitmentsArray, PARAM_LOG_NB_PARTIES, PARAM_NB_PARTIES};
 
 use super::{
     commitments::Hash,
