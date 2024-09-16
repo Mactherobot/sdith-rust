@@ -1,4 +1,4 @@
-use crate::helpers::gf256::gf256::{gf256_add, div, gf256_evaluate_polynomial_horner, gf256_mul, gf256_sub};
+use crate::arith::gf256::gf256::{gf256_add, div, gf256_evaluate_polynomial_horner, gf256_mul, gf256_sub};
 
 use super::prg::prg::PRG;
 
