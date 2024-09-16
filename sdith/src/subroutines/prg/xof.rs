@@ -15,7 +15,7 @@ fn get_hasher() -> Shake {
     Shake::v256()
 }
 
-pub(super) fn xof_init(
+pub(crate) fn xof_init(
     seed: &[u8; PARAM_SEED_SIZE],
     salt: Option<&[u8; PARAM_SALT_SIZE]>,
 ) -> Shake {

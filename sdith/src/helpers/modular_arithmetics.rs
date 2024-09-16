@@ -1,3 +1,7 @@
+// Modular arithmetic helper functions
+// Should instead use GL256 modular field for Galous field 256
+// TODO: remove if unneeded. Keep for reference if needed.
+
 use std::ops::Mul;
 
 use crypto_bigint::{
