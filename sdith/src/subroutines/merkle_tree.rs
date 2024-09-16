@@ -1,3 +1,4 @@
+use num_traits::ToPrimitive;
 use tiny_keccak::Hasher;
 
 use crate::constants::{CommitmentsArray, PARAM_LOG_NB_PARTIES, PARAM_NB_PARTIES};
@@ -14,7 +15,7 @@ pub const PARAM_MERKLE_TREE_NODES: usize =
 pub const HASH_PREFIX_MERKLE_TREE: u8 = 3;
 
 struct MerkleTree {
-    height: u8,
+    height: i32,
     n_nodes: usize,
     n_leaves: usize,
     nodes: [Hash; PARAM_MERKLE_TREE_NODES as usize],
@@ -25,7 +26,11 @@ impl MerkleTree {
         let mut nodes: [Hash; PARAM_MERKLE_TREE_NODES as usize] =
             [Hash::default(); PARAM_MERKLE_TREE_NODES as usize];
         let nb_leaves = commitments.len();
-        let height: u8 = ceil_log2(nb_leaves as u32).try_into().unwrap();
+        let height: i32 = nb_leaves
+            .to_f32()
+            .expect("could not convert to f32")
+            .log2()
+            .ceil() as i32;
         let nb_nodes = (1 << (height)) + nb_leaves - 1;
 
         let mut first_index = nb_nodes - nb_leaves;
@@ -91,7 +96,7 @@ mod test {
     fn test_merkle_tree() {
         let commitments = [[1_u8; 32]; PARAM_NB_PARTIES as usize];
         let tree = MerkleTree::new(commitments, None);
-        assert_eq!(tree.height, PARAM_MERKLE_TREE_HEIGHT as u8);
+        assert_eq!(tree.height, PARAM_MERKLE_TREE_HEIGHT as i32);
         assert_eq!(tree.n_nodes, PARAM_MERKLE_TREE_NODES as usize);
         assert_eq!(tree.n_leaves, PARAM_NB_PARTIES as usize);
 
