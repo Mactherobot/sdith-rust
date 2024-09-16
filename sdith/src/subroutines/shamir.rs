@@ -1,4 +1,4 @@
-use crate::helpers::gf256::{add, div, evaluate_polynomial_horner, mul, sub};
+use crate::helpers::gf256::gf256::{gf256_add, div, gf256_evaluate_polynomial_horner, gf256_mul, gf256_sub};
 
 use super::prg::prg::PRG;
 
@@ -20,7 +20,7 @@ fn share_coeffs(coefficients: Vec<u8>, n: usize) -> Vec<(u8, u8)> {
     assert!(n < u8::MAX as usize);
     for i in 1..=n {
         let x: u8 = i.try_into().expect("Failed to convert usize to u8");
-        let y = evaluate_polynomial_horner(&coefficients, &x);
+        let y = gf256_evaluate_polynomial_horner(&coefficients, x);
         shares.push((x, y));
     }
 
@@ -38,13 +38,13 @@ pub(crate) fn reconstruct(shares: &Vec<(u8, u8)>) -> u8 {
         for m in 0..k {
             if m != j {
                 let x_m = shares[m].0;
-                _prod = mul(_prod, &div(x_m, &sub(x_m, &x_j)))
+                _prod = gf256_mul(_prod, div(x_m, gf256_sub(x_m, x_j)))
             }
         }
 
         // y_j * prod
-        _prod = mul(yj, &_prod);
-        result = add(result, &_prod);
+        _prod = gf256_mul(yj, _prod);
+        result = gf256_add(result, _prod);
     }
 
     return result;

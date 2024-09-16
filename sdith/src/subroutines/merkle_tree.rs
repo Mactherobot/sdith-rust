@@ -3,12 +3,11 @@ use tiny_keccak::Hasher;
 use crate::{
     constants::{CommitmentsArray, PARAM_LOG_NB_PARTIES, PARAM_NB_PARTIES},
     helpers::modular_arithmetics::ceil_log2,
-    subroutines::hashing::hash_finalize,
 };
 
 use super::{
     commitments::Hash,
-    hashing::{get_hasher, get_hasher_with_prefix},
+    prg::hashing::{get_hasher, hash_finalize},
 };
 
 pub const PARAM_MERKLE_TREE_HEIGHT: usize = PARAM_LOG_NB_PARTIES;
@@ -62,7 +61,6 @@ impl MerkleTree {
                 }
                 hasher.update(&nodes[left_child_index]);
                 hasher.update(&nodes[right_child_index]);
-
                 nodes[parent_index] = hash_finalize(hasher);
                 parent_index += 1;
             }

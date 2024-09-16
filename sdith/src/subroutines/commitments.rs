@@ -2,7 +2,7 @@ use tiny_keccak::Hasher;
 
 use crate::constants::PARAM_DIGEST_SIZE;
 
-use super::hashing::{get_hasher_with_prefix, hash_finalize};
+use super::prg::hashing::{get_hasher_with_prefix, hash_finalize};
 
 /// A hash is a fixed-size array of bytes.
 /// The size of the hash is determined by the security parameter λ.

@@ -2,6 +2,7 @@
 
 use std::{
     fmt::Debug,
+    num::Wrapping,
     ops::{Add, Div, Mul, Sub},
 };
 
@@ -57,19 +58,40 @@ const LOG_TABLE_0X03: [u8; 255] = [
     0x4a, 0xed, 0xde, 0xc5, 0x31, 0xfe, 0x18, 0x0d, 0x63, 0x8c, 0x80, 0xc0, 0xf7, 0x70, 0x07,
 ];
 
-fn log_lookup(a: &u8) -> u8 {
-    LOG_TABLE_0X03[*a as usize - 1]
+fn log_lookup(a: u8) -> u8 {
+    LOG_TABLE_0X03[a as usize - 1]
 }
 
-pub(crate) fn add(a: u8, b: &u8) -> u8 {
+pub(crate) fn gf256_add(a: u8, b: u8) -> u8 {
     a ^ b
 }
 
-pub(crate) fn sub(a: u8, b: &u8) -> u8 {
-    add(a, b)
+pub(crate) fn gf256_sub(a: u8, b: u8) -> u8 {
+    gf256_add(a, b)
 }
 
-pub(crate) fn mul(a: u8, b: &u8) -> u8 {
+pub(crate) fn gf256_mul(a: u8, b: u8) -> u8 {
+    mul_spec(a, b)
+}
+
+/// Multiplication from the spec implementation
+fn mul_spec(a: u8, b: u8) -> u8 {
+    let a = Wrapping(a);
+    let b = Wrapping(b);
+    let one = Wrapping(1_u8);
+    let modulus = Wrapping(MODULUS);
+    let mut r: Wrapping<u8> = -(b >> 7) & a;
+    r = (-(b >> 6 & one) & a) ^ (-(r >> 7) & modulus) ^ (r + r);
+    r = (-(b >> 5 & one) & a) ^ (-(r >> 7) & modulus) ^ (r + r);
+    r = (-(b >> 4 & one) & a) ^ (-(r >> 7) & modulus) ^ (r + r);
+    r = (-(b >> 3 & one) & a) ^ (-(r >> 7) & modulus) ^ (r + r);
+    r = (-(b >> 2 & one) & a) ^ (-(r >> 7) & modulus) ^ (r + r);
+    r = (-(b >> 1 & one) & a) ^ (-(r >> 7) & modulus) ^ (r + r);
+    r = (-(b & one) & a) ^ (-(r >> 7) & modulus) ^ (r + r);
+    return r.0;
+}
+
+fn mul_wiki(a: u8, b: u8) -> u8 {
     // TODO: Lookup carryless multiplication in Rust clmul
     let mut r: u8 = 0;
     let mut a = a.clone();
@@ -94,9 +116,9 @@ pub(crate) fn mul(a: u8, b: &u8) -> u8 {
 }
 
 /// Multiplication using log table lookup a * b = g^(log_g(a) + log_g(b))
-pub(crate) fn mul_lookup(a: u8, b: u8) -> u8 {
-    let log_a = log_lookup(&a);
-    let log_b = log_lookup(&b);
+fn mul_lookup(a: u8, b: u8) -> u8 {
+    let log_a = log_lookup(a);
+    let log_b = log_lookup(b);
     let res = log_a.wrapping_add(log_b);
     power_lookup(res)
     // TODO: Distributivity of multiplication over addition is not working as expected.
@@ -104,23 +126,23 @@ pub(crate) fn mul_lookup(a: u8, b: u8) -> u8 {
 }
 
 /// Inverse using log table lookup a^-1 = g^(|g| - log_g(a))
-pub(crate) fn mul_inverse_lookup(a: &u8) -> u8 {
+pub(crate) fn gf256_mul_inverse_lookup(a: u8) -> u8 {
     let log_a = log_lookup(a);
     let log_a_inv = ORDER - log_a;
     power_lookup(log_a_inv)
 }
 
-pub(crate) fn div(a: u8, b: &u8) -> u8 {
-    mul(a, &mul_inverse_lookup(b))
+pub(crate) fn div(a: u8, b: u8) -> u8 {
+    gf256_mul(a, gf256_mul_inverse_lookup(b))
 }
 
-pub(crate) fn evaluate_polynomial_horner(coeffs: &Vec<u8>, x: &u8) -> u8 {
+pub(crate) fn gf256_evaluate_polynomial_horner(coeffs: &Vec<u8>, x: u8) -> u8 {
     assert!(coeffs.len() > 0 && coeffs.len() < u32::MAX as usize);
     let degree = coeffs.len() - 1;
     let mut acc = coeffs[degree].clone();
     for i in (0..degree).rev() {
-        acc = mul(acc, x);
-        acc = add(acc, &coeffs[i]);
+        acc = gf256_mul(acc, x);
+        acc = gf256_add(acc, coeffs[i]);
     }
     return acc;
 }
@@ -132,7 +154,7 @@ impl Add for GF256 {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        GF256(add(self.0, &rhs.0))
+        GF256(gf256_add(self.0, rhs.0))
     }
 }
 
@@ -140,7 +162,7 @@ impl Sub for GF256 {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        GF256(sub(self.0, &rhs.0))
+        GF256(gf256_sub(self.0, rhs.0))
     }
 }
 
@@ -148,7 +170,7 @@ impl Mul for GF256 {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        GF256(mul(self.0, &rhs.0))
+        GF256(gf256_mul(self.0, rhs.0))
     }
 }
 
@@ -156,7 +178,7 @@ impl Div for GF256 {
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self::Output {
-        GF256(div(self.0, &rhs.0))
+        GF256(div(self.0, rhs.0))
     }
 }
 
@@ -186,10 +208,6 @@ macro_rules! gf256 {
     ($val:expr) => {
         GF256($val)
     };
-}
-
-pub(crate) fn gf256_innerproduct_batched() {
-    panic!("Not implemented. See `submission_package/Optimized_Implementation/Threshold_Variant/sdith_threshold_cat1_gf256/gf256.c`");
 }
 
 #[cfg(test)]
@@ -240,6 +258,6 @@ mod tests {
         let x = 0x06;
         let expected = 237_u8;
 
-        assert_eq!(evaluate_polynomial_horner(&coeffs, &x), expected);
+        assert_eq!(gf256_evaluate_polynomial_horner(&coeffs, x), expected);
     }
 }
