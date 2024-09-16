@@ -1,13 +1,13 @@
-// Field extension F_q^2 = F_q[X] / (X^2 + X + 32)
+// Field extension `F_q^2 = F_q[X] / (X^2 + X + 32)`
 
 use super::gf256::{gf256_add, gf256_mul};
 
-/// Addition: Field extension F_q^2 = F_q[X] / (X^2 + X + 32)
+/// Addition: Field extension `F_q^2 = F_q[X] / (X^2 + X + 32)`
 fn gf256_ext16_add(a: [u8; 2], b: [u8; 2]) -> [u8; 2] {
     [gf256_add(a[0], b[0]), gf256_add(a[1], b[1])]
 }
 
-/// Multiplication: Field extension F_q^2 = F_q[X] / (X^2 + X + 32)
+/// Multiplication: Field extension `F_q^2 = F_q[X] / (X^2 + X + 32)`
 fn gf256_ext16_mul(a: [u8; 2], b: [u8; 2]) -> [u8; 2] {
     let [a0, a1] = a;
     let [b0, b1] = b;
@@ -41,9 +41,9 @@ mod ext16_tests {
     }
 }
 
-// Field extension F_q^4 = F_q[Z] / (Z^2 + Z + 32(X)) where (X) = 256
+// Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
 
-/// Addition: Field extension F_q^4 = F_q[Z] / (Z^2 + Z + 32(X)) where (X) = 256
+/// Addition: Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
 pub(crate) fn gf256_ext32_add(a: [u8; 4], b: [u8; 4]) -> [u8; 4] {
     let [a0, a1, a2, a3] = a;
     let [b0, b1, b2, b3] = b;
@@ -53,7 +53,7 @@ pub(crate) fn gf256_ext32_add(a: [u8; 4], b: [u8; 4]) -> [u8; 4] {
     [r0, r1, r2, r3]
 }
 
-/// Multiplication: Field extension F_q^4 = F_q[Z] / (Z^2 + Z + 32(X)) where (X) = 256
+/// Multiplication: Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
 pub(crate) fn gf256_ext32_mul(a: [u8; 4], b: [u8; 4]) -> [u8; 4] {
     let [a0, a1, a2, a3] = a;
     let [b0, b1, b2, b3] = b;
