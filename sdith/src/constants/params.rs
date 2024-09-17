@@ -42,7 +42,11 @@ pub(crate) const PARAM_SECRET_KEY_BYTES: usize = PARAM_SEED_SIZE + PARAM_SOL_SIZ
 pub(crate) const PARAM_SECRET_KEY_BYTES_SHORT: usize = PARAM_SEED_SIZE;
 
 // Misc
+
+/// d-split variable for the splitting variant of the Syndrome Decoding Problem. Currently set to 1. Should ideally be able to set on running the application and running instances in parallel.
+/// Checkout: Splitting syndrome decoding in the specs
 pub(crate) const PARAM_SPLITTING_FACTOR: usize = 1;
+
 pub(crate) const PARAM_CHUNK_LENGTH: usize = PARAM_CODE_LENGTH / PARAM_SPLITTING_FACTOR;
 pub(crate) const PARAM_CHUNK_WEIGHT: usize = PARAM_CODE_WEIGHT / PARAM_SPLITTING_FACTOR;
 
