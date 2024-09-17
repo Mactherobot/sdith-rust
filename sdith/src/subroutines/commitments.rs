@@ -1,6 +1,6 @@
 use tiny_keccak::Hasher;
 
-use crate::constants::PARAM_DIGEST_SIZE;
+use crate::constants::params::PARAM_DIGEST_SIZE;
 
 use super::prg::hashing::{get_hasher_with_prefix, hash_finalize};
 

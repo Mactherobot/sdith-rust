@@ -1,6 +1,7 @@
 use tiny_keccak::{Hasher, Sha3};
 
-use crate::constants::{Hash, PARAM_DIGEST_SIZE};
+use crate::constants::params::PARAM_DIGEST_SIZE;
+use crate::constants::types::Hash;
 
 pub const HASH_PREFIX_CHALLENGE_1: [u8; 1] = [1];
 pub const HASH_PREFIX_CHALLENGE_2: [u8; 1] = [2];

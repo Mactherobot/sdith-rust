@@ -9,7 +9,7 @@ use std::{
 use num_traits::CheckedDiv;
 
 const MODULUS: u8 = 0x1B; // The primitive polynomial x^4 + x^3 + x + 1 (0b0001_1011)
-const GENERATOR: u8 = 0x03; // The generator polynomial x + 1 ({03}) of the multiplicative group of GF(2^8)
+const _GENERATOR: u8 = 0x03; // The generator polynomial x + 1 ({03}) of the multiplicative group of GF(2^8)
 const ORDER: u8 = 0xff; // The order of the multiplicative group of GF(2^8)
 
 // Precomputed tables for fast multiplication and division in GF(2^8) using the generator polynomial x + 1 ({03})
@@ -91,7 +91,7 @@ fn mul_spec(a: u8, b: u8) -> u8 {
     return r.0;
 }
 
-fn mul_wiki(a: u8, b: u8) -> u8 {
+fn _mul_wiki(a: u8, b: u8) -> u8 {
     // TODO: Lookup carryless multiplication in Rust clmul
     let mut r: u8 = 0;
     let mut a = a.clone();
@@ -116,7 +116,7 @@ fn mul_wiki(a: u8, b: u8) -> u8 {
 }
 
 /// Multiplication using log table lookup a * b = g^(log_g(a) + log_g(b))
-fn mul_lookup(a: u8, b: u8) -> u8 {
+fn _mul_lookup(a: u8, b: u8) -> u8 {
     let log_a = log_lookup(a);
     let log_b = log_lookup(b);
     let res = log_a.wrapping_add(log_b);
@@ -134,17 +134,6 @@ pub(crate) fn gf256_mul_inverse_lookup(a: u8) -> u8 {
 
 pub(crate) fn div(a: u8, b: u8) -> u8 {
     gf256_mul(a, gf256_mul_inverse_lookup(b))
-}
-
-pub(crate) fn gf256_evaluate_polynomial_horner(coeffs: &Vec<u8>, x: u8) -> u8 {
-    assert!(coeffs.len() > 0 && coeffs.len() < u32::MAX as usize);
-    let degree = coeffs.len() - 1;
-    let mut acc = coeffs[degree].clone();
-    for i in (0..degree).rev() {
-        acc = gf256_mul(acc, x);
-        acc = gf256_add(acc, coeffs[i]);
-    }
-    return acc;
 }
 
 #[derive(Clone, Copy)]
@@ -213,7 +202,7 @@ macro_rules! gf256 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{constants::PARAM_SEED_SIZE, subroutines::prg::prg::PRG};
+    use crate::{constants::params::PARAM_SEED_SIZE, subroutines::prg::prg::PRG};
 
     #[test]
     fn test_gf256_definitions() {
@@ -250,14 +239,5 @@ mod tests {
         // Distributivity of multiplication over addition:
         println!("{:?} {:?} {:?}", a, b, c);
         assert_eq!(a * (b + c), a * b + a * c);
-    }
-
-    #[test]
-    fn test_evaluate_polynomial_horner() {
-        let coeffs = vec![0x01, 0x02, 0x03, 0x04, 0x05];
-        let x = 0x06;
-        let expected = 237_u8;
-
-        assert_eq!(gf256_evaluate_polynomial_horner(&coeffs, x), expected);
     }
 }

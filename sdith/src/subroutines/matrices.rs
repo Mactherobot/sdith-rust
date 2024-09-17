@@ -1,6 +1,6 @@
 use matrix::{format::Compressed, Matrix};
 
-use crate::constants::{PARAM_CODE_DIMENSION, PARAM_CODE_LENGTH, PARAM_SEED_SIZE};
+use crate::constants::params::{PARAM_CODE_DIMENSION, PARAM_CODE_LENGTH, PARAM_SEED_SIZE};
 
 use super::prg::prg::PRG;
 

@@ -9,7 +9,7 @@
 /// which tolerates input seeds of variable lengths.
 use tiny_keccak::{Hasher, Shake};
 
-use crate::constants::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
+use crate::constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
 
 fn get_hasher() -> Shake {
     Shake::v256()

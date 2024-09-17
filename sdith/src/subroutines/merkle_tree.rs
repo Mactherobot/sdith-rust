@@ -1,7 +1,7 @@
 use num_traits::ToPrimitive;
 use tiny_keccak::Hasher;
 
-use crate::constants::{CommitmentsArray, PARAM_LOG_NB_PARTIES, PARAM_NB_PARTIES};
+use crate::constants::{params::{PARAM_LOG_NB_PARTIES, PARAM_NB_PARTIES}, types::CommitmentsArray};
 
 use super::{
     commitments::Hash,
@@ -89,8 +89,9 @@ impl MerkleTree {
 mod test {
     use tiny_keccak::Hasher;
 
+    use crate::constants::params::PARAM_NB_PARTIES;
+
     use super::*;
-    use crate::constants::PARAM_NB_PARTIES;
 
     #[test]
     fn test_merkle_tree() {

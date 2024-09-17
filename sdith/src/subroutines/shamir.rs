@@ -1,4 +1,7 @@
-use crate::arith::gf256::gf256::{gf256_add, div, gf256_evaluate_polynomial_horner, gf256_mul, gf256_sub};
+use crate::arith::gf256::{
+    gf256_arith::{div, gf256_add, gf256_mul, gf256_sub},
+    gf256_poly::gf256_evaluate_polynomial_horner,
+};
 
 use super::prg::prg::PRG;
 
@@ -53,7 +56,7 @@ pub(crate) fn reconstruct(shares: &Vec<(u8, u8)>) -> u8 {
 #[cfg(test)]
 mod tests {
 
-    use crate::constants::PARAM_SEED_SIZE;
+    use crate::constants::params::PARAM_SEED_SIZE;
 
     use super::*;
 

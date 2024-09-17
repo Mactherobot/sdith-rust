@@ -1,6 +1,6 @@
 // Field extension `F_q^2 = F_q[X] / (X^2 + X + 32)`
 
-use super::gf256::{gf256_add, gf256_mul};
+use super::gf256_arith::{gf256_add, gf256_mul};
 
 /// Addition: Field extension `F_q^2 = F_q[X] / (X^2 + X + 32)`
 fn gf256_ext16_add(a: [u8; 2], b: [u8; 2]) -> [u8; 2] {

@@ -1,6 +1,6 @@
 use tiny_keccak::{Shake, Xof};
 
-use crate::constants::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
+use crate::constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
 
 use super::xof::xof_init;
 
