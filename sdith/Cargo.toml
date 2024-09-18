@@ -11,3 +11,4 @@ num-traits = "0.2.19"
 polynomen = "1.1.0"
 rand = "0.8.5"
 tiny-keccak = { version = "2.0.2", features = ["shake", "sha3"] }
+queues = "1.0.2"
