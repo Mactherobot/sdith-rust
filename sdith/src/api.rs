@@ -1,4 +1,7 @@
-use crate::keygen::{PublicKey, SecretKey};
+use crate::witness::{Instance, Solution};
+
+type PublicKey = Instance;
+type SecretKey = Solution;
 
 pub trait SDitH {
     /// Generates public and private key.
@@ -66,7 +69,7 @@ pub trait SDitH {
 
     /// Verify signed message.
     /// Returns true if the signed message is valid.
-    /// 
+    ///
     /// ### Arguments
     /// * `m` - pointer to output message (allocated array with smlen bytes),
     ///                       can be equal to sm

@@ -2,11 +2,13 @@
 /// Also called q in the spec and is the Galois field size GL(q) = GL(2^8) = GL(256)
 pub(crate) const PARAM_FIELD_SIZE: usize = 256;
 /// Also called m in the spec
-pub(crate) const PARAM_CODE_LENGTH: usize = 230;
+pub(crate) const PARAM_M: usize = 230;
 /// Also called k in the spec
-pub(crate) const PARAM_CODE_DIMENSION: usize = 126;
+pub(crate) const PARAM_K: usize = 126;
 /// Also called w in the spec and is the Hamming weight bound
-pub(crate) const PARAM_CODE_WEIGHT: usize = 79;
+pub(crate) const PARAM_W: usize = 79;
+/// m - k
+pub(crate) const PARAM_M_SUB_K: usize = PARAM_M - PARAM_K;
 
 // MPC Parameters
 pub(crate) const PARAM_NB_EVALS_PER_POLY: usize = 7;
@@ -28,33 +30,10 @@ pub(crate) const PARAM_TREE_NB_MAX_OPEN_LEAVES: usize = 19;
 pub(crate) const PARAM_SEED_SIZE: usize = 128 / 8;
 pub(crate) const PARAM_SALT_SIZE: usize = 256 / 8;
 pub(crate) const PARAM_DIGEST_SIZE: usize = 256 / 8;
-// TODO:  pub(crate) const PARAM_SIGNATURE_SIZEBYTES = 2*PARAM_DIGEST_SIZE + PARAM_SALT_SIZE + PARAM_COMPRESSED_BR_SIZE + PARAM_NB_EXECUTIONS*PARAM_NB_REVEALED * (PARAM_WIT_SHORT_SIZE + PARAM_CORR_SHORT_SIZE + PARAM_UNIF_SHORT_SIZE) + PARAM_NB_EXECUTIONS*PARAM_DIGEST_SIZE * PARAM_TREE_NB_MAX_OPEN_LEAVES;
-
-
-// Witness (witness.h)
-pub(crate) const PARAM_INSTANCE_SIZE: usize = PARAM_SEED_SIZE + PARAM_SYNDROME_LENGTH;
-pub(crate) const PARAM_SOL_SIZE: usize =
-    PARAM_CODE_DIMENSION + 2 * PARAM_SPLITTING_FACTOR * PARAM_CHUNK_WEIGHT;
-
-// Keygen (keygen.h)
-pub(crate) const PARAM_PUBLIC_KEY_BYTES: usize = PARAM_INSTANCE_SIZE;
-pub(crate) const PARAM_SECRET_KEY_BYTES: usize = PARAM_SEED_SIZE + PARAM_SOL_SIZE;
-pub(crate) const PARAM_SECRET_KEY_BYTES_SHORT: usize = PARAM_SEED_SIZE;
-
-// Misc
 
 /// d-split variable for the splitting variant of the Syndrome Decoding Problem. Currently set to 1. Should ideally be able to set on running the application and running instances in parallel.
 /// Checkout: Splitting syndrome decoding in the specs
 pub(crate) const PARAM_SPLITTING_FACTOR: usize = 1;
 
-pub(crate) const PARAM_CHUNK_LENGTH: usize = PARAM_CODE_LENGTH / PARAM_SPLITTING_FACTOR;
-pub(crate) const PARAM_CHUNK_WEIGHT: usize = PARAM_CODE_WEIGHT / PARAM_SPLITTING_FACTOR;
-
-pub(crate) const PARAM_SYNDROME_LENGTH: usize = PARAM_CODE_LENGTH - PARAM_CODE_DIMENSION;
-pub(crate) const PARAM_SYNDROME_LENGTH_CEIL32: usize = ((PARAM_SYNDROME_LENGTH + 31) >> 5) << 5;
-pub(crate) const PARAM_CODEWORD_LENGTH: usize = PARAM_CODE_LENGTH;
-pub(crate) const PARAM_CODEWORD_LENGTH_CEIL32: usize = ((PARAM_CODEWORD_LENGTH + 31) >> 5) << 5;
-pub(crate) const PARAM_PLAINTEXT_LENGTH: usize = PARAM_CODE_DIMENSION;
-pub(crate) const PARAM_PCMATRIX_BYTESIZE: usize =
-    PARAM_CODE_DIMENSION * PARAM_SYNDROME_LENGTH_CEIL32;
-
+pub(crate) const PARAM_CHUNK_LENGTH: usize = PARAM_M / PARAM_SPLITTING_FACTOR;
+pub(crate) const PARAM_CHUNK_WEIGHT: usize = PARAM_W / PARAM_SPLITTING_FACTOR;
