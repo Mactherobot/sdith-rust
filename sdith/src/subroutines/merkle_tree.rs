@@ -1,3 +1,4 @@
+use num_traits::ToPrimitive;
 use queues::Queue;
 use tiny_keccak::Hasher;
 

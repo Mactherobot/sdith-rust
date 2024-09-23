@@ -20,13 +20,13 @@ use crate::{
 };
 
 // Polynomial types
-const WeightPolyLength: usize = PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR;
+const WEIGHT_POLY_LENGTH: usize = PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR;
 /// QPoly is a polynomial of degree PARAM_CHUNK_WEIGHT * PARAM_SPLITTING_FACTOR. Split into a matrix of PARAM_SPLITTING_FACTOR rows and PARAM_CHUNK_WEIGHT columns.
-type QPPoly = [u8; WeightPolyLength];
+type QPPoly = [u8; WEIGHT_POLY_LENGTH];
 impl Matrix<PARAM_SPLITTING_FACTOR, PARAM_CHUNK_W> for QPPoly {}
 
-const LengthPolyLength: usize = PARAM_CHUNK_M * PARAM_SPLITTING_FACTOR;
-type SPoly = [u8; LengthPolyLength];
+const LENGTH_POLY_LENGTH: usize = PARAM_CHUNK_M * PARAM_SPLITTING_FACTOR;
+type SPoly = [u8; LENGTH_POLY_LENGTH];
 impl Matrix<PARAM_SPLITTING_FACTOR, PARAM_CHUNK_M> for SPoly {}
 
 type HMatrix = [u8; PARAM_M_SUB_K * PARAM_K];
@@ -60,7 +60,7 @@ pub(crate) struct Solution {
     pub(crate) p_poly: QPPoly,
 }
 
-pub type WitnessPlain = [u8; PARAM_M_SUB_K + WeightPolyLength * 2];
+pub type WitnessPlain = [u8; PARAM_M_SUB_K + WEIGHT_POLY_LENGTH * 2];
 impl Solution {
     pub(crate) fn get_witness_plain(&self) -> WitnessPlain {
         concat_vectors(&[&self.s_a, &self.q_poly, &self.p_poly])
@@ -240,9 +240,9 @@ mod test_witness {
         let (q_poly, s_poly, p_poly) = polynomials;
 
         // Check that the polynomials have the correct length
-        assert_eq!(q_poly.len(), WeightPolyLength);
-        assert_eq!(s_poly.len(), LengthPolyLength);
-        assert_eq!(p_poly.len(), WeightPolyLength);
+        assert_eq!(q_poly.len(), WEIGHT_POLY_LENGTH);
+        assert_eq!(s_poly.len(), LENGTH_POLY_LENGTH);
+        assert_eq!(p_poly.len(), WEIGHT_POLY_LENGTH);
 
         // Check that the polynomials are not all zeros
         assert!(q_poly.iter().any(|x| x != &0_u8));
@@ -296,7 +296,9 @@ fn _sample_x_with_hamming_weight_w(
 #[cfg(test)]
 mod test_helpers {
     use crate::{
-        arith::hamming_weight, constants::params::{PARAM_CHUNK_W, PARAM_SEED_SIZE, PARAM_W}, subroutines::prg::prg::PRG
+        arith::hamming_weight,
+        constants::params::{PARAM_CHUNK_W, PARAM_SEED_SIZE, PARAM_W},
+        subroutines::prg::prg::PRG,
     };
 
     use super::*;

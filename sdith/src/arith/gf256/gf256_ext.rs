@@ -1,5 +1,7 @@
 // Field extension `F_q^2 = F_q[X] / (X^2 + X + 32)`
 
+use crate::subroutines::prg::{self, prg::PRG};
+
 use super::gf256_arith::{gf256_add, gf256_mul};
 
 /// Addition: Field extension `F_q^2 = F_q[X] / (X^2 + X + 32)`
@@ -70,13 +72,8 @@ pub(crate) fn gf256_ext32_mul(a: [u8; 4], b: [u8; 4]) -> [u8; 4] {
 }
 
 /// Sample a value from the extended field `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
-pub(crate) fn gf256_ext32_sample() -> [u8; 4] {
-    [
-        rand::random::<u8>(),
-        rand::random::<u8>(),
-        rand::random::<u8>(),
-        rand::random::<u8>(),
-    ]
+pub(crate) fn gf256_ext32_sample(prg: &mut PRG) -> [u8; 4] {
+    prg.sample_field_elements_gf256(4).try_into().unwrap()
 }
 
 #[cfg(test)]
