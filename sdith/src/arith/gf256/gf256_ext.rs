@@ -69,6 +69,16 @@ pub(crate) fn gf256_ext32_mul(a: [u8; 4], b: [u8; 4]) -> [u8; 4] {
     [r0, r1, r2, r3]
 }
 
+/// Sample a value from the extended field `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
+pub(crate) fn gf256_ext32_sample() -> [u8; 4] {
+    [
+        rand::random::<u8>(),
+        rand::random::<u8>(),
+        rand::random::<u8>(),
+        rand::random::<u8>(),
+    ]
+}
+
 #[cfg(test)]
 mod ext32_tests {
     #[test]
@@ -78,6 +88,11 @@ mod ext32_tests {
 
     #[test]
     fn test_mul() {
+        todo!()
+    }
+
+    #[test]
+    fn test_sample() {
         todo!()
     }
 }
