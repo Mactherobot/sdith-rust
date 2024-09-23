@@ -170,10 +170,10 @@ fn sample_witness(seed_witness: Seed) -> (QPPoly, SPoly, QPPoly) {
 
     for n_poly in 0..PARAM_SPLITTING_FACTOR {
         // First, compute the non-redundant positions
-        _sample_non_redundant(&mut prg, &mut positions);
+        sample_non_redundant(&mut prg, &mut positions);
 
         // Sample x vector
-        let x_vector = _sample_x_with_hamming_weight_w(&mut prg, &positions);
+        let x_vector = sample_x_with_hamming_weight_w(&mut prg, &positions);
 
         // Compute truncated Q -> Q' polynomial
         let q_coeffs = q_poly.get_row_mut(n_poly);
@@ -210,7 +210,9 @@ fn sample_witness(seed_witness: Seed) -> (QPPoly, SPoly, QPPoly) {
 
 #[cfg(test)]
 mod test_witness {
-    use crate::arith::{gf256::gf256_poly::gf256_evaluate_polynomial_horner, hamming_weight};
+    use crate::arith::{
+        gf256::gf256_poly::gf256_evaluate_polynomial_horner, hamming_weight_vector,
+    };
 
     use super::*;
 
@@ -257,13 +259,13 @@ mod test_witness {
                 x_vector[i] = gf256_evaluate_polynomial_horner(&s_poly_d.to_vec(), i as u8)
             }
 
-            assert_eq!(hamming_weight(&x_vector), PARAM_CHUNK_W as u64);
+            assert_eq!(hamming_weight_vector(&x_vector), PARAM_CHUNK_W as u64);
         }
     }
 }
 
 /// Create a set { f_1, ..., f_{PARAM_CHUNK_WEIGHT} }.
-fn _sample_non_redundant(prg: &mut PRG, result: &mut [u8; PARAM_CHUNK_W]) {
+fn sample_non_redundant(prg: &mut PRG, result: &mut [u8; PARAM_CHUNK_W]) {
     let mut i = 0;
     while i < PARAM_CHUNK_W {
         prg.sample(&mut result[i..i + 1]);
@@ -278,7 +280,9 @@ fn _sample_non_redundant(prg: &mut PRG, result: &mut [u8; PARAM_CHUNK_W]) {
     }
 }
 
-fn _sample_x_with_hamming_weight_w(
+/// Create a vector x with hamming weight PARAM_CHUNK_WEIGHT.
+/// Meaning that the vector x has exactly PARAM_CHUNK_WEIGHT non-zero values.
+fn sample_x_with_hamming_weight_w(
     prg: &mut PRG,
     positions: &[u8; PARAM_CHUNK_W],
 ) -> [u8; PARAM_CHUNK_M] {
@@ -296,7 +300,7 @@ fn _sample_x_with_hamming_weight_w(
 #[cfg(test)]
 mod test_helpers {
     use crate::{
-        arith::hamming_weight,
+        arith::hamming_weight_vector,
         constants::params::{PARAM_CHUNK_W, PARAM_SEED_SIZE, PARAM_W},
         subroutines::prg::prg::PRG,
     };
@@ -308,7 +312,7 @@ mod test_helpers {
         let seed = [0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);
         let mut positions = [0u8; PARAM_CHUNK_W];
-        _sample_non_redundant(&mut prg, &mut positions);
+        sample_non_redundant(&mut prg, &mut positions);
 
         assert_eq!(positions.len(), PARAM_CHUNK_W);
         assert!(positions.iter().any(|x| x != &0_u8));
@@ -328,13 +332,13 @@ mod test_helpers {
             let seed = [i as u8; PARAM_SEED_SIZE];
             let mut prg = PRG::init(&seed, None);
             let mut positions = [0u8; PARAM_CHUNK_W];
-            _sample_non_redundant(&mut prg, &mut positions);
-            let x_vector = _sample_x_with_hamming_weight_w(&mut prg, &positions);
+            sample_non_redundant(&mut prg, &mut positions);
+            let x_vector = sample_x_with_hamming_weight_w(&mut prg, &positions);
             assert_eq!(x_vector.len(), PARAM_CHUNK_M);
             assert!(
-                hamming_weight(&x_vector) <= PARAM_W as u64,
+                hamming_weight_vector(&x_vector) <= PARAM_W as u64,
                 "x_vector weight {}, exceeds {}",
-                hamming_weight(&x_vector),
+                hamming_weight_vector(&x_vector),
                 PARAM_W
             );
         }

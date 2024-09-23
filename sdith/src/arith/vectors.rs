@@ -17,6 +17,27 @@ pub(crate) fn vector_copy_into_2<const A: usize, const B: usize>(
     copy_from_vec_ptrs(&v[offset..offset + B], out2);
 }
 
+/// Concatenates a list of vectors into a single vector. The "Parse" function
+pub(crate) fn parse(arrays: Vec<&[u8]>) -> Vec<u8> {
+    let mut result = Vec::new();
+    for array in arrays {
+        result.extend_from_slice(array);
+    }
+    result
+}
+
+/// Splits a vector into a list of vectors. The "Serialize" function
+pub(crate) fn serialize(array: &Vec<u8>, n_sizes: Vec<usize>) -> Vec<Vec<u8>> {
+    assert!(n_sizes.iter().sum::<usize>() == array.len());
+    let mut result = Vec::new();
+    let mut offset = 0;
+    for size in n_sizes.iter() {
+        result.push(array[offset..offset + size].to_vec());
+        offset += size;
+    }
+    result
+}
+
 /// Concatenates a list of vectors into a single vector. The "Serialize" function
 pub(crate) fn concat_vectors<const O: usize>(vectors: &[&[u8]]) -> [u8; O] {
     assert!(vectors.iter().map(|v| v.len()).sum::<usize>() == O);
@@ -55,5 +76,26 @@ mod tests {
 
         let result = concat_vectors(&[&v1, &v2, &v3]);
         assert_eq!(result, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    }
+
+    #[test]
+    fn test_parse() {
+        let v1 = [1, 2, 3];
+        let v2 = [4, 5, 6];
+        let v3 = [7, 8, 9];
+
+        let result = parse(vec![&v1, &v2, &v3]);
+        assert_eq!(result, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    }
+
+    #[test]
+    fn test_serialize() {
+        let v = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
+        let result = serialize(&v, vec![3, 4, 2]);
+
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0], [1, 2, 3]);
+        assert_eq!(result[1], [4, 5, 6, 7]);
+        assert_eq!(result[2], [8, 9]);
     }
 }
