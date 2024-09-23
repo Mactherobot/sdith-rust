@@ -211,7 +211,7 @@ fn sample_witness(seed_witness: Seed) -> (QPPoly, SPoly, QPPoly) {
 #[cfg(test)]
 mod test_witness {
     use crate::arith::{
-        gf256::gf256_poly::gf256_evaluate_polynomial_horner, hamming_weight_vector,
+        gf256::{self, gf256_poly::gf256_evaluate_polynomial_horner}, hamming_weight_vector,
     };
 
     use super::*;
@@ -260,6 +260,30 @@ mod test_witness {
             }
 
             assert_eq!(hamming_weight_vector(&x_vector), PARAM_CHUNK_W as u64);
+        }
+
+        // Test that S · Q = P · F
+        for d in 0..PARAM_SPLITTING_FACTOR {
+            let s_poly_d = s_poly.get_row(d);
+            let q_poly_d = q_poly.get_row(d);
+            let p_poly_d = p_poly.get_row(d);
+
+            let mut s_q = [0_u8; PARAM_CHUNK_M];
+            let mut p_f = [0_u8; PARAM_CHUNK_M];
+
+            // Compute S · Q and P · F
+            for i in 0..PARAM_CHUNK_M {
+                s_q[i] = gf256_mul(
+                    gf256_evaluate_polynomial_horner(&s_poly_d.to_vec(), i as u8),
+                    gf256_evaluate_polynomial_horner(&q_poly_d.to_vec(), i as u8),
+                ); // TODO WHY DIS NOT ZERO
+                p_f[i] = gf256_mul(
+                    gf256_evaluate_polynomial_horner(&p_poly_d.to_vec(), i as u8),
+                    gf256_evaluate_polynomial_horner(&PRECOMPUTED_F_POLY.to_vec(), i as u8),
+                );
+            }
+
+            assert_eq!(s_q, p_f);
         }
     }
 }
