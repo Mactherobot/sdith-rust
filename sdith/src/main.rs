@@ -1,4 +1,5 @@
 #![feature(generic_const_exprs)]
+// TODO: Can we remove const generics. Currently used by `matrices.rs`
 
 mod api;
 mod arith;

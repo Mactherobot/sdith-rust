@@ -1,4 +1,3 @@
-use num_traits::ToPrimitive;
 use queues::Queue;
 use tiny_keccak::Hasher;
 
@@ -85,11 +84,20 @@ impl MerkleTree {
         }
     }
 
-    //
-    pub fn get_merkle_path(&self, index_leaves_auth: Vec<u8>) -> Vec<Hash> {
+    /// Returns the nodes required to calculate the merkle root from the leaves.
+    ///
+    /// # Arguments
+    /// - `selected_leaves`: A vector of 0s and 1s where 1 indicates that the leaf at that index is selected and 0 indicates that the leaf is not selected
+    ///
+    /// # Returns
+    /// A vector of node hash values that are required to calculate the merkle root from the selected leaves.
+    ///
+    /// If you supply all leaves or none, the auth path will be empty.
+    pub fn get_merkle_path(&self, selected_leaves: Vec<u8>) -> Vec<Hash> {
+        assert!(selected_leaves.len() == self.n_leaves);
         let mut missing = vec![];
-        (0..index_leaves_auth.len()).for_each(|i| {
-            if index_leaves_auth[i] == 0 {
+        (0..selected_leaves.len()).for_each(|i| {
+            if selected_leaves[i] == 0 {
                 missing.push((1 << self.height) + i);
             }
         });
@@ -109,7 +117,6 @@ impl MerkleTree {
         for h in (1..=self.height).rev() {
             for i in 1 << h..(1 << (h + 1)) {
                 if missing.contains(&i) {
-                    println!("Missing: {}", i);
                     auth.push(self.nodes[i]);
                 }
             }
@@ -118,16 +125,16 @@ impl MerkleTree {
         auth
     }
 
-    // Recalculates the merkle root from the commitments and the auth
+    /// Recalculates the merkle root from the commitments and the auth
     pub fn get_merkle_root_from_auth(
         &self,
-        index_leaves_auth: Vec<u8>,
+        selected_leaves: Vec<u8>,
         commitments: CommitmentsArray,
         mut auth: Vec<Hash>,
     ) -> Hash {
         let mut q: Queue<(Hash, usize)> = queue![];
-        (0..index_leaves_auth.len()).for_each(|i| {
-            if index_leaves_auth[i] == 1 {
+        (0..selected_leaves.len()).for_each(|i| {
+            if selected_leaves[i] == 1 {
                 let index = (1 << self.height) + i;
                 let add = q.add((commitments[i], index));
                 if add.is_err() {
@@ -137,7 +144,6 @@ impl MerkleTree {
         });
 
         let (mut height, mut last_index) = (1 << self.height, self.n_nodes - 1);
-        println!("Queue: {:?}", q);
         // While the next element is not the root of the tree
         while q.peek().unwrap().1 != 1 {
             // Get the next element
@@ -221,26 +227,33 @@ mod test {
     }
 
     #[test]
-    fn test_merkle_path() {
+    fn test_merkle_zero_auth_path() {
+        // When you have all leaves selected, you don't need any extra nodes to calculate the root. Therefore, if all leaves are selected, the auth path should be empty
         let commitments = [[1_u8; 32]; PARAM_NB_PARTIES];
         let tree = MerkleTree::new(commitments, None);
-        let auth = tree.get_merkle_path(vec![0_u8; PARAM_NB_PARTIES]);
 
+        let auth = tree.get_merkle_path(vec![0_u8; PARAM_NB_PARTIES]);
         assert_eq!(auth.len(), 0);
         assert_eq!(auth.is_empty(), true);
+
+        let auth = tree.get_merkle_path(vec![1_u8; PARAM_NB_PARTIES]);
+        assert_eq!(auth.len(), 0);
+        assert!(auth.is_empty());
     }
 
     #[test]
-    fn test_merkle_path_2() {
+    fn test_merkle_one_selected_leaf() {
         let commitments = [[1_u8; 32]; PARAM_NB_PARTIES];
         let tree = MerkleTree::new(commitments, None);
-        // Set one of the entries to 1
-        let mut index_leaves_auth = vec![0_u8; PARAM_NB_PARTIES];
-        index_leaves_auth[0] = 1;
-        let auth = tree.get_merkle_path(index_leaves_auth);
-        println!("Auth: {:?}", auth);
 
-        assert_eq!(auth.len(), 8);
+        // Set one of the leaves
+        let mut selected_leaves = vec![0_u8; PARAM_NB_PARTIES];
+        selected_leaves[0] = 1;
+
+        let auth = tree.get_merkle_path(selected_leaves);
+
+        // The auth path should have 8 nodes (one from each level)
+        assert_eq!(auth.len(), PARAM_MERKLE_TREE_HEIGHT as usize);
         assert!(!auth.is_empty());
     }
 
@@ -248,13 +261,13 @@ mod test {
     fn test_merkle_root_from_auth() {
         let commitments = [[1_u8; 32]; PARAM_NB_PARTIES];
         let tree = MerkleTree::new(commitments, None);
+
         // Set one of the entries to 1
-        let mut index_leaves_auth = vec![0_u8; PARAM_NB_PARTIES];
-        index_leaves_auth[0] = 1;
-        index_leaves_auth[2] = 1;
-        let auth = tree.get_merkle_path(index_leaves_auth.clone());
-        println!("Auth: {:?}", auth.len());
-        let root = tree.get_merkle_root_from_auth(index_leaves_auth, commitments, auth);
+        let mut selected_leaves = vec![0_u8; PARAM_NB_PARTIES];
+        selected_leaves[0] = 1;
+
+        let auth = tree.get_merkle_path(selected_leaves.clone());
+        let root = tree.get_merkle_root_from_auth(selected_leaves, commitments, auth);
         assert_eq!(root, tree.nodes[1]);
     }
 }

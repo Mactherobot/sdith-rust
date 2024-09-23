@@ -1,11 +1,11 @@
 // SD Parameters
 /// Also called q in the spec and is the Galois field size GL(q) = GL(2^8) = GL(256)
 pub(crate) const PARAM_FIELD_SIZE: usize = 256;
-/// Also called m in the spec
+/// Code length PARAM_CODE_LENGTH
 pub(crate) const PARAM_M: usize = 230;
-/// Also called k in the spec
+/// Vector dimension PARAM_CODE_DIMENSION
 pub(crate) const PARAM_K: usize = 126;
-/// Also called w in the spec and is the Hamming weight bound
+/// The Hamming weight bound PARAM_CODE_WEIGHT
 pub(crate) const PARAM_W: usize = 79;
 /// m - k
 pub(crate) const PARAM_M_SUB_K: usize = PARAM_M - PARAM_K;
@@ -35,5 +35,7 @@ pub(crate) const PARAM_DIGEST_SIZE: usize = 256 / 8;
 /// Checkout: Splitting syndrome decoding in the specs
 pub(crate) const PARAM_SPLITTING_FACTOR: usize = 1;
 
-pub(crate) const PARAM_CHUNK_LENGTH: usize = PARAM_M / PARAM_SPLITTING_FACTOR;
-pub(crate) const PARAM_CHUNK_WEIGHT: usize = PARAM_W / PARAM_SPLITTING_FACTOR;
+/// Chunk size for the splitting variant of the Syndrome Decoding Problem for Code Length m
+pub(crate) const PARAM_CHUNK_M: usize = PARAM_M / PARAM_SPLITTING_FACTOR;
+/// Chunk size for the splitting variant of the Syndrome Decoding Problem for Hamming weight w
+pub(crate) const PARAM_CHUNK_W: usize = PARAM_W / PARAM_SPLITTING_FACTOR;

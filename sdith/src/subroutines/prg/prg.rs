@@ -21,6 +21,17 @@ impl PRG {
         self.xof.squeeze(output);
     }
 
+    pub fn sample_non_zero<const SIZE: usize>(&mut self) -> [u8; SIZE] {
+        let mut result = [0_u8; SIZE];
+        for i in 0..SIZE {
+            self.sample(&mut result[i..i + 1]);
+            if result[i] == 0 {
+                result[i] += 1;
+            }
+        }
+        result
+    }
+
     /// Sample a random value in the field F_q = F_256
     /// The byte B_i is returned as the sampled field element. XOF is called to generate n bytes
     pub fn sample_field_elements_gf256(&mut self, n: usize) -> Vec<u8> {
@@ -83,6 +94,18 @@ mod tests {
         for i in f.iter() {
             println!("{}", i);
             assert!(*i < 251);
+        }
+    }
+
+    #[test]
+    fn test_prg_sample_non_zero() {
+        let seed = &[0u8; PARAM_SEED_SIZE];
+        let mut prg = PRG::init(seed, None);
+
+        let f = prg.sample_non_zero::<256>();
+        assert_ne!(f, [0u8; 256]);
+        for i in f.iter() {
+            assert_ne!(*i, 0);
         }
     }
 }
