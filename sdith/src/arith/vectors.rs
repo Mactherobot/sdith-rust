@@ -18,12 +18,13 @@ pub(crate) fn vector_copy_into_2<const A: usize, const B: usize>(
 }
 
 /// Concatenates a list of vectors into a single vector. The "Parse" function
-pub(crate) fn parse(arrays: Vec<&[u8]>) -> Vec<u8> {
+pub(crate) fn parse<const N: usize>(arrays: Vec<&[u8]>) -> [u8; N] {
     let mut result = Vec::new();
+    assert!(arrays.iter().map(|a| a.len()).sum::<usize>() == N);
     for array in arrays {
         result.extend_from_slice(array);
     }
-    result
+    result.try_into().expect("Failed to parse vector")
 }
 
 /// Splits a vector into a list of vectors. The "Serialize" function
@@ -82,10 +83,10 @@ mod tests {
     fn test_parse() {
         let v1 = [1, 2, 3];
         let v2 = [4, 5, 6];
-        let v3 = [7, 8, 9];
+        let v3 = [7, 8, 9, 10];
 
-        let result = parse(vec![&v1, &v2, &v3]);
-        assert_eq!(result, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        let result = parse::<10>(vec![&v1, &v2, &v3]);
+        assert_eq!(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     }
 
     #[test]
