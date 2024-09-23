@@ -27,15 +27,15 @@ pub(crate) fn parse(arrays: Vec<&[u8]>) -> Vec<u8> {
 }
 
 /// Splits a vector into a list of vectors. The "Serialize" function
-pub(crate) fn serialize(array: &Vec<u8>, n_sizes: Vec<usize>) -> Vec<Vec<u8>> {
+pub(crate) fn serialize<const N: usize>(array: &Vec<u8>, n_sizes: Vec<usize>) -> [Vec<u8>; N] {
     assert!(n_sizes.iter().sum::<usize>() == array.len());
-    let mut result = Vec::new();
+    let mut result = Vec::with_capacity(N);
     let mut offset = 0;
     for size in n_sizes.iter() {
         result.push(array[offset..offset + size].to_vec());
         offset += size;
     }
-    result
+    result.try_into().expect("Failed to serialize vector")
 }
 
 /// Concatenates a list of vectors into a single vector. The "Serialize" function
@@ -91,7 +91,7 @@ mod tests {
     #[test]
     fn test_serialize() {
         let v = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
-        let result = serialize(&v, vec![3, 4, 2]);
+        let result = serialize::<3>(&v, vec![3, 4, 2]);
 
         assert_eq!(result.len(), 3);
         assert_eq!(result[0], [1, 2, 3]);
