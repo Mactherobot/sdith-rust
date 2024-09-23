@@ -17,7 +17,7 @@ pub(crate) fn gf256_evaluate_polynomial_horner(coeffs: &Vec<u8>, x: u8) -> u8 {
 /// If (X-alpha) divides P_in, returns P_in / (X-alpha)
 pub(crate) fn gf256_remove_one_degree_factor_monic(q_out: &mut [u8], p_in: &[u8], alpha: u8) {
     let in_degree = p_in.len() - 1;
-    assert!(q_out.len() == in_degree);
+    assert!(q_out.len() >= in_degree, "Output array must be larger than input coefficient array `p_in`. p_in: {}, q_out: {}", in_degree, q_out.len());
 
     q_out[in_degree - 1] = 1_u8; // Monic polynomial: a polynomial whose leading coefficient is 1; e.g. X^3 + 23X^2 + 34X + 45
 

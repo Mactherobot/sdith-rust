@@ -1,28 +1,38 @@
 use crate::{
-    arith::gf256::{
-        gf256_arith::{gf256_add, gf256_mul, gf256_sub},
-        gf256_poly::gf256_remove_one_degree_factor_monic,
-        gf256_vector::{gf256_add_vector, gf256_mul_vector_by_scalar},
+    arith::{
+        gf256::{
+            gf256_arith::{gf256_add, gf256_mul, gf256_sub},
+            gf256_poly::gf256_remove_one_degree_factor_monic,
+            gf256_vector::{gf256_add_vector, gf256_mul_vector_by_scalar},
+        },
+        matrices::{Matrix, MatrixGF256Arith},
+        vectors::{concat_vectors, vector_copy_into_2},
     },
     constants::{
         params::{
-            PARAM_CHUNK_LENGTH, PARAM_CHUNK_WEIGHT, PARAM_K, PARAM_M_SUB_K, PARAM_SEED_SIZE,
-            PARAM_SPLITTING_FACTOR,
+            PARAM_CHUNK_LENGTH, PARAM_CHUNK_WEIGHT, PARAM_K, PARAM_M_SUB_K, PARAM_SALT_SIZE,
+            PARAM_SEED_SIZE, PARAM_SPLITTING_FACTOR,
         },
         precomputed::{PRECOMPUTED_F_POLY, PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S},
+        types::Seed,
     },
-    subroutines::{
-        matrices::{split_vector_cpy_into_2, HMatrix, Matrix, MatrixGF256Arith},
-        prg::prg::PRG,
-    },
+    subroutines::prg::prg::PRG,
 };
 
 // Polynomial types
-type QPoly = [u8; PARAM_CHUNK_WEIGHT * PARAM_SPLITTING_FACTOR];
-impl Matrix<PARAM_CHUNK_WEIGHT, PARAM_SPLITTING_FACTOR> for QPoly {}
-type PPoly = [u8; PARAM_CHUNK_WEIGHT * PARAM_SPLITTING_FACTOR];
-type SPoly = [u8; PARAM_CHUNK_LENGTH * PARAM_SPLITTING_FACTOR];
-impl Matrix<PARAM_CHUNK_LENGTH, PARAM_SPLITTING_FACTOR> for SPoly {}
+const WeightPolyLength: usize = PARAM_CHUNK_WEIGHT * PARAM_SPLITTING_FACTOR;
+/// QPoly is a polynomial of degree PARAM_CHUNK_WEIGHT * PARAM_SPLITTING_FACTOR. Split into a matrix of PARAM_SPLITTING_FACTOR rows and PARAM_CHUNK_WEIGHT columns.
+type QPPoly = [u8; WeightPolyLength];
+impl Matrix<PARAM_SPLITTING_FACTOR, PARAM_CHUNK_WEIGHT> for QPPoly {}
+
+const LengthPolyLength: usize = PARAM_CHUNK_LENGTH * PARAM_SPLITTING_FACTOR;
+type SPoly = [u8; LengthPolyLength];
+impl Matrix<PARAM_SPLITTING_FACTOR, PARAM_CHUNK_LENGTH> for SPoly {}
+
+type HMatrix = [u8; PARAM_M_SUB_K * PARAM_K];
+
+impl MatrixGF256Arith<{ PARAM_M_SUB_K }, { PARAM_K }> for HMatrix {}
+impl Matrix<{ PARAM_M_SUB_K }, { PARAM_K }> for HMatrix {}
 
 /// Instance Definition:
 ///
@@ -32,9 +42,9 @@ impl Matrix<PARAM_CHUNK_LENGTH, PARAM_SPLITTING_FACTOR> for SPoly {}
 ///
 /// Some member can be pointers when they are generated at each signing and verification from the others members.
 pub(crate) struct Instance {
-    seed_h: [u8; PARAM_SEED_SIZE],
-    y: [u8; PARAM_M_SUB_K],
-    matrix_h_prime: HMatrix,
+    pub(crate) seed_h: Seed,
+    pub(crate) y: [u8; PARAM_M_SUB_K],
+    pub(crate) matrix_h_prime: HMatrix,
 }
 
 /// Solution Definition:
@@ -45,36 +55,94 @@ pub(crate) struct Instance {
 ///
 /// It corresponds to the extended solution, meaning that it contains all the secret values which can be deterministically built from the solution itself and which are inputs of the underlying MPC protocol.
 pub(crate) struct Solution {
-    s_a: [u8; PARAM_K],
-    s_poly: SPoly,
-    q_poly: QPoly,
+    pub(crate) s_a: [u8; PARAM_K],
+    pub(crate) q_poly: QPPoly,
+    pub(crate) p_poly: QPPoly,
 }
 
-fn generate_instance_with_solution(prg: &mut PRG) -> (Instance, Solution) {
-    let (q_poly, s_poly, p_poly) = compute_polynomials(prg);
+pub type WitnessPlain = [u8; PARAM_M_SUB_K + WeightPolyLength * 2];
+impl Solution {
+    pub(crate) fn get_witness_plain(&self) -> WitnessPlain {
+        concat_vectors(&[&self.s_a, &self.q_poly, &self.p_poly])
+    }
+}
 
+struct Witness {
+    s_a: [u8; PARAM_K],
+    s_b: [u8; PARAM_M_SUB_K],
+    y: [u8; PARAM_M_SUB_K],
+    seed_h: Seed,
+    matrix_h_prime: HMatrix,
+}
+
+/// Generate a witness for the instance.
+///
+/// Inputs:
+/// - seed_h: Seed used to generate the H matrix.
+/// - polynomials: Tuple containing the polynomials Q', S, and P.
+///
+/// Note that Q' is the truncated version of Q
+fn generate_witness(seed_h: Seed, polynomials: (QPPoly, SPoly, QPPoly)) -> Witness {
+    let (_q_poly, s_poly, _p_poly) = polynomials;
+
+    // s is pre serialized as (s_A | s_B) due to the nature of SPoly
     // Split s as (s_A | s_B)
     let mut s_a = [0_u8; PARAM_K];
     let mut s_b = [0_u8; PARAM_M_SUB_K];
-    split_vector_cpy_into_2(&s_poly, &mut s_a, &mut s_b);
-
-    // Sample a seed for matrix H
-    let mut seed_H = [0_u8; PARAM_SEED_SIZE];
-    prg.sample(&mut seed_H);
+    vector_copy_into_2(&s_poly, &mut s_a, &mut s_b);
 
     // Build H
-    let matrix_H_prime = HMatrix::random(&mut PRG::init(&seed_H, None));
+    let matrix_h_prime = HMatrix::gen_random(&mut PRG::init(&seed_h, None));
 
     // Build y = s_B + H' s_A
 
     // H' s_A
-    let mut y: [u8; PARAM_M_SUB_K] = matrix_H_prime.gf256_mul_vector(&s_a);
+    let mut y: [u8; PARAM_M_SUB_K] = matrix_h_prime.gf256_mul_vector(&s_a);
     // s_B + ...
     for i in 0..y.len() {
         y[i] = gf256_add(y[i], s_b[i]);
     }
 
-    todo!()
+    Witness {
+        s_a,
+        s_b,
+        y,
+        seed_h,
+        matrix_h_prime,
+    }
+}
+
+/// Expand a seed into multiple seeds.
+/// (seed_1, seed_2, ..., seed_n) = ExpandSeed(seed_root, salt := 0, n)
+fn expand_seed<const SEEDS: usize>(seed_root: Seed) -> [Seed; SEEDS] {
+    let mut prg = PRG::init(&seed_root, Some(&[0u8; PARAM_SALT_SIZE]));
+    let mut seeds = Vec::<Seed>::with_capacity(SEEDS);
+    for _ in 0..SEEDS {
+        let mut seed = [0u8; PARAM_SEED_SIZE];
+        prg.sample(&mut seed);
+        seeds.push(seed);
+    }
+    seeds.try_into().expect("Failed to convert seeds")
+}
+
+pub(crate) fn generate_instance_with_solution(seed_root: Seed) -> (Instance, Solution) {
+    let [seed_h, seed_witness] = expand_seed(seed_root);
+    let polynomials = compute_polynomials(seed_witness);
+    let witness = generate_witness(seed_h, polynomials);
+
+    let instance = Instance {
+        seed_h: witness.seed_h,
+        y: witness.y,
+        matrix_h_prime: witness.matrix_h_prime,
+    };
+
+    let solution = Solution {
+        s_a: witness.s_a,
+        q_poly: polynomials.0,
+        p_poly: polynomials.2,
+    };
+
+    (instance, solution)
 }
 
 /// Computes the polynomials S, Q, and P.
@@ -89,26 +157,28 @@ fn generate_instance_with_solution(prg: &mut PRG) -> (Instance, Solution) {
 ///
 /// # Returns
 ///
-/// A tuple containing the generated polynomials: `(SPoly, QPoly, PPoly)`.
-fn compute_polynomials(prg: &mut PRG) -> (QPoly, SPoly, PPoly) {
+/// A tuple containing the generated polynomials: `(Q', S, P)`.
+fn compute_polynomials(seed_witness: Seed) -> (QPPoly, SPoly, QPPoly) {
+    let mut prg = PRG::init(&seed_witness, None);
+
     // Initiate variables
     let mut positions = [0_u8; PARAM_CHUNK_WEIGHT];
     let mut non_zero_coordinates = [0_u8; PARAM_CHUNK_WEIGHT];
 
-    let mut q_poly: QPoly = [0_u8; PARAM_CHUNK_WEIGHT * PARAM_SPLITTING_FACTOR];
-    let mut p_poly: PPoly = [0_u8; PARAM_CHUNK_WEIGHT * PARAM_SPLITTING_FACTOR];
+    let mut q_poly: QPPoly = [0_u8; PARAM_CHUNK_WEIGHT * PARAM_SPLITTING_FACTOR];
+    let mut p_poly: QPPoly = [0_u8; PARAM_CHUNK_WEIGHT * PARAM_SPLITTING_FACTOR];
     let mut s_poly: SPoly = [0_u8; PARAM_CHUNK_LENGTH * PARAM_SPLITTING_FACTOR];
 
     for n_poly in 0..PARAM_SPLITTING_FACTOR {
         // First, compute the non-redundant positions
-        _sample_non_redundant(prg, &mut positions);
+        _sample_non_redundant(&mut prg, &mut positions);
 
         // Then, compute the non-zero evaluations of S
-        _sample_non_zero(prg, &mut non_zero_coordinates);
+        _sample_non_zero(&mut prg, &mut non_zero_coordinates);
 
         // Compute x vector
-        let mut x_vector = [0_u8; PARAM_CHUNK_WEIGHT];
-        for i in 0..PARAM_CHUNK_WEIGHT {
+        let mut x_vector = [0_u8; PARAM_CHUNK_LENGTH];
+        for i in 0..PARAM_CHUNK_LENGTH {
             for j in 0..PARAM_CHUNK_WEIGHT {
                 x_vector[i] ^= non_zero_coordinates[j] * (positions[j] == i as u8) as u8;
             }
@@ -116,12 +186,14 @@ fn compute_polynomials(prg: &mut PRG) -> (QPoly, SPoly, PPoly) {
 
         // Compute Q' polynomial
         let q_coeffs = q_poly.get_row_mut(n_poly);
+        q_coeffs.fill(1);
         for i in 0..PARAM_CHUNK_WEIGHT {
             // Q' <- Q · (X-w_i)
             let wi = positions[i];
             let minus_wi = gf256_sub(0, wi);
             for j in (1..=i).rev() {
-                q_coeffs[j] = gf256_add(q_coeffs[j - 1], gf256_mul(minus_wi, q_coeffs[j]));
+                let val = gf256_add(q_coeffs[j - 1], gf256_mul(minus_wi, q_coeffs[j]));
+                q_coeffs[j] = val;
             }
             q_coeffs[0] = gf256_mul(minus_wi, q_coeffs[0]);
         }
@@ -143,6 +215,47 @@ fn compute_polynomials(prg: &mut PRG) -> (QPoly, SPoly, PPoly) {
         }
     }
     return (q_poly, s_poly, p_poly);
+}
+
+#[cfg(test)]
+mod test_witness {
+    use super::*;
+
+    #[test]
+    fn test_generate_witness() {
+        let seed_test = [0u8; PARAM_SEED_SIZE];
+        let polynomials = compute_polynomials(seed_test);
+        let result = generate_witness(seed_test, polynomials);
+
+        let h_prime = result.matrix_h_prime;
+        let y = result.y;
+        let s_a = result.s_a;
+        let s_b_expect = result.s_b;
+
+        // Check s_b = y - H' s_a
+        let mut s_b_result: [u8; PARAM_M_SUB_K] = h_prime.gf256_mul_vector(&s_a);
+        for i in 0..s_b_result.len() {
+            s_b_result[i] = gf256_sub(y[i], s_b_result[i]);
+        }
+        assert_eq!(s_b_expect, s_b_result);
+    }
+
+    #[test]
+    fn test_compute_polynomials() {
+        let seed = [0u8; PARAM_SEED_SIZE];
+        let polynomials = compute_polynomials(seed);
+        let (q_poly, s_poly, p_poly) = polynomials;
+
+        // Check that the polynomials have the correct length
+        assert_eq!(q_poly.len(), WeightPolyLength);
+        assert_eq!(s_poly.len(), LengthPolyLength);
+        assert_eq!(p_poly.len(), WeightPolyLength);
+
+        // Check that the polynomials are not all zeros
+        assert!(q_poly.iter().any(|x| x != &0_u8));
+        assert!(s_poly.iter().any(|x| x != &0_u8));
+        assert!(p_poly.iter().any(|x| x != &0_u8));
+    }
 }
 
 fn _sample_non_redundant(prg: &mut PRG, result: &mut [u8; PARAM_CHUNK_WEIGHT]) {
