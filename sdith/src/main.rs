@@ -5,6 +5,7 @@ mod api;
 mod arith;
 mod constants;
 mod keygen;
+mod mpc;
 mod subroutines;
 mod witness;
 
