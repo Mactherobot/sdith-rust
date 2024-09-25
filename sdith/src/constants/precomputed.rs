@@ -30,3 +30,24 @@ pub(crate) const PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S: [u8; 230] = [
     27, 54, 54, 250, 250, 101, 101, 149, 149, 10, 10, 40, 40, 122, 122, 223, 223, 141, 141, 139,
     139, 190, 190, 53, 53,
 ];
+
+#[cfg(test)]
+mod test {
+    use crate::{
+        arith::gf256::gf256_poly::{
+            gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
+        },
+        constants::params::PARAM_CHUNK_M,
+    };
+
+    use super::PRECOMPUTED_F_POLY;
+
+    #[test]
+    fn test_f_is_well_formed() {
+        // We check if the precomputed polynomial F is well-computed
+        for i in 0..PARAM_CHUNK_M {
+            let f_eval = gf256_evaluate_polynomial_horner_monic(&PRECOMPUTED_F_POLY.to_vec(), i as u8);
+            assert!(f_eval == 0, "Error: Wrong F evaluation ({}, {}).", i, f_eval);
+        }
+    }
+}

@@ -6,8 +6,8 @@ use crate::{
     subroutines::prg::prg::PRG,
 };
 
-pub trait MatrixGF256Arith<const ROWS: usize, const COLS: usize>:
-    Index<usize, Output = u8>
+pub trait MatrixGF256<const ROWS: usize, const COLS: usize>:
+    Index<usize, Output = [u8; COLS]>
 {
     /// Multiply the matrix self `A` by a vector `x` in GF(256).
     ///
@@ -36,58 +36,21 @@ pub trait MatrixGF256Arith<const ROWS: usize, const COLS: usize>:
         for i in 0..ROWS {
             let mut sum = 0u8;
             for j in 0..COLS {
-                sum = gf256_add(sum, gf256_mul(self[i * ROWS + j], x[i]));
+                sum = gf256_add(sum, gf256_mul(self[i][j], x[i]));
             }
             result[i] = sum;
         }
         return result;
     }
-}
 
-pub trait Matrix<const ROWS: usize, const COLS: usize>:
-    Index<usize, Output = u8>
-    + IndexMut<usize, Output = u8>
-    + Index<Range<usize>, Output = [u8]>
-    + IndexMut<Range<usize>, Output = [u8]>
-{
     /// Generate a random matrix of size `ROWS * COLS` using the provided PRG.
     /// Same as ExpandH function in the reference implementation.
-    fn gen_random(prg: &mut PRG) -> [u8; ROWS * COLS] {
-        let elements: [u8; ROWS * COLS] = prg
-            .sample_field_elements_gf256(ROWS * COLS)
-            .as_slice()
-            .try_into()
-            .expect("PRG did not return correct number of elements for H matrix");
+    fn gen_random(prg: &mut PRG) -> [[u8; COLS]; ROWS] {
+        let mut elements: [[u8; COLS]; ROWS] = [[0u8; COLS]; ROWS];
+        for i in 0..ROWS {
+            elements[i] = prg.sample_field_elements_gf251(COLS).try_into().unwrap();
+        }
         elements
-    }
-
-    fn set(&mut self, i: usize, j: usize, value: u8) {
-        assert!(i < ROWS);
-        assert!(j < COLS);
-        self[i * COLS + j] = value;
-    }
-
-    /// Get the element at row `i` and column `j`. From matrix `A^(m * n)` for i <= m and j <= n.
-    fn get(&self, i: usize, j: usize) -> u8 {
-        assert!(i < ROWS);
-        assert!(j < COLS);
-        self[i * COLS + j]
-    }
-
-    fn get_row(&self, i: usize) -> &[u8] {
-        assert!(i < ROWS);
-        &self[i * COLS..(i + 1) * COLS]
-    }
-
-    fn get_row_mut(&mut self, i: usize) -> &mut [u8] {
-        assert!(i < ROWS);
-        let start = i * COLS;
-        let end = (i + 1) * COLS;
-        &mut self[start..end]
-    }
-
-    fn elements(&self) -> &Self {
-        self
     }
 }
 
@@ -100,9 +63,8 @@ mod tests {
     const TEST_COLS: usize = 4;
     const TEST_ROWS: usize = 4;
 
-    type TestMatrix = [u8; TEST_ROWS * TEST_COLS];
-    impl MatrixGF256Arith<TEST_ROWS, TEST_COLS> for TestMatrix {}
-    impl Matrix<TEST_ROWS, TEST_COLS> for TestMatrix {}
+    type TestMatrix = [[u8; TEST_COLS]; TEST_ROWS];
+    impl MatrixGF256<TEST_ROWS, TEST_COLS> for TestMatrix {}
 
     #[test]
     fn test_random_gen() {
@@ -112,7 +74,7 @@ mod tests {
 
     #[test]
     fn test_multiply_vector() {
-        let matrix: TestMatrix = [2u8; TEST_COLS * TEST_ROWS];
+        let matrix: TestMatrix = [[2u8; TEST_COLS]; TEST_ROWS];
         let x = [2u8; TEST_COLS];
         let y: [u8; TEST_ROWS] = matrix.gf256_mul_vector(&x);
 
@@ -133,52 +95,5 @@ mod tests {
             matrix.gf256_mul_vector::<{ TEST_COLS }, { TEST_ROWS - 1 }>(&x)
         });
         assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_set_get_element() {
-        let mut matrix: TestMatrix = [0u8; 4 * 4];
-        matrix.set(0, 0, 1);
-        matrix.set(0, 1, 2);
-        matrix.set(1, 0, 3);
-        matrix.set(1, 1, 4);
-
-        assert_eq!(matrix.get(0, 0), 1);
-        assert_eq!(matrix.get(0, 1), 2);
-        assert_eq!(matrix.get(1, 0), 3);
-        assert_eq!(matrix.get(1, 1), 4);
-    }
-
-    #[test]
-    fn test_get_row() {
-        let mut matrix: TestMatrix = [0u8; 4 * 4];
-        matrix.set(0, 0, 1);
-        matrix.set(0, 1, 2);
-        matrix.set(1, 0, 3);
-        matrix.set(1, 1, 4);
-
-        assert_eq!(matrix.get_row(0), [1, 2, 0, 0]);
-        assert_eq!(matrix.get_row(1), [3, 4, 0, 0]);
-    }
-
-    #[test]
-    fn test_get_row_mut() {
-        let mut matrix: TestMatrix = [0u8; 4 * 4];
-        matrix.set(0, 0, 1);
-        matrix.set(0, 1, 2);
-        matrix.set(1, 0, 3);
-        matrix.set(1, 1, 4);
-
-        let row = matrix.get_row_mut(0);
-        row[0] = 5;
-        row[1] = 6;
-
-        assert_eq!(matrix.get_row(0), [5, 6, 0, 0]);
-    }
-
-    #[test]
-    fn test_elements() {
-        let matrix: TestMatrix = [0u8; 4 * 4];
-        assert_eq!(matrix.elements(), &matrix);
     }
 }

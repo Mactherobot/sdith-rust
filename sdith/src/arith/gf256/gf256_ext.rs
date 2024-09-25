@@ -41,7 +41,7 @@ fn gf256_ext16_mul(_a: [u8; 2], _b: [u8; 2]) -> [u8; 2] {
     [c0, c1]
 }
 
-/// Multiplication by 32
+/// Field extension `F_q^2 = F_q[X] / (X^2 + X + 32)`: Multiplication by 32
 ///
 ///   32 in F_256^2 = 0 + 32X
 ///

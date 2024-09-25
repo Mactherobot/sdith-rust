@@ -13,6 +13,17 @@ pub(crate) fn gf256_evaluate_polynomial_horner(coeffs: &Vec<u8>, x: u8) -> u8 {
     return acc;
 }
 
+pub(crate) fn gf256_evaluate_polynomial_horner_monic(coeffs: &Vec<u8>, x: u8) -> u8 {
+    assert!(coeffs.len() > 0 && coeffs.len() < u32::MAX as usize);
+    let degree = coeffs.len() - 1;
+    let mut acc = 1;
+    for i in (0..degree).rev() {
+        acc = gf256_mul(acc, x);
+        acc = gf256_add(acc, coeffs[i]);
+    }
+    return acc;
+}
+
 /// The function divides the input polynomial P_in(X) by the binomial (X−α), assuming P_in(X) is a monic polynomial (a polynomial whose leading coefficient is 1). It outputs the resulting quotient polynomial Q(X).
 /// If (X-alpha) divides P_in, returns P_in / (X-alpha)
 pub(crate) fn gf256_remove_one_degree_factor_monic(q_out: &mut [u8], p_in: &[u8], alpha: u8) {

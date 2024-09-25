@@ -18,11 +18,11 @@ pub(crate) fn vector_copy_into_2<const A: usize, const B: usize>(
 }
 
 /// Concatenates a list of vectors into a single vector. The "serialize" function
-pub(crate) fn serialize<const N: usize>(arrays: Vec<&[u8]>) -> [u8; N] {
+pub(crate) fn serialize<const OUT: usize, const INNER: usize>(arrays: Vec<[u8; INNER]>) -> [u8; OUT] {
+    assert!(arrays.iter().map(|a| a.len()).sum::<usize>() == OUT);
     let mut result = Vec::new();
-    assert!(arrays.iter().map(|a| a.len()).sum::<usize>() == N);
     for array in arrays {
-        result.extend_from_slice(array);
+        result.extend_from_slice(&array);
     }
     result.try_into().expect("Failed to parse vector")
 }
@@ -37,19 +37,6 @@ pub(crate) fn parse<const N: usize>(array: &Vec<u8>, n_sizes: Vec<usize>) -> [Ve
         offset += size;
     }
     result.try_into().expect("Failed to serialize vector")
-}
-
-/// Concatenates a list of vectors into a single vector. The "Serialize" function
-pub(crate) fn concat_vectors<const O: usize>(vectors: &[&[u8]]) -> [u8; O] {
-    assert!(vectors.iter().map(|v| v.len()).sum::<usize>() == O);
-    let mut result = Vec::with_capacity(O);
-    for v in vectors {
-        result.extend_from_slice(v);
-    }
-    result
-        .as_slice()
-        .try_into()
-        .expect("Failed to concatenate vectors")
 }
 
 #[cfg(test)]
@@ -70,22 +57,12 @@ mod tests {
     }
 
     #[test]
-    fn test_vector_concat() {
+    fn test_serialize() {
         let v1 = [1, 2, 3];
         let v2 = [4, 5, 6];
         let v3 = [7, 8, 9];
 
-        let result = concat_vectors(&[&v1, &v2, &v3]);
-        assert_eq!(result, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    }
-
-    #[test]
-    fn test_serialize() {
-        let v1 = [1, 2, 3];
-        let v2 = [4, 5, 6];
-        let v3 = [7, 8, 9, 10];
-
-        let result = serialize::<10>(vec![&v1, &v2, &v3]);
+        let result = serialize::<10, 3>(vec![v1, v2, v3]);
         assert_eq!(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     }
 
