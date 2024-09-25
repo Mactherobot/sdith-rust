@@ -66,6 +66,7 @@ pub(crate) fn gf256_add(a: u8, b: u8) -> u8 {
     a ^ b
 }
 
+/// JUST ADD... DUH its XOR
 pub(crate) fn gf256_sub(a: u8, b: u8) -> u8 {
     gf256_add(a, b)
 }
@@ -151,7 +152,7 @@ impl Sub for GF256 {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        GF256(gf256_sub(self.0, rhs.0))
+        GF256(gf256_add(self.0, rhs.0))
     }
 }
 

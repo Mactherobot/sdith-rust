@@ -97,37 +97,40 @@ mod tests {
 
     use super::*;
 
-    type TestMatrix = [u8; 4 * 4];
-    impl MatrixGF256Arith<4, 4> for TestMatrix {}
-    impl Matrix<4, 4> for TestMatrix {}
+    const TEST_COLS: usize = 4;
+    const TEST_ROWS: usize = 4;
+
+    type TestMatrix = [u8; TEST_ROWS * TEST_COLS];
+    impl MatrixGF256Arith<TEST_ROWS, TEST_COLS> for TestMatrix {}
+    impl Matrix<TEST_ROWS, TEST_COLS> for TestMatrix {}
 
     #[test]
     fn test_random_gen() {
         let matrix = TestMatrix::gen_random(&mut PRG::init(&[0u8; PARAM_SEED_SIZE], None));
-        assert!(matrix.len() == PARAM_M_SUB_K * PARAM_K);
+        assert!(matrix.len() == TEST_COLS * TEST_ROWS);
     }
 
     #[test]
     fn test_multiply_vector() {
-        let matrix: TestMatrix = [2u8; 4 * 4];
-        let x = [2u8; PARAM_M_SUB_K];
-        let y: [u8; PARAM_K] = matrix.gf256_mul_vector(&x);
+        let matrix: TestMatrix = [2u8; TEST_COLS * TEST_ROWS];
+        let x = [2u8; TEST_COLS];
+        let y: [u8; TEST_ROWS] = matrix.gf256_mul_vector(&x);
 
-        assert!(y.len() == PARAM_K);
-        for i in 0..PARAM_K {
+        assert!(y.len() == TEST_ROWS);
+        for i in 0..TEST_ROWS {
             assert_eq!(y[i], 0); // Each sum x is the same, and gf256_add(x, x) = 0. So the result is 0.
         }
 
         // Test assert len panics
-        let x = [2u8; PARAM_M_SUB_K - 1];
+        let x = [2u8; TEST_COLS - 1];
         let result = std::panic::catch_unwind(|| {
-            matrix.gf256_mul_vector::<{ PARAM_M_SUB_K - 1 }, { PARAM_K }>(&x)
+            matrix.gf256_mul_vector::<{ TEST_COLS - 1 }, { TEST_ROWS }>(&x)
         });
         assert!(result.is_err());
 
-        let x = [2u8; PARAM_M_SUB_K];
+        let x = [2u8; TEST_COLS];
         let result = std::panic::catch_unwind(|| {
-            matrix.gf256_mul_vector::<{ PARAM_M_SUB_K }, { PARAM_K - 1 }>(&x)
+            matrix.gf256_mul_vector::<{ TEST_COLS }, { TEST_ROWS - 1 }>(&x)
         });
         assert!(result.is_err());
     }
