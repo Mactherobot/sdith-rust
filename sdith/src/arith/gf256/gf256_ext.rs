@@ -158,9 +158,9 @@ mod ext32_tests {
     #[test]
     fn test_f_256_32_extension() {
         let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], None);
-        let a: [u8; 4] = prg.sample_field_elements_gf256(4).try_into().unwrap();
-        let b: [u8; 4] = prg.sample_field_elements_gf256(4).try_into().unwrap();
-        let c: [u8; 4] = prg.sample_field_elements_gf256(4).try_into().unwrap();
+        let a: [u8; 4] = gf256_ext32_sample(&mut prg);
+        let b: [u8; 4] = gf256_ext32_sample(&mut prg);
+        let c: [u8; 4] = gf256_ext32_sample(&mut prg);
 
         // Commutativity of addition and multiplication:
         assert_eq!(gf256_ext32_add(a, b), gf256_ext32_add(b, a));
