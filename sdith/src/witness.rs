@@ -172,14 +172,13 @@ fn sample_witness(
         x_vectors[n_poly] = x_vector;
 
         // Compute Q
-        for i in 0..PARAM_CHUNK_W {
+        for (i, fi) in positions.iter().enumerate() {
             // Q' <- Q · (X-f_i)
-            let fi = positions[i]; // -f_i = f_i
             for j in (1..=i).rev() {
                 q_poly[n_poly][j] =
-                    gf256_add(q_poly[n_poly][j - 1], gf256_mul(fi, q_poly[n_poly][j]));
+                    gf256_add(q_poly[n_poly][j - 1], gf256_mul(q_poly[n_poly][j], *fi));
             }
-            q_poly[n_poly][0] = gf256_mul(fi, q_poly[n_poly][0]);
+            q_poly[n_poly][0] = gf256_mul(*fi, q_poly[n_poly][0]);
         }
 
         // Compute S and P
@@ -201,6 +200,26 @@ fn sample_witness(
     return (q_poly, s_poly, p_poly, x_vectors);
 }
 
+fn compute_q_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N + 1] {
+    let mut q = [0u8; N + 1];
+    q[0] = 1;
+    for (i, fi) in positions.iter().enumerate() {
+        for j in (0..=i).rev() {
+            q[j + 1] = gf256_add(q[j + 1], gf256_mul(q[j], *fi));
+        }
+    }
+    q
+}
+
+/// Add leading coefficient 1 to the polynomial.
+fn complete_q<const N: usize>(q_prime: [u8; N]) -> [u8; N + 1] {
+    let mut q = [1_u8; N + 1];
+    for i in (0..N).rev() {
+        q[i + 1] = q_prime[i];
+    }
+    q
+}
+
 #[cfg(test)]
 mod test_witness {
     use crate::arith::{
@@ -211,6 +230,16 @@ mod test_witness {
     };
 
     use super::*;
+
+    #[test]
+    fn test_compute_q_chunk() {
+        let positions = [1, 2];
+        let q = compute_q_chunk(&positions);
+
+        for x in positions.iter() {
+            assert_eq!(gf256_evaluate_polynomial_horner(&q.to_vec(), *x), 0);
+        }
+    }
 
     #[test]
     fn test_generate_witness() {
