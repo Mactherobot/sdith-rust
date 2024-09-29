@@ -2,24 +2,25 @@
 
 use crate::arith::gf256::gf256_arith::{gf256_add, gf256_mul};
 
+use super::gf256_arith::gf256_pow;
+
+/// Evaluate a polynomial at a point using Horner's method.
 pub(crate) fn gf256_evaluate_polynomial_horner(coeffs: &Vec<u8>, x: u8) -> u8 {
     assert!(coeffs.len() > 0 && coeffs.len() < u32::MAX as usize);
-    let degree = coeffs.len() - 1;
-    let mut acc = coeffs[degree].clone();
-    for i in (0..degree).rev() {
-        acc = gf256_mul(acc, x);
-        acc = gf256_add(acc, coeffs[i]);
+    let mut acc = coeffs[0].clone();
+    for i in 1..coeffs.len() {
+        acc = gf256_add(coeffs[i], gf256_mul(acc, x));
     }
     return acc;
 }
 
+/// Evaluate a polynomial at a point using Horner's method. Adds leading coefficient 1 to the polynomial for monic.
 pub(crate) fn gf256_evaluate_polynomial_horner_monic(coeffs: &Vec<u8>, x: u8) -> u8 {
     assert!(coeffs.len() > 0 && coeffs.len() < u32::MAX as usize);
     let degree = coeffs.len() - 1;
     let mut acc = 1;
-    for i in (0..degree).rev() {
-        acc = gf256_mul(acc, x);
-        acc = gf256_add(acc, coeffs[i]);
+    for i in 0..coeffs.len() {
+        acc = gf256_add(coeffs[i], gf256_mul(acc, x));
     }
     return acc;
 }
@@ -28,7 +29,12 @@ pub(crate) fn gf256_evaluate_polynomial_horner_monic(coeffs: &Vec<u8>, x: u8) ->
 /// If (X-alpha) divides P_in, returns P_in / (X-alpha)
 pub(crate) fn gf256_remove_one_degree_factor_monic(q_out: &mut [u8], p_in: &[u8], alpha: u8) {
     let in_degree = p_in.len() - 1;
-    assert!(q_out.len() >= in_degree, "Output array must be larger than input coefficient array `p_in`. p_in: {}, q_out: {}", in_degree, q_out.len());
+    assert!(
+        q_out.len() >= in_degree,
+        "Output array must be larger than input coefficient array `p_in`. p_in: {}, q_out: {}",
+        in_degree,
+        q_out.len()
+    );
 
     q_out[in_degree - 1] = 1_u8; // Monic polynomial: a polynomial whose leading coefficient is 1; e.g. X^3 + 23X^2 + 34X + 45
 
@@ -46,7 +52,7 @@ mod test_poly_ops {
     fn test_evaluate_polynomial_horner() {
         let coeffs = vec![0x01, 0x02, 0x03, 0x04, 0x05];
         let x = 0x06;
-        let expected = 237_u8;
+        let expected = 220_u8;
 
         assert_eq!(gf256_evaluate_polynomial_horner(&coeffs, x), expected);
     }
