@@ -69,7 +69,10 @@ mod tests {
     #[test]
     fn test_random_gen() {
         let matrix = TestMatrix::gen_random(&mut PRG::init(&[0u8; PARAM_SEED_SIZE], None));
-        assert!(matrix.len() == TEST_COLS * TEST_ROWS);
+        assert!(matrix.len() == TEST_COLS);
+        for i in 0..TEST_ROWS {
+            assert!(matrix[i].len() == TEST_COLS);
+        }
     }
 
     #[test]

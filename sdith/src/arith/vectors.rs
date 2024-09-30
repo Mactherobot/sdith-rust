@@ -62,8 +62,8 @@ mod tests {
         let v2 = [4, 5, 6];
         let v3 = [7, 8, 9];
 
-        let result = serialize::<10, 3>(vec![v1, v2, v3]);
-        assert_eq!(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        let result = serialize::<9, 3>(vec![v1, v2, v3]);
+        assert_eq!(result, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
     }
 
     #[test]

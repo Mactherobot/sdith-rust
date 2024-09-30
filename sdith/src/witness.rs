@@ -249,10 +249,10 @@ mod test_witness {
 
             for i in 0..PARAM_CHUNK_M {
                 // Test that S(fi) = xi for all xi
-                // assert_eq!(
-                //     gf256_evaluate_polynomial_horner(&s_poly_d.to_vec(), i as u8),
-                //     x_vector_d[i]
-                // );
+                assert_eq!(
+                    gf256_evaluate_polynomial_horner(&s_poly_d.to_vec(), i as u8),
+                    x_vector_d[i]
+                );
 
                 // Test that Q(fi) = 0 for all xi != 0
                 // TODO: This currently does not work. Seems it might not be Q, but Q'? However, we dont know as of yet
@@ -317,18 +317,19 @@ fn sample_x(prg: &mut PRG) -> ([u8; PARAM_CHUNK_M], [u8; PARAM_CHUNK_W]) {
     (x_vector, positions)
 }
 
-/// Compute the polynomial Q from the non-zero positions.
+/// Compute the polynomial Q from the non-zero positions, but in reverse order, i.e. [3,2,1] represents x^3 + 2x^2 + 3x.
 /// Essentially this computes the monic polynomial from the roots. I.e. Q(root) = 0.
 fn compute_q_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N + 1] {
     let mut q = [0u8; N + 1];
-    q[0] = 1; // Initialize [1, 0, 0, ..., 0]
+    q[0] = positions[0];
+    q[1] = 1;
 
-    for fi in positions.iter() {
-        for i in (0..positions.len()).rev() {
-            // Start from the last non-zero coefficient
-            // Q_i+1 += Q_i * (-fi)
-            q[i + 1] = gf256_add(q[i + 1], gf256_mul(q[i], *fi));
+    for k in 2..=N {
+        q[k] = 1;
+        for i in (0..=(k - 2)).rev() {
+            q[i + 1] = gf256_add(q[i], gf256_mul(q[i + 1], positions[k - 1]));
         }
+        q[0] = gf256_mul(q[0], positions[k - 1]);
     }
     q
 }
