@@ -2,9 +2,8 @@
 
 use crate::arith::gf256::gf256_arith::{gf256_add, gf256_mul};
 
-use super::gf256_arith::gf256_pow;
-
 /// Evaluate a polynomial at a point using Horner's method.
+/// coeffs: Coefficients of the polynomial in decreasing order of degree. e.g. [1, 2, 3] represents p(x) = x^2 + 2x + 3
 pub(crate) fn gf256_evaluate_polynomial_horner(coeffs: &Vec<u8>, x: u8) -> u8 {
     assert!(coeffs.len() > 0 && coeffs.len() < u32::MAX as usize);
     let mut acc = coeffs[0].clone();
@@ -17,7 +16,6 @@ pub(crate) fn gf256_evaluate_polynomial_horner(coeffs: &Vec<u8>, x: u8) -> u8 {
 /// Evaluate a polynomial at a point using Horner's method. Adds leading coefficient 1 to the polynomial for monic.
 pub(crate) fn gf256_evaluate_polynomial_horner_monic(coeffs: &Vec<u8>, x: u8) -> u8 {
     assert!(coeffs.len() > 0 && coeffs.len() < u32::MAX as usize);
-    let degree = coeffs.len() - 1;
     let mut acc = 1;
     for i in 0..coeffs.len() {
         acc = gf256_add(coeffs[i], gf256_mul(acc, x));
@@ -50,11 +48,24 @@ mod test_poly_ops {
 
     #[test]
     fn test_evaluate_polynomial_horner() {
+        // Test made using python galois package (https://pypi.org/project/galois/)
+        // python:
+        // >>> import galois
+        // >>> GF256 = galois.GF(2**8)
+        // >>> GF256.properties
+        // 'Galois Field:\n  name: GF(2^8)\n  characteristic: 2\n  degree: 8\n  order: 256\n  irreducible_poly: x^8 + x^4 + x^3 + x^2 + 1\n  is_primitive_poly: True\n  primitive_element: x'
+        // >>> p = galois.Poly([1,2,3,4,5], field=GF256)
+        // >>> p(6)
+        // GF(220, order=2^8)
         let coeffs = vec![0x01, 0x02, 0x03, 0x04, 0x05];
         let x = 0x06;
         let expected = 220_u8;
 
         assert_eq!(gf256_evaluate_polynomial_horner(&coeffs, x), expected);
+        assert_eq!(
+            gf256_evaluate_polynomial_horner_monic(&vec![2, 3, 4, 5], x),
+            expected
+        );
     }
 
     #[test]

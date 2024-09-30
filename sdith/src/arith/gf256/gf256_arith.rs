@@ -15,6 +15,10 @@ const ORDER: u16 = 0xff; // The order of the multiplicative group of GF(2^8)
 // Precomputed tables for fast multiplication and division in GF(2^8) using the generator polynomial x + 1 ({03})
 
 /// Table lookup for g^i where g = 0x03. Double the size to avoid modulo operation.
+///
+/// Found using python galois package (https://pypi.org/project/galois/)
+/// GF256 = galois.GF(2**8)
+/// GF256._EXP
 const POWER_TABLE_0X03: [u8; 512] = [
     1, 2, 4, 8, 16, 32, 64, 128, 29, 58, 116, 232, 205, 135, 19, 38, 76, 152, 45, 90, 180, 117,
     234, 201, 143, 3, 6, 12, 24, 48, 96, 192, 157, 39, 78, 156, 37, 74, 148, 53, 106, 212, 181,
@@ -48,6 +52,9 @@ fn power_lookup(a: u16) -> u8 {
 }
 
 /// Table lookup for log_g(a) where g = 0x03. Note that log_g(0) is undefined.
+/// Found using python galois package (https://pypi.org/project/galois/)
+/// GF256 = galois.GF(2**8)
+/// GF256._LOG
 const LOG_TABLE_0X03: [u16; 256] = [
     0, 0, 1, 25, 2, 50, 26, 198, 3, 223, 51, 238, 27, 104, 199, 75, 4, 100, 224, 14, 52, 141, 239,
     129, 28, 193, 105, 248, 200, 8, 76, 113, 5, 138, 101, 47, 225, 36, 15, 33, 53, 147, 142, 218,
@@ -78,6 +85,9 @@ pub(crate) fn gf256_sub(a: u8, b: u8) -> u8 {
 }
 
 pub(crate) fn gf256_mul(a: u8, b: u8) -> u8 {
+    if (a == 0) || (b == 0) {
+        return 0;
+    }
     _mul_lookup(a, b)
 }
 
@@ -215,7 +225,11 @@ macro_rules! gf256 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{constants::params::PARAM_SEED_SIZE, subroutines::prg::prg::PRG};
+    use crate::{
+        arith::gf256::{addition_tests::ADD_TESTS, multiplication_tests::MUL_TESTS},
+        constants::params::PARAM_SEED_SIZE,
+        subroutines::prg::prg::PRG,
+    };
 
     #[test]
     fn test_arith_edgecase() {
@@ -225,6 +239,7 @@ mod tests {
         let b = gf256!(0x8b);
         let c = gf256!(0xcb);
         let expected = gf256!(230u8);
+
         let bc = b + c;
         assert_eq!(bc, gf256!(64u8));
         let ac = a * c;
@@ -233,6 +248,36 @@ mod tests {
         assert_eq!(ab, gf256!(79u8));
         assert_eq!(a * (b + c), expected);
         assert_eq!(a * b + a * c, expected);
+    }
+
+    #[test]
+    fn test_all_add_cases() {
+        for a in 0..=255 {
+            for b in 0..=255 {
+                assert_eq!(
+                    gf256_add(a, b),
+                    ADD_TESTS[b as usize][a as usize],
+                    "Failed for a: {}, b: {}",
+                    a,
+                    b
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_all_mul_cases() {
+        for a in 0..=255 {
+            for b in 0..=255 {
+                assert_eq!(
+                    gf256_mul(a, b),
+                    MUL_TESTS[b as usize][a as usize],
+                    "Failed for a: {}, b: {}",
+                    a,
+                    b
+                );
+            }
+        }
     }
 
     #[test]
