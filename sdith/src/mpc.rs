@@ -1,12 +1,10 @@
 use crate::{
     arith::{
-        gf256::gf256_ext::{gf256_ext32_add, gf256_ext32_mul, gf256_ext32_sample},
-        vectors::{self, parse, serialize},
+        gf256::gf256_ext::{gf256_ext32_add, gf256_ext32_mul},
+        vectors::{parse, serialize},
     },
     constants::{
-        params::{
-            PARAM_EXT_DEGREE, PARAM_NB_EVALS_PER_POLY, PARAM_SEED_SIZE, PARAM_SPLITTING_FACTOR,
-        },
+        params::{PARAM_EXT_DEGREE, PARAM_NB_EVALS_PER_POLY, PARAM_SPLITTING_FACTOR},
         types::{Salt, Seed},
     },
     subroutines::prg::prg::PRG,
@@ -14,11 +12,7 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub(crate) struct MPC {
-    pub(crate) a: [[[u8; PARAM_EXT_DEGREE]; PARAM_NB_EVALS_PER_POLY]; PARAM_SPLITTING_FACTOR],
-    pub(crate) b: [[[u8; PARAM_EXT_DEGREE]; PARAM_NB_EVALS_PER_POLY]; PARAM_SPLITTING_FACTOR],
-    pub(crate) c: [[u8; PARAM_EXT_DEGREE]; PARAM_NB_EVALS_PER_POLY],
-}
+pub(crate) struct MPC {}
 
 type BeaverA = [[[u8; PARAM_EXT_DEGREE]; PARAM_NB_EVALS_PER_POLY]; PARAM_SPLITTING_FACTOR];
 type BeaverB = [[[u8; PARAM_EXT_DEGREE]; PARAM_NB_EVALS_PER_POLY]; PARAM_SPLITTING_FACTOR];
@@ -30,23 +24,6 @@ const BeaverCPlainSize: usize = PARAM_EXT_DEGREE * PARAM_NB_EVALS_PER_POLY;
 type BeaverCPlain = [u8; BeaverCPlainSize];
 
 impl MPC {
-    // pub(crate) fn new() -> Self {
-    //     let a = [[gf256_ext32_sample(&mut PRG::init(&[0u8; PARAM_SEED_SIZE], None));
-    //         PARAM_NB_EVALS_PER_POLY]; PARAM_SPLITTING_FACTOR];
-    //     let b = [[gf256_ext32_sample(&mut PRG::init(&[0u8; PARAM_SEED_SIZE], None));
-    //         PARAM_NB_EVALS_PER_POLY]; PARAM_SPLITTING_FACTOR];
-    //     let mut c = [[0u8; PARAM_EXT_DEGREE]; PARAM_NB_EVALS_PER_POLY];
-
-    //     for i in 0..PARAM_NB_EVALS_PER_POLY {
-    //         // Update the c value
-    //         for j in 0..PARAM_SPLITTING_FACTOR {
-    //             c[i] = gf256_ext32_add(c[i], gf256_ext32_mul(a[j][i], b[j][i]));
-    //         }
-    //     }
-
-    //     MPC { a, b, c }
-    // }
-
     fn generate_beaver_ab_plain(mseed: Seed, salt: Salt) -> BeaverABPlain {
         let mut prg = PRG::init(&mseed, Some(&salt));
         let beaver_ab_plain: [u8; BeaverABPlainSize] = prg
@@ -141,35 +118,8 @@ impl MPC {
 
 #[cfg(test)]
 mod mpc_tests {
-    use crate::constants::params::PARAM_SALT_SIZE;
-
+    use crate::constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
     use super::*;
-
-    #[test]
-    fn test_mpc() {
-        // let mpc = MPC::new();
-        // let mut c = mpc.c;
-
-        // // Check that the values are not all zero
-        // assert_ne!(
-        //     mpc.a,
-        //     [[[0u8; PARAM_EXT_DEGREE]; PARAM_NB_EVALS_PER_POLY]; PARAM_SPLITTING_FACTOR]
-        // );
-        // assert_ne!(
-        //     mpc.b,
-        //     [[[0u8; PARAM_EXT_DEGREE]; PARAM_NB_EVALS_PER_POLY]; PARAM_SPLITTING_FACTOR]
-        // );
-        // assert_ne!(mpc.c, [[0u8; PARAM_EXT_DEGREE]; PARAM_NB_EVALS_PER_POLY]);
-
-        // // Check that c is the sum of the products of a and b for each split
-        // for d in 0..PARAM_SPLITTING_FACTOR {
-        //     for i in 0..PARAM_NB_EVALS_PER_POLY {
-        //         c[i] = gf256_ext32_add(c[i], gf256_ext32_mul(mpc.a[d][i], mpc.b[d][i]));
-        //     }
-        // }
-
-        // assert_eq!(c, [[0u8; PARAM_EXT_DEGREE]; PARAM_NB_EVALS_PER_POLY])
-    }
 
     #[test]
     fn test_beaver_ab_marshalling() {
@@ -219,6 +169,5 @@ mod mpc_tests {
         }
 
         assert_eq!(c, [[0u8; PARAM_EXT_DEGREE]; PARAM_NB_EVALS_PER_POLY]);
-            
     }
 }
