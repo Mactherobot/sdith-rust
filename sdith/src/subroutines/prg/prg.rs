@@ -45,7 +45,7 @@ impl PRG {
 
     /// Sample a random value in the field F_q = F_251.
     /// See bottom of page 24 in spec
-    pub fn sample_field_elements_gf251(&mut self, n: usize) -> Vec<u8> {
+    fn sample_field_elements_gf251(&mut self, n: usize) -> Vec<u8> {
         let mut f = vec![0u8; n];
         let mut i = 1;
         while i <= n {

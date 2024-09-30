@@ -1,6 +1,6 @@
 use crate::{
     constants::{params::PARAM_M_SUB_K, types::Seed},
-    witness::generate_instance_with_solution,
+    witness::{generate_instance_with_solution, WitnessPlain},
 };
 
 struct PublicKey {
@@ -11,7 +11,8 @@ struct PublicKey {
 struct SecretKey {
     seed_h: Seed,
     y: [u8; PARAM_M_SUB_K],
-    // wit_plain: WitnessPlain,
+    /// The witness plain: serialize(s_a, Q', P)
+    wit_plain: WitnessPlain,
 }
 
 pub(crate) fn keygen(seed_root: Seed) -> (PublicKey, SecretKey) {
@@ -24,7 +25,7 @@ pub(crate) fn keygen(seed_root: Seed) -> (PublicKey, SecretKey) {
     let sk = SecretKey {
         seed_h: instance.seed_h,
         y: instance.y,
-        // wit_plain: _solution.get_witness_plain(), // TODO: Implement this
+        wit_plain: _solution.get_witness_plain()
     };
 
     (pk, sk)

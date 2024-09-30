@@ -18,7 +18,9 @@ pub(crate) fn vector_copy_into_2<const A: usize, const B: usize>(
 }
 
 /// Concatenates a list of vectors into a single vector. The "serialize" function
-pub(crate) fn serialize<const OUT: usize, const INNER: usize>(arrays: Vec<[u8; INNER]>) -> [u8; OUT] {
+pub(crate) fn serialize<const OUT: usize, const INNER: usize>(
+    arrays: Vec<[u8; INNER]>,
+) -> [u8; OUT] {
     assert!(arrays.iter().map(|a| a.len()).sum::<usize>() == OUT);
     let mut result = Vec::new();
     for array in arrays {
@@ -27,8 +29,37 @@ pub(crate) fn serialize<const OUT: usize, const INNER: usize>(arrays: Vec<[u8; I
     result.try_into().expect("Failed to parse vector")
 }
 
+pub(crate) fn serialize_vec(array: Vec<Vec<u8>>) -> Vec<u8> {
+    let mut result = Vec::with_capacity(array.iter().map(|a| a.len()).sum());
+    for a in array {
+        result.extend_from_slice(&a);
+    }
+    result
+}
+
+pub(crate) fn parse<const N: usize, const M: usize>(
+    array: &Vec<u8>,
+    n_sizes: Vec<usize>,
+) -> [[u8; M]; N] {
+    assert!(
+        n_sizes.iter().sum::<usize>() == array.len(),
+        "Cannot parse, incorrect sizes: n_sizes: {:?}, array.len(): {}",
+        n_sizes,
+        array.len()
+    );
+    let mut result = [[0; M]; N];
+    let mut offset = 0;
+    for (i, size) in n_sizes.iter().enumerate() {
+        result[i] = array[offset..offset + size]
+            .try_into()
+            .expect("Failed to parse vector");
+        offset += size;
+    }
+    result.try_into().expect("Failed to serialize vector")
+}
+
 /// Splits a vector into a list of vectors. The "parse" function
-pub(crate) fn parse<const N: usize>(array: &Vec<u8>, n_sizes: Vec<usize>) -> [Vec<u8>; N] {
+pub(crate) fn parse_vec<const N: usize>(array: &Vec<u8>, n_sizes: Vec<usize>) -> [Vec<u8>; N] {
     assert!(n_sizes.iter().sum::<usize>() == array.len());
     let mut result = Vec::with_capacity(N);
     let mut offset = 0;
@@ -69,7 +100,7 @@ mod tests {
     #[test]
     fn test_parse() {
         let v = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
-        let result = parse::<3>(&v, vec![3, 4, 2]);
+        let result = parse_vec::<3>(&v, vec![3, 4, 2]);
 
         assert_eq!(result.len(), 3);
         assert_eq!(result[0], [1, 2, 3]);
