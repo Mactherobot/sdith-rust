@@ -1,3 +1,5 @@
+use core::hash;
+
 use crate::{
     arith::{
         gf256::gf256_ext::{gf256_ext32_add, gf256_ext32_mul},
@@ -5,7 +7,7 @@ use crate::{
     },
     constants::{
         params::{PARAM_EXT_DEGREE, PARAM_NB_EVALS_PER_POLY, PARAM_SPLITTING_FACTOR},
-        types::{Salt, Seed},
+        types::{Hash, Salt, Seed},
     },
     subroutines::prg::prg::PRG,
     witness::WitnessPlain,
@@ -104,22 +106,48 @@ impl MPC {
         )
     }
 
+    pub(crate) fn expanc_mpc_challenge(
+        hash: Hash,
+        number_of_pairs: usize,
+    ) -> (
+        [u8; PARAM_EXT_DEGREE * PARAM_NB_EVALS_PER_POLY],
+        [u8; PARAM_EXT_DEGREE * PARAM_NB_EVALS_PER_POLY * PARAM_SPLITTING_FACTOR],
+    ) {
+        let mut prg = PRG::init(&hash, None);
+        let v = prg.sample_field_elements_gf256(
+            number_of_pairs
+                * PARAM_EXT_DEGREE
+                * PARAM_NB_EVALS_PER_POLY
+                * (PARAM_SPLITTING_FACTOR + 1),
+        );
+
+        todo!("Implement the expanc MPC challenge")
+    }
+
     /// computes the publicly recomputed values of the MPC protocol (i.e. the plain
     /// values corresponding to the broadcasted shares). It takes as input the plain input of the MPC
     /// protocol, made of the witness (sA , Q′ , P ) and the Beaver triples (a, b, c), the syndrome decoding
     /// instance (H ′ , y), and the MPC challenge (r, ε). From these inputs, it computes and returns the
     /// plain broadcast values (α, β). Note that the subroutine does not recompute v which is always
     /// zero.
-    pub(crate) fn computePlainBroadcast(witness: WitnessPlain) -> (Vec<u8>, Vec<u8>) {
+    pub(crate) fn compute_plain_broadcast(witness: WitnessPlain) -> (Vec<u8>, Vec<u8>) {
         // TODO: implement marshalling of the beaver triples
         todo!("Implement the marshalling of the beaver triples")
+    }
+
+    pub(crate) fn party_computation() {
+        todo!("Implement the party computation")
+    }
+
+    pub(crate) fn inverse_party_computation() {
+        todo!("Implement the inverse party computation")
     }
 }
 
 #[cfg(test)]
 mod mpc_tests {
-    use crate::constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
     use super::*;
+    use crate::constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
 
     #[test]
     fn test_beaver_ab_marshalling() {
