@@ -1,11 +1,25 @@
 use crate::{
-    arith::beaver_triples,
+    arith::{
+        beaver_triples, concat_arrays_stable,
+        gf256::{
+            gf256_ext::{gf256_ext32_add, gf256_ext32_mul, gf256_ext32_pow, FPoint},
+            gf256_poly::{
+                gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
+            },
+            gf256_vector::gf256_mul_vector_by_scalar,
+        },
+        matrices::MatrixGF256,
+        split_array_stable,
+    },
     constants::{
-        params::{PARAM_L, PARAM_LOG_N, PARAM_TAU},
+        params::{
+            PARAM_CHUNK_M, PARAM_K, PARAM_L, PARAM_LOG_N, PARAM_M, PARAM_M_SUB_K,
+            PARAM_SPLITTING_FACTOR, PARAM_T, PARAM_TAU,
+        },
         types::{Hash, Salt, Seed},
     },
     subroutines::prg::prg::PRG,
-    witness::{Solution, Witness},
+    witness::{QPoly, SPoly, Solution, Witness},
 };
 
 use super::{
@@ -19,7 +33,19 @@ pub(crate) struct MPC {}
 /// A bit mask that ensures the value generated in expand_view_challenges is within 1:PARAM_N
 const MASK: u16 = (1 << PARAM_LOG_N) - 1;
 
-struct Broadcast {}
+type BroadcastValue = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];
+pub(crate) struct Broadcast {
+    pub(crate) alpha: BroadcastValue,
+    pub(crate) beta: BroadcastValue,
+}
+
+impl Default for Broadcast {
+    fn default() -> Self {
+        let alpha = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
+        let beta = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
+        Self { alpha, beta }
+    }
+}
 
 impl MPC {
     pub(crate) fn generate_beaver_triples(mseed: Seed, salt: Salt) -> (BeaverA, BeaverB, BeaverC) {
@@ -52,6 +78,28 @@ impl MPC {
         view_challenges
     }
 
+    /// Evaluate the polynomial at a given point in FPoint. See p. 20 of the specification.
+    /// The polynomial is evaluated using Horner's method.
+    /// If `use_monic` is true, the polynomial is evaluated using the monic form by adding the leading coefficient 1.
+    /// Otherwise, the polynomial is evaluated as is.
+    fn polynomial_evaluation(poly_d: Vec<u8>, r: FPoint, use_monic: bool) -> FPoint {
+        let mut sum = FPoint::default();
+        for i in 1..poly_d.len() {
+            // sum += r^(i-1) * q_poly_d[i]
+            let mut r_n = gf256_ext32_pow(r, i - 1);
+            let eval_poly = if use_monic {
+                gf256_evaluate_polynomial_horner_monic(&poly_d, i as u8)
+            } else {
+                gf256_evaluate_polynomial_horner(&poly_d, i as u8)
+            };
+            gf256_mul_vector_by_scalar(&mut r_n, eval_poly);
+
+            sum = gf256_ext32_add(sum, r_n);
+        }
+
+        return sum;
+    }
+
     /// computes the publicly recomputed values of the MPC protocol (i.e. the plain
     /// values corresponding to the broadcasted shares). It takes as input the plain input of the MPC
     /// protocol, made of the witness (sA , Q′ , P ) and the Beaver triples (a, b, c), the syndrome decoding
@@ -63,9 +111,38 @@ impl MPC {
         witness: Witness,
         beaver_triples: (BeaverA, BeaverB, BeaverC),
         chal: Challenge,
-    ) {
-        let (a, b, c) = beaver_triples;
+    ) -> Broadcast {
+        let (a, b, _c) = beaver_triples;
         let (r, e) = (chal.r, chal.e);
+
+        // Generate s = (sA, y * H')
+        let s_b: [u8; PARAM_M_SUB_K] = witness.matrix_h_prime.gf256_mul_vector(&witness.y);
+        let s: [u8; PARAM_M] = concat_arrays_stable(witness.s_a, s_b);
+        let mut s_poly: SPoly = [[0u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
+        for (i, s_poly_d) in s.chunks(PARAM_CHUNK_M).enumerate() {
+            s_poly[i] = s_poly_d.try_into().expect("Invalid chunk size");
+        }
+
+        let mut broadcast = Broadcast::default();
+
+        for j in 0..PARAM_T {
+            for d in 0..PARAM_SPLITTING_FACTOR {
+                let q_poly_d = witness.q_poly[d].to_vec();
+                let s_poly_d = s_poly[d].to_vec();
+
+                // α[d][j] = ε[d][j] ⊗ Evaluate(Q[ν], r[j]) + a[d][j]
+                broadcast.alpha[d][j] = gf256_ext32_add(
+                    gf256_ext32_mul(e[d][j], MPC::polynomial_evaluation(q_poly_d, r[j], true)),
+                    a[d][j],
+                );
+
+                // β[d][j] = Evaluate(S[ν], r[j]) + b[d][j]
+                broadcast.beta[d][j] =
+                    gf256_ext32_add(MPC::polynomial_evaluation(s_poly_d, r[j], false), b[d][j]);
+            }
+        }
+
+        return broadcast;
     }
 
     pub(crate) fn party_computation() {
@@ -104,5 +181,15 @@ mod mpc_tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn test_polynomial_evaluation() {
+        todo!("Implement the test for polynomial evaluation")
+    }
+
+    #[test]
+    fn test_compute_broadcast() {
+        todo!("Implement the test for compute broadcast")
     }
 }

@@ -5,9 +5,9 @@ use crate::{
 };
 
 /// Challenge pair `(r, e) ∈ F_point^t, (F_point^t)^d`
-pub(super) struct Challenge {
-    pub(super) r: [FPoint; PARAM_T],
-    pub(super) e: [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR],
+pub(crate) struct Challenge {
+    pub(crate) r: [FPoint; PARAM_T],
+    pub(crate) e: [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR],
 }
 
 impl Challenge {

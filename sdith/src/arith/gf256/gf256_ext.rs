@@ -146,6 +146,22 @@ pub(crate) fn gf256_ext32_mul(a: FPoint, b: FPoint) -> FPoint {
     [r0, r1, r2, r3]
 }
 
+/// Exponentiation: Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
+pub(crate) fn gf256_ext32_pow(a: FPoint, n: usize) -> FPoint {
+    // TODO: is this efficient? Used copilot to generate this
+    let mut res = GF256_32_ONE;
+    let mut base = a;
+    let mut n = n;
+    while n > 0 {
+        if n & 1 == 1 {
+            res = gf256_ext32_mul(res, base);
+        }
+        base = gf256_ext32_mul(base, base);
+        n >>= 1;
+    }
+    res
+}
+
 /// Sample a value from the extended field `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
 pub(crate) fn gf256_ext32_sample(prg: &mut PRG) -> FPoint {
     prg.sample_field_fq_elements_vec(4).try_into().unwrap()
@@ -198,5 +214,20 @@ mod ext32_tests {
             gf256_ext32_mul(a, gf256_ext32_add(b, c)),
             gf256_ext32_add(gf256_ext32_mul(a, b), gf256_ext32_mul(a, c))
         );
+    }
+
+    #[test]
+    fn test_f_256_32_pow() {
+        let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], None);
+        let a: [u8; 4] = gf256_ext32_sample(&mut prg);
+        let n = 10;
+
+        let pow = gf256_ext32_pow(a, n);
+        let mut expected = GF256_32_ONE;
+        for _ in 0..n {
+            expected = gf256_ext32_mul(expected, a);
+        }
+
+        assert_eq!(pow, expected);
     }
 }

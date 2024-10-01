@@ -20,9 +20,9 @@ use crate::{
 
 // Polynomial types
 /// QPoly is a polynomial of degree PARAM_CHUNK_WEIGHT * PARAM_SPLITTING_FACTOR. Split into a matrix of PARAM_SPLITTING_FACTOR rows and PARAM_CHUNK_WEIGHT columns.
-type QPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
+pub(crate) type QPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
 type PPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
-type SPoly = [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
+pub(crate) type SPoly = [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
 
 type HPrimeMatrix = [[u8; PARAM_K]; PARAM_M_SUB_K];
 impl MatrixGF256<{ PARAM_M_SUB_K }, { PARAM_K }> for HPrimeMatrix {}
