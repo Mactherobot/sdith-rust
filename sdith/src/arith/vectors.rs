@@ -58,13 +58,14 @@ pub(crate) fn parse<const N: usize, const M: usize>(
     result.try_into().expect("Failed to serialize vector")
 }
 
-pub(crate) fn parse_to<const N: usize, const M: usize>(src: [u8; M * N], dst: &mut [[u8; M]; N]) {
+pub(crate) fn parse_to<'a>(src: &'a [u8], dst: &mut [&'a [u8]]) {
+    let m = dst[0].len();
+    let n = dst.len();
+    assert!(src.len() == n * m);
     let mut offset = 0;
-    for i in 0..N {
-        dst[i] = src[offset..offset + M]
-            .try_into()
-            .expect("Failed to parse vector");
-        offset += M;
+    for i in 0..n {
+        dst[i] = &src[offset..offset + m];
+        offset += m;
     }
 }
 
@@ -122,8 +123,8 @@ mod tests {
         assert_eq!(result[1], [4, 5, 6]);
         assert_eq!(result[2], [7, 8, 9]);
 
-        let mut result = [[0; 3]; 3];
-        parse_to([1, 2, 3, 4, 5, 6, 7, 8, 9], &mut result);
+        let mut result = [&[0u8; 3]; 3];
+        parse_to(&[1, 2, 3, 4, 5, 6, 7, 8, 9], &mut result);
         assert_eq!(result.len(), 3);
         assert_eq!(result[0], [1, 2, 3]);
         assert_eq!(result[1], [4, 5, 6]);

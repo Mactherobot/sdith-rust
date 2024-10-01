@@ -1,13 +1,9 @@
 use crate::{
-    arith::{
-        gf256::gf256_ext::{gf256_ext32_add, gf256_ext32_mul},
-        vectors::serialize,
-    },
     constants::{
         params::{PARAM_ETA, PARAM_L, PARAM_LOG_N, PARAM_SPLITTING_FACTOR, PARAM_T, PARAM_TAU},
         types::{Hash, Salt, Seed},
     },
-    subroutines::prg::{hashing::HASH_PREFIX_CHALLENGE_2, prg::PRG},
+    subroutines::prg::prg::PRG,
     witness::WitnessPlain,
 };
 
@@ -19,7 +15,10 @@ use super::{
 #[derive(Debug)]
 pub(crate) struct MPC {}
 
+/// A bit mask that ensures the value generated in expand_view_challenges is within 1:PARAM_N
 const MASK: u16 = (1 << PARAM_LOG_N) - 1;
+
+const BROAD_PLAIN_LENGTH = 2 * PARAM_SPLITTING_FACTOR * PARAM_T * PARAM_ETA;
 
 impl MPC {
     pub(crate) fn generate_beaver_plain(mseed: Seed, salt: Salt) -> (BeaverABPlain, BeaverCPlain) {
@@ -53,9 +52,14 @@ impl MPC {
     /// instance (H ′ , y), and the MPC challenge (r, ε). From these inputs, it computes and returns the
     /// plain broadcast values (α, β). Note that the subroutine does not recompute v which is always
     /// zero.
-    pub(crate) fn compute_plain_broadcast(witness: WitnessPlain) -> (Vec<u8>, Vec<u8>) {
-        // TODO: implement marshalling of the beaver triples
-        todo!("Implement the marshalling of the beaver triples")
+    /// Input: (wit plain, beav ab plain, beav c plain), chal, (H′, y)
+    pub(crate) fn compute_plain_broadcast(
+        wit_plain: WitnessPlain,
+        beav_plain: (BeaverABPlain, BeaverCPlain),
+        chal_plain: Challenge,
+        (h_prime, y): (Vec<u8>, Vec<u8>),
+    ) -> [u8; BROAD_PLAIN_LENGTH] {
+        let 
     }
 
     pub(crate) fn party_computation() {
