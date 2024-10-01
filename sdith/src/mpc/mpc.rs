@@ -26,7 +26,7 @@ impl MPC {
     }
 
     pub(crate) fn expand_mpc_challenges(n: usize) -> Vec<Challenge> {
-        Challenge::generate_n(n)
+        Challenge::generate_plain(n)
     }
 
     /// Sample the view challenges for the MPC protocol. The view challenges are sampled from a set {}
