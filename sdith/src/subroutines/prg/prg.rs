@@ -1,8 +1,10 @@
+use std::fmt::Error;
+
 use tiny_keccak::{Shake, Xof};
 
 use crate::{
-    arith::{gf256::gf256_ext::FPoint, vectors::parse},
-    constants::params::{PARAM_ETA, PARAM_SALT_SIZE, PARAM_SEED_SIZE},
+    arith::gf256::gf256_ext::FPoint,
+    constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
 };
 
 use super::xof::{xof_init, xof_init_base};
@@ -35,7 +37,11 @@ impl PRG {
         }
     }
 
-    pub fn sample_field_fq_non_zero_set(&mut self, output: &mut [u8]) {
+    pub fn sample_field_fq_non_zero_set(&mut self, output: &mut [u8]) -> Result<(), Error> {
+        if output.len() >= 256 {
+            return Err(Error);
+        };
+
         let mut i = 0;
         while i < output.len() {
             self.sample_field_fq_non_zero(&mut output[i..i + 1]);
@@ -45,6 +51,8 @@ impl PRG {
             }
             i += 1;
         }
+
+        return Ok(());
     }
 
     /// Sample a random value in the field F_q = F_256
@@ -112,14 +120,15 @@ mod tests {
         let seed = &[0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(seed, None);
 
-        let mut f = [0u8; 256];
-        prg.sample_field_fq_non_zero(&mut f);
-
-        assert_ne!(f, [0u8; 256]);
-        for i in f.iter() {
-            assert_ne!(*i, 0);
-            let is_redundant = (0..f.len()).any(|j| f[j] == *i);
+        let mut f = [0u8; 100];
+        prg.sample_field_fq_non_zero_set(&mut f);
+        for (i, fi) in f.iter().enumerate() {
+            assert_ne!(*fi, 0);
+            let is_redundant = (0..i).any(|j| f[j] == *fi);
             assert!(!is_redundant);
         }
+
+        let mut f = [0u8; 256];
+        assert!(prg.sample_field_fq_non_zero_set(&mut f).is_err());
     }
 }

@@ -2,7 +2,6 @@
 pub(crate) mod beaver_triples;
 pub(crate) mod gf256;
 pub(crate) mod matrices;
-pub(crate) mod vectors;
 
 /// Calculate hamming weight of the given vector, which is the number of non-zero elements.
 pub(crate) fn hamming_weight_vector(x: &[u8]) -> u64 {

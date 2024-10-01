@@ -1,14 +1,15 @@
 use crate::{
+    arith::beaver_triples,
     constants::{
-        params::{PARAM_ETA, PARAM_L, PARAM_LOG_N, PARAM_SPLITTING_FACTOR, PARAM_T, PARAM_TAU},
+        params::{PARAM_L, PARAM_LOG_N, PARAM_TAU},
         types::{Hash, Salt, Seed},
     },
     subroutines::prg::prg::PRG,
-    witness::WitnessPlain,
+    witness::{Solution, Witness},
 };
 
 use super::{
-    beaver::{Beaver, BeaverABPlain, BeaverCPlain},
+    beaver::{Beaver, BeaverA, BeaverABPlain, BeaverB, BeaverC, BeaverCPlain},
     challenge::Challenge,
 };
 
@@ -18,15 +19,20 @@ pub(crate) struct MPC {}
 /// A bit mask that ensures the value generated in expand_view_challenges is within 1:PARAM_N
 const MASK: u16 = (1 << PARAM_LOG_N) - 1;
 
-const BROAD_PLAIN_LENGTH = 2 * PARAM_SPLITTING_FACTOR * PARAM_T * PARAM_ETA;
+struct Broadcast {}
 
 impl MPC {
-    pub(crate) fn generate_beaver_plain(mseed: Seed, salt: Salt) -> (BeaverABPlain, BeaverCPlain) {
-        Beaver::generate_beaver_plain(mseed, salt)
+    pub(crate) fn generate_beaver_triples(mseed: Seed, salt: Salt) -> (BeaverA, BeaverB, BeaverC) {
+        Beaver::generate_beaver_triples(mseed, salt)
     }
 
     pub(crate) fn expand_mpc_challenges(n: usize) -> Vec<Challenge> {
-        Challenge::generate_plain(n)
+        let mut challenges = Vec::with_capacity(n);
+        for _ in 0..n {
+            challenges.push(Challenge::new());
+        }
+
+        challenges
     }
 
     /// Sample the view challenges for the MPC protocol. The view challenges are sampled from a set {}
@@ -53,13 +59,13 @@ impl MPC {
     /// plain broadcast values (α, β). Note that the subroutine does not recompute v which is always
     /// zero.
     /// Input: (wit plain, beav ab plain, beav c plain), chal, (H′, y)
-    pub(crate) fn compute_plain_broadcast(
-        wit_plain: WitnessPlain,
-        beav_plain: (BeaverABPlain, BeaverCPlain),
-        chal_plain: Challenge,
-        (h_prime, y): (Vec<u8>, Vec<u8>),
-    ) -> [u8; BROAD_PLAIN_LENGTH] {
-        let 
+    pub(crate) fn compute_broadcast(
+        witness: Witness,
+        beaver_triples: (BeaverA, BeaverB, BeaverC),
+        chal: Challenge,
+    ) {
+        let (a, b, c) = beaver_triples;
+        let (r, e) = (chal.r, chal.e);
     }
 
     pub(crate) fn party_computation() {

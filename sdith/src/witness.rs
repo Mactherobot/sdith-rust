@@ -1,12 +1,11 @@
 use crate::{
     arith::{
         gf256::{
-            gf256_arith::{gf256_add, gf256_mul, gf256_sub},
+            gf256_arith::{gf256_add, gf256_mul},
             gf256_poly::gf256_remove_one_degree_factor_monic,
             gf256_vector::{gf256_add_vector, gf256_mul_vector_by_scalar},
         },
         matrices::MatrixGF256,
-        vectors::{parse, parse_vec, serialize, serialize_vec, vector_copy_into_2},
     },
     constants::{
         params::{
@@ -41,7 +40,7 @@ pub(crate) struct Instance {
     pub(crate) matrix_h_prime: HPrimeMatrix,
 }
 
-/// Solution Definition:
+/// Solution Definition: (s_a, Q', P)
 ///
 /// This structure represents a solution for an instance presented by "instance_t".
 ///
@@ -54,82 +53,14 @@ pub(crate) struct Solution {
     pub(crate) p_poly: PPoly,
 }
 
-pub(crate) type WitnessPlain = Vec<u8>;
-
-impl Solution {
-    pub(crate) fn get_witness_plain(&self) -> WitnessPlain {
-        let mut q_poly = Vec::with_capacity(PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR);
-        let mut p_poly = Vec::with_capacity(PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR);
-        for d in 0..PARAM_SPLITTING_FACTOR {
-            q_poly.extend(self.q_poly[d].to_vec());
-            p_poly.extend(self.p_poly[d].to_vec());
-        }
-
-        serialize_vec(vec![self.s_a.to_vec(), q_poly, p_poly])
-    }
-
-    pub(crate) fn parse_witness_plain(wit_plain: Vec<u8>) -> Self {
-        let [s_a, q_poly, p_poly] = parse_vec(
-            &wit_plain,
-            vec![
-                PARAM_K,
-                PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR,
-                PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR,
-            ],
-        );
-
-        let q_poly = parse::<PARAM_SPLITTING_FACTOR, PARAM_CHUNK_W>(
-            &q_poly,
-            [PARAM_CHUNK_W; PARAM_SPLITTING_FACTOR].to_vec(),
-        );
-
-        let p_poly = parse::<PARAM_SPLITTING_FACTOR, PARAM_CHUNK_W>(
-            &p_poly,
-            vec![PARAM_CHUNK_W; PARAM_SPLITTING_FACTOR],
-        );
-
-        Solution {
-            s_a: s_a.try_into().expect("Failed to convert s_a"),
-            q_poly,
-            p_poly,
-        }
-    }
-}
-
-#[cfg(test)]
-mod test_solution {
-    use crate::constants::params::{
-        PARAM_CHUNK_W, PARAM_K, PARAM_SEED_SIZE, PARAM_SPLITTING_FACTOR,
-    };
-
-    use super::generate_instance_with_solution;
-
-    #[test]
-    fn test_serialize() {
-        let solution = generate_instance_with_solution([0u8; PARAM_SEED_SIZE]).1;
-        let wit_plain = solution.get_witness_plain();
-
-        assert!(wit_plain.len() == PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2);
-    }
-
-    #[test]
-    fn test_parse() {
-        let solution = generate_instance_with_solution([0u8; PARAM_SEED_SIZE]).1;
-        let wit_plain = solution.get_witness_plain();
-        let solution_parsed = super::Solution::parse_witness_plain(wit_plain);
-
-        assert_eq!(solution.s_a, solution_parsed.s_a);
-        assert_eq!(solution.q_poly, solution_parsed.q_poly);
-        assert_eq!(solution.p_poly, solution_parsed.p_poly);
-    }
-}
-
-struct Witness {
-    s_a: [u8; PARAM_K],
+pub(crate) struct Witness {
+    pub(crate) s_a: [u8; PARAM_K],
     s_b: [u8; PARAM_M_SUB_K],
-    y: [u8; PARAM_M_SUB_K],
-    seed_h: Seed,
-    matrix_h_prime: HPrimeMatrix,
+    pub(crate) y: [u8; PARAM_M_SUB_K],
+    pub(crate) matrix_h_prime: HPrimeMatrix,
+    pub(crate) seed_h: Seed,
+    pub(crate) q_poly: QPoly,
+    pub(crate) p_poly: PPoly,
 }
 
 /// Generate a witness for the instance.
@@ -142,11 +73,9 @@ fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly)) -> Witness
 
     // s is pre serialized as (s_A | s_B) due to the nature of SPoly
     // Split s as (s_A | s_B)
-    let mut s_a = [0_u8; PARAM_K];
-    let mut s_b = [0_u8; PARAM_M_SUB_K];
-    let s_serialized =
-        serialize::<{ PARAM_CHUNK_M * PARAM_SPLITTING_FACTOR }, PARAM_CHUNK_M>(s_poly.to_vec());
-    vector_copy_into_2(&s_serialized, &mut s_a, &mut s_b);
+    let s_flat = s_poly.as_flattened();
+    let s_a: [u8; PARAM_K] = s_flat[..PARAM_K].try_into().expect("Failed to convert s_a");
+    let s_b: [u8; PARAM_M_SUB_K] = s_flat[PARAM_K..].try_into().expect("Failed to convert s_b");
 
     // Build H
     let matrix_h_prime = HPrimeMatrix::gen_random(&mut PRG::init(&seed_h, None));
@@ -155,6 +84,7 @@ fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly)) -> Witness
 
     // H' s_A
     let mut y: [u8; PARAM_M_SUB_K] = matrix_h_prime.gf256_mul_vector(&s_a);
+
     // s_B + ...
     for i in 0..y.len() {
         y[i] = gf256_add(y[i], s_b[i]);
@@ -166,6 +96,8 @@ fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly)) -> Witness
         y,
         seed_h,
         matrix_h_prime,
+        q_poly: _q_poly,
+        p_poly: _p_poly,
     }
 }
 
@@ -264,8 +196,11 @@ fn sample_witness(
 #[cfg(test)]
 mod test_witness {
     use crate::arith::{
-        gf256::gf256_poly::{
-            gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
+        gf256::{
+            gf256_arith::gf256_sub,
+            gf256_poly::{
+                gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
+            },
         },
         hamming_weight_vector,
     };
