@@ -71,6 +71,8 @@
 \chapter{Introduction}
 \label{ch:intro}
 
+few pages. INtroduce what we have done and how the paper is structured
+
 \todo{motivate and explain the problem to be addressed}
 
 \todo{example of a citation: \cite{DBLP:conf/sas/ChristensenMS03}}
@@ -78,8 +80,41 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\chapter{The Great Ideas}
-\label{ch:main}
+\chapter{Description of the algorithm}
+\label{ch:desc}
+
+Abstract level description of the algorithm own words
+MPCitH
+Syndrome detection problem
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Specification}
+\label{ch:spec}
+more detailed description of the algorithm
+e.g. how we sampled I[e] witness challenge
+table of spec params (with our code naming and different categories)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Implementation}
+\label{ch:impl}
+
+Tooling and language feaures (rust, criterion)
+code sections
+code re-usability with traits for categories.
+
+const generics vs inline mutability (benchmarking?, nightly?)
+traits for categories
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Benchmarks}
+\label{ch:bench}
+diaries of benchmarks.
+discussion of results
 
 \lipsum[1-20] % dummy text
 
@@ -87,6 +122,11 @@
 
 \chapter{Conclusion}
 \label{ch:conclusion}
+
+wrap up and pose future work
+what should people continue with
+point to round 2 NIST
+work in context of timeline
 
 \todo{conclude on the problem statement from the introduction}
 

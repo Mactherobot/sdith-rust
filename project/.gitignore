@@ -1,0 +1,7 @@
+
+/out
+
+*.bbl
+*.fls
+*.synctex.gz
+*.pdf
