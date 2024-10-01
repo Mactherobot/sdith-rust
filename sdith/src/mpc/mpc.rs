@@ -103,7 +103,7 @@ impl MPC {
     /// computes the publicly recomputed values of the MPC protocol (i.e. the plain
     /// values corresponding to the broadcasted shares). It takes as input the plain input of the MPC
     /// protocol, made of the witness (sA , Q′ , P ) and the Beaver triples (a, b, c), the syndrome decoding
-    /// instance (H ′ , y), and the MPC challenge (r, ε). From these inputs, it computes and returns the
+    /// instance (H′ , y), and the MPC challenge (r, ε). From these inputs, it computes and returns the
     /// plain broadcast values (α, β). Note that the subroutine does not recompute v which is always
     /// zero.
     /// Input: (wit plain, beav ab plain, beav c plain), chal, (H′, y)

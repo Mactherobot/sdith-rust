@@ -1,4 +1,3 @@
-// pub (crate) mod modular_arithmetics;
 pub(crate) mod beaver_triples;
 pub(crate) mod gf256;
 pub(crate) mod matrices;
@@ -8,6 +7,8 @@ pub(crate) fn hamming_weight_vector(x: &[u8]) -> u64 {
     x.iter().fold(0, |a, b| a + (*b != 0) as u64)
 }
 
+/// Concatenate two arrays. Should be stable without experimental features.
+/// https://users.rust-lang.org/t/concatenating-arrays/89538/3
 pub(crate) fn concat_arrays_stable<T, const A: usize, const B: usize, const C: usize>(
     a: [T; A],
     b: [T; B],
