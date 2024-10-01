@@ -28,9 +28,13 @@ impl MPC {
         Challenge::generate_n(n)
     }
 
-    pub(crate) fn expand_view_challenges_threshold(n: usize) -> [[u8; PARAM_L]; PARAM_TAU] {
+    pub(crate) fn expand_view_challenges_threshold() -> [[u8; PARAM_L]; PARAM_TAU] {
         let mut prg = PRG::init_base(&HASH_PREFIX_CHALLENGE_2);
-        todo!("Implement the view challenge expansion")
+        let mut view_challenges = [[0u8; PARAM_L]; PARAM_TAU];
+        for i in 0..PARAM_TAU {
+            view_challenges[i] = prg.sample_field_elements_gf256::<PARAM_L>();
+        }
+        view_challenges
     }
 
     /// computes the publicly recomputed values of the MPC protocol (i.e. the plain
