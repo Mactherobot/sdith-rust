@@ -3,7 +3,7 @@ use queues::Queue;
 use tiny_keccak::Hasher;
 
 use crate::constants::{
-    params::{PARAM_DIGEST_SIZE, PARAM_LOG_NB_PARTIES, PARAM_NB_PARTIES},
+    params::{PARAM_DIGEST_SIZE, PARAM_LOG_N, PARAM_N},
     types::CommitmentsArray,
 };
 
@@ -14,9 +14,8 @@ use super::{
     prg::hashing::{get_hasher, hash_finalize},
 };
 
-pub const PARAM_MERKLE_TREE_HEIGHT: usize = PARAM_LOG_NB_PARTIES;
-pub const PARAM_MERKLE_TREE_NODES: usize =
-    2_usize.pow(PARAM_MERKLE_TREE_HEIGHT as u32) + (PARAM_NB_PARTIES);
+pub const PARAM_MERKLE_TREE_HEIGHT: usize = PARAM_LOG_N;
+pub const PARAM_MERKLE_TREE_NODES: usize = 2_usize.pow(PARAM_MERKLE_TREE_HEIGHT as u32) + (PARAM_N);
 
 pub const HASH_PREFIX_MERKLE_TREE: u8 = 3;
 
@@ -206,17 +205,17 @@ impl MerkleTree {
 mod test {
     use tiny_keccak::Hasher;
 
-    use crate::constants::params::PARAM_NB_PARTIES;
+    use crate::constants::params::PARAM_N;
 
     use super::*;
 
     #[test]
     fn test_merkle_tree() {
-        let commitments = [[1_u8; 32]; PARAM_NB_PARTIES];
+        let commitments = [[1_u8; 32]; PARAM_N];
         let tree = MerkleTree::new(commitments, None);
         assert_eq!(tree.height, PARAM_MERKLE_TREE_HEIGHT as i32);
         assert_eq!(tree.n_nodes, { PARAM_MERKLE_TREE_NODES - 1 });
-        assert_eq!(tree.n_leaves, { PARAM_NB_PARTIES });
+        assert_eq!(tree.n_leaves, { PARAM_N });
 
         let mut hasher = get_hasher();
         hasher.update(&[HASH_PREFIX_MERKLE_TREE]);
@@ -230,25 +229,25 @@ mod test {
     #[test]
     fn test_merkle_zero_auth_path() {
         // When you have all leaves selected, you don't need any extra nodes to calculate the root. Therefore, if all leaves are selected, the auth path should be empty
-        let commitments = [[1_u8; 32]; PARAM_NB_PARTIES];
+        let commitments = [[1_u8; 32]; PARAM_N];
         let tree = MerkleTree::new(commitments, None);
 
-        let auth = tree.get_merkle_path(vec![0_u8; PARAM_NB_PARTIES]);
+        let auth = tree.get_merkle_path(vec![0_u8; PARAM_N]);
         assert_eq!(auth.len(), 0);
         assert_eq!(auth.is_empty(), true);
 
-        let auth = tree.get_merkle_path(vec![1_u8; PARAM_NB_PARTIES]);
+        let auth = tree.get_merkle_path(vec![1_u8; PARAM_N]);
         assert_eq!(auth.len(), 0);
         assert!(auth.is_empty());
     }
 
     #[test]
     fn test_merkle_one_selected_leaf() {
-        let commitments = [[1_u8; 32]; PARAM_NB_PARTIES];
+        let commitments = [[1_u8; 32]; PARAM_N];
         let tree = MerkleTree::new(commitments, None);
 
         // Set one of the leaves
-        let mut selected_leaves = vec![0_u8; PARAM_NB_PARTIES];
+        let mut selected_leaves = vec![0_u8; PARAM_N];
         selected_leaves[0] = 1;
 
         let auth = tree.get_merkle_path(selected_leaves);
@@ -260,11 +259,11 @@ mod test {
 
     #[test]
     fn test_merkle_root_from_auth() {
-        let commitments = [[1_u8; 32]; PARAM_NB_PARTIES];
+        let commitments = [[1_u8; 32]; PARAM_N];
         let tree = MerkleTree::new(commitments, None);
 
         // Set one of the entries to 1
-        let mut selected_leaves = vec![0_u8; PARAM_NB_PARTIES];
+        let mut selected_leaves = vec![0_u8; PARAM_N];
         selected_leaves[0] = 1;
 
         let auth = tree.get_merkle_path(selected_leaves.clone());

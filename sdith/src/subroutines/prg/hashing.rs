@@ -8,6 +8,8 @@ pub const HASH_PREFIX_CHALLENGE_2: [u8; 1] = [2];
 
 pub fn get_hasher() -> Sha3 {
     return Sha3::v256();
+
+    // TODO Return different hashers for different security levels
 }
 
 pub fn get_hasher_with_prefix(prefix: &[u8]) -> Sha3 {

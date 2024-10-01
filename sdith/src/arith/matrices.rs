@@ -48,7 +48,10 @@ pub trait MatrixGF256<const ROWS: usize, const COLS: usize>:
     fn gen_random(prg: &mut PRG) -> [[u8; COLS]; ROWS] {
         let mut elements: [[u8; COLS]; ROWS] = [[0u8; COLS]; ROWS];
         for i in 0..ROWS {
-            elements[i] = prg.sample_field_elements_gf256(COLS).try_into().unwrap();
+            elements[i] = prg
+                .sample_field_elements_gf256_vec(COLS)
+                .try_into()
+                .unwrap();
         }
         elements
     }

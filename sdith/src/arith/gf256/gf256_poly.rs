@@ -23,7 +23,6 @@ pub(crate) fn gf256_evaluate_polynomial_horner_monic(coeffs: &Vec<u8>, x: u8) ->
     for i in (0..=degree).rev() {
         acc = gf256_mul(acc, x);
         acc = gf256_add(acc, coeffs[i]);
-
     }
     return acc;
 }
@@ -68,7 +67,7 @@ mod test_poly_ops {
 
         assert_eq!(gf256_evaluate_polynomial_horner(&coeffs, x), expected);
         assert_eq!(
-            gf256_evaluate_polynomial_horner_monic(&vec![5,4,3,2], x),
+            gf256_evaluate_polynomial_horner_monic(&vec![5, 4, 3, 2], x),
             expected
         );
     }

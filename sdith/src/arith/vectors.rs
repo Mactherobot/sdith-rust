@@ -58,6 +58,16 @@ pub(crate) fn parse<const N: usize, const M: usize>(
     result.try_into().expect("Failed to serialize vector")
 }
 
+pub(crate) fn parse_to<const N: usize, const M: usize>(src: [u8; M * N], dst: &mut [[u8; M]; N]) {
+    let mut offset = 0;
+    for i in 0..N {
+        dst[i] = src[offset..offset + M]
+            .try_into()
+            .expect("Failed to parse vector");
+        offset += M;
+    }
+}
+
 /// Splits a vector into a list of vectors. The "parse" function
 pub(crate) fn parse_vec<const N: usize>(array: &Vec<u8>, n_sizes: Vec<usize>) -> [Vec<u8>; N] {
     assert!(n_sizes.iter().sum::<usize>() == array.len());
@@ -106,5 +116,17 @@ mod tests {
         assert_eq!(result[0], [1, 2, 3]);
         assert_eq!(result[1], [4, 5, 6, 7]);
         assert_eq!(result[2], [8, 9]);
+
+        let result = parse::<3, 3>(&v, vec![3, 3, 3]);
+        assert_eq!(result[0], [1, 2, 3]);
+        assert_eq!(result[1], [4, 5, 6]);
+        assert_eq!(result[2], [7, 8, 9]);
+
+        let mut result = [[0; 3]; 3];
+        parse_to([1, 2, 3, 4, 5, 6, 7, 8, 9], &mut result);
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0], [1, 2, 3]);
+        assert_eq!(result[1], [4, 5, 6]);
+        assert_eq!(result[2], [7, 8, 9]);
     }
 }

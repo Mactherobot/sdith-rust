@@ -25,7 +25,7 @@ pub(crate) fn keygen(seed_root: Seed) -> (PublicKey, SecretKey) {
     let sk = SecretKey {
         seed_h: instance.seed_h,
         y: instance.y,
-        wit_plain: _solution.get_witness_plain()
+        wit_plain: _solution.get_witness_plain(),
     };
 
     (pk, sk)

@@ -1,8 +1,11 @@
 use tiny_keccak::{Shake, Xof};
 
-use crate::constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
+use crate::{
+    arith::{gf256::gf256_ext::FPoint, vectors::parse},
+    constants::params::{PARAM_ETA, PARAM_SALT_SIZE, PARAM_SEED_SIZE},
+};
 
-use super::xof::xof_init;
+use super::xof::{xof_init, xof_init_base};
 
 pub struct PRG {
     xof: Shake,
@@ -13,6 +16,13 @@ impl PRG {
     pub fn init(seed: &[u8; PARAM_SEED_SIZE], salt: Option<&[u8; PARAM_SALT_SIZE]>) -> Self {
         PRG {
             xof: xof_init(seed, salt),
+        }
+    }
+
+    /// Initialize the PRG with a base value e.g for h1 in the spec `PRG::init_base(HASH_PREFIX_CHALLENGE_1)`
+    pub fn init_base(x: &[u8]) -> Self {
+        PRG {
+            xof: xof_init_base(x),
         }
     }
 
@@ -34,12 +44,28 @@ impl PRG {
 
     /// Sample a random value in the field F_q = F_256
     /// The byte B_i is returned as the sampled field element. XOF is called to generate n bytes
-    pub fn sample_field_elements_gf256(&mut self, n: usize) -> Vec<u8> {
+    pub fn sample_field_elements_gf256_vec(&mut self, n: usize) -> Vec<u8> {
         let mut f = vec![0u8; n];
-        for i in 0..n {
-            self.xof.squeeze(&mut f[i..i + 1]);
-        }
+        self.xof.squeeze(&mut f);
 
+        f
+    }
+
+    /// Sample a random value in the field F_q = F_256
+    /// The byte B_i is returned as the sampled field element. XOF is called to generate n bytes
+    pub fn sample_field_elements_gf256<const N: usize>(&mut self) -> [u8; N] {
+        let mut f = [0u8; N];
+        self.xof.squeeze(&mut f);
+
+        f
+    }
+
+    /// Sample a random value in the field F_q^η
+    pub fn sample_field_f_point_elements<const N: usize>(&mut self) -> [FPoint; N] {
+        let mut f = [FPoint::default(); N];
+        for i in 0..N {
+            self.xof.squeeze(&mut f[i]);
+        }
         f
     }
 
@@ -76,11 +102,11 @@ mod tests {
     }
 
     #[test]
-    fn test_prg_sample_field_elements_gf256() {
+    fn test_prg_sample_field_elements_gf256_vec() {
         let seed = &[0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(seed, None);
 
-        let f = prg.sample_field_elements_gf256(32);
+        let f = prg.sample_field_elements_gf256_vec(32);
         assert_ne!(f, vec![0u8; 32]);
     }
 

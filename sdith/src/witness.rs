@@ -98,10 +98,11 @@ impl Solution {
 
 #[cfg(test)]
 mod test_solution {
-    use crate::constants::params::{PARAM_CHUNK_W, PARAM_K, PARAM_SEED_SIZE, PARAM_SPLITTING_FACTOR};
+    use crate::constants::params::{
+        PARAM_CHUNK_W, PARAM_K, PARAM_SEED_SIZE, PARAM_SPLITTING_FACTOR,
+    };
 
-    use super::{generate_instance_with_solution};
-
+    use super::generate_instance_with_solution;
 
     #[test]
     fn test_serialize() {

@@ -11,19 +11,22 @@ pub(crate) const PARAM_W: usize = 79;
 pub(crate) const PARAM_M_SUB_K: usize = PARAM_M - PARAM_K;
 
 // MPC Parameters
-pub(crate) const PARAM_NB_EVALS_PER_POLY: usize = 7;
-pub(crate) const PARAM_EXT_DEGREE: usize = 4;
+/// (t) Number of random evaluation points
+pub(crate) const PARAM_T: usize = 7;
+/// (η) F_point size for F_point = F_(q^η)
+pub(crate) const PARAM_ETA: usize = 4;
 
 // MPCitH Parameters
-/// Security parameter. E.g. used for the 2λ bit salt for commitments
+/// (λ) Security parameter. E.g. used for the 2λ bit salt for commitments
 pub(crate) const PARAM_LAMBDA: usize = PARAM_FIELD_SIZE / 2;
-/// Number of secret parties
-pub(crate) const PARAM_NB_PARTIES: usize = PARAM_FIELD_SIZE;
-/// Number of log2(nb_parties) for the number of parties
-pub(crate) const PARAM_LOG_NB_PARTIES: usize = 8;
-/// Number of repetitions of the protocol
-pub(crate) const PARAM_NB_EXECUTIONS: usize = 6;
-pub(crate) const PARAM_NB_REVEALED: usize = 3;
+/// (N) Number of secret parties
+pub(crate) const PARAM_N: usize = PARAM_FIELD_SIZE;
+/// (log_2(N)) Number of log2(nb_parties) for the number of parties
+pub(crate) const PARAM_LOG_N: usize = 8;
+/// (τ) Number of repetitions of the protocol
+pub(crate) const PARAM_TAU: usize = 6;
+/// (ℓ) Privacy threshold (number of open parties)
+pub(crate) const PARAM_L: usize = 3;
 pub(crate) const PARAM_TREE_NB_MAX_OPEN_LEAVES: usize = 19;
 
 // Signature Parameters

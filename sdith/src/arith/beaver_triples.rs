@@ -3,14 +3,14 @@ use crate::subroutines::prg::prg::PRG;
 use super::gf256;
 
 pub(crate) fn generate_beaver_triple_gf256(prg: &mut PRG) -> (u8, u8, u8) {
-    let [a, b] = prg.sample_field_elements_gf256(2).try_into().unwrap();
+    let [a, b] = prg.sample_field_elements_gf256_vec(2).try_into().unwrap();
     let c = gf256::gf256_arith::gf256_mul(a, b);
     (a, b, c)
 }
 
 pub(crate) fn generate_beaver_triples_ext32(prg: &mut PRG) -> ([u8; 4], [u8; 4], [u8; 4]) {
-    let a: [u8; 4] = prg.sample_field_elements_gf256(4).try_into().unwrap();
-    let b: [u8; 4] = prg.sample_field_elements_gf256(4).try_into().unwrap();
+    let a: [u8; 4] = prg.sample_field_elements_gf256_vec(4).try_into().unwrap();
+    let b: [u8; 4] = prg.sample_field_elements_gf256_vec(4).try_into().unwrap();
     let c = gf256::gf256_ext::gf256_ext32_mul(a, b);
     (a, b, c)
 }

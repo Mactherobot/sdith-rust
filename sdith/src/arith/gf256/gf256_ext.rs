@@ -63,9 +63,9 @@ mod ext16_tests {
     #[test]
     fn test_f_256_16_extension() {
         let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], None);
-        let a: [u8; 2] = prg.sample_field_elements_gf256(2).try_into().unwrap();
-        let b: [u8; 2] = prg.sample_field_elements_gf256(2).try_into().unwrap();
-        let c: [u8; 2] = prg.sample_field_elements_gf256(2).try_into().unwrap();
+        let a: [u8; 2] = prg.sample_field_elements_gf256_vec(2).try_into().unwrap();
+        let b: [u8; 2] = prg.sample_field_elements_gf256_vec(2).try_into().unwrap();
+        let c: [u8; 2] = prg.sample_field_elements_gf256_vec(2).try_into().unwrap();
 
         // Commutativity of addition and multiplication:
         assert_eq!(gf256_ext16_add(a, b), gf256_ext16_add(b, a));
@@ -106,7 +106,7 @@ mod ext16_tests {
     #[test]
     fn test_f_256_16_mul_32() {
         let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], None);
-        let a: [u8; 2] = prg.sample_field_elements_gf256(2).try_into().unwrap();
+        let a: [u8; 2] = prg.sample_field_elements_gf256_vec(2).try_into().unwrap();
         let n32 = [0u8, 32u8];
 
         let mul32 = gf256_ext16_mul32(a);
@@ -118,8 +118,10 @@ mod ext16_tests {
 
 // Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
 
+pub(crate) type FPoint = [u8; 4];
+
 /// Addition: Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
-pub(crate) fn gf256_ext32_add(a: [u8; 4], b: [u8; 4]) -> [u8; 4] {
+pub(crate) fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
     let [a0, a1, a2, a3] = a;
     let [b0, b1, b2, b3] = b;
     let [r0, r1] = gf256_ext16_add([a0, a1], [b0, b1]);
@@ -129,7 +131,7 @@ pub(crate) fn gf256_ext32_add(a: [u8; 4], b: [u8; 4]) -> [u8; 4] {
 }
 
 /// Multiplication: Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
-pub(crate) fn gf256_ext32_mul(a: [u8; 4], b: [u8; 4]) -> [u8; 4] {
+pub(crate) fn gf256_ext32_mul(a: FPoint, b: FPoint) -> FPoint {
     let [a0, a1, a2, a3] = a;
     let [b0, b1, b2, b3] = b;
 
@@ -145,8 +147,8 @@ pub(crate) fn gf256_ext32_mul(a: [u8; 4], b: [u8; 4]) -> [u8; 4] {
 }
 
 /// Sample a value from the extended field `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
-pub(crate) fn gf256_ext32_sample(prg: &mut PRG) -> [u8; 4] {
-    prg.sample_field_elements_gf256(4).try_into().unwrap()
+pub(crate) fn gf256_ext32_sample(prg: &mut PRG) -> FPoint {
+    prg.sample_field_elements_gf256_vec(4).try_into().unwrap()
 }
 
 #[cfg(test)]
