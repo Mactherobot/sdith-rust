@@ -26,25 +26,30 @@ impl PRG {
         }
     }
 
-    /// Sample a random value from the PRG
-    pub fn sample(&mut self, output: &mut [u8]) {
-        self.xof.squeeze(output);
-    }
-
-    pub fn sample_non_zero<const SIZE: usize>(&mut self) -> [u8; SIZE] {
-        let mut result = [0_u8; SIZE];
-        for i in 0..SIZE {
-            self.sample(&mut result[i..i + 1]);
-            if result[i] == 0 {
-                result[i] += 1;
+    pub fn sample_field_fq_non_zero(&mut self, output: &mut [u8]) {
+        for i in 0..output.len() {
+            self.sample_field_fq_elements(&mut output[i..i + 1]);
+            if output[i] == 0 {
+                output[i] += 1;
             }
         }
-        result
+    }
+
+    pub fn sample_field_fq_non_zero_set(&mut self, output: &mut [u8]) {
+        let mut i = 0;
+        while i < output.len() {
+            self.sample_field_fq_non_zero(&mut output[i..i + 1]);
+            let is_redundant = (0..i).any(|j| output[j] == output[i]);
+            if is_redundant {
+                continue;
+            }
+            i += 1;
+        }
     }
 
     /// Sample a random value in the field F_q = F_256
     /// The byte B_i is returned as the sampled field element. XOF is called to generate n bytes
-    pub fn sample_field_elements_gf256_vec(&mut self, n: usize) -> Vec<u8> {
+    pub fn sample_field_fq_elements_vec(&mut self, n: usize) -> Vec<u8> {
         let mut f = vec![0u8; n];
         self.xof.squeeze(&mut f);
 
@@ -53,37 +58,15 @@ impl PRG {
 
     /// Sample a random value in the field F_q = F_256
     /// The byte B_i is returned as the sampled field element. XOF is called to generate n bytes
-    pub fn sample_field_elements_gf256<const N: usize>(&mut self) -> [u8; N] {
-        let mut f = [0u8; N];
-        self.xof.squeeze(&mut f);
-
-        f
+    pub fn sample_field_fq_elements(&mut self, out: &mut [u8]) {
+        self.xof.squeeze(out);
     }
 
     /// Sample a random value in the field F_q^η
-    pub fn sample_field_f_point_elements<const N: usize>(&mut self) -> [FPoint; N] {
-        let mut f = [FPoint::default(); N];
-        for i in 0..N {
-            self.xof.squeeze(&mut f[i]);
+    pub fn sample_field_fpoint_elements(&mut self, out: &mut [FPoint]) {
+        for i in 0..out.len() {
+            self.xof.squeeze(&mut out[i]);
         }
-        f
-    }
-
-    /// Sample a random value in the field F_q = F_251.
-    /// See bottom of page 24 in spec
-    fn sample_field_elements_gf251(&mut self, n: usize) -> Vec<u8> {
-        let mut f = vec![0u8; n];
-        let mut i = 1;
-        while i <= n {
-            let mut buf = [0u8; 1];
-            self.xof.squeeze(&mut buf);
-            if buf[0] < 251 {
-                f[i - 1] = buf[0];
-                i += 1;
-            }
-        }
-
-        f
     }
 }
 
@@ -97,7 +80,7 @@ mod tests {
         let mut prg = PRG::init(seed, None);
 
         let mut output = [0u8; 32];
-        prg.sample(&mut output);
+        prg.sample_field_fq_elements(&mut output);
         assert_ne!(output, [0u8; 32]);
     }
 
@@ -106,21 +89,8 @@ mod tests {
         let seed = &[0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(seed, None);
 
-        let f = prg.sample_field_elements_gf256_vec(32);
+        let f = prg.sample_field_fq_elements_vec(32);
         assert_ne!(f, vec![0u8; 32]);
-    }
-
-    #[test]
-    fn test_prg_sample_field_elements_gf251() {
-        let seed = &[0u8; PARAM_SEED_SIZE];
-        let mut prg = PRG::init(seed, None);
-
-        let f = prg.sample_field_elements_gf251(32);
-        assert_ne!(f, vec![0u8; 32]);
-        for i in f.iter() {
-            println!("{}", i);
-            assert!(*i < 251);
-        }
     }
 
     #[test]
@@ -128,10 +98,28 @@ mod tests {
         let seed = &[0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(seed, None);
 
-        let f = prg.sample_non_zero::<256>();
+        let mut f = [0u8; 256];
+        prg.sample_field_fq_non_zero(&mut f);
+
         assert_ne!(f, [0u8; 256]);
         for i in f.iter() {
             assert_ne!(*i, 0);
+        }
+    }
+
+    #[test]
+    fn test_prg_sample_non_zero_set() {
+        let seed = &[0u8; PARAM_SEED_SIZE];
+        let mut prg = PRG::init(seed, None);
+
+        let mut f = [0u8; 256];
+        prg.sample_field_fq_non_zero(&mut f);
+
+        assert_ne!(f, [0u8; 256]);
+        for i in f.iter() {
+            assert_ne!(*i, 0);
+            let is_redundant = (0..f.len()).any(|j| f[j] == *i);
+            assert!(!is_redundant);
         }
     }
 }

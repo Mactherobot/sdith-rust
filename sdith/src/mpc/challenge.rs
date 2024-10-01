@@ -1,11 +1,11 @@
 use crate::{
     arith::gf256::gf256_ext::FPoint,
-    constants::params::{PARAM_ETA, PARAM_SPLITTING_FACTOR, PARAM_T},
+    constants::params::{PARAM_SPLITTING_FACTOR, PARAM_T},
     subroutines::prg::{hashing::HASH_PREFIX_CHALLENGE_1, prg::PRG},
 };
 
 /// Amount t*(d+1) of FPoint elements in a challenge (r, e) ∈ F_point^t, (F_point^t)^d
-const ChallengePointLength: usize = PARAM_T * (PARAM_SPLITTING_FACTOR + 1);
+const CHALLENGE_POINT_LENGTH: usize = PARAM_T * (PARAM_SPLITTING_FACTOR + 1);
 
 /// Challenge pair `(r, e) ∈ F_point^t, (F_point^t)^d`
 pub(super) struct Challenge {
@@ -22,8 +22,8 @@ impl Challenge {
 
         // Loop to generate challenges
         for _ in 0..n {
-            let challenge_point_elements =
-                prg.sample_field_f_point_elements::<ChallengePointLength>();
+            let mut challenge_point_elements = [FPoint::default(); CHALLENGE_POINT_LENGTH];
+            prg.sample_field_fpoint_elements(&mut challenge_point_elements);
             challenges.push(Challenge::parse(challenge_point_elements));
         }
 
@@ -31,7 +31,7 @@ impl Challenge {
     }
 
     /// Parse a slice of FPoint elements into a Challenge struct
-    fn parse(src: [FPoint; ChallengePointLength]) -> Self {
+    fn parse(src: [FPoint; CHALLENGE_POINT_LENGTH]) -> Self {
         let r: [FPoint; PARAM_T] = src[..PARAM_T].try_into().expect("Failed to parse r");
 
         let mut e: [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR] = Default::default();
@@ -47,12 +47,15 @@ impl Challenge {
 
 #[cfg(test)]
 mod challenge_tests {
+    use crate::constants::params::PARAM_ETA;
+
     use super::*;
 
     #[test]
     fn test_parse() {
         let mut prg = PRG::init_base(&HASH_PREFIX_CHALLENGE_1);
-        let points = prg.sample_field_f_point_elements::<ChallengePointLength>();
+        let mut points = [FPoint::default(); CHALLENGE_POINT_LENGTH];
+        prg.sample_field_fpoint_elements(&mut points);
 
         let challenge = Challenge::parse(points);
         assert_eq!(challenge.r.len(), PARAM_T);

@@ -13,7 +13,7 @@ pub(crate) fn share(v: &u8, n: usize, k: usize, prg: &mut PRG) -> Vec<(u8, u8)> 
     // Generate a random polynomial of degree `k - 1` with the constant term `v`.
     // Coefficients are chosen uniformly at random from the field `GF256`.
     let mut coefficients = vec![v.clone()];
-    coefficients.append(&mut prg.sample_field_elements_gf256_vec(k - 1));
+    coefficients.append(&mut prg.sample_field_fq_elements_vec(k - 1));
     share_coeffs(coefficients, n)
 }
 

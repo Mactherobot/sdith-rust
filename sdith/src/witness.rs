@@ -176,7 +176,7 @@ fn expand_seed<const SEEDS: usize>(seed_root: Seed) -> [Seed; SEEDS] {
     let mut seeds = Vec::<Seed>::with_capacity(SEEDS);
     for _ in 0..SEEDS {
         let mut seed = [0u8; PARAM_SEED_SIZE];
-        prg.sample(&mut seed);
+        prg.sample_field_fq_elements(&mut seed);
         seeds.push(seed);
     }
     seeds.try_into().expect("Failed to convert seeds")
@@ -364,7 +364,7 @@ fn sample_non_zero_x_positions(prg: &mut PRG) -> [u8; PARAM_CHUNK_W] {
     let mut positions = [0_u8; PARAM_CHUNK_W];
     let mut i = 0;
     while i < PARAM_CHUNK_W {
-        prg.sample(&mut positions[i..i + 1]);
+        prg.sample_field_fq_elements(&mut positions[i..i + 1]);
         if positions[i] >= PARAM_CHUNK_M as u8 {
             continue;
         }
@@ -382,7 +382,8 @@ fn sample_non_zero_x_positions(prg: &mut PRG) -> [u8; PARAM_CHUNK_W] {
 fn sample_x(prg: &mut PRG) -> ([u8; PARAM_CHUNK_M], [u8; PARAM_CHUNK_W]) {
     let positions = sample_non_zero_x_positions(prg);
     let mut x_vector = [0_u8; PARAM_CHUNK_M];
-    let non_zero_coordinates = prg.sample_non_zero::<PARAM_CHUNK_W>();
+    let mut non_zero_coordinates = [1u8; PARAM_CHUNK_W];
+    prg.sample_field_fq_non_zero(&mut non_zero_coordinates);
     for (j, pos) in positions.iter().enumerate() {
         x_vector[*pos as usize] ^= non_zero_coordinates[j];
     }

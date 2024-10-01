@@ -27,10 +27,8 @@ impl Beaver {
     /// Generate serialised beaver a and b values
     pub(super) fn generate_beaver_ab_plain(mseed: Seed, salt: Salt) -> BeaverABPlain {
         let mut prg = PRG::init(&mseed, Some(&salt));
-        let beaver_ab_plain: [u8; BeaverABPlainSize] = prg
-            .sample_field_elements_gf256_vec(BeaverABPlainSize)
-            .try_into()
-            .unwrap();
+        let mut beaver_ab_plain = [0u8; BeaverABPlainSize];
+        prg.sample_field_fq_elements(&mut beaver_ab_plain);
         beaver_ab_plain
     }
 

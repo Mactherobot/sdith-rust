@@ -1,6 +1,6 @@
 // SD Parameters
-/// Also called q in the spec and is the Galois field size GL(q) = GL(2^8) = GL(256)
-pub(crate) const PARAM_FIELD_SIZE: usize = 256;
+/// (q) The Galois field size GL(q) = GL(2^8) = GL(256)
+pub(crate) const PARAM_Q: usize = 256;
 /// Code length PARAM_CODE_LENGTH
 pub(crate) const PARAM_M: usize = 230;
 /// Vector dimension PARAM_CODE_DIMENSION
@@ -18,9 +18,9 @@ pub(crate) const PARAM_ETA: usize = 4;
 
 // MPCitH Parameters
 /// (λ) Security parameter. E.g. used for the 2λ bit salt for commitments
-pub(crate) const PARAM_LAMBDA: usize = PARAM_FIELD_SIZE / 2;
-/// (N) Number of secret parties
-pub(crate) const PARAM_N: usize = PARAM_FIELD_SIZE;
+pub(crate) const PARAM_LAMBDA: usize = PARAM_Q / 2;
+/// (N) Number of secret parties = q
+pub(crate) const PARAM_N: usize = PARAM_Q;
 /// (log_2(N)) Number of log2(nb_parties) for the number of parties
 pub(crate) const PARAM_LOG_N: usize = 8;
 /// (τ) Number of repetitions of the protocol

@@ -269,7 +269,7 @@ mod tests {
     fn test_gf256_definitions() {
         let mut prg = PRG::init(&[2u8; PARAM_SEED_SIZE], None);
         let [a, b, c] = *prg
-            .sample_field_elements_gf256_vec(3)
+            .sample_field_fq_elements_vec(3)
             .iter()
             .map(|x| gf256!(*x))
             .collect::<Vec<GF256>>()
