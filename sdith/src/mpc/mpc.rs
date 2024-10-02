@@ -204,10 +204,10 @@ impl MPC {
         let mut alpha_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         let mut beta_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         let mut v = [FPoint::default(); PARAM_T];
-        for j in 1..PARAM_T {
+        for j in 0..PARAM_T {
             // Set v[j] to the negated correlated value from c
             // TODO: figure out how to find the negated value
-            for d in 1..PARAM_SPLITTING_FACTOR {
+            for d in 0..PARAM_SPLITTING_FACTOR {
                 // Set alpha as ε[j][ν] ⊗ Evaluate(Q[ν], r[j]) + a[j][ν]
                 let eval_q = MPC::polynomial_evaluation(witness.q_poly[d].to_vec(), r[j], true);
                 let _a = a[j][d];
@@ -299,10 +299,10 @@ impl MPC {
         let mut a = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         let mut b = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         let mut c = [FPoint::default(); PARAM_T];
-        for j in 1..PARAM_T {
+        for j in 0..PARAM_T {
             // Set c[j] to the negated correlated value from v
             // TODO: figure out how to find the negated value
-            for d in 1..PARAM_SPLITTING_FACTOR {
+            for d in 0..PARAM_SPLITTING_FACTOR {
                 // First we need to set alpha as ε[j][ν] ⊗ Evaluate(Q[ν], r[j]) + a[j][ν]
                 let eval_q = MPC::polynomial_evaluation(witness.q_poly[d].to_vec(), r[j], true);
                 let _alpa_share = alpha_share[j][d];
