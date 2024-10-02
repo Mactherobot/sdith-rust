@@ -230,4 +230,13 @@ mod ext32_tests {
 
         assert_eq!(pow, expected);
     }
+
+    #[test]
+    fn test_f_256_32_pow_0() {
+        let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], None);
+        let a: [u8; 4] = gf256_ext32_sample(&mut prg);
+        let n = 0;
+        let pow = gf256_ext32_pow(a, n);
+        assert_eq!(pow, GF256_32_ONE);
+    }
 }
