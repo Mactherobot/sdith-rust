@@ -68,7 +68,7 @@ pub(crate) struct Witness {
 /// Inputs:
 /// - seed_h: Seed used to generate the H matrix.
 /// - polynomials: Tuple containing the polynomials Q', S, and P.
-fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly)) -> Witness {
+pub(crate) fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly)) -> Witness {
     let (_q_poly, s_poly, _p_poly) = polynomials;
 
     // s is pre serialized as (s_A | s_B) due to the nature of SPoly
@@ -148,7 +148,7 @@ pub(crate) fn generate_instance_with_solution(seed_root: Seed) -> (Instance, Sol
 ///
 /// A tuple containing the generated polynomials: `(Q', S, P, x)`.
 /// `x` is only used for testing purposes.
-fn sample_witness(
+pub(crate) fn sample_witness(
     seed_witness: Seed,
 ) -> (
     QPoly,
