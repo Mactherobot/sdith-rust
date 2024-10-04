@@ -4,7 +4,7 @@ use crate::arith::gf256::gf256_arith::{gf256_add, gf256_mul};
 
 /// Evaluate a polynomial at a point using Horner's method.
 /// coeffs: Coefficients of the polynomial in increasing order of degree. e.g. [1, 2, 3] represents p(x) = 3x^2 + 2x + 1
-pub(crate) fn gf256_evaluate_polynomial_horner(coeffs: &Vec<u8>, x: u8) -> u8 {
+pub(crate) fn gf256_evaluate_polynomial_horner(coeffs: &[u8], x: u8) -> u8 {
     assert!(coeffs.len() > 0 && coeffs.len() < u32::MAX as usize);
     let degree = coeffs.len() - 1;
     let mut acc = coeffs[degree].clone();
@@ -16,7 +16,7 @@ pub(crate) fn gf256_evaluate_polynomial_horner(coeffs: &Vec<u8>, x: u8) -> u8 {
 }
 
 /// Evaluate a polynomial at a point using Horner's method. Adds leading coefficient 1 to the polynomial for monic.
-pub(crate) fn gf256_evaluate_polynomial_horner_monic(coeffs: &Vec<u8>, x: u8) -> u8 {
+pub(crate) fn gf256_evaluate_polynomial_horner_monic(coeffs: &[u8], x: u8) -> u8 {
     assert!(coeffs.len() > 0 && coeffs.len() < u32::MAX as usize);
     let degree = coeffs.len() - 1;
     let mut acc = 1;

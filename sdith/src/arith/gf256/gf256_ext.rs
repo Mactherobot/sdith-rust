@@ -1,11 +1,57 @@
 // Field extension `F_q^2 = F_q[X] / (X^2 + X + 32)`. Here "/" means "over"
 
-use crate::subroutines::prg::{self, prg::PRG};
+use crate::{constants::params::PARAM_L, subroutines::{prg::{self, prg::PRG}, shamir::Shamir}};
 
-use super::gf256_arith::{gf256_add, gf256_mul, gf256_sub};
+use super::{gf256_arith::{gf256_add, gf256_mul, gf256_sub}, FieldArith};
 
 const GF256_16_ONE: [u8; 2] = [1, 0];
 const GF256_32_ONE: [u8; 4] = [1, 0, 0, 0];
+
+impl FieldArith for FPoint {
+    fn field_one() -> Self {
+        GF256_32_ONE
+    }
+
+    fn field_zero() -> Self {
+        [0u8; 4]
+    }
+
+    fn field_add(&self, rhs: Self) -> Self {
+        todo!()
+    }
+
+    fn field_sub(&self, rhs: Self) -> Self {
+        todo!()
+    }
+
+    fn field_mul(&self, rhs: Self) -> Self {
+        todo!()
+    }
+
+    fn field_mul_inverse(&self) -> Self {
+        todo!()
+    }
+
+    fn field_pow(&self, exp: u8) -> Self {
+        todo!()
+    }
+
+    fn field_eval_polynomial(&self, poly: &[Self]) -> Self {
+        todo!()
+    }
+}
+
+impl Shamir<PARAM_L> for FPoint {
+    fn sample_field_elements(prg: &mut PRG) -> [Self; PARAM_L - 1] {
+        let mut res = [FPoint::default(); PARAM_L - 1];
+        prg.sample_field_fpoint_elements(&mut res);
+        res
+    }
+
+    fn from_usize(x: usize) -> Self {
+        todo!()
+    }
+}
 
 /// First field extension F_256^2 = F_256[X] / (X^2 + X + 32)
 ///

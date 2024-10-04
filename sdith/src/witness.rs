@@ -1,5 +1,6 @@
 use crate::{
     arith::{
+        concat_arrays_stable,
         gf256::{
             gf256_arith::{gf256_add, gf256_mul},
             gf256_poly::gf256_remove_one_degree_factor_monic,
@@ -9,8 +10,8 @@ use crate::{
     },
     constants::{
         params::{
-            PARAM_CHUNK_M, PARAM_CHUNK_W, PARAM_K, PARAM_M_SUB_K, PARAM_SALT_SIZE, PARAM_SEED_SIZE,
-            PARAM_SPLITTING_FACTOR,
+            PARAM_CHUNK_M, PARAM_CHUNK_W, PARAM_K, PARAM_M, PARAM_M_SUB_K, PARAM_SALT_SIZE,
+            PARAM_SEED_SIZE, PARAM_SPLITTING_FACTOR,
         },
         precomputed::{PRECOMPUTED_F_POLY, PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S},
         types::Seed,
@@ -21,6 +22,7 @@ use crate::{
 // Polynomial types
 /// QPoly is a polynomial of degree PARAM_CHUNK_WEIGHT * PARAM_SPLITTING_FACTOR. Split into a matrix of PARAM_SPLITTING_FACTOR rows and PARAM_CHUNK_WEIGHT columns.
 pub(crate) type QPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
+pub(crate) type QPolyComplete = [[u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR];
 type PPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
 pub(crate) type SPoly = [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
 
@@ -55,6 +57,7 @@ pub(crate) struct Solution {
 
 pub(crate) struct Witness {
     pub(crate) s_a: [u8; PARAM_K],
+    /// s_b is only used for testing purposes
     s_b: [u8; PARAM_M_SUB_K],
     pub(crate) y: [u8; PARAM_M_SUB_K],
     pub(crate) matrix_h_prime: HPrimeMatrix,
@@ -258,7 +261,7 @@ mod test_witness {
             for i in 0..PARAM_CHUNK_M {
                 // Test that S(fi) = xi for all xi
                 assert_eq!(
-                    gf256_evaluate_polynomial_horner(&s_poly_d.to_vec(), i as u8),
+                    gf256_evaluate_polynomial_horner(&s_poly_d, i as u8),
                     x_vector_d[i]
                 );
 
@@ -266,7 +269,7 @@ mod test_witness {
                 // TODO: This currently does not work. Seems it might not be Q, but Q'? However, we dont know as of yet
                 if x_vector_d[i] != 0 {
                     assert_eq!(
-                        gf256_evaluate_polynomial_horner_monic(&q_poly_d.to_vec(), i as u8),
+                        gf256_evaluate_polynomial_horner_monic(&q_poly_d, i as u8),
                         0_u8
                     );
                 }
@@ -279,12 +282,12 @@ mod test_witness {
             // Compute S · Q and P · F
             for i in 0..PARAM_CHUNK_M {
                 s_q[i] = gf256_mul(
-                    gf256_evaluate_polynomial_horner(&s_poly_d.to_vec(), i as u8),
-                    gf256_evaluate_polynomial_horner_monic(&q_poly_d.to_vec(), i as u8),
+                    gf256_evaluate_polynomial_horner(&s_poly_d, i as u8),
+                    gf256_evaluate_polynomial_horner_monic(&q_poly_d, i as u8),
                 );
                 p_f[i] = gf256_mul(
-                    gf256_evaluate_polynomial_horner(&p_poly_d.to_vec(), i as u8),
-                    gf256_evaluate_polynomial_horner(&PRECOMPUTED_F_POLY.to_vec(), i as u8),
+                    gf256_evaluate_polynomial_horner(&p_poly_d, i as u8),
+                    gf256_evaluate_polynomial_horner(&PRECOMPUTED_F_POLY, i as u8),
                 );
             }
 
@@ -341,10 +344,51 @@ fn compute_q_prime_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N] {
     q_coeffs
 }
 
+/// Completes the q polynomial by inserting the leading coefficient at the beginning of each d-split
+pub(crate) fn complete_q(q_poly: &mut QPolyComplete, witness: &Witness, leading: u8) {
+    assert!(q_poly.len() == PARAM_SPLITTING_FACTOR);
+    assert!(
+        q_poly[0].len() == PARAM_CHUNK_W + 1,
+        "Need space for leading coef"
+    );
+
+    for d in 0..PARAM_SPLITTING_FACTOR {
+        q_poly[d][0] = leading;
+        for i in 0..PARAM_CHUNK_W {
+            q_poly[d][i + 1] = witness.q_poly[d][i];
+        }
+    }
+}
+
+/// Generate s = (sA, y + H's_a),
+pub(crate) fn compute_s(witness: &Witness) -> [u8; PARAM_M] {
+    let mut h_prime_s_a: [u8; PARAM_M_SUB_K] =
+        witness.matrix_h_prime.gf256_mul_vector(&witness.s_a);
+    gf256_add_vector(&mut h_prime_s_a, &witness.y);
+    let s_b: [u8; PARAM_M_SUB_K] = h_prime_s_a;
+    let s: [u8; PARAM_M] = concat_arrays_stable(witness.s_a, s_b);
+    s
+}
+
+/// Compute SPoly from s = Parse((s, F_q^(m/d), F_q^(m/d),...)
+pub(crate) fn compute_s_poly(s: [u8; PARAM_M]) -> SPoly {
+    let mut s_poly: SPoly = [[0u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
+    for (i, s_poly_d) in s.chunks(PARAM_CHUNK_M).enumerate() {
+        s_poly[i] = s_poly_d.try_into().expect("Invalid chunk size");
+    }
+
+    s_poly
+}
+
 #[cfg(test)]
 mod test_helpers {
     use crate::{
-        arith::{gf256::gf256_poly::gf256_evaluate_polynomial_horner_monic, hamming_weight_vector},
+        arith::{
+            gf256::gf256_poly::{
+                gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
+            },
+            hamming_weight_vector,
+        },
         constants::params::{PARAM_CHUNK_W, PARAM_SEED_SIZE, PARAM_W},
         subroutines::prg::prg::PRG,
     };
@@ -395,7 +439,7 @@ mod test_helpers {
         let positions = [1, 2];
         let q = compute_q_prime_chunk(&positions);
         for x in positions.iter() {
-            assert_eq!(gf256_evaluate_polynomial_horner_monic(&q.to_vec(), *x), 0);
+            assert_eq!(gf256_evaluate_polynomial_horner_monic(&q, *x), 0);
         }
     }
 
@@ -404,7 +448,50 @@ mod test_helpers {
         let positions = sample_x(&mut PRG::init(&[0u8; PARAM_SEED_SIZE], None)).1;
         let q = compute_q_prime_chunk(&positions);
         for pos in positions.iter() {
-            assert_eq!(gf256_evaluate_polynomial_horner_monic(&q.to_vec(), *pos), 0);
+            assert_eq!(gf256_evaluate_polynomial_horner_monic(&q, *pos), 0);
+        }
+    }
+
+    #[test]
+    fn test_compute_s() {
+        let seed = [0u8; PARAM_SEED_SIZE];
+        let (q, s, p, ..) = sample_witness(seed);
+        let witness = generate_witness(seed, (q, s, p));
+        let s = compute_s(&witness);
+
+        assert_eq!(s.len(), PARAM_M);
+        assert_eq!(s[..PARAM_K], witness.s_a);
+        assert_eq!(s[PARAM_K..], witness.s_b);
+    }
+
+    #[test]
+    fn test_compute_s_poly() {
+        let seed = [0u8; PARAM_SEED_SIZE];
+        let (q, s, p, ..) = sample_witness(seed);
+        let witness = generate_witness(seed, (q, s, p));
+        let s = compute_s(&witness);
+        let s_poly = compute_s_poly(s);
+
+        assert_eq!(s_poly.len(), PARAM_SPLITTING_FACTOR);
+        assert_eq!(s_poly.as_flattened(), s);
+    }
+
+    #[test]
+    fn test_complete_q() {
+        let seed = [0u8; PARAM_SEED_SIZE];
+        let (q_poly, s, p, ..) = sample_witness(seed);
+        let witness = generate_witness(seed, (q_poly, s, p));
+        let mut q_complete = [[0_u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR];
+        complete_q(&mut q_complete, &witness, 1);
+
+        for (i, q_comp) in q_complete.iter().enumerate() {
+            assert_eq!(q_comp[0], 1);
+
+            // Check that this is the same as using the monic polynomial evaluation on the original q_poly
+            assert_eq!(
+                gf256_evaluate_polynomial_horner_monic(&q_poly[i], 1),
+                gf256_evaluate_polynomial_horner(q_comp, 1)
+            )
         }
     }
 }

@@ -8,9 +8,58 @@ use std::{
 
 use num_traits::CheckedDiv;
 
+use crate::{constants::params::PARAM_L, subroutines::{prg::prg::PRG, shamir::Shamir}};
+
+use super::{gf256_poly::gf256_evaluate_polynomial_horner, FieldArith};
+
 const MODULUS: u8 = 0x1B; // The primitive polynomial x^4 + x^3 + x + 1 (0b0001_1011)
 const _GENERATOR: u8 = 0x03; // The generator polynomial x + 1 ({03}) of the multiplicative group of GF(2^8)
 const ORDER: u16 = 0xff; // The order of the multiplicative group of GF(2^8)
+
+impl FieldArith for u8 {
+    fn field_add(&self, rhs: u8) -> Self {
+        gf256_add(*self, rhs)
+    }
+
+    fn field_sub(&self, rhs: u8) -> Self {
+        gf256_sub(*self, rhs)
+    }
+
+    fn field_mul(&self, rhs: u8) -> Self {
+        gf256_mul(*self, rhs)
+    }
+
+    fn field_pow(&self, rhs: u8) -> Self {
+        gf256_pow(*self, rhs)
+    }
+
+    fn field_mul_inverse(&self) -> Self {
+        gf256_mul_inverse_lookup(*self)
+    }
+
+    fn field_one() -> Self {
+        1u8
+    }
+
+    fn field_zero() -> Self {
+        0u8
+    }
+
+    fn field_eval_polynomial(&self, poly: &[Self]) -> Self {
+        gf256_evaluate_polynomial_horner(poly, *self)
+    }
+}
+
+impl Shamir<PARAM_L> for u8 {
+    fn sample_field_elements(prg: &mut PRG) -> [u8; PARAM_L - 1] {
+        let mut elements = [0; PARAM_L - 1];
+        prg.sample_field_fq_elements(&mut elements);
+        elements
+    }
+    fn from_usize(x: usize) -> Self {
+        x.try_into().expect("Failed to convert usize to u8")
+    }
+}
 
 // Precomputed tables for fast multiplication and division in GF(2^8) using the generator polynomial x + 1 ({03})
 

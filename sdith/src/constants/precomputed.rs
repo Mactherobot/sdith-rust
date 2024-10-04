@@ -44,7 +44,7 @@ mod test {
     fn test_f_is_well_formed() {
         // We check if the precomputed polynomial F is well-computed
         for i in 0..PARAM_CHUNK_M {
-            let f_eval = gf256_evaluate_polynomial_horner(&PRECOMPUTED_F_POLY.to_vec(), i as u8);
+            let f_eval = gf256_evaluate_polynomial_horner(&PRECOMPUTED_F_POLY, i as u8);
             assert!(
                 f_eval == 0,
                 "Error: Wrong F evaluation ({}, {}).",
