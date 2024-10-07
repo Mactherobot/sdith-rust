@@ -187,7 +187,7 @@ impl MPC {
         let mut v = [FPoint::default(); PARAM_T];
         for j in 0..PARAM_T {
             // Set v[j] to the negated correlated value from c
-            // TODO: figure out how to find the negated value
+            v[j] = _c[j];
             for d in 0..PARAM_SPLITTING_FACTOR {
                 // Set alpha as ε[j][ν] ⊗ Evaluate(Q[ν], r[j]) + a[j][ν]
                 let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], r[j]);
@@ -273,7 +273,7 @@ impl MPC {
         let mut c = [FPoint::default(); PARAM_T];
         for j in 0..PARAM_T {
             // Set c[j] to the negated correlated value from v
-            // TODO: figure out how to find the negated value
+            c[j] = _v[j];
             for d in 0..PARAM_SPLITTING_FACTOR {
                 // First we need to set alpha as ε[j][ν] ⊗ Evaluate(Q[ν], r[j]) + a[j][ν]
                 let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], r[j]);
