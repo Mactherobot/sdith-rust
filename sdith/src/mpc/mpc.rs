@@ -52,8 +52,8 @@ impl Default for Broadcast {
 }
 
 impl MPC {
-    pub(crate) fn generate_beaver_triples(mseed: Seed, salt: Salt) -> (BeaverA, BeaverB, BeaverC) {
-        Beaver::generate_beaver_triples(mseed, salt)
+    pub(crate) fn generate_beaver_triples(prg: &mut PRG) -> (BeaverA, BeaverB, BeaverC) {
+        Beaver::generate_beaver_triples(prg)
     }
 
     pub(crate) fn expand_mpc_challenges(n: usize) -> Vec<Challenge> {
@@ -315,7 +315,7 @@ impl MPC {
 #[cfg(test)]
 mod mpc_tests {
     use crate::{
-        constants::params::{PARAM_DIGEST_SIZE, PARAM_N},
+        constants::params::{PARAM_DIGEST_SIZE, PARAM_N, PARAM_SALT_SIZE},
         witness::{generate_witness, sample_witness},
     };
 
@@ -384,7 +384,8 @@ mod mpc_tests {
         let hseed = Seed::from([0; 16]);
         let (q, s, p, _) = sample_witness(mseed);
         let witness = generate_witness(hseed, (q, s, p));
-        let beaver_triples = Beaver::generate_beaver_triples(mseed, [0; 32]);
+        let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
+        let beaver_triples = Beaver::generate_beaver_triples(&mut prg);
         let chal = Challenge::new();
         let broadcast = MPC::compute_broadcast(witness, beaver_triples, chal);
 

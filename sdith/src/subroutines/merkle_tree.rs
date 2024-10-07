@@ -19,15 +19,15 @@ pub(crate)const PARAM_MERKLE_TREE_NODES: usize = 2_usize.pow(PARAM_MERKLE_TREE_H
 
 pub(crate)const HASH_PREFIX_MERKLE_TREE: u8 = 3;
 
-struct MerkleTree {
-    height: i32,
-    n_nodes: usize,
-    n_leaves: usize,
-    nodes: [Hash; PARAM_MERKLE_TREE_NODES as usize],
+pub(crate) struct MerkleTree {
+    pub(crate) height: i32,
+    pub(crate) n_nodes: usize,
+    pub(crate) n_leaves: usize,
+    pub(crate) nodes: [Hash; PARAM_MERKLE_TREE_NODES as usize],
 }
 
 impl MerkleTree {
-    fn new(commitments: CommitmentsArray, salt: Option<Hash>) -> Self {
+    pub(crate) fn new(commitments: CommitmentsArray, salt: Option<Hash>) -> Self {
         let mut nodes: [Hash; PARAM_MERKLE_TREE_NODES] = [Hash::default(); PARAM_MERKLE_TREE_NODES];
         let nb_leaves = commitments.len();
         let height: i32 = nb_leaves

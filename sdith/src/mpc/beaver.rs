@@ -9,21 +9,19 @@ use crate::{
 
 pub(crate) type BeaverA = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];
 pub(crate) type BeaverB = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];
-
 pub(crate) type BeaverC = [FPoint; PARAM_T];
 
-pub(super) const BeaverABPlainSize: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR * 2;
-pub(super) type BeaverABPlain = [u8; BeaverABPlainSize];
-pub(super) const BeaverCPlainSize: usize = PARAM_ETA * PARAM_T;
-pub(super) type BeaverCPlain = [u8; BeaverCPlainSize];
+/// (t * 2d)η
+pub(crate) const BEAVER_ABPLAIN_SIZE: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR * 2;
+/// tη
+pub(crate) const BEAVER_CPLAIN_SIZE: usize = PARAM_ETA * PARAM_T;
 
 /// Beaver triples implementation
-pub(super) struct Beaver {}
+pub(crate) struct Beaver {}
 
 impl Beaver {
     /// Generate serialised beaver a and b values
-    pub(super) fn generate_beaver_triples(mseed: Seed, salt: Salt) -> (BeaverA, BeaverB, BeaverC) {
-        let mut prg = PRG::init(&mseed, Some(&salt));
+    pub(crate) fn generate_beaver_triples(prg: &mut PRG) -> (BeaverA, BeaverB, BeaverC) {
         let mut a: BeaverA = Default::default();
         let mut b: BeaverA = Default::default();
         let mut c: BeaverC = [FPoint::default(); PARAM_T];
@@ -41,12 +39,12 @@ impl Beaver {
     }
 
     /// Serialise beaver a and b values
-    pub(crate) fn serialise_beaver_triples(
+    pub(crate) fn serialise(
         a: BeaverA,
         b: BeaverB,
         c: BeaverC,
-    ) -> [u8; BeaverABPlainSize + BeaverCPlainSize] {
-        let mut plain = [0u8; BeaverABPlainSize + BeaverCPlainSize];
+    ) -> [u8; BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE] {
+        let mut plain = [0u8; BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE];
         let mut offset = 0;
 
         // Serialise a
@@ -81,7 +79,7 @@ impl Beaver {
     }
 
     pub(crate) fn deserialise(
-        beaver_abc_plain: [u8; BeaverABPlainSize + BeaverCPlainSize],
+        beaver_abc_plain: [u8; BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE],
     ) -> (BeaverA, BeaverB, BeaverC) {
         let mut offset = 0;
         let mut a: BeaverA = Default::default();
@@ -129,7 +127,8 @@ mod beaver_tests {
     fn test_generate() {
         let mseed = [0u8; PARAM_SEED_SIZE];
         let salt = [0u8; PARAM_SALT_SIZE];
-        let (a, b, mut c) = Beaver::generate_beaver_triples(mseed, salt);
+        let mut prg = PRG::init(&mseed, Some(&salt));
+        let (a, b, mut c) = Beaver::generate_beaver_triples(&mut prg);
 
         assert_eq!(a.len(), PARAM_SPLITTING_FACTOR);
         assert_eq!(b.len(), PARAM_SPLITTING_FACTOR);
@@ -157,12 +156,13 @@ mod beaver_tests {
 
     #[test]
     fn test_serialise() {
+        let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], Some(&[0u8; PARAM_SALT_SIZE]));
         let (a, b, c) =
-            Beaver::generate_beaver_triples([0u8; PARAM_SEED_SIZE], [0u8; PARAM_SALT_SIZE]);
+            Beaver::generate_beaver_triples(&mut prg);
 
-        let plain = Beaver::serialise_beaver_triples(a, b, c);
+        let plain = Beaver::serialise(a, b, c);
 
-        assert_eq!(plain.len(), BeaverABPlainSize + BeaverCPlainSize);
+        assert_eq!(plain.len(), BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE);
 
         let (a_des, b_des, c_des) = Beaver::deserialise(plain);
 

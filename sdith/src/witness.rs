@@ -55,6 +55,49 @@ pub(crate) struct Solution {
     pub(crate) p_poly: PPoly,
 }
 
+/// k + 2w
+pub(crate) const SOLUTION_PLAIN_SIZE: usize = PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2;
+
+impl Solution {
+    pub(crate) fn serialise(&self) -> [u8; SOLUTION_PLAIN_SIZE] {
+        let mut serialised = [0u8; PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2];
+        serialised[..PARAM_K].copy_from_slice(&self.s_a);
+        for i in 0..PARAM_SPLITTING_FACTOR {
+            serialised[PARAM_K + i * PARAM_CHUNK_W..PARAM_K + (i + 1) * PARAM_CHUNK_W]
+                .copy_from_slice(&self.q_poly[i]);
+        }
+        for i in 0..PARAM_SPLITTING_FACTOR {
+            serialised[PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR + i * PARAM_CHUNK_W
+                ..PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR + (i + 1) * PARAM_CHUNK_W]
+                .copy_from_slice(&self.p_poly[i]);
+        }
+        serialised
+    }
+
+    pub(crate) fn deserialise(solution_plain: [u8; SOLUTION_PLAIN_SIZE]) -> Self {
+        let mut s_a = [0u8; PARAM_K];
+        s_a.copy_from_slice(&solution_plain[..PARAM_K]);
+        let mut q_poly = [[0u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
+        for i in 0..PARAM_SPLITTING_FACTOR {
+            q_poly[i].copy_from_slice(
+                &solution_plain[PARAM_K + i * PARAM_CHUNK_W..PARAM_K + (i + 1) * PARAM_CHUNK_W],
+            );
+        }
+        let mut p_poly = [[0u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
+        for i in 0..PARAM_SPLITTING_FACTOR {
+            p_poly[i].copy_from_slice(
+                &solution_plain[PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR + i * PARAM_CHUNK_W
+                    ..PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR + (i + 1) * PARAM_CHUNK_W],
+            );
+        }
+        Solution {
+            s_a,
+            q_poly,
+            p_poly,
+        }
+    }
+}
+
 pub(crate) struct Witness {
     pub(crate) s_a: [u8; PARAM_K],
     /// s_b is only used for testing purposes
@@ -293,6 +336,31 @@ mod test_witness {
 
             assert_eq!(s_q, p_f);
         }
+    }
+
+    #[test]
+    fn test_serialise() {
+        let seed = [0u8; PARAM_SEED_SIZE];
+        let (q_poly, s_poly, p_poly, ..) = sample_witness(seed);
+        let witness = generate_witness(seed, (q_poly, s_poly, p_poly));
+        let solution = Solution {
+            s_a: witness.s_a,
+            q_poly: witness.q_poly,
+            p_poly: witness.p_poly,
+        };
+
+        let serialised = solution.serialise();
+
+        assert_eq!(
+            serialised.len(),
+            PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2
+        );
+
+        let deserialised = Solution::deserialise(serialised);
+
+        assert_eq!(solution.s_a, deserialised.s_a);
+        assert_eq!(solution.q_poly, deserialised.q_poly);
+        assert_eq!(solution.p_poly, deserialised.p_poly);
     }
 }
 
