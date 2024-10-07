@@ -1,10 +1,14 @@
 use crate::{
     arith::gf256::gf256_ext::FPoint,
-    constants::params::{PARAM_SPLITTING_FACTOR, PARAM_T},
-    subroutines::prg::{hashing::HASH_PREFIX_CHALLENGE_1, prg::PRG},
+    constants::{
+        params::{PARAM_SPLITTING_FACTOR, PARAM_T},
+        types::Hash,
+    },
+    subroutines::prg::prg::PRG,
 };
 
 /// Challenge pair `(r, e) ∈ F_point^t, (F_point^t)^d`
+#[derive(Clone)]
 pub(crate) struct Challenge {
     pub(crate) r: [FPoint; PARAM_T],
     pub(crate) e: [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR],
@@ -13,8 +17,8 @@ pub(crate) struct Challenge {
 impl Challenge {
     /// Generate `number_of_pairs` of challenges (r, e) ∈ F_point^t, (F_point^t)^d
     /// Uses h1 hash for Fiat-Shamir Transform
-    pub(super) fn new() -> Self {
-        let mut prg = PRG::init_base(&HASH_PREFIX_CHALLENGE_1);
+    pub(crate) fn new(h1: Hash) -> Self {
+        let mut prg = PRG::init_base(&h1);
         let mut r = [FPoint::default(); PARAM_T];
         prg.sample_field_fpoint_elements(&mut r);
 
@@ -29,7 +33,7 @@ impl Challenge {
 
 impl Default for Challenge {
     fn default() -> Self {
-        Self::new()
+        Self::new(Hash::default())
     }
 }
 
@@ -41,7 +45,8 @@ mod challenge_tests {
 
     #[test]
     fn test_generate() {
-        let challenge = Challenge::new();
+        let hash = Hash::default();
+        let challenge = Challenge::new(hash);
         assert_eq!(challenge.r.len(), PARAM_T);
         assert_eq!(challenge.e.len(), PARAM_SPLITTING_FACTOR);
         for r in challenge.r.iter() {

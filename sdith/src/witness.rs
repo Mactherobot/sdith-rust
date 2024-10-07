@@ -49,6 +49,7 @@ pub(crate) struct Instance {
 /// It is part of the secret key of the signature scheme.
 ///
 /// It corresponds to the extended solution, meaning that it contains all the secret values which can be deterministically built from the solution itself and which are inputs of the underlying MPC protocol.
+#[derive(Clone, Copy)]
 pub(crate) struct Solution {
     pub(crate) s_a: [u8; PARAM_K],
     pub(crate) q_poly: QPoly,
@@ -103,7 +104,7 @@ pub(crate) struct Witness {
     /// s_b is only used for testing purposes
     s_b: [u8; PARAM_M_SUB_K],
     pub(crate) y: [u8; PARAM_M_SUB_K],
-    pub(crate) matrix_h_prime: HPrimeMatrix,
+    pub(crate) h_prime: HPrimeMatrix,
     pub(crate) seed_h: Seed,
     pub(crate) q_poly: QPoly,
     pub(crate) p_poly: PPoly,
@@ -141,7 +142,7 @@ pub(crate) fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly))
         s_b,
         y,
         seed_h,
-        matrix_h_prime,
+        h_prime: matrix_h_prime,
         q_poly: _q_poly,
         p_poly: _p_poly,
     }
@@ -168,7 +169,7 @@ pub(crate) fn generate_instance_with_solution(seed_root: Seed) -> (Instance, Sol
     let instance = Instance {
         seed_h: witness.seed_h,
         y: witness.y,
-        matrix_h_prime: witness.matrix_h_prime,
+        matrix_h_prime: witness.h_prime,
     };
 
     let solution = Solution {
@@ -259,7 +260,7 @@ mod test_witness {
         let (q, s, p, ..) = sample_witness(seed_test);
         let result = generate_witness(seed_test, (q, s, p));
 
-        let h_prime = result.matrix_h_prime;
+        let h_prime = result.h_prime;
         let y = result.y;
         let s_a = result.s_a;
         let s_b_expect = result.s_b;
@@ -413,28 +414,31 @@ fn compute_q_prime_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N] {
 }
 
 /// Completes the q polynomial by inserting the leading coefficient at the beginning of each d-split
-pub(crate) fn complete_q(q_poly: &mut QPolyComplete, witness: &Witness, leading: u8) {
-    assert!(q_poly.len() == PARAM_SPLITTING_FACTOR);
+pub(crate) fn complete_q(q_poly_out: &mut QPolyComplete, q_poly: QPoly, leading: u8) {
+    assert!(q_poly_out.len() == PARAM_SPLITTING_FACTOR);
     assert!(
-        q_poly[0].len() == PARAM_CHUNK_W + 1,
+        q_poly_out[0].len() == PARAM_CHUNK_W + 1,
         "Need space for leading coef"
     );
 
     for d in 0..PARAM_SPLITTING_FACTOR {
-        q_poly[d][0] = leading;
+        q_poly_out[d][0] = leading;
         for i in 0..PARAM_CHUNK_W {
-            q_poly[d][i + 1] = witness.q_poly[d][i];
+            q_poly_out[d][i + 1] = q_poly[d][i];
         }
     }
 }
 
 /// Generate s = (sA, y + H's_a),
-pub(crate) fn compute_s(witness: &Witness) -> [u8; PARAM_M] {
-    let mut h_prime_s_a: [u8; PARAM_M_SUB_K] =
-        witness.matrix_h_prime.gf256_mul_vector(&witness.s_a);
-    gf256_add_vector(&mut h_prime_s_a, &witness.y);
+pub(crate) fn compute_s(
+    s_a: &[u8; PARAM_K],
+    h_prime: &HPrimeMatrix,
+    y: &[u8; PARAM_M_SUB_K],
+) -> [u8; PARAM_M] {
+    let mut h_prime_s_a: [u8; PARAM_M_SUB_K] = h_prime.gf256_mul_vector(s_a);
+    gf256_add_vector(&mut h_prime_s_a, y);
     let s_b: [u8; PARAM_M_SUB_K] = h_prime_s_a;
-    let s: [u8; PARAM_M] = concat_arrays_stable(witness.s_a, s_b);
+    let s: [u8; PARAM_M] = concat_arrays_stable(*s_a, s_b);
     s
 }
 
@@ -525,7 +529,10 @@ mod test_helpers {
         let seed = [0u8; PARAM_SEED_SIZE];
         let (q, s, p, ..) = sample_witness(seed);
         let witness = generate_witness(seed, (q, s, p));
-        let s = compute_s(&witness);
+        let y = witness.y;
+        let h_prime = witness.h_prime;
+        let s_a = witness.s_a;
+        let s = compute_s(&s_a, &h_prime, &y);
 
         assert_eq!(s.len(), PARAM_M);
         assert_eq!(s[..PARAM_K], witness.s_a);
@@ -537,7 +544,10 @@ mod test_helpers {
         let seed = [0u8; PARAM_SEED_SIZE];
         let (q, s, p, ..) = sample_witness(seed);
         let witness = generate_witness(seed, (q, s, p));
-        let s = compute_s(&witness);
+        let y = witness.y;
+        let h_prime = witness.h_prime;
+        let s_a = witness.s_a;
+        let s = compute_s(&s_a, &h_prime, &y);
         let s_poly = compute_s_poly(s);
 
         assert_eq!(s_poly.len(), PARAM_SPLITTING_FACTOR);
@@ -550,7 +560,7 @@ mod test_helpers {
         let (q_poly, s, p, ..) = sample_witness(seed);
         let witness = generate_witness(seed, (q_poly, s, p));
         let mut q_complete = [[0_u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR];
-        complete_q(&mut q_complete, &witness, 1);
+        complete_q(&mut q_complete, q_poly, 1);
 
         for (i, q_comp) in q_complete.iter().enumerate() {
             assert_eq!(q_comp[0], 1);

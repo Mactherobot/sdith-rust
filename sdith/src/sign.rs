@@ -9,25 +9,80 @@ use crate::{
         matrices::MatrixGF256,
     },
     constants::{
-        params::{PARAM_L, PARAM_N, PARAM_TAU},
+        params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_N, PARAM_SALT_SIZE, PARAM_TAU},
         types::{CommitmentsArray, Hash, Salt, Seed},
     },
     keygen::SecretKey,
     mpc::{
         beaver::{Beaver, BeaverA, BeaverB, BeaverC, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE},
-        mpc::MPC,
+        challenge::Challenge,
+        mpc::{BroadcastShare, MPC},
     },
     subroutines::{
         commitments::{self, commit_share},
         merkle_tree::MerkleTree,
-        prg::{hashing::hash_1, prg::PRG},
+        prg::{
+            hashing::{hash_1, hash_2},
+            prg::PRG,
+        },
     },
     witness::{HPrimeMatrix, Solution, SOLUTION_PLAIN_SIZE},
 };
 
+struct Signature {
+    salt: Salt,
+    h1: Hash,
+    broadcast_plain: [u8; PARAM_L],
+    broadcast_shares_plain: [u8; PARAM_L],
+    auth: Vec<Vec<Hash>>,
+    wit_share: [[u8; PARAM_L - 1]; PARAM_TAU],
+}
+
+impl Signature {
+    fn new(
+        salt: Salt,
+        h1: Hash,
+        broadcast_plain: Vec<u8>,
+        broadcast_shares_plain: Vec<u8>,
+        view_opening_challenges: [[u16; PARAM_L]; PARAM_TAU],
+        merkle_trees: Vec<MerkleTree>,
+        input_share: [[u8; PARAM_L]; PARAM_TAU],
+    ) -> Self {
+        // Signature building
+        let mut wit_share = [[0u8; PARAM_L - 1]; PARAM_TAU];
+        let mut auth = vec![];
+        for e in 0..PARAM_TAU {
+            auth.push(merkle_trees[e].get_merkle_path(&view_opening_challenges[e]));
+            wit_share[e] = input_share[e][..PARAM_L - 1].try_into().unwrap();
+        }
+        Signature {
+            salt,
+            h1,
+            broadcast_plain,
+            broadcast_shares_plain,
+            auth,
+            wit_share,
+        }
+    }
+    pub(crate) fn serialise_signature(&self) -> Vec<u8> {
+        let mut serialised = vec![];
+        serialised.extend_from_slice(&self.salt);
+        serialised.extend_from_slice(&self.h1);
+        serialised.extend_from_slice(&self.broadcast_plain);
+        serialised.extend_from_slice(&self.broadcast_shares_plain);
+        for auth in &self.auth {
+            serialised.extend_from_slice(&auth);
+        }
+        for wit_share in &self.wit_share {
+            serialised.extend_from_slice(&wit_share);
+        }
+        serialised
+    }
+}
+
 pub(crate) fn sign_message(entropy: (Seed, Salt), secret_key: SecretKey, message: &[u8]) {
     // Expansion of the parity matrix H'
-    let matrix_h_prime = HPrimeMatrix::gen_random(&mut PRG::init(&secret_key.seed_h, None));
+    let h_prime = HPrimeMatrix::gen_random(&mut PRG::init(&secret_key.seed_h, None));
 
     // Randomness generation for the Beaver triples and the shares
     let (mseed, salt) = entropy;
@@ -65,6 +120,46 @@ pub(crate) fn sign_message(entropy: (Seed, Salt), secret_key: SecretKey, message
         }
     }
     let h1 = hash_1(h1_data);
+    let chal = Challenge::new(h1);
+
+    // MPC Simulation
+    let beaver_triples = (a, b, c);
+    let broadcast = MPC::compute_broadcast(
+        secret_key.solution,
+        beaver_triples,
+        chal.clone(),
+        h_prime,
+        secret_key.y,
+    );
+
+    // Run throuh Tau and l to compute the broadcast shares
+    let broadcast_shares = MPC::party_computation(
+        secret_key.solution,
+        beaver_triples,
+        chal,
+        &broadcast,
+        false,
+        h_prime,
+        secret_key.y,
+    );
+
+    let broadcast_plain = MPC::serialise_broadcast(broadcast);
+    let broadcast_shares_plain = MPC::serialise_broadcast_shares(broadcast_shares);
+
+    // Second challenge (view-opening challenge)
+    // Create the hash data for h2, contains message, salt, h1, broadcast_plain, broadcast_shares_plain
+    let h2_data: Vec<&[u8]> = vec![
+        message,
+        &salt,
+        &h1,
+        &broadcast_plain,
+        &broadcast_shares_plain,
+    ];
+
+    let h2 = hash_2(h2_data);
+
+    // Create the set of view-opening challenges
+    let view_opening_challenges = MPC::expand_view_challenges_threshold(h2);
 }
 
 #[cfg(test)]
@@ -112,12 +207,12 @@ impl Input {
     ///   input_share[e][i] = input_plain + sum^l_(j=1) fij · input coef[e][j]    if i != N
     ///                       input_coef[e][l]                                    if i == N
     /// ```
-    fn compute_input_shares(&self, prg: &mut PRG) -> [[[u8; INPUT_SIZE]; PARAM_TAU]; PARAM_N] {
+    fn compute_input_shares(&self, prg: &mut PRG) -> [[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU] {
         let input_plain = self.serialise();
-        let mut input_shares = [[[0u8; INPUT_SIZE]; PARAM_TAU]; PARAM_N];
+        let mut input_shares = [[[0u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU];
 
         // Generate coefficients
-        let mut input_coef = [[[0u8; INPUT_SIZE]; PARAM_TAU]; PARAM_L];
+        let mut input_coef = [[[0u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU];
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_L {
                 prg.sample_field_fq_elements(&mut input_coef[e][i]);
