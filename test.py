@@ -29,8 +29,8 @@ def from_roots_rev(roots, field):
             coefs[i + 1] = coefs[i] + roots[k - 1] * coefs[i + 1]
         coefs[0] *= roots[k - 1]
 
-
     return coefs
+
 
 def from_roots2(roots, field):
     roots = [field(r) for r in roots]
@@ -44,15 +44,29 @@ def from_roots2(roots, field):
     return coefs
 
 
-field = gf256
-q = from_roots_rev([1, 2, 3, 4], field)
-q.reverse()
-print(q)
+# field = gf256
+# q = from_roots_rev([1, 2, 3, 4], field)
+# q.reverse()
+# print(q)
 
-poly = galois.Poly(q, field)
-print(poly)
-print(poly(1))
-print(poly(2))
-print(poly(3))
-print(poly(4))
-print(poly(5))
+# poly = galois.Poly(q, field)
+# print(poly)
+# print(poly(1))
+# print(poly(2))
+# print(poly(3))
+# print(poly(4))
+# print(poly(5))
+
+a = gf256(57)
+b = 139
+c = 203
+
+print("a^b: ", a**b)
+print("a^c: ", a**c)
+
+print("a^b: ", a**b)
+print("a^b * a^c: ", a**b * a**c)
+print("a^(b+c): ", a ** (b + c))
+print("b+c: ", b + c)
+
+print(gf256._positive_power)

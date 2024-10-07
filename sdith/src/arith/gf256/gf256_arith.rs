@@ -38,6 +38,10 @@ impl FieldArith for u8 {
         0u8
     }
 
+    fn field_pow(&self, exp: u8) -> Self {
+        gf256_pow_lookup(*self, exp)
+    }
+
     fn field_sample(prg: &mut PRG) -> Self {
         let mut res = [0; 1];
         prg.sample_field_fq_elements(&mut res);
@@ -179,6 +183,21 @@ fn _mul_lookup(a: u8, b: u8) -> u8 {
     power_lookup(res)
 }
 
+/// using lookup table for power: a^b = g^(log_g(a^b)) = g^(b * log_g(a)) = g^(b * log_g(a) mod |g|)
+fn gf256_pow_lookup(a: u8, b: u8) -> u8 {
+    if b == 0 {
+        return 1;
+    }
+
+    if a == 0 {
+        return 0;
+    }
+
+    let log_a = log_lookup(a);
+    let res = ((b as u16) * log_a) % ORDER;
+    power_lookup(res)
+}
+
 /// Inverse using log table lookup a^-1 = g^(|g| - log_g(a))
 pub(crate) fn gf256_mul_inverse_lookup(a: u8) -> u8 {
     let log_a = log_lookup(a);
@@ -257,6 +276,36 @@ mod tests {
             a.field_mul(b.field_add(c)),
             a.field_mul(b).field_add(a.field_mul(c))
         );
+    }
+
+    #[test]
+    fn test_gf256_pow() {
+        let mut prg = PRG::init(&[2u8; PARAM_SEED_SIZE], None);
+        let [a, b, c] = *prg.sample_field_fq_elements_vec(3) else {
+            panic!("Failed to sample 3 field elements");
+        };
+
+        assert!(a != 0 && b != 0);
+
+        let pow = a.field_pow(b);
+
+        let mut manual = 1;
+        for _ in 0..b {
+            manual = manual.field_mul(a);
+        }
+
+        // a^b = a * a * a * ... * a (b times)
+        assert_eq!(pow, manual);
+        assert_eq!(a.field_pow(0), 1);
+        assert_eq!(0.field_pow(0), 1);
+        assert_eq!(0.field_pow(2), 0);
+
+        // a^b * a^c = a^(b+c) - Note that "+" is not in the
+        let ab = a.field_pow(b);
+        let ac = a.field_pow(c);
+        let bc: u8 = (((b as u16) + (c as u16)) % ORDER).try_into().unwrap();
+
+        assert_eq!(ab.field_mul(ac), a.field_pow(bc));
     }
 
     #[test]
