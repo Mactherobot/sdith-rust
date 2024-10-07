@@ -76,6 +76,15 @@ impl PRG {
             self.xof.squeeze(&mut out[i]);
         }
     }
+
+    /// Sample a random value in the field F_q^η
+    pub fn sample_field_fpoint_elements_vec(&mut self, n: usize) -> Vec<FPoint> {
+        let mut f = vec![FPoint::default(); n];
+        for i in 0..n {
+            self.xof.squeeze(&mut f[i]);
+        }
+        f
+    }
 }
 
 #[cfg(test)]

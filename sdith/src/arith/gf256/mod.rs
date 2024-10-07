@@ -1,15 +1,14 @@
 use crate::subroutines::prg::prg::PRG;
 
-mod addition_tests;
 pub(crate) mod gf256_arith;
 pub(crate) mod gf256_ext;
 pub(crate) mod gf256_poly;
 pub(crate) mod gf256_vector;
-mod multiplication_tests;
 
+/// TODO: Replace calls to gf256_* methods to use the FieldArith trait.
 pub(crate) trait FieldArith
 where
-    Self: Sized,
+    Self: Sized + Clone + Copy + PartialEq,
 {
     fn field_one() -> Self;
     fn field_zero() -> Self {
@@ -23,11 +22,31 @@ where
     where
         Self: Sized,
     {
+        if rhs == Self::field_zero() {
+            panic!("Division by zero");
+        }
         self.field_mul(rhs.field_mul_inverse())
     }
 
-    fn field_pow(&self, exp: u8) -> Self;
-    fn field_eval_polynomial(&self, poly: &[Self]) -> Self;
+    fn field_pow(&self, exp: u8) -> Self {
+        let mut acc = Self::field_one();
+        for _ in 0..exp {
+            acc = Self::field_mul(&acc, *self);
+        }
+        acc
+    }
+
+    /// Evaluate a polynomial at the point `self` using Horner's method.
+    fn field_eval_polynomial(&self, poly: &[Self]) -> Self {
+        assert!(poly.len() > 0 && poly.len() < u32::MAX as usize);
+        let degree = poly.len() - 1;
+        let mut acc = poly[degree].clone();
+        for i in (0..degree).rev() {
+            acc = Self::field_mul(&acc, *self);
+            acc = Self::field_add(&acc, poly[i]);
+        }
+        return acc;
+    }
 
     fn field_add_mut(&mut self, rhs: Self) {
         *self = self.field_add(rhs);
@@ -40,4 +59,6 @@ where
     fn field_mul_mut(&mut self, rhs: Self) {
         *self = self.field_mul(rhs);
     }
+
+    fn field_sample(prg: &mut PRG) -> Self;
 }

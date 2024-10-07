@@ -200,10 +200,10 @@ pub(crate) fn sample_witness(
 mod test_witness {
     use crate::arith::{
         gf256::{
-            gf256_arith::gf256_sub,
             gf256_poly::{
                 gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
             },
+            FieldArith,
         },
         hamming_weight_vector,
     };
@@ -224,7 +224,7 @@ mod test_witness {
         // Check s_b = y - H' s_a
         let mut s_b_result: [u8; PARAM_M_SUB_K] = h_prime.gf256_mul_vector(&s_a);
         for i in 0..s_b_result.len() {
-            s_b_result[i] = gf256_sub(y[i], s_b_result[i]);
+            s_b_result[i].field_sub_mut(y[i]);
         }
         assert_eq!(s_b_expect, s_b_result);
     }
