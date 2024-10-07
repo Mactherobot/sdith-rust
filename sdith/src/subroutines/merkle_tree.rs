@@ -14,10 +14,10 @@ use super::{
     prg::hashing::{get_hasher, hash_finalize},
 };
 
-pub const PARAM_MERKLE_TREE_HEIGHT: usize = PARAM_LOG_N;
-pub const PARAM_MERKLE_TREE_NODES: usize = 2_usize.pow(PARAM_MERKLE_TREE_HEIGHT as u32) + (PARAM_N);
+pub(crate)const PARAM_MERKLE_TREE_HEIGHT: usize = PARAM_LOG_N;
+pub(crate)const PARAM_MERKLE_TREE_NODES: usize = 2_usize.pow(PARAM_MERKLE_TREE_HEIGHT as u32) + (PARAM_N);
 
-pub const HASH_PREFIX_MERKLE_TREE: u8 = 3;
+pub(crate)const HASH_PREFIX_MERKLE_TREE: u8 = 3;
 
 struct MerkleTree {
     height: i32,
@@ -93,7 +93,7 @@ impl MerkleTree {
     /// A vector of node hash values that are required to calculate the merkle root from the selected leaves.
     ///
     /// If you supply all leaves or none, the auth path will be empty.
-    pub fn get_merkle_path(&self, selected_leaves: Vec<u8>) -> Vec<Hash> {
+    pub(crate)fn get_merkle_path(&self, selected_leaves: Vec<u8>) -> Vec<Hash> {
         assert!(selected_leaves.len() == self.n_leaves);
         let mut missing = vec![];
         (0..selected_leaves.len()).for_each(|i| {
@@ -126,7 +126,7 @@ impl MerkleTree {
     }
 
     /// Recalculates the merkle root from the commitments and the auth
-    pub fn get_merkle_root_from_auth(
+    pub(crate)fn get_merkle_root_from_auth(
         &self,
         selected_leaves: Vec<u8>,
         commitments: CommitmentsArray,

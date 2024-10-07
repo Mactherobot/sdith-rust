@@ -5,7 +5,7 @@ use crate::{
     subroutines::prg::prg::PRG,
 };
 
-pub trait MatrixGF256<const ROWS: usize, const COLS: usize>:
+pub(crate)trait MatrixGF256<const ROWS: usize, const COLS: usize>:
     Index<usize, Output = [u8; COLS]>
 {
     /// Multiply the matrix self `A` by a vector `x` in GF(256).

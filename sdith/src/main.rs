@@ -8,6 +8,7 @@ mod keygen;
 mod mpc;
 mod subroutines;
 mod witness;
+mod sign;
 
 fn main() {
     println!("Hello, world!");

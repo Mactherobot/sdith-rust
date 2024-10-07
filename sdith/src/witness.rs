@@ -26,7 +26,7 @@ pub(crate) type QPolyComplete = [[u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR
 type PPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
 pub(crate) type SPoly = [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
 
-type HPrimeMatrix = [[u8; PARAM_K]; PARAM_M_SUB_K];
+pub(crate) type HPrimeMatrix = [[u8; PARAM_K]; PARAM_M_SUB_K];
 impl MatrixGF256<{ PARAM_M_SUB_K }, { PARAM_K }> for HPrimeMatrix {}
 
 /// Instance Definition:
