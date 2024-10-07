@@ -286,8 +286,7 @@ impl MPC {
                 let _beta_share = beta_share[j][d];
                 b[j][d] = gf256_ext32_add(eval_s, _beta_share);
 
-                // Now we need to add  ε[j][ν] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P
-                // [ν], r[j]) to c[j]
+                // Now we need to add  ε[j][ν] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[ν], r[j]) to c[j]
                 let eval_p = MPC::polynomial_evaluation(&witness.p_poly[d], r[j]);
                 let eval_f = MPC::polynomial_evaluation(&PRECOMPUTED_F_POLY, r[j]);
                 let eval_f_p = gf256_ext32_mul(eval_f, eval_p);
