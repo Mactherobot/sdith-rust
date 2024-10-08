@@ -1,5 +1,4 @@
-use crate::constants::params::PARAM_ETA;
-use crate::sign::Input;
+use crate::signature::input::Input;
 use crate::witness::{HPrimeMatrix, Solution};
 use crate::{
     arith::{
