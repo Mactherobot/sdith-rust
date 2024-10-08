@@ -1,5 +1,5 @@
 use crate::signature::input::{Input, InputSharePlain};
-use crate::witness::{HPrimeMatrix, Solution};
+use crate::witness::{HPrimeMatrix, Solution, SOLUTION_PLAIN_SIZE};
 use crate::{
     arith::{
         concat_arrays_stable,
@@ -222,14 +222,15 @@ impl MPC {
     /// shares of a party.
     /// TODO: This is missing the share part of this
     pub(crate) fn inverse_party_computation(
-        solution: Solution,
+        solution_plain: [u8; SOLUTION_PLAIN_SIZE],
         broadcast_share: BroadcastShare,
-        chal: Challenge,
-        broadcast: Broadcast,
-        with_offset: bool,
+        chal: &Challenge,
         h_prime: HPrimeMatrix,
         y: [u8; PARAM_M_SUB_K],
+        broadcast: &Broadcast,
+        with_offset: bool,
     ) -> (BeaverA, BeaverB, BeaverC) {
+        let solution = Solution::parse(solution_plain);
         // (α, β, v) The broadcast share values
         let (alpha_share, beta_share, _v) = (
             broadcast_share.alpha,
@@ -455,13 +456,13 @@ mod mpc_tests {
         );
 
         let inverse_party_computation = MPC::inverse_party_computation(
-            solution,
+            Input::truncate_beaver_triples(input.serialise()),
             party_computation,
-            chal,
-            broadcast,
-            with_offset,
+            &chal,
             h_prime,
             y,
+            &broadcast,
+            with_offset,
         );
 
         let (a, b, c) = inverse_party_computation;

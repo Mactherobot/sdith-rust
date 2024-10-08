@@ -1,18 +1,33 @@
+use num_traits::ToBytes;
+
 use crate::{
-    arith::matrices::MatrixGF256,
+    arith::{
+        gf256::{
+            gf256_vector::{
+                gf256_add_vector, gf256_add_vector_mul_scalar, gf256_add_vector_with_padding,
+            },
+            FieldArith,
+        },
+        matrices::MatrixGF256,
+    },
     constants::{
-        params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_N, PARAM_SALT_SIZE, PARAM_TAU},
+        params::{
+            PARAM_DIGEST_SIZE, PARAM_L, PARAM_N, PARAM_SALT_SIZE, PARAM_SPLITTING_FACTOR, PARAM_T,
+            PARAM_TAU,
+        },
         types::{CommitmentsArray, Hash, Salt, Seed},
     },
     keygen::{PublicKey, SecretKey},
     mpc::{
-        broadcast::{self, BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
+        broadcast::{
+            self, Broadcast, BroadcastShare, BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE,
+        },
         challenge::Challenge,
         mpc::MPC,
     },
     subroutines::{
-        commitments::commit_share,
-        merkle_tree::MerkleTree,
+        commitments::{self, commit_share},
+        merkle_tree::{get_merkle_root_from_auth, MerkleTree},
         prg::{
             hashing::{hash_1, hash_2},
             prg::PRG,
@@ -63,7 +78,8 @@ impl Signature {
             auth[e] = merkle_trees[e].get_merkle_path(&view_opening_challenges[e]);
             for (_i, i) in view_opening_challenges[e].iter().enumerate() {
                 // Truncate witness share by removing beaver triples from the plain value
-                solution_share[e][_i] = Input::truncate_beaver_triples(input_shares[e][*i as usize])
+                solution_share[e][_i] =
+                    Input::truncate_beaver_triples(input_shares[e][(*i - 1) as usize])
             }
         }
 
@@ -194,17 +210,19 @@ impl Signature {
         // Compute input shares for the MPC
         // let mut input_shares
         let (input_shares, input_coefs) = input.compute_input_shares(&mut prg);
-        let mut commitments: [CommitmentsArray; PARAM_TAU] =
-            [[Hash::default(); PARAM_N]; PARAM_TAU];
+        let mut commitments: [Hash; PARAM_TAU] = [Hash::default(); PARAM_TAU];
 
         // Commit shares
         let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
         for e in 0..PARAM_TAU {
+            let mut commitments_prime = [Hash::default(); PARAM_N];
             for i in 0..PARAM_N {
                 // Commit to the shares
-                commitments[e][i] = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
+                commitments_prime[i] = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
             }
-            merkle_trees.push(MerkleTree::new(commitments[e], Some(salt)));
+            let merkle_tree = MerkleTree::new(commitments_prime, Some(salt));
+            commitments[e] = merkle_tree.get_root();
+            merkle_trees.push(merkle_tree);
         }
 
         // First challenge (MPC challenge)
@@ -212,9 +230,7 @@ impl Signature {
         // h1 = Hash1 (seedH , y, salt, com[1], . . . , com[τ ])
         let mut h1_data: Vec<&[u8]> = vec![&secret_key.seed_h, &secret_key.y, &salt];
         for e in 0..PARAM_TAU {
-            for i in 0..PARAM_N {
-                h1_data.push(&commitments[e][i]);
-            }
+            h1_data.push(&commitments[e]);
         }
         let h1 = hash_1(h1_data);
         let chal = Challenge::new(h1);
@@ -286,7 +302,7 @@ impl Signature {
         let h_prime = HPrimeMatrix::gen_random(&mut PRG::init(&public_key.seed_h, None));
 
         // Signature parsing
-        let (salt, h1, broadcast_plain, broadcast_shares_plain, wit_share, auth) = (
+        let (salt, h1, broadcast_plain, broadcast_shares_plain, solution_share, mut auth) = (
             signature.salt,
             signature.h1,
             signature.broadcast_plain,
@@ -308,14 +324,96 @@ impl Signature {
         ];
         let h2 = hash_2(h2_data);
 
-        return false;
+        // Compute the view-opening challenges
+        let view_opening_challenges = MPC::expand_view_challenges_threshold(h2);
+
+        let broadcast = Broadcast::parse(broadcast_plain);
+        let mut broadcast_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
+        for e in 0..PARAM_TAU {
+            for j in 0..PARAM_L {
+                let offset = BROADCAST_SHARE_PLAIN_SIZE * (e * PARAM_L + j);
+                broadcast_shares[e][j] = broadcast_shares_plain
+                    [offset..offset + BROADCAST_SHARE_PLAIN_SIZE]
+                    .try_into()
+                    .unwrap();
+            }
+        }
+        let mut sh_broadcast = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
+        let mut commitments: [Hash; PARAM_TAU] = [Hash::default(); PARAM_TAU];
+        // Party computation and regeneration of Merkle commitments
+        for e in 0..PARAM_TAU {
+            let mut commitments_prime = [Hash::default(); PARAM_L];
+            for (li, i) in view_opening_challenges[e].iter().enumerate() {
+                let mut with_offset = true;
+                if *i as usize == PARAM_N {
+                    sh_broadcast[e][li] = broadcast_shares[e][*i as usize];
+                    with_offset = false;
+                } else {
+                    // We need to compute the following:
+                    // input_share[e][i] = input_plain + sum^ℓ_(j=1) fij · input coef[e][j]
+                    let f_i = i.to_le_bytes()[0];
+
+                    let mut eval_sum = [0u8; BROADCAST_SHARE_PLAIN_SIZE];
+
+                    // Compute the inner sum
+                    // sum^ℓ_(j=1) fij · input coef[e][j]
+                    for j in 0..PARAM_L {
+                        gf256_add_vector_mul_scalar(
+                            &mut eval_sum,
+                            &broadcast_shares[e][j],
+                            f_i.field_pow((j + 1) as u8),
+                        );
+                    }
+
+                    // Add the input_plain to the sum
+                    // broadcast_plain + eval_sum
+                    gf256_add_vector_with_padding(&mut eval_sum, &broadcast_plain);
+
+                    // input_shares[e][i] = ...
+                    gf256_add_vector(&mut sh_broadcast[e][li], &eval_sum);
+                }
+
+                // Verify the Merkle path
+                let beaver_triples = MPC::inverse_party_computation(
+                    solution_share[e][li],
+                    BroadcastShare::parse(sh_broadcast[e][li]),
+                    &chal,
+                    h_prime,
+                    public_key.y,
+                    &broadcast,
+                    with_offset,
+                );
+
+                let input_share =
+                    Input::append_beaver_triples(solution_share[e][li], beaver_triples);
+                // Commit to the shares
+                commitments_prime[li] = commit_share(&salt, e as u16, *i, &input_share);
+            }
+            let Ok(root) = get_merkle_root_from_auth(
+                &mut auth[e],
+                commitments_prime,
+                &view_opening_challenges[e],
+            ) else {
+                return false;
+            };
+            commitments[e] = root;
+        }
+
+        // h1 = Hash1 (seedH , y, salt, com[1], . . . , com[τ ])
+        let mut h1_data: Vec<&[u8]> = vec![&public_key.seed_h, &public_key.y, &salt];
+        for e in 0..PARAM_TAU {
+            h1_data.push(&commitments[e]);
+        }
+        let h1_prime = hash_1(h1_data);
+
+        h1 == h1_prime
     }
 }
 
 #[cfg(test)]
 mod signature_tests {
     use super::*;
-    use crate::constants::params::PARAM_DIGEST_SIZE;
+    use crate::constants::params::{PARAM_DIGEST_SIZE, PARAM_SEED_SIZE};
 
     #[test]
     fn test_serialise_deserialise_signature() {
@@ -354,5 +452,16 @@ mod signature_tests {
         for (i, auth_len) in auth_lengths.iter().enumerate() {
             assert_eq!(auth_len, &deserialised.auth[i].len());
         }
+    }
+
+    #[test]
+    fn test_sign_verify_signature() {
+        let seed_root = [0u8; PARAM_SEED_SIZE];
+        let (pk, sk) = crate::keygen::keygen(seed_root);
+        let message = b"Hello, World!";
+        let entropy = (seed_root, [0u8; PARAM_SALT_SIZE]);
+        let signature = Signature::sign_message(entropy, sk, message);
+        let valid = Signature::verify_signature(pk, signature, message);
+        assert!(valid);
     }
 }

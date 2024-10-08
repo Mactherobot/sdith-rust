@@ -4,7 +4,16 @@ use super::gf256_arith::{gf256_add, gf256_mul};
 
 /// vz'[] = vz[] + vx[]
 pub(crate) fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
+    assert!(vx.len() >= vz.len());
     let bytes = vz.len();
+    for i in 0..bytes {
+        vz[i] = gf256_add(vz[i], vx[i]);
+    }
+}
+/// vz'[] = vz[] + (vx[], 0000000000000...)
+pub(crate) fn gf256_add_vector_with_padding(vz: &mut [u8], vx: &[u8]) {
+    assert!(vz.len() >= vx.len());
+    let bytes = vx.len();
     for i in 0..bytes {
         vz[i] = gf256_add(vz[i], vx[i]);
     }

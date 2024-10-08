@@ -45,8 +45,7 @@ impl Input {
     }
 
     pub(crate) fn parse(input_plain: InputSharePlain) -> Input {
-        let solution =
-            Solution::parse(input_plain[..SOLUTION_PLAIN_SIZE].try_into().unwrap());
+        let solution = Solution::parse(input_plain[..SOLUTION_PLAIN_SIZE].try_into().unwrap());
         let (a, b, c) = Beaver::parse(input_plain[SOLUTION_PLAIN_SIZE..].try_into().unwrap());
 
         Input {
@@ -58,10 +57,25 @@ impl Input {
 
     /// Remove the Beaver triples from the input shares as they can be derived from the Solution shares
     /// {[x_A]_i, [P]_i, [Q]_i}_(i \in I) and broadcast shares {[α]_i, [β]_i, [v]_i}_(i \in I).
-    pub(super) fn truncate_beaver_triples(
+    pub(crate) fn truncate_beaver_triples(
         input_share: [u8; INPUT_SIZE],
     ) -> [u8; SOLUTION_PLAIN_SIZE] {
         return input_share[..SOLUTION_PLAIN_SIZE].try_into().unwrap();
+    }
+
+    /// Append the Beaver triples from the input shares as they can be derived from the Solution shares
+    pub(crate) fn append_beaver_triples(
+        solution_share: [u8; SOLUTION_PLAIN_SIZE],
+        beaver_triples: (BeaverA, BeaverB, BeaverC),
+    ) -> [u8; INPUT_SIZE] {
+        let mut input = [0u8; INPUT_SIZE];
+        input[..SOLUTION_PLAIN_SIZE].copy_from_slice(&solution_share);
+        input[SOLUTION_PLAIN_SIZE..].copy_from_slice(&Beaver::serialise(
+            beaver_triples.0,
+            beaver_triples.1,
+            beaver_triples.2,
+        ));
+        input
     }
 
     /// Compute the input shares for Algorithm 12, p. 38
@@ -71,7 +85,10 @@ impl Input {
     ///   input_share[e][i] = input_plain + sum^l_(j=1) fij · input coef[e][j]    if i != N
     ///                       input_coef[e][l]                                    if i == N
     /// ```
-    pub(super) fn compute_input_shares(&self, prg: &mut PRG) -> (InputSharesPlain, [[[u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU]) {
+    pub(super) fn compute_input_shares(
+        &self,
+        prg: &mut PRG,
+    ) -> (InputSharesPlain, [[[u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU]) {
         let input_plain = self.serialise();
         let mut input_shares = [[[0u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU];
 
@@ -87,7 +104,7 @@ impl Input {
             for i in 0..(PARAM_N - 1) {
                 // We need to compute the following:
                 // input_share[e][i] = input_plain + sum^ℓ_(j=1) fij · input coef[e][j]
-                let f_i = u8::try_from(i).unwrap();
+                let f_i = u8::try_from(i + 1).unwrap();
                 let mut eval_sum = [0u8; INPUT_SIZE];
 
                 // Compute the inner sum

@@ -1,9 +1,11 @@
+use std::error::Error;
+
 use num_traits::ToPrimitive;
 use queues::Queue;
 use tiny_keccak::Hasher;
 
 use crate::constants::{
-    params::{PARAM_DIGEST_SIZE, PARAM_LOG_N, PARAM_N},
+    params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_LOG_N, PARAM_N, PARAM_TAU},
     types::{CommitmentsArray, Hash},
 };
 
@@ -41,9 +43,7 @@ impl MerkleTree {
         // Add leaves to the tree
         (0..nb_leaves).for_each(|i| {
             nodes[first_index + i] = commitments[i];
-        });
-
-        // TODO: Otimize the loop below with batch processing https://github.com/sdith/sdith/blob/main/Optimized_Implementation/Threshold_Variant/sdith_threshold_cat1_gf256/merkle-tree.c
+        }); // TODO: Otimize the loop below with batch processing https://github.com/sdith/sdith/blob/main/Optimized_Implementation/Threshold_Variant/sdith_threshold_cat1_gf256/merkle-tree.c
         for _h in (0..height).rev() {
             // Indicates if the last node is isolated
             let last_is_isolated = 1 - (last_index & 0x1);
@@ -80,6 +80,11 @@ impl MerkleTree {
             n_leaves: nb_leaves,
             nodes,
         }
+    }
+
+    /// Returns the root of the merkle tree
+    pub(crate) fn get_root(&self) -> Hash {
+        self.nodes[1]
     }
 
     /// Returns the nodes required to calculate the merkle root from the leaves.
@@ -122,88 +127,86 @@ impl MerkleTree {
 
         auth
     }
-
-    /// Recalculates the merkle root from the commitments and the auth
-    pub(crate) fn get_merkle_root_from_auth(
-        &self,
-        selected_leaves: &[u16],
-        commitments: CommitmentsArray,
-        mut auth: Vec<Hash>,
-    ) -> Hash {
-        let mut q: Queue<(Hash, usize)> = queue![];
-        for i in 0..self.n_leaves {
-            if selected_leaves.contains(&(i as u16)) {
-                let index = (1 << self.height) + i;
-                let add = q.add((commitments[i], index));
-                if add.is_err() {
-                    panic!("Could not add element to queue");
-                }
-            }
-        }
-
-        let (mut height, mut last_index) = (1 << self.height, self.n_nodes - 1);
-        // While the next element is not the root of the tree
-        while q.peek().unwrap().1 != 1 {
-            // Get the next element
-            let (mut node, index) = q.remove().unwrap();
-
-            // if the height is more than the index then divide the height and last_index by 2
-            if index < height {
-                height >>= 1;
-                last_index >>= 1;
-            }
-            let mut next_node: Hash = Hash::default();
-            let is_left_child = index % 2 == 0;
-            if is_left_child && index == last_index {
-                let add = q.add((node, index >> 1));
-                if add.is_err() {
-                    panic!("Could not add element to queue");
-                }
-            } else {
-                let mut next_index = 0;
-                let ok = q.peek();
-                if ok.is_ok() {
-                    next_index = ok.unwrap().1;
-                }
-                if index % 2 == 0 && next_index == index + 1 {
-                    (next_node, _) = q.remove().unwrap();
-                } else {
-                    if auth[0].len() >= PARAM_DIGEST_SIZE {
-                        // Extract and remove the first hash of the auth path
-                        next_node = auth.remove(0);
-                    } else {
-                        panic!("Auth path is too short");
-                    }
-                    if index % 2 == 1 {
-                        // swap the next node with the current node
-                        std::mem::swap(&mut node, &mut next_node);
-                    }
-                }
-                let mut hasher = get_hasher();
-                hasher.update(&[HASH_PREFIX_MERKLE_TREE]);
-                hasher.update(&2_u16.to_le_bytes());
-                hasher.update(&node);
-                if next_node != [0_u8; 32] {
-                    hasher.update(&next_node);
-                }
-                let parent = hash_finalize(hasher);
-                let add = q.add((parent, index >> 1));
-                if add.is_err() {
-                    panic!("Could not add element to queue");
-                }
-            }
-        }
-        let (root, _) = q.remove().unwrap();
-
-        root
-    }
 }
 
+/// Recalculates the merkle root from the commitments and the auth
+pub(crate) fn get_merkle_root_from_auth(
+    auth: &mut Vec<Hash>,
+    commitments: [Hash; PARAM_L],
+    selected_leaves: &[u16],
+) -> Result<Hash, &'static str> {
+    let mut q: Queue<(Hash, usize)> = queue![];
+    for i in 0..PARAM_L {
+        if selected_leaves.contains(&(i as u16)) {
+            let index = (1 << PARAM_MERKLE_TREE_HEIGHT) + selected_leaves[i] as usize;
+            let add = q.add((commitments[i], index));
+            if add.is_err() {
+                return Err("Could not add element to queue");
+            }
+        }
+    }
+
+    let (mut height, mut last_index) = (1 << PARAM_MERKLE_TREE_HEIGHT, PARAM_MERKLE_TREE_NODES - 1);
+    // While the next element is not the root of the tree
+    while q.peek().unwrap().1 != 1 {
+        // Get the next element
+        let (mut node, index) = q.remove().unwrap();
+
+        // if the height is more than the index then divide the height and last_index by 2
+        if index < height {
+            height >>= 1;
+            last_index >>= 1;
+        }
+        let mut next_node: Hash = Hash::default();
+        let is_left_child = index % 2 == 0;
+        if is_left_child && index == last_index {
+            let add = q.add((node, index >> 1));
+            if add.is_err() {
+                return Err("Could not add element to queue");
+            }
+        } else {
+            let mut next_index = 0;
+            let ok = q.peek();
+            if ok.is_ok() {
+                next_index = ok.unwrap().1;
+            }
+            if index % 2 == 0 && next_index == index + 1 {
+                (next_node, _) = q.remove().unwrap();
+            } else {
+                if auth[0].len() >= PARAM_DIGEST_SIZE {
+                    // Extract and remove the first hash of the auth path
+                    next_node = auth.remove(0);
+                } else {
+                    return Err("Auth path is too short");
+                }
+                if index % 2 == 1 {
+                    // swap the next node with the current node
+                    std::mem::swap(&mut node, &mut next_node);
+                }
+            }
+            let mut hasher = get_hasher();
+            hasher.update(&[HASH_PREFIX_MERKLE_TREE]);
+            hasher.update(&2_u16.to_le_bytes());
+            hasher.update(&node);
+            if next_node != [0_u8; 32] {
+                hasher.update(&next_node);
+            }
+            let parent = hash_finalize(hasher);
+            let add = q.add((parent, index >> 1));
+            if add.is_err() {
+                return Err("Could not add element to queue");
+            }
+        }
+    }
+    let (root, _) = q.remove().unwrap();
+
+    Ok(root)
+}
 #[cfg(test)]
 mod test {
     use tiny_keccak::Hasher;
 
-    use crate::constants::params::PARAM_N;
+    use crate::constants::params::{PARAM_L, PARAM_N};
 
     use super::*;
 
@@ -251,7 +254,7 @@ mod test {
         let auth = tree.get_merkle_path(&[1u16]);
 
         // The auth path should have 8 nodes (one from each level)
-        assert_eq!(auth.len(), PARAM_MERKLE_TREE_HEIGHT as usize);
+        assert_eq!(auth.len(), PARAM_MERKLE_TREE_HEIGHT);
         assert!(!auth.is_empty());
     }
 
@@ -260,8 +263,13 @@ mod test {
         let commitments = [[1_u8; 32]; PARAM_N];
         let tree = MerkleTree::new(commitments, None);
 
-        let auth = tree.get_merkle_path(&[233u16]);
-        let root = tree.get_merkle_root_from_auth(&[233u16], commitments, auth);
-        assert_eq!(root, tree.nodes[1]);
+        let commitmens_tau = [[1_u8; 32]; PARAM_L];
+        let mut auth = tree.get_merkle_path(&[233u16]);
+        let Ok(root) = get_merkle_root_from_auth(&mut auth, commitmens_tau, &[233u16]) else {
+            panic!("Could not get merkle root from auth")
+        };
+        assert_eq!(tree.nodes[1], root);
     }
+
+    // TODO: Add more tests that are negative
 }
