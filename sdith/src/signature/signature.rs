@@ -6,7 +6,7 @@ use crate::{
     },
     keygen::{PublicKey, SecretKey},
     mpc::{
-        broadcast::{BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
+        broadcast::{self, BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
         challenge::Challenge,
         mpc::MPC,
     },
@@ -27,7 +27,7 @@ struct Signature {
     salt: Salt,
     h1: Hash,
     broadcast_plain: [u8; BROADCAST_PLAIN_SIZE],
-    broadcast_shares_plain: [u8; BROADCAST_SHARE_PLAIN_SIZE],
+    broadcast_shares_plain: [u8; BROADCAST_SHARE_PLAIN_SIZE * PARAM_L * PARAM_TAU],
     // wit_share from spec
     solution_share: [[[u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
     auth: [Vec<Hash>; PARAM_TAU],
@@ -49,7 +49,7 @@ impl Signature {
         salt: Salt,
         h1: Hash,
         broadcast_plain: [u8; BROADCAST_PLAIN_SIZE],
-        broadcast_shares_plain: [u8; BROADCAST_SHARE_PLAIN_SIZE],
+        broadcast_shares_plain: [u8; BROADCAST_SHARE_PLAIN_SIZE * PARAM_L * PARAM_TAU],
         view_opening_challenges: [[u16; PARAM_L]; PARAM_TAU],
         merkle_trees: Vec<MerkleTree>,
         // Shares of the input (s_a, Q', P) and the Beaver triples (a, b, c) for each party
@@ -123,11 +123,11 @@ impl Signature {
             .unwrap();
         offset += BROADCAST_PLAIN_SIZE;
 
-        let broadcast_shares_plain: [u8; BROADCAST_SHARE_PLAIN_SIZE] = signature_plain
-            [offset..offset + BROADCAST_SHARE_PLAIN_SIZE]
-            .try_into()
-            .unwrap();
-        offset += BROADCAST_SHARE_PLAIN_SIZE;
+        let broadcast_shares_plain: [u8; BROADCAST_SHARE_PLAIN_SIZE * PARAM_TAU * PARAM_L] =
+            signature_plain[offset..offset + BROADCAST_SHARE_PLAIN_SIZE * PARAM_TAU * PARAM_L]
+                .try_into()
+                .unwrap();
+        offset += BROADCAST_SHARE_PLAIN_SIZE * PARAM_TAU * PARAM_L;
 
         let mut solution_share = [[[0u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
         for e in 0..PARAM_TAU {
@@ -171,133 +171,145 @@ impl Signature {
             auth,
         }
     }
-}
 
-pub(crate) fn sign_message(
-    entropy: (Seed, Salt),
-    secret_key: SecretKey,
-    message: &[u8],
-) -> Signature {
-    // Expansion of the parity matrix H'
-    let h_prime = HPrimeMatrix::gen_random(&mut PRG::init(&secret_key.seed_h, None));
+    pub(crate) fn sign_message(
+        entropy: (Seed, Salt),
+        secret_key: SecretKey,
+        message: &[u8],
+    ) -> Signature {
+        // Expansion of the parity matrix H'
+        let h_prime = HPrimeMatrix::gen_random(&mut PRG::init(&secret_key.seed_h, None));
 
-    // Randomness generation for the Beaver triples and the shares
-    let (mseed, salt) = entropy;
-    let mut prg = PRG::init(&mseed, Some(&salt));
-    let (a, b, c) = MPC::generate_beaver_triples(&mut prg);
+        // Randomness generation for the Beaver triples and the shares
+        let (mseed, salt) = entropy;
+        let mut prg = PRG::init(&mseed, Some(&salt));
+        let (a, b, c) = MPC::generate_beaver_triples(&mut prg);
 
-    let input = Input {
-        solution: secret_key.solution,
-        beaver_ab: (a, b),
-        beaver_c: c,
-    };
+        let input = Input {
+            solution: secret_key.solution,
+            beaver_ab: (a, b),
+            beaver_c: c,
+        };
 
-    // Compute input shares for the MPC
-    // let mut input_shares
-    let input_shares = input.compute_input_shares(&mut prg);
-    let mut commitments: [CommitmentsArray; PARAM_TAU] = [[Hash::default(); PARAM_N]; PARAM_TAU];
+        // Compute input shares for the MPC
+        // let mut input_shares
+        let (input_shares, input_coefs) = input.compute_input_shares(&mut prg);
+        let mut commitments: [CommitmentsArray; PARAM_TAU] =
+            [[Hash::default(); PARAM_N]; PARAM_TAU];
 
-    // Commit shares
-    let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
-    for e in 0..PARAM_TAU {
-        for i in 0..PARAM_N {
-            // Commit to the shares
-            commitments[e][i] = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
+        // Commit shares
+        let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
+        for e in 0..PARAM_TAU {
+            for i in 0..PARAM_N {
+                // Commit to the shares
+                commitments[e][i] = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
+            }
+            merkle_trees.push(MerkleTree::new(commitments[e], Some(salt)));
         }
-        merkle_trees.push(MerkleTree::new(commitments[e], Some(salt)));
+
+        // First challenge (MPC challenge)
+
+        // h1 = Hash1 (seedH , y, salt, com[1], . . . , com[τ ])
+        let mut h1_data: Vec<&[u8]> = vec![&secret_key.seed_h, &secret_key.y, &salt];
+        for e in 0..PARAM_TAU {
+            for i in 0..PARAM_N {
+                h1_data.push(&commitments[e][i]);
+            }
+        }
+        let h1 = hash_1(h1_data);
+        let chal = Challenge::new(h1);
+
+        // MPC Simulation
+        let broadcast = MPC::compute_broadcast(input, &chal, h_prime, secret_key.y);
+        let mut broadcast_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
+
+        // Run through Tau and l to compute the broadcast shares
+        for e in 0..PARAM_TAU {
+            for j in 0..PARAM_L {
+                let broadcast_share = MPC::party_computation(
+                    input_coefs[e][j],
+                    &chal,
+                    h_prime,
+                    secret_key.y,
+                    &broadcast,
+                    false,
+                );
+                broadcast_shares[e][j] = broadcast_share.serialise();
+            }
+        }
+
+        let broadcast_plain = broadcast.serialise();
+        let mut broadcast_shares_plain = [0u8; BROADCAST_SHARE_PLAIN_SIZE * PARAM_L * PARAM_TAU];
+        for e in 0..PARAM_TAU {
+            for j in 0..PARAM_L {
+                let offset = BROADCAST_SHARE_PLAIN_SIZE * (e * PARAM_L + j);
+                broadcast_shares_plain[offset..offset + BROADCAST_SHARE_PLAIN_SIZE]
+                    .copy_from_slice(&broadcast_shares[e][j]);
+            }
+        }
+
+        // Second challenge (view-opening challenge)
+        // Create the hash data for h2, contains message, salt, h1, broadcast_plain, broadcast_shares_plain
+        let h2_data: Vec<&[u8]> = vec![
+            message,
+            &salt,
+            &h1,
+            &broadcast_plain,
+            &broadcast_shares_plain,
+        ];
+
+        let h2 = hash_2(h2_data);
+
+        // Create the set of view-opening challenges
+        let view_opening_challenges = MPC::expand_view_challenges_threshold(h2);
+
+        // Build the signature
+        let signature = Signature::new(
+            salt,
+            h1,
+            broadcast_plain,
+            broadcast_shares_plain,
+            view_opening_challenges,
+            merkle_trees,
+            input_shares,
+        );
+
+        signature
     }
 
-    // First challenge (MPC challenge)
+    pub(crate) fn verify_signature(
+        public_key: PublicKey,
+        signature: Signature,
+        message: &[u8],
+    ) -> bool {
+        // Expansion of parity-check matrix
+        let h_prime = HPrimeMatrix::gen_random(&mut PRG::init(&public_key.seed_h, None));
 
-    // h1 = Hash1 (seedH , y, salt, com[1], . . . , com[τ ])
-    let mut h1_data: Vec<&[u8]> = vec![&secret_key.seed_h, &secret_key.y, &salt];
-    for e in 0..PARAM_TAU {
-        for i in 0..PARAM_N {
-            h1_data.push(&commitments[e][i]);
-        }
+        // Signature parsing
+        let (salt, h1, broadcast_plain, broadcast_shares_plain, wit_share, auth) = (
+            signature.salt,
+            signature.h1,
+            signature.broadcast_plain,
+            signature.broadcast_shares_plain,
+            signature.solution_share,
+            signature.auth,
+        );
+
+        // First challenge (MPC challenge) Only generate one in the case of threshold variant
+        let chal = Challenge::new(h1);
+
+        // Second challenge (view-opening challenge)
+        let h2_data: Vec<&[u8]> = vec![
+            message,
+            &salt,
+            &h1,
+            &broadcast_plain,
+            &broadcast_shares_plain,
+        ];
+        let h2 = hash_2(h2_data);
+
+        return false;
     }
-    let h1 = hash_1(h1_data);
-    let chal = Challenge::new(h1);
-
-    // MPC Simulation
-    let beaver_triples = (a, b, c);
-    let broadcast = MPC::compute_broadcast(input, chal.clone(), h_prime, secret_key.y);
-
-    // Run throuh Tau and l to compute the broadcast shares
-    let broadcast_shares = MPC::party_computation(
-        secret_key.solution,
-        beaver_triples,
-        chal,
-        &broadcast,
-        false,
-        h_prime,
-        secret_key.y,
-    );
-
-    let broadcast_plain = broadcast.serialise();
-    let broadcast_shares_plain = broadcast_shares.serialise();
-
-    // Second challenge (view-opening challenge)
-    // Create the hash data for h2, contains message, salt, h1, broadcast_plain, broadcast_shares_plain
-    let h2_data: Vec<&[u8]> = vec![
-        message,
-        &salt,
-        &h1,
-        &broadcast_plain,
-        &broadcast_shares_plain,
-    ];
-
-    let h2 = hash_2(h2_data);
-
-    // Create the set of view-opening challenges
-    let view_opening_challenges = MPC::expand_view_challenges_threshold(h2);
-
-    // Build the signature
-    let signature = Signature::new(
-        salt,
-        h1,
-        broadcast_plain,
-        broadcast_shares_plain,
-        view_opening_challenges,
-        merkle_trees,
-        input_shares,
-    );
-
-    signature
-}
-
-pub(crate) fn verify_signature(
-    public_key: PublicKey,
-    signature: Signature,
-    message: &[u8],
-) -> bool {
-    // Expansion of parity-check matrix
-    let h_prime = HPrimeMatrix::gen_random(&mut PRG::init(&public_key.seed_h, None));
-
-    // Signature parsing
-    let (salt, h1, broadcast_plain, broadcast_shares_plain, wit_share, auth) = (
-        signature.salt,
-        signature.h1,
-        signature.broadcast_plain,
-        signature.broadcast_shares_plain,
-        signature.solution_share,
-        signature.auth,
-    );
-
-    // First challenge (MPC challenge) Only generate one in the case of threshold variant
-    let chal = Challenge::new(h1);
-
-    // Second challenge (view-opening challenge)
-    let h2_data: Vec<&[u8]> = vec![
-        message,
-        &salt,
-        &h1,
-        &broadcast_plain,
-        &broadcast_shares_plain,
-    ];
-    let h2 = hash_2(h2_data);
-
-    return false;
 }
 
 #[cfg(test)]
@@ -322,7 +334,7 @@ mod signature_tests {
             salt: [1u8; PARAM_SALT_SIZE],
             h1: [2u8; PARAM_DIGEST_SIZE],
             broadcast_plain: [3u8; BROADCAST_PLAIN_SIZE],
-            broadcast_shares_plain: [4u8; BROADCAST_SHARE_PLAIN_SIZE],
+            broadcast_shares_plain: [4u8; BROADCAST_SHARE_PLAIN_SIZE * PARAM_L * PARAM_TAU],
             solution_share: [[[5u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
             auth,
         };

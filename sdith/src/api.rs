@@ -5,7 +5,7 @@ type SecretKey = Solution;
 
 pub(crate)trait SDitH {
     /// Generates public and private key.
-    /// Returns true if the keypair was generated successfully.
+    /// Returns true if the key pair was generated successfully.
     ///
     /// ### Arguments
     ///

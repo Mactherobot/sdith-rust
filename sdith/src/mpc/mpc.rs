@@ -1,4 +1,4 @@
-use crate::signature::input::Input;
+use crate::signature::input::{Input, InputSharePlain};
 use crate::witness::{HPrimeMatrix, Solution};
 use crate::{
     arith::{
@@ -90,7 +90,7 @@ impl MPC {
     /// Input: (wit plain, beav ab plain, beav c plain), chal, (H′, y)
     pub(crate) fn compute_broadcast(
         input: Input,
-        chal: Challenge,
+        chal: &Challenge,
         h_prime: HPrimeMatrix,
         y: [u8; PARAM_M_SUB_K],
     ) -> Broadcast {
@@ -132,16 +132,19 @@ impl MPC {
     /// the syndrome decoding instance (H′, y), the MPC challenge (r, ε) and the recomputed values (α, β) and returns the broadcast shares
     /// (α, β, v)_i of the party.
     pub(crate) fn party_computation(
-        solution: Solution,
-        beaver_triples: (BeaverA, BeaverB, BeaverC),
-        chal: Challenge,
-        broadcast: &Broadcast,
-        with_offset: bool,
+        input_share_plain: InputSharePlain,
+        chal: &Challenge,
         h_prime: HPrimeMatrix,
         y: [u8; PARAM_M_SUB_K],
+        broadcast: &Broadcast,
+        with_offset: bool,
     ) -> BroadcastShare {
-        let (a, b, _c) = beaver_triples;
+        let input_share = Input::deserialise(input_share_plain);
+        let (a, b) = input_share.beaver_ab;
+        let c = input_share.beaver_c;
+        let solution = input_share.solution;
         let (r, e) = (chal.r, chal.e);
+
         // Plain broadcast values
         let (alpha, beta) = (broadcast.alpha, broadcast.beta);
         let mut _s = [0u8; PARAM_M];
@@ -152,14 +155,14 @@ impl MPC {
             // Generate s = (sA, y + H's_a)
             _s = compute_s(&s_a, &h_prime, &y);
 
-            // Compute the completed q_poly by inserting the leading coef
+            // Compute the completed q_poly by inserting the leading coefficient
             complete_q(&mut q_poly_complete, solution.q_poly, 1u8);
         } else {
             // Generate s = (sA, y + H's_a)
             let s_b: [u8; PARAM_M_SUB_K] = h_prime.gf256_mul_vector(&s_a);
             _s = concat_arrays_stable(s_a, s_b);
 
-            // Compute the completed q_poly by inserting the 0 as the leading coef, this is due to
+            // Compute the completed q_poly by inserting the 0 as the leading coefficient, this is due to
             // when the parties locally add a constant value to a sharing, the constant addition is only done by one party. The Boolean
             // with offset is set to True for this party while it is set to False for the other parties.
             complete_q(&mut q_poly_complete, solution.q_poly, 0u8);
@@ -173,7 +176,7 @@ impl MPC {
         let mut v = [FPoint::default(); PARAM_T];
         for j in 0..PARAM_T {
             // Set v[j] to the negated correlated value from c
-            v[j] = _c[j];
+            v[j] = c[j];
             for d in 0..PARAM_SPLITTING_FACTOR {
                 // Set alpha as ε[j][ν] ⊗ Evaluate(Q[ν], r[j]) + a[j][ν]
                 let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], r[j]);
@@ -247,13 +250,13 @@ impl MPC {
             // Generate s = (sA, y + H's_a)
             _s = compute_s(&s_a, &h_prime, &y);
 
-            // Compute the completed q_poly by inserting the leading coef
+            // Compute the completed q_poly by inserting the leading coefficient
             complete_q(&mut q_poly_complete, solution.q_poly, 1u8);
         } else {
             // Generate s = (sA, y + H's_a)
             let s_b: [u8; PARAM_M_SUB_K] = h_prime.gf256_mul_vector(&s_a);
             _s = concat_arrays_stable(s_a, s_b);
-            // Compute the completed q_poly by inserting the 0 as the leading coef, this is due to
+            // Compute the completed q_poly by inserting the 0 as the leading coefficient, this is due to
             // when the parties locally add a constant value to a sharing, the constant addition is only done by one party. The Boolean
             // with offset is set to True for this party while it is set to False for the other parties.
             complete_q(&mut q_poly_complete, solution.q_poly, 0u8);
@@ -398,7 +401,7 @@ mod mpc_tests {
                 beaver_ab: (beaver_triples.0, beaver_triples.1),
                 beaver_c: beaver_triples.2,
             },
-            chal,
+            &chal,
             witness.h_prime,
             witness.y,
         );
@@ -420,35 +423,35 @@ mod mpc_tests {
 
         let (q, s, p, _) = sample_witness(mseed);
         let witness = generate_witness(hseed, (q, s, p));
+
         let beaver_triples = Beaver::generate_beaver_triples(&mut prg);
         let chal = Challenge::new(Hash::default());
+
         let solution = Solution {
             s_a: witness.s_a,
             q_poly: q,
             p_poly: p,
         };
-        let broadcast = MPC::compute_broadcast(
-            Input {
-                solution: solution.clone(),
-                beaver_ab: (beaver_triples.0, beaver_triples.1),
-                beaver_c: beaver_triples.2,
-            },
-            chal.clone(),
-            witness.h_prime,
-            witness.y,
-        );
+
+        let input = Input {
+            solution: solution.clone(),
+            beaver_ab: (beaver_triples.0, beaver_triples.1),
+            beaver_c: beaver_triples.2,
+        };
+
+        let broadcast = MPC::compute_broadcast(input.clone(), &chal, witness.h_prime, witness.y);
+
         let with_offset = false;
         let h_prime = witness.h_prime;
         let y = witness.y;
 
         let party_computation = MPC::party_computation(
-            solution,
-            beaver_triples,
-            chal.clone(),
-            &broadcast,
-            with_offset,
+            input.serialise(),
+            &chal,
             h_prime,
             y,
+            &broadcast,
+            with_offset,
         );
 
         let inverse_party_computation = MPC::inverse_party_computation(

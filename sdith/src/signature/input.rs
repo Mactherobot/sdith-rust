@@ -4,11 +4,14 @@ use crate::{
         FieldArith,
     },
     constants::params::{PARAM_L, PARAM_N, PARAM_TAU},
-    mpc::beaver::{Beaver, BeaverA, BeaverB, BeaverC, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE},
+    mpc::beaver::{
+        self, Beaver, BeaverA, BeaverB, BeaverC, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE,
+    },
     subroutines::prg::prg::PRG,
     witness::{Solution, SOLUTION_PLAIN_SIZE},
 };
 
+#[derive(Clone)]
 pub(crate) struct Input {
     pub(crate) solution: Solution,
     pub(crate) beaver_ab: (BeaverA, BeaverB),
@@ -18,9 +21,12 @@ pub(crate) struct Input {
 /// k+2w+t(2d+1)η
 pub(super) const INPUT_SIZE: usize = SOLUTION_PLAIN_SIZE + BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE;
 
+pub(crate) type InputSharePlain = [u8; INPUT_SIZE];
+pub(crate) type InputSharesPlain = [[InputSharePlain; PARAM_N]; PARAM_TAU];
+
 impl Input {
     // Turn the input into a byte array for mpc of `F_q^(k+2w+t(2d+1)η)`
-    pub(super) fn serialise(&self) -> [u8; INPUT_SIZE] {
+    pub(crate) fn serialise(&self) -> [u8; INPUT_SIZE] {
         let mut serialised = [0u8; INPUT_SIZE];
         serialised[..SOLUTION_PLAIN_SIZE].copy_from_slice(&self.solution.serialise());
         serialised[SOLUTION_PLAIN_SIZE..].copy_from_slice(&Beaver::serialise(
@@ -31,14 +37,30 @@ impl Input {
         serialised
     }
 
-    pub(super) fn deserialise_solution(input: [u8; SOLUTION_PLAIN_SIZE]) -> Solution {
-        let solution = Solution::deserialise(input);
+    pub(crate) fn deserialise_solution(
+        truncated_input_plain: [u8; SOLUTION_PLAIN_SIZE],
+    ) -> Solution {
+        let solution = Solution::deserialise(truncated_input_plain);
         solution
+    }
+
+    pub(crate) fn deserialise(input_plain: InputSharePlain) -> Input {
+        let solution =
+            Solution::deserialise(input_plain[..SOLUTION_PLAIN_SIZE].try_into().unwrap());
+        let (a, b, c) = Beaver::deserialise(input_plain[SOLUTION_PLAIN_SIZE..].try_into().unwrap());
+
+        Input {
+            solution,
+            beaver_ab: (a, b),
+            beaver_c: c,
+        }
     }
 
     /// Remove the Beaver triples from the input shares as they can be derived from the Solution shares
     /// {[x_A]_i, [P]_i, [Q]_i}_(i \in I) and broadcast shares {[α]_i, [β]_i, [v]_i}_(i \in I).
-    pub(super) fn truncate_beaver_triples(input_share: [u8; INPUT_SIZE]) -> [u8; SOLUTION_PLAIN_SIZE] {
+    pub(super) fn truncate_beaver_triples(
+        input_share: [u8; INPUT_SIZE],
+    ) -> [u8; SOLUTION_PLAIN_SIZE] {
         return input_share[..SOLUTION_PLAIN_SIZE].try_into().unwrap();
     }
 
@@ -49,15 +71,15 @@ impl Input {
     ///   input_share[e][i] = input_plain + sum^l_(j=1) fij · input coef[e][j]    if i != N
     ///                       input_coef[e][l]                                    if i == N
     /// ```
-    pub(super) fn compute_input_shares(&self, prg: &mut PRG) -> [[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU] {
+    pub(super) fn compute_input_shares(&self, prg: &mut PRG) -> (InputSharesPlain, [[[u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU]) {
         let input_plain = self.serialise();
         let mut input_shares = [[[0u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU];
 
         // Generate coefficients
-        let mut input_coef = [[[0u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU];
+        let mut input_coefs = [[[0u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU];
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_L {
-                prg.sample_field_fq_elements(&mut input_coef[e][i]);
+                prg.sample_field_fq_elements(&mut input_coefs[e][i]);
             }
         }
 
@@ -73,7 +95,7 @@ impl Input {
                 for j in 0..PARAM_L {
                     gf256_add_vector_mul_scalar(
                         &mut eval_sum,
-                        &input_coef[e][j],
+                        &input_coefs[e][j],
                         f_i.field_pow((j + 1) as u8),
                     );
                 }
@@ -88,10 +110,10 @@ impl Input {
 
             // From line 13 in Algorithm 12
             // input[e][N-1] = input_coef[e][L-1]
-            input_shares[e][PARAM_N - 1] = input_coef[e][PARAM_L - 1];
+            input_shares[e][PARAM_N - 1] = input_coefs[e][PARAM_L - 1];
         }
 
-        input_shares
+        (input_shares, input_coefs)
     }
 }
 
