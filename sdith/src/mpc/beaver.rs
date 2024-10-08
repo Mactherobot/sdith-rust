@@ -78,7 +78,7 @@ impl Beaver {
         plain
     }
 
-    pub(crate) fn deserialise(
+    pub(crate) fn parse(
         beaver_abc_plain: [u8; BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE],
     ) -> (BeaverA, BeaverB, BeaverC) {
         let mut offset = 0;
@@ -164,7 +164,7 @@ mod beaver_tests {
 
         assert_eq!(plain.len(), BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE);
 
-        let (a_des, b_des, c_des) = Beaver::deserialise(plain);
+        let (a_des, b_des, c_des) = Beaver::parse(plain);
 
         assert_eq!(a, a_des);
         assert_eq!(b, b_des);

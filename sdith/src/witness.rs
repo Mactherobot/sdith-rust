@@ -75,7 +75,7 @@ impl Solution {
         serialised
     }
 
-    pub(crate) fn deserialise(solution_plain: [u8; SOLUTION_PLAIN_SIZE]) -> Self {
+    pub(crate) fn parse(solution_plain: [u8; SOLUTION_PLAIN_SIZE]) -> Self {
         let mut s_a = [0u8; PARAM_K];
         s_a.copy_from_slice(&solution_plain[..PARAM_K]);
         let mut q_poly = [[0u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
@@ -357,7 +357,7 @@ mod test_witness {
             PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2
         );
 
-        let deserialised = Solution::deserialise(serialised);
+        let deserialised = Solution::parse(serialised);
 
         assert_eq!(solution.s_a, deserialised.s_a);
         assert_eq!(solution.q_poly, deserialised.q_poly);

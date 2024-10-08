@@ -105,7 +105,7 @@ impl Signature {
         serialised
     }
 
-    pub(crate) fn deserialise(signature_plain: Vec<u8>) -> Signature {
+    pub(crate) fn parse(signature_plain: Vec<u8>) -> Signature {
         let mut offset = 0;
         let salt: Salt = signature_plain[offset..offset + PARAM_SALT_SIZE]
             .try_into()
@@ -340,7 +340,7 @@ mod signature_tests {
         };
 
         let serialised = sign.serialise();
-        let deserialised = Signature::deserialise(serialised);
+        let deserialised = Signature::parse(serialised);
 
         assert_eq!(sign.salt, deserialised.salt);
         assert_eq!(sign.h1, deserialised.h1);

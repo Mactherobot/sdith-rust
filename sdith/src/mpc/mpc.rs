@@ -139,7 +139,7 @@ impl MPC {
         broadcast: &Broadcast,
         with_offset: bool,
     ) -> BroadcastShare {
-        let input_share = Input::deserialise(input_share_plain);
+        let input_share = Input::parse(input_share_plain);
         let (a, b) = input_share.beaver_ab;
         let c = input_share.beaver_c;
         let solution = input_share.solution;

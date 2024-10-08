@@ -31,7 +31,7 @@ impl Broadcast {
         result
     }
 
-    pub(crate) fn deserialise(broadcast_plain: [u8; BROADCAST_PLAIN_SIZE]) -> Self {
+    pub(crate) fn parse(broadcast_plain: [u8; BROADCAST_PLAIN_SIZE]) -> Self {
         let alpha: BroadcastValue = deserialise_broadcast_value(
             broadcast_plain[..BROADCAST_VALUE_PLAIN_SIZE]
                 .try_into()
@@ -103,7 +103,7 @@ impl BroadcastShare {
         result
     }
 
-    pub(crate) fn deserialise(broadcast_share_plain: [u8; BROADCAST_SHARE_PLAIN_SIZE]) -> Self {
+    pub(crate) fn parse(broadcast_share_plain: [u8; BROADCAST_SHARE_PLAIN_SIZE]) -> Self {
         let alpha: BroadcastValue = deserialise_broadcast_value(
             broadcast_share_plain[..BROADCAST_VALUE_PLAIN_SIZE]
                 .try_into()
@@ -152,7 +152,7 @@ mod broadcast_tests {
         assert_eq!(serialised.len(), BROADCAST_PLAIN_SIZE);
         assert_ne!(serialised, [0u8; BROADCAST_PLAIN_SIZE]);
 
-        let deserialised = Broadcast::deserialise(serialised);
+        let deserialised = Broadcast::parse(serialised);
 
         assert_eq!(broadcast.alpha, deserialised.alpha);
         assert_eq!(broadcast.beta, deserialised.beta);
@@ -167,7 +167,7 @@ mod broadcast_tests {
         };
 
         let serialised = broadcast_share.serialise();
-        let deserialised = BroadcastShare::deserialise(serialised);
+        let deserialised = BroadcastShare::parse(serialised);
 
         assert_eq!(broadcast_share.alpha, deserialised.alpha);
         assert_eq!(broadcast_share.beta, deserialised.beta);

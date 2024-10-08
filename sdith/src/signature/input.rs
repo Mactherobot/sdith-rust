@@ -40,14 +40,14 @@ impl Input {
     pub(crate) fn deserialise_solution(
         truncated_input_plain: [u8; SOLUTION_PLAIN_SIZE],
     ) -> Solution {
-        let solution = Solution::deserialise(truncated_input_plain);
+        let solution = Solution::parse(truncated_input_plain);
         solution
     }
 
-    pub(crate) fn deserialise(input_plain: InputSharePlain) -> Input {
+    pub(crate) fn parse(input_plain: InputSharePlain) -> Input {
         let solution =
-            Solution::deserialise(input_plain[..SOLUTION_PLAIN_SIZE].try_into().unwrap());
-        let (a, b, c) = Beaver::deserialise(input_plain[SOLUTION_PLAIN_SIZE..].try_into().unwrap());
+            Solution::parse(input_plain[..SOLUTION_PLAIN_SIZE].try_into().unwrap());
+        let (a, b, c) = Beaver::parse(input_plain[SOLUTION_PLAIN_SIZE..].try_into().unwrap());
 
         Input {
             solution,
