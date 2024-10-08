@@ -31,8 +31,8 @@ impl Input {
         serialised
     }
 
-    fn deserialise_solution(input: [u8; SOLUTION_PLAIN_SIZE]) -> Solution {
-        let solution = Solution::deserialise(input[..SOLUTION_PLAIN_SIZE].try_into().unwrap());
+    pub(super) fn deserialise_solution(input: [u8; SOLUTION_PLAIN_SIZE]) -> Solution {
+        let solution = Solution::deserialise(input);
         solution
     }
 
