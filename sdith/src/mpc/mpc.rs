@@ -177,14 +177,14 @@ impl MPC {
             for d in 0..PARAM_SPLITTING_FACTOR {
                 // Set alpha as ε[j][ν] ⊗ Evaluate(Q[ν], r[j]) + a[j][ν]
                 let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], r[j]);
-                let _a = a[j][d];
-                let _epsilon = e[j][d];
-                alpha_share[j][d] = gf256_ext32_add(gf256_ext32_mul(_epsilon, eval_q), _a);
+                let _a = a[d][j];
+                let _epsilon = e[d][j];
+                alpha_share[d][j] = gf256_ext32_add(gf256_ext32_mul(_epsilon, eval_q), _a);
 
                 // Set beta as Evaluate(S[d], r[j]) + b[j][d]
                 let eval_s = MPC::polynomial_evaluation(&s_poly[d], r[j]);
-                let _b = b[j][d];
-                beta_share[j][d] = gf256_ext32_add(eval_s, _b);
+                let _b = b[d][j];
+                beta_share[d][j] = gf256_ext32_add(eval_s, _b);
 
                 // Add ε[j][ν] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[ν], r[j]) to v[j]
                 let eval_p = MPC::polynomial_evaluation(&solution.p_poly[d], r[j]);
@@ -194,8 +194,8 @@ impl MPC {
                 v[j] = gf256_ext32_add(v[j], eval_epsilon_f_p);
 
                 // Add α[j][ν] ⊗ b[j][ν] + ¯β[j][ν] ⊗ a[j][ν] to v[j]
-                let plain_alpha = alpha[j][d];
-                let plain_beta = beta[j][d];
+                let plain_alpha = alpha[d][j];
+                let plain_beta = beta[d][j];
                 let eval_plain_alpha_b = gf256_ext32_mul(plain_alpha, _b);
                 let eval_plain_beta_a = gf256_ext32_mul(plain_beta, _a);
                 let eval_alpha_beta = gf256_ext32_add(eval_plain_alpha_b, eval_plain_beta_a);
@@ -266,14 +266,14 @@ impl MPC {
             for d in 0..PARAM_SPLITTING_FACTOR {
                 // First we need to set alpha as ε[j][ν] ⊗ Evaluate(Q[ν], r[j]) + a[j][ν]
                 let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], r[j]);
-                let _alpa_share = alpha_share[j][d];
-                let _epsilon = e[j][d];
-                a[j][d] = gf256_ext32_add(gf256_ext32_mul(_epsilon, eval_q), _alpa_share);
+                let _alpha_share = alpha_share[d][j];
+                let _epsilon = e[d][j];
+                a[d][j] = gf256_ext32_add(gf256_ext32_mul(_epsilon, eval_q), _alpha_share);
 
                 // Next we need to set beta as Evaluate(S[d], r[j]) + b[j][d]
                 let eval_s = MPC::polynomial_evaluation(&s_poly[d], r[j]);
-                let _beta_share = beta_share[j][d];
-                b[j][d] = gf256_ext32_add(eval_s, _beta_share);
+                let _beta_share = beta_share[d][j];
+                b[d][j] = gf256_ext32_add(eval_s, _beta_share);
 
                 // Now we need to add  ε[j][ν] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[ν], r[j]) to c[j]
                 let eval_p = MPC::polynomial_evaluation(&solution.p_poly[d], r[j]);
@@ -283,10 +283,10 @@ impl MPC {
                 c[j] = gf256_ext32_add(c[j], eval_epsilon_f_p);
 
                 // Add α[j][ν] ⊗ b[j][ν] + ¯β[j][ν] ⊗ a[j][ν] to c[j]
-                let plain_alpha = alpha[j][d];
-                let plain_beta = beta[j][d];
-                let eval_plain_alpha_b = gf256_ext32_mul(plain_alpha, _beta_share);
-                let eval_plain_beta_a = gf256_ext32_mul(plain_beta, _alpa_share);
+                let plain_alpha = alpha[d][j];
+                let plain_beta = beta[d][j];
+                let eval_plain_alpha_b = gf256_ext32_mul(plain_alpha, b[d][j]);
+                let eval_plain_beta_a = gf256_ext32_mul(plain_beta, a[d][j]);
                 let eval_alpha_beta = gf256_ext32_add(eval_plain_alpha_b, eval_plain_beta_a);
                 c[j] = gf256_ext32_add(c[j], eval_alpha_beta);
 
@@ -297,7 +297,7 @@ impl MPC {
                 }
             }
         }
-        return Default::default();
+        return (a, b, c);
     }
 }
 
@@ -308,7 +308,7 @@ mod mpc_tests {
             params::{PARAM_DIGEST_SIZE, PARAM_N, PARAM_SALT_SIZE},
             types::Seed,
         },
-        witness::{generate_witness, sample_witness},
+        witness::{self, generate_witness, sample_witness},
     };
 
     use super::*;
@@ -403,6 +403,71 @@ mod mpc_tests {
         for i in 0..PARAM_SPLITTING_FACTOR {
             assert_eq!(broadcast.alpha[i].len(), PARAM_T);
             assert_eq!(broadcast.beta[i].len(), PARAM_T);
+        }
+    }
+
+    /// Test that we can compute the party computation
+    #[test]
+    fn test_compute_party_computation() {
+        let mseed = Seed::from([0; 16]);
+        let hseed = Seed::from([0; 16]);
+        let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
+
+        let (q, s, p, _) = sample_witness(mseed);
+        let witness = generate_witness(hseed, (q, s, p));
+        let beaver_triples = Beaver::generate_beaver_triples(&mut prg);
+        let chal = Challenge::new(Hash::default());
+        let solution = Solution {
+            s_a: witness.s_a,
+            q_poly: q,
+            p_poly: p,
+        };
+        let broadcast = MPC::compute_broadcast(
+            Input {
+                solution: solution.clone(),
+                beaver_ab: (beaver_triples.0, beaver_triples.1),
+                beaver_c: beaver_triples.2,
+            },
+            chal.clone(),
+            witness.h_prime,
+            witness.y,
+        );
+        let with_offset = false;
+        let h_prime = witness.h_prime;
+        let y = witness.y;
+
+        let party_computation = MPC::party_computation(
+            solution,
+            beaver_triples,
+            chal.clone(),
+            &broadcast,
+            with_offset,
+            h_prime,
+            y,
+        );
+
+        assert_eq!(party_computation.alpha.len(), PARAM_SPLITTING_FACTOR);
+        assert_eq!(party_computation.beta.len(), PARAM_SPLITTING_FACTOR);
+
+        let inverse_party_computation = MPC::inverse_party_computation(
+            solution,
+            party_computation,
+            chal,
+            broadcast,
+            with_offset,
+            h_prime,
+            y,
+        );
+
+        let (a, b, c) = inverse_party_computation;
+
+        // Assert that the computed values are the same as the original values
+        for i in 0..PARAM_SPLITTING_FACTOR {
+            for j in 0..PARAM_T {
+                assert_eq!(a[i][j], beaver_triples.0[i][j]);
+                assert_eq!(b[i][j], beaver_triples.1[i][j]);
+                assert_eq!(c[i], beaver_triples.2[i]);
+            }
         }
     }
 }

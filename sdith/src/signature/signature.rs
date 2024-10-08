@@ -4,7 +4,7 @@ use crate::{
         params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_N, PARAM_SALT_SIZE, PARAM_TAU},
         types::{CommitmentsArray, Hash, Salt, Seed},
     },
-    keygen::SecretKey,
+    keygen::{PublicKey, SecretKey},
     mpc::{
         broadcast::{BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
         challenge::Challenge,
@@ -266,6 +266,40 @@ pub(crate) fn sign_message(
     signature
 }
 
+pub(crate) fn verify_signature(
+    public_key: PublicKey,
+    signature: Signature,
+    message: &[u8],
+) -> bool {
+    // Expansion of parity-check matrix
+    let h_prime = HPrimeMatrix::gen_random(&mut PRG::init(&public_key.seed_h, None));
+
+    // Signature parsing
+    let (salt, h1, broadcast_plain, broadcast_shares_plain, wit_share, auth) = (
+        signature.salt,
+        signature.h1,
+        signature.broadcast_plain,
+        signature.broadcast_shares_plain,
+        signature.solution_share,
+        signature.auth,
+    );
+
+    // First challenge (MPC challenge) Only generate one in the case of threshold variant
+    let chal = Challenge::new(h1);
+
+    // Second challenge (view-opening challenge)
+    let h2_data: Vec<&[u8]> = vec![
+        message,
+        &salt,
+        &h1,
+        &broadcast_plain,
+        &broadcast_shares_plain,
+    ];
+    let h2 = hash_2(h2_data);
+
+    return false;
+}
+
 #[cfg(test)]
 mod signature_tests {
     use super::*;
@@ -305,7 +339,7 @@ mod signature_tests {
         );
         assert_eq!(sign.solution_share, deserialised.solution_share);
 
-        for (i,auth_len) in auth_lengths.iter().enumerate() {
+        for (i, auth_len) in auth_lengths.iter().enumerate() {
             assert_eq!(auth_len, &deserialised.auth[i].len());
         }
     }
