@@ -1,4 +1,5 @@
-use crate::constants::types::Seed;
+use crate::constants::params::PARAM_ETA;
+use crate::sign::Input;
 use crate::witness::{HPrimeMatrix, Solution};
 use crate::{
     arith::{
@@ -19,9 +20,10 @@ use crate::{
         types::Hash,
     },
     subroutines::prg::prg::PRG,
-    witness::{complete_q, compute_s, compute_s_poly, QPolyComplete, Witness},
+    witness::{complete_q, compute_s, compute_s_poly, QPolyComplete},
 };
 
+use super::broadcast::{Broadcast, BroadcastShare};
 use super::{
     beaver::{Beaver, BeaverA, BeaverB, BeaverC},
     challenge::Challenge,
@@ -32,27 +34,6 @@ pub(crate) struct MPC {}
 
 /// A bit mask that ensures the value generated in expand_view_challenges is within 1:PARAM_N
 const MASK: u16 = (1 << PARAM_LOG_N) - 1;
-
-type BroadcastValue = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];
-#[derive(Clone)]
-pub(crate) struct Broadcast {
-    pub(crate) alpha: BroadcastValue,
-    pub(crate) beta: BroadcastValue,
-}
-
-pub(crate) struct BroadcastShare {
-    pub(crate) alpha: BroadcastValue,
-    pub(crate) beta: BroadcastValue,
-    pub(crate) v: [FPoint; PARAM_T],
-}
-
-impl Default for Broadcast {
-    fn default() -> Self {
-        let alpha = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
-        let beta = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
-        Self { alpha, beta }
-    }
-}
 
 impl MPC {
     pub(crate) fn generate_beaver_triples(prg: &mut PRG) -> (BeaverA, BeaverB, BeaverC) {
@@ -109,13 +90,13 @@ impl MPC {
     /// zero.
     /// Input: (wit plain, beav ab plain, beav c plain), chal, (H′, y)
     pub(crate) fn compute_broadcast(
-        solution: Solution,
-        beaver_triples: (BeaverA, BeaverB, BeaverC),
+        input: Input,
         chal: Challenge,
         h_prime: HPrimeMatrix,
         y: [u8; PARAM_M_SUB_K],
     ) -> Broadcast {
-        let (a, b, _c) = beaver_triples;
+        let (a, b) = input.beaver_ab;
+        let solution = input.solution;
         let (r, e) = (chal.r, chal.e);
 
         // Generate s = (sA, y + H's_a)
@@ -148,22 +129,9 @@ impl MPC {
         broadcast
     }
 
-    pub(crate) fn serialise_broadcast(broadcast: Broadcast) -> Vec<u8> {
-        let mut result = Vec::with_capacity(PARAM_M);
-        for d in 0..PARAM_SPLITTING_FACTOR {
-            for j in 0..PARAM_T {
-                result.extend_from_slice(&broadcast.alpha[d][j]);
-                result.extend_from_slice(&broadcast.beta[d][j]);
-            }
-        }
-        result
-    }
-
-    /// Performs the party computation, namely it computes the shares broadcast by a party. It takes the
-    /// input shares of the party (sA, Q′, P )_i and (a, b, c)_i, the syndrome decoding instance (H′, y),
-    /// the MPC challenge (r, ε) and the recomputed values (α, β) and returns the broadcast shares
+    /// Compute the shares broadcast by a party. It takes the input shares of the party (sA, Q′, P )_i and (a, b, c)_i,
+    /// the syndrome decoding instance (H′, y), the MPC challenge (r, ε) and the recomputed values (α, β) and returns the broadcast shares
     /// (α, β, v)_i of the party.
-    /// TODO: Is missing the share part of this
     pub(crate) fn party_computation(
         solution: Solution,
         beaver_triples: (BeaverA, BeaverB, BeaverC),
@@ -177,20 +145,20 @@ impl MPC {
         let (r, e) = (chal.r, chal.e);
         // Plain broadcast values
         let (alpha, beta) = (broadcast.alpha, broadcast.beta);
-        let mut s = [0u8; PARAM_M];
+        let mut _s = [0u8; PARAM_M];
         let mut q_poly_complete: QPolyComplete = [[0u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR];
         let s_a = solution.s_a;
 
         if with_offset {
             // Generate s = (sA, y + H's_a)
-            s = compute_s(&s_a, &h_prime, &y);
+            _s = compute_s(&s_a, &h_prime, &y);
 
             // Compute the completed q_poly by inserting the leading coef
             complete_q(&mut q_poly_complete, solution.q_poly, 1u8);
         } else {
             // Generate s = (sA, y + H's_a)
             let s_b: [u8; PARAM_M_SUB_K] = h_prime.gf256_mul_vector(&s_a);
-            s = concat_arrays_stable(s_a, s_b);
+            _s = concat_arrays_stable(s_a, s_b);
 
             // Compute the completed q_poly by inserting the 0 as the leading coef, this is due to
             // when the parties locally add a constant value to a sharing, the constant addition is only done by one party. The Boolean
@@ -199,7 +167,7 @@ impl MPC {
         }
 
         // Compute the S polynomial
-        let s_poly = compute_s_poly(s);
+        let s_poly = compute_s_poly(_s);
 
         let mut alpha_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         let mut beta_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
@@ -246,17 +214,6 @@ impl MPC {
             beta: beta_share,
             v,
         };
-    }
-
-    pub(crate) fn serialise_broadcast_shares(broadcast_share: BroadcastShare) -> Vec<u8> {
-        let mut result = Vec::with_capacity(PARAM_M);
-        for d in 0..PARAM_SPLITTING_FACTOR {
-            for j in 0..PARAM_T {
-                result.extend_from_slice(&broadcast_share.alpha[d][j]);
-                result.extend_from_slice(&broadcast_share.beta[d][j]);
-            }
-        }
-        result
     }
 
     /// computes the shares of the Beaver triples from the shares of the witness and the broadcast
@@ -348,7 +305,10 @@ impl MPC {
 #[cfg(test)]
 mod mpc_tests {
     use crate::{
-        constants::params::{PARAM_DIGEST_SIZE, PARAM_N, PARAM_SALT_SIZE},
+        constants::{
+            params::{PARAM_DIGEST_SIZE, PARAM_N, PARAM_SALT_SIZE},
+            types::Seed,
+        },
         witness::{generate_witness, sample_witness},
     };
 
@@ -415,21 +375,29 @@ mod mpc_tests {
     fn test_compute_broadcast() {
         let mseed = Seed::from([0; 16]);
         let hseed = Seed::from([0; 16]);
+        let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
+
         let (q, s, p, _) = sample_witness(mseed);
         let witness = generate_witness(hseed, (q, s, p));
-        let s_a = witness.s_a;
-        let h_prime = witness.h_prime;
-        let y = witness.y;
-        let solution = Solution {
-            s_a,
-            q_poly: q,
-            p_poly: p,
-        };
-        let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
         let beaver_triples = Beaver::generate_beaver_triples(&mut prg);
+
         let hash1 = Hash::default();
         let chal = Challenge::new(hash1);
-        let broadcast = MPC::compute_broadcast(solution, beaver_triples, chal, h_prime, y);
+
+        let broadcast = MPC::compute_broadcast(
+            Input {
+                solution: Solution {
+                    s_a: witness.s_a,
+                    q_poly: q,
+                    p_poly: p,
+                },
+                beaver_ab: (beaver_triples.0, beaver_triples.1),
+                beaver_c: beaver_triples.2,
+            },
+            chal,
+            witness.h_prime,
+            witness.y,
+        );
 
         assert_eq!(broadcast.alpha.len(), PARAM_SPLITTING_FACTOR);
         assert_eq!(broadcast.beta.len(), PARAM_SPLITTING_FACTOR);
