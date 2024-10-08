@@ -227,27 +227,32 @@ impl MPC {
         h_prime: HPrimeMatrix,
         y: [u8; PARAM_M_SUB_K],
     ) -> (BeaverA, BeaverB, BeaverC) {
+        // (α, β, v) The broadcast share values
         let (alpha_share, beta_share, _v) = (
             broadcast_share.alpha,
             broadcast_share.beta,
             broadcast_share.v,
         );
-        let (r, e) = (chal.r, chal.e);
+        // (¯α, ¯β) are the broadcast values
         let (alpha, beta) = (broadcast.alpha, broadcast.beta);
-        let mut s = [0u8; PARAM_M];
+        // Challenge values
+        let (r, e) = (chal.r, chal.e);
+
+        // Mutable variables
+        let mut _s = [0u8; PARAM_M];
         let mut q_poly_complete: QPolyComplete = [[0u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR];
         let s_a = solution.s_a;
 
         if with_offset {
             // Generate s = (sA, y + H's_a)
-            s = compute_s(&s_a, &h_prime, &y);
+            _s = compute_s(&s_a, &h_prime, &y);
 
             // Compute the completed q_poly by inserting the leading coef
             complete_q(&mut q_poly_complete, solution.q_poly, 1u8);
         } else {
             // Generate s = (sA, y + H's_a)
             let s_b: [u8; PARAM_M_SUB_K] = h_prime.gf256_mul_vector(&s_a);
-            s = concat_arrays_stable(s_a, s_b);
+            _s = concat_arrays_stable(s_a, s_b);
             // Compute the completed q_poly by inserting the 0 as the leading coef, this is due to
             // when the parties locally add a constant value to a sharing, the constant addition is only done by one party. The Boolean
             // with offset is set to True for this party while it is set to False for the other parties.
@@ -255,7 +260,7 @@ impl MPC {
         }
 
         // Compute the S polynomial
-        let s_poly = compute_s_poly(s);
+        let s_poly = compute_s_poly(_s);
 
         let mut a = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         let mut b = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
@@ -308,7 +313,7 @@ mod mpc_tests {
             params::{PARAM_DIGEST_SIZE, PARAM_N, PARAM_SALT_SIZE},
             types::Seed,
         },
-        witness::{self, generate_witness, sample_witness},
+        witness::{generate_witness, sample_witness},
     };
 
     use super::*;
@@ -406,7 +411,7 @@ mod mpc_tests {
         }
     }
 
-    /// Test that we can compute the party computation
+    /// Test that we can compute the party computation and inverse it again
     #[test]
     fn test_compute_party_computation() {
         let mseed = Seed::from([0; 16]);
@@ -445,9 +450,6 @@ mod mpc_tests {
             h_prime,
             y,
         );
-
-        assert_eq!(party_computation.alpha.len(), PARAM_SPLITTING_FACTOR);
-        assert_eq!(party_computation.beta.len(), PARAM_SPLITTING_FACTOR);
 
         let inverse_party_computation = MPC::inverse_party_computation(
             solution,
