@@ -558,7 +558,7 @@ mod signature_tests {
                     &mut signature.auth[e],
                     chosen_commitments.as_slice().try_into().unwrap(),
                     &view_opening_challenges[e],
-                    Some(salt)
+                    Some(salt),
                 )
                 .unwrap(),
                 merkle_trees[e].get_root()

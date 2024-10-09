@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{error::Error, fmt::Debug};
 
 use num_traits::ToPrimitive;
 use queues::Queue;
@@ -44,6 +44,7 @@ impl MerkleTree {
         (0..nb_leaves).for_each(|i| {
             nodes[first_index + i] = commitments[i];
         }); // TODO: Optimize the loop below with batch processing https://github.com/sdith/sdith/blob/main/Optimized_Implementation/Threshold_Variant/sdith_threshold_cat1_gf256/merkle-tree.c
+        
         for _h in (0..height).rev() {
             // Indicates if the last node is isolated
             let last_is_isolated = 1 - (last_index & 0x1);
@@ -86,6 +87,16 @@ impl MerkleTree {
         self.nodes[1]
     }
 
+    /// Return non-zero based index of the leaf in the tree
+    fn get_leaf_index(&self, n: usize) -> u16 {
+        assert!(
+            n > self.n_leaves && n <= (self.n_nodes + 1),
+            "Invalid leaf index: {}",
+            n
+        );
+        (n - self.n_leaves).try_into().unwrap()
+    }
+
     /// Returns the nodes required to calculate the merkle root from the leaves.
     ///
     /// # Arguments
@@ -98,9 +109,11 @@ impl MerkleTree {
     pub(crate) fn get_merkle_path(&self, selected_leaves: &[u16]) -> Vec<Hash> {
         // Find the missing nodes
         // missing ← {2n + i − 1, i not in selected_leaves}
-        let mut missing = (self.n_leaves..=self.n_nodes)
-            .filter(|i| !selected_leaves.contains(&((i - (1 << self.height) + 1) as u16)))
+        let mut missing = ((self.n_leaves+1)..=(self.n_nodes + 1))
+            .filter(|i| !selected_leaves.contains(&(self.get_leaf_index(*i as usize) as u16)))
             .collect::<Vec<usize>>();
+
+        println!("missing: {:?}", missing);
 
         // Remove the leaves from the missing list
         for i in (1..=(1 << self.height) - 1).rev() {
@@ -117,8 +130,10 @@ impl MerkleTree {
 
         // Fetch the missing nodes
         for h in (1..=self.height).rev() {
+            println!("------------ height: {}", h);
             for i in 1 << h..(1 << (h + 1)) {
                 if missing.contains(&i) {
+                    println!("missing: {}, parent_index: {}", i, i >> 1);
                     auth.push(self.nodes[i]);
                 }
             }
@@ -128,17 +143,25 @@ impl MerkleTree {
     }
 }
 
-fn merkle_hash(index: u16, left: Hash, right: Option<Hash>, salt: Option<Salt>) -> Hash {
+fn merkle_hash(parent_index: u16, left: Hash, right: Option<Hash>, salt: Option<Salt>) -> Hash {
     let mut hasher = sha3();
+
+    // Hash the prefix
     hasher.update(&[HASH_PREFIX_MERKLE_TREE]);
+
     if let Some(salt) = salt {
         hasher.update(&salt);
     }
-    hasher.update(&index.to_le_bytes());
+
+    // Hash the parent_index
+    hasher.update(&parent_index.to_le_bytes());
+
+    // Hash the left and right children
     hasher.update(&left);
     if let Some(right) = right {
         hasher.update(&right);
     }
+
     hash_finalize(hasher)
 }
 
@@ -162,7 +185,7 @@ pub(crate) fn get_merkle_root_from_auth(
     for (i, selected_leaf) in selected_leaves.iter().enumerate() {
         let add = q.add((
             commitments[i],
-            (1 << PARAM_MERKLE_TREE_HEIGHT) + *selected_leaf as usize,
+            (1 << PARAM_MERKLE_TREE_HEIGHT) + *selected_leaf as usize - 1,
         ));
 
         if add.is_err() {
@@ -237,7 +260,7 @@ pub(crate) fn get_merkle_root_from_auth(
                 salt,
             );
 
-            let add = q.add((parent, index >> 1));
+            let add = q.add((parent, parent_index));
             if add.is_err() {
                 return Err("Could not add element to queue");
             }
@@ -247,8 +270,11 @@ pub(crate) fn get_merkle_root_from_auth(
 
     Ok(root)
 }
+
 #[cfg(test)]
 mod test {
+    use core::panic;
+
     use crate::{
         constants::params::{PARAM_L, PARAM_N},
         subroutines::prg::prg::PRG,
@@ -261,7 +287,7 @@ mod test {
         let commitments = [[1_u8; 32]; PARAM_N];
         let tree = MerkleTree::new(commitments, None);
         assert_eq!(tree.height, PARAM_MERKLE_TREE_HEIGHT as i32);
-        assert_eq!(tree.n_nodes, { PARAM_MERKLE_TREE_NODES - 1 });
+        assert_eq!(tree.n_nodes, PARAM_MERKLE_TREE_NODES - 1);
         assert_eq!(tree.n_leaves, { PARAM_N });
 
         let root = merkle_hash(1, tree.nodes[2], Some(tree.nodes[3]), None);
@@ -276,9 +302,10 @@ mod test {
         let tree = MerkleTree::new(commitments, None);
 
         let mut selected_leaves = [0u16; PARAM_N];
-        for i in 0..PARAM_N {
-            selected_leaves[i] = i as u16;
+        for i in 1..=PARAM_N {
+            selected_leaves[i - 1] = i as u16;
         }
+
         let auth = tree.get_merkle_path(&selected_leaves);
         assert_eq!(auth.len(), 0);
         assert_eq!(auth.is_empty(), true);
@@ -417,18 +444,28 @@ mod test {
         let selected_leaves = [1u16, 2u16, 235u16];
         for i in 0..2 {
             let _selected_leaves = &selected_leaves.clone()[..i + 1];
+
+            // Get the commitments for the selected leaves
             let mut commitments_tau = vec![];
             for i in _selected_leaves {
-                commitments_tau.push(commitments[*i as usize]);
+                commitments_tau.push(commitments[*i as usize - 1]);
             }
-            let mut auth = tree.get_merkle_path(&selected_leaves);
 
+            // Get the auth path for the selected leaves
+            let mut auth = tree.get_merkle_path(&_selected_leaves);
+
+            // Get the merkle root from the auth path
             let Ok(root) =
                 get_merkle_root_from_auth(&mut auth, &commitments_tau, &_selected_leaves, None)
             else {
                 panic!("Could not get merkle root from auth")
             };
-            assert_eq!(tree.get_root(), root);
+            assert_eq!(
+                tree.get_root(),
+                root,
+                "Roots do not match for selected leaves {:?}",
+                _selected_leaves
+            );
         }
     }
 
@@ -500,5 +537,51 @@ mod test {
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "No auth path");
     }
-    // TODO: Add more tests that are negative
+
+    #[test]
+    fn test_edgecase() {
+        let selected_leaves = [245u16, 124];
+
+        let mut prg = PRG::init_base(&[1]);
+        let mut commitments = [[1_u8; 32]; PARAM_N];
+        for i in 0..PARAM_N {
+            prg.sample_field_fq_non_zero(&mut commitments[i]);
+        }
+
+        let tree = MerkleTree::new(commitments, None);
+        selected_leaves
+            .iter()
+            .for_each(|l| println!("{}", l + tree.n_leaves as u16));
+
+        let mut commitments_tau = vec![];
+        for i in &selected_leaves {
+            commitments_tau.push(commitments[*i as usize - 1]);
+        }
+
+        let mut auth = tree.get_merkle_path(&selected_leaves);
+
+        let result = get_merkle_root_from_auth(&mut auth, &commitments_tau, &selected_leaves, None);
+        if result.is_err() {
+            panic!("{}", result.unwrap_err());
+        }
+
+        assert_eq!(tree.get_root(), result.unwrap());
+    }
+
+    #[test]
+    fn test_get_leaf_index() {
+        let mut commitments = [[0_u8; 32]; PARAM_N];
+        for i in 1..=PARAM_N {
+            commitments[i - 1] = [i as u8; 32];
+        }
+        let tree = MerkleTree::new(commitments, None);
+
+        for i in (1 << PARAM_MERKLE_TREE_HEIGHT) + 1..=PARAM_MERKLE_TREE_NODES {
+            assert_eq!(tree.get_leaf_index(i), (i - 256) as u16);
+        }
+
+        assert_eq!(tree.get_leaf_index(257), 1);
+        assert_eq!(tree.get_leaf_index(380), 124);
+        assert_eq!(tree.get_leaf_index(PARAM_MERKLE_TREE_NODES), 256);
+    }
 }
