@@ -66,7 +66,7 @@ impl Signature {
         broadcast_plain: [u8; BROADCAST_PLAIN_SIZE],
         broadcast_shares_plain: [u8; BROADCAST_SHARE_PLAIN_SIZE * PARAM_L * PARAM_TAU],
         view_opening_challenges: [[u16; PARAM_L]; PARAM_TAU],
-        merkle_trees: Vec<MerkleTree>,
+        merkle_trees: &Vec<MerkleTree>,
         // Shares of the input (s_a, Q', P) and the Beaver triples (a, b, c) for each party
         input_shares: [[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU],
     ) -> Self {
@@ -209,7 +209,46 @@ impl Signature {
 
         // Compute input shares for the MPC
         // let mut input_shares
-        let (input_shares, input_coefs) = input.compute_input_shares(&mut prg);
+        let input_plain = input.serialise();
+        let mut input_shares = [[[0u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU];
+
+        // Generate coefficients
+        let mut input_coefs = [[[0u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU];
+        for e in 0..PARAM_TAU {
+            for i in 0..PARAM_L {
+                prg.sample_field_fq_elements(&mut input_coefs[e][i]);
+            }
+        }
+
+        for e in 0..PARAM_TAU {
+            for i in 0..(PARAM_N - 1) {
+                // We need to compute the following:
+                // input_share[e][i] = input_plain + sum^ℓ_(j=1) fij · input coef[e][j]
+                let f_i = u8::try_from(i + 1).unwrap();
+                let mut eval_sum = [0u8; INPUT_SIZE];
+
+                // Compute the inner sum
+                // sum^ℓ_(j=1) fij · input coef[e][j]
+                for j in 0..PARAM_L {
+                    gf256_add_vector_mul_scalar(
+                        &mut eval_sum,
+                        &input_coefs[e][j],
+                        f_i.field_pow((j + 1) as u8),
+                    );
+                }
+
+                // Add the input_plain to the sum
+                // input_plain + eval_sum
+                gf256_add_vector(&mut eval_sum, &input_plain);
+
+                // input_shares[e][i] = ...
+                gf256_add_vector(&mut input_shares[e][i], &eval_sum);
+            }
+
+            // From line 13 in Algorithm 12
+            // input[e][N-1] = input_coef[e][L-1]
+            input_shares[e][PARAM_N - 1] = input_coefs[e][PARAM_L - 1];
+        }
         let mut commitments: [Hash; PARAM_TAU] = [Hash::default(); PARAM_TAU];
 
         // Commit shares
@@ -286,7 +325,7 @@ impl Signature {
             broadcast_plain,
             broadcast_shares_plain,
             view_opening_challenges,
-            merkle_trees,
+            &merkle_trees,
             input_shares,
         );
 
@@ -412,6 +451,7 @@ impl Signature {
 
 #[cfg(test)]
 mod signature_tests {
+
     use super::*;
     use crate::constants::params::{PARAM_DIGEST_SIZE, PARAM_SEED_SIZE};
 
@@ -463,5 +503,59 @@ mod signature_tests {
         let signature = Signature::sign_message(entropy, sk, message);
         let valid = Signature::verify_signature(pk, signature, message);
         assert!(valid);
+    }
+
+    #[test]
+    fn test_auth_in_new() {
+        let salt = [1u8; PARAM_SALT_SIZE];
+        let h1 = [2u8; PARAM_DIGEST_SIZE];
+        let broadcast_plain = [3u8; BROADCAST_PLAIN_SIZE];
+        let broadcast_shares_plain = [4u8; BROADCAST_SHARE_PLAIN_SIZE * PARAM_L * PARAM_TAU];
+        let view_opening_challenges = MPC::expand_view_challenges_threshold(Hash::default());
+        let input_shares = [[[5u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU];
+        let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
+        let mut commitments = Vec::with_capacity(PARAM_TAU);
+        for e in 0..PARAM_TAU {
+            commitments.push(
+                input_shares[e]
+                    .iter()
+                    .map(|is| commit_share(&salt, e as u16, 0, is))
+                    .collect::<Vec<Hash>>(),
+            );
+
+            merkle_trees.push(MerkleTree::new(
+                commitments[e].as_slice().try_into().unwrap(),
+                Some(salt),
+            ));
+        }
+        let mut signature = Signature::new(
+            salt,
+            h1,
+            broadcast_plain,
+            broadcast_shares_plain,
+            view_opening_challenges,
+            &merkle_trees,
+            input_shares,
+        );
+        for e in 0..PARAM_TAU {
+            let mut chosen_commitments = vec![];
+            assert_eq!(
+                signature.auth[e],
+                merkle_trees[e].get_merkle_path(&view_opening_challenges[e])
+            );
+            for (i, i_val) in view_opening_challenges[e].iter().enumerate() {
+                chosen_commitments.push(commitments[e][*i_val as usize]);
+            }
+            println!("{:?}", chosen_commitments);
+            assert_eq!(
+                get_merkle_root_from_auth(
+                    &mut signature.auth[e],
+                    chosen_commitments.as_slice().try_into().unwrap(),
+                    &view_opening_challenges[e]
+                )
+                .unwrap(),
+                merkle_trees[e].get_root()
+            );
+        }
     }
 }

@@ -135,17 +135,23 @@ pub(crate) fn get_merkle_root_from_auth(
     commitments: [Hash; PARAM_L],
     selected_leaves: &[u16],
 ) -> Result<Hash, &'static str> {
-    assert!(!auth.is_empty());
+    if auth.is_empty() {
+        return Err("No auth path");
+    }
     let mut q: Queue<(Hash, usize)> = queue![];
-    for i in 0..PARAM_N {
-        let mut found = 0;
-        if selected_leaves.contains(&(i as u16)) {
-            let index = (1 << PARAM_MERKLE_TREE_HEIGHT) + selected_leaves[found] as usize;
-            let add = q.add((commitments[found], index));
-            if add.is_err() {
-                return Err("Could not add element to queue");
-            }
-            found += 1;
+    if selected_leaves.len() != commitments.len() {
+        return Err("The number of selected leaves and commitments should be of equal length");
+    }
+    // Add the commitments to the queue but with the correct index in the tree
+
+    for (i, selected_leaf) in selected_leaves.iter().enumerate() {
+        let add = q.add((
+            commitments[i],
+            (1 << PARAM_MERKLE_TREE_HEIGHT) + *selected_leaf as usize,
+        ));
+
+        if add.is_err() {
+            return Err("Could not add element to queue");
         }
     }
 
@@ -176,7 +182,7 @@ pub(crate) fn get_merkle_root_from_auth(
             if index % 2 == 0 && next_index == index + 1 {
                 (next_node, _) = q.remove().unwrap();
             } else {
-                if auth[0].len() >= PARAM_DIGEST_SIZE {
+                if !auth.is_empty() {
                     // Extract and remove the first hash of the auth path
                     next_node = auth.remove(0);
                 } else {
@@ -209,7 +215,10 @@ pub(crate) fn get_merkle_root_from_auth(
 mod test {
     use tiny_keccak::Hasher;
 
-    use crate::constants::params::{PARAM_L, PARAM_N};
+    use crate::{
+        constants::params::{PARAM_L, PARAM_N},
+        subroutines::prg::prg::PRG,
+    };
 
     use super::*;
 
@@ -263,16 +272,93 @@ mod test {
 
     #[test]
     fn test_merkle_root_from_auth() {
+        let mut commitments = [[1_u8; 32]; PARAM_N];
+
+        let mut prg = PRG::init_base(&[1]);
+        for i in 0..PARAM_N {
+            prg.sample_field_fq_non_zero(&mut commitments[i])
+        }
+        let tree = MerkleTree::new(commitments, None);
+
+        let selected_leaves = [233u16, 234u16, 235u16];
+        let mut commitmens_tau = [[1_u8; 32]; PARAM_L];
+        for i in selected_leaves {
+            commitmens_tau[(i - 233) as usize] = commitments[i as usize];
+        }
+        let mut auth = tree.get_merkle_path(&selected_leaves);
+        let Ok(root) = get_merkle_root_from_auth(&mut auth, commitmens_tau, &selected_leaves)
+        else {
+            panic!("Could not get merkle root from auth")
+        };
+        assert_eq!(tree.get_root(), root);
+    }
+
+    #[test]
+    fn test_merkle_root_from_auth_wrong_commitments() {
+        let mut commitments = [[1_u8; 32]; PARAM_N];
+
+        let mut prg = PRG::init_base(&[1]);
+        for i in 0..PARAM_N {
+            prg.sample_field_fq_non_zero(&mut commitments[i])
+        }
+        let tree = MerkleTree::new(commitments, None);
+
+        let selected_leaves = [233u16, 234u16, 235u16];
+        let mut commitmens_tau = [[1_u8; 32]; PARAM_L];
+        for i in selected_leaves {
+            commitmens_tau[(i - 233) as usize] = commitments[0];
+        }
+        let mut auth = tree.get_merkle_path(&selected_leaves);
+        let Ok(root) = get_merkle_root_from_auth(&mut auth, commitmens_tau, &selected_leaves)
+        else {
+            panic!("Could not get merkle root from auth")
+        };
+        assert_ne!(tree.get_root(), root);
+    }
+
+    #[test]
+    fn test_merkle_root_from_auth_remove_wrong() {
         let commitments = [[1_u8; 32]; PARAM_N];
         let tree = MerkleTree::new(commitments, None);
 
+        let selected_leaves = [233u16, 234u16, 235u16];
         let commitmens_tau = [[1_u8; 32]; PARAM_L];
-        let mut auth = tree.get_merkle_path(&[233u16]);
-        let Ok(root) = get_merkle_root_from_auth(&mut auth, commitmens_tau, &[233u16]) else {
-            panic!("Could not get merkle root from auth")
-        };
-        assert_eq!(tree.nodes[1], root);
+        let mut auth = tree.get_merkle_path(&selected_leaves);
+        auth.remove(0);
+        let result = get_merkle_root_from_auth(&mut auth, commitmens_tau, &selected_leaves);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Auth path is too short");
     }
 
+    #[test]
+    fn test_merkle_root_from_selected_leaves_too_short() {
+        let commitments = [[1_u8; 32]; PARAM_N];
+        let tree = MerkleTree::new(commitments, None);
+
+        let selected_leaves = [233u16, 234u16];
+        let commitmens_tau = [[1_u8; 32]; PARAM_L];
+        let mut auth = tree.get_merkle_path(&selected_leaves);
+        auth.remove(0);
+        let result = get_merkle_root_from_auth(&mut auth, commitmens_tau, &selected_leaves);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "The number of selected leaves and commitments should be of equal length"
+        );
+    }
+
+    #[test]
+    fn test_merkle_root_from_auth_empty() {
+        let commitments = [[1_u8; 32]; PARAM_N];
+        let tree = MerkleTree::new(commitments, None);
+
+        let selected_leaves = [233u16, 234u16];
+        let commitmens_tau = [[1_u8; 32]; PARAM_L];
+        let mut auth = vec![];
+
+        let result = get_merkle_root_from_auth(&mut auth, commitmens_tau, &selected_leaves);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "No auth path");
+    }
     // TODO: Add more tests that are negative
 }
