@@ -44,7 +44,7 @@ impl MerkleTree {
         (0..nb_leaves).for_each(|i| {
             nodes[first_index + i] = commitments[i];
         }); // TODO: Optimize the loop below with batch processing https://github.com/sdith/sdith/blob/main/Optimized_Implementation/Threshold_Variant/sdith_threshold_cat1_gf256/merkle-tree.c
-        
+
         for _h in (0..height).rev() {
             // Indicates if the last node is isolated
             let last_is_isolated = 1 - (last_index & 0x1);
@@ -90,11 +90,11 @@ impl MerkleTree {
     /// Return non-zero based index of the leaf in the tree
     fn get_leaf_index(&self, n: usize) -> u16 {
         assert!(
-            n > self.n_leaves && n <= (self.n_nodes + 1),
+            n >= self.n_leaves && n <= self.n_nodes,
             "Invalid leaf index: {}",
             n
         );
-        (n - self.n_leaves).try_into().unwrap()
+        (n - (self.n_leaves - 1)).try_into().unwrap()
     }
 
     /// Returns the nodes required to calculate the merkle root from the leaves.
@@ -109,20 +109,28 @@ impl MerkleTree {
     pub(crate) fn get_merkle_path(&self, selected_leaves: &[u16]) -> Vec<Hash> {
         // Find the missing nodes
         // missing ← {2n + i − 1, i not in selected_leaves}
-        let mut missing = ((self.n_leaves+1)..=(self.n_nodes + 1))
+        let mut missing = (self.n_leaves..=self.n_nodes)
             .filter(|i| !selected_leaves.contains(&(self.get_leaf_index(*i as usize) as u16)))
             .collect::<Vec<usize>>();
 
-        println!("missing: {:?}", missing);
-
         // Remove the leaves from the missing list
-        for i in (1..=(1 << self.height) - 1).rev() {
+        for parent_index in (1..=(1 << self.height) - 1).rev() {
             // If both children are missing, add the parent to the missing list
-            if missing.contains(&(i * 2)) && missing.contains(&(i * 2 + 1)) {
-                // Remove the 2 children from the missing list and add the parent instead
-                missing.retain(|&x| x != i * 2);
-                missing.retain(|&x| x != i * 2 + 1);
-                missing.push(i);
+            let left_child = missing.iter().position(|v| v == &(parent_index * 2));
+            let right_child = missing.iter().position(|v| v == &(parent_index * 2 + 1));
+
+            if let Some(left_child_index) = left_child {
+                if let Some(right_child_index) = right_child {
+                    // Remove the 2 children from the missing list and add the parent instead
+                    if left_child_index < right_child_index {
+                        missing.remove(right_child_index);
+                        missing.remove(left_child_index);
+                    } else {
+                        missing.remove(left_child_index);
+                        missing.remove(right_child_index);
+                    }
+                    missing.push(parent_index);
+                }
             }
         }
 
@@ -130,10 +138,8 @@ impl MerkleTree {
 
         // Fetch the missing nodes
         for h in (1..=self.height).rev() {
-            println!("------------ height: {}", h);
             for i in 1 << h..(1 << (h + 1)) {
                 if missing.contains(&i) {
-                    println!("missing: {}, parent_index: {}", i, i >> 1);
                     auth.push(self.nodes[i]);
                 }
             }
@@ -178,6 +184,10 @@ pub(crate) fn get_merkle_root_from_auth(
     if selected_leaves.len() != commitments.len() {
         return Err("The number of selected leaves and commitments should be of equal length");
     }
+
+    // First, sort the selected leaves and the commitments
+    let mut selected_leaves = selected_leaves.to_vec();
+    selected_leaves.sort();
 
     let mut q: Queue<(Hash, usize)> = queue![];
 
@@ -290,9 +300,25 @@ mod test {
         assert_eq!(tree.n_nodes, PARAM_MERKLE_TREE_NODES - 1);
         assert_eq!(tree.n_leaves, { PARAM_N });
 
-        let root = merkle_hash(1, tree.nodes[2], Some(tree.nodes[3]), None);
+        assert_eq!(tree.nodes[0], Hash::default());
+        assert_eq!(
+            tree.nodes[1],
+            merkle_hash(1, tree.nodes[2], Some(tree.nodes[3]), None)
+        );
 
-        assert_eq!(tree.nodes[1], root);
+        assert_eq!(tree.nodes[256], commitments[0]);
+        assert_eq!(tree.nodes.last(), Some(&commitments[255]));
+        assert_eq!(tree.nodes.len(), PARAM_MERKLE_TREE_NODES);
+
+        // We are not zero index, so start from 1
+        for i in 1..=255 {
+            let left = tree.nodes[i * 2];
+            let right = tree.nodes[i * 2 + 1];
+            assert_eq!(
+                tree.nodes[i],
+                merkle_hash(i.try_into().unwrap(), left, Some(right), None)
+            );
+        }
     }
 
     #[test]
@@ -484,6 +510,7 @@ mod test {
         for i in selected_leaves {
             commitments_tau[(i - 233) as usize] = commitments[0];
         }
+
         let mut auth = tree.get_merkle_path(&selected_leaves);
         let Ok(root) =
             get_merkle_root_from_auth(&mut auth, &commitments_tau, &selected_leaves, None)
@@ -539,8 +566,8 @@ mod test {
     }
 
     #[test]
-    fn test_edgecase() {
-        let selected_leaves = [245u16, 124];
+    fn test_edgecase_with_unsorted_selected_leaves() {
+        let selected_leaves = [124, 245u16];
 
         let mut prg = PRG::init_base(&[1]);
         let mut commitments = [[1_u8; 32]; PARAM_N];
@@ -576,12 +603,8 @@ mod test {
         }
         let tree = MerkleTree::new(commitments, None);
 
-        for i in (1 << PARAM_MERKLE_TREE_HEIGHT) + 1..=PARAM_MERKLE_TREE_NODES {
-            assert_eq!(tree.get_leaf_index(i), (i - 256) as u16);
-        }
-
-        assert_eq!(tree.get_leaf_index(257), 1);
-        assert_eq!(tree.get_leaf_index(380), 124);
-        assert_eq!(tree.get_leaf_index(PARAM_MERKLE_TREE_NODES), 256);
+        assert_eq!(tree.get_leaf_index(256), 1);
+        assert_eq!(tree.get_leaf_index(379), 124);
+        assert_eq!(tree.get_leaf_index(tree.n_nodes), 256);
     }
 }
