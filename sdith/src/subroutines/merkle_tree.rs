@@ -135,14 +135,17 @@ pub(crate) fn get_merkle_root_from_auth(
     commitments: [Hash; PARAM_L],
     selected_leaves: &[u16],
 ) -> Result<Hash, &'static str> {
+    assert!(!auth.is_empty());
     let mut q: Queue<(Hash, usize)> = queue![];
-    for i in 0..PARAM_L {
+    for i in 0..PARAM_N {
+        let mut found = 0;
         if selected_leaves.contains(&(i as u16)) {
-            let index = (1 << PARAM_MERKLE_TREE_HEIGHT) + selected_leaves[i] as usize;
-            let add = q.add((commitments[i], index));
+            let index = (1 << PARAM_MERKLE_TREE_HEIGHT) + selected_leaves[found] as usize;
+            let add = q.add((commitments[found], index));
             if add.is_err() {
                 return Err("Could not add element to queue");
             }
+            found += 1;
         }
     }
 
