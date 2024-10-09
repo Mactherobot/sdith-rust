@@ -60,6 +60,7 @@ impl MPC {
                 value &= MASK;
                 view_challenges[i][j] = value
             }
+            view_challenges[i].sort();
         }
 
         view_challenges
