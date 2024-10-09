@@ -430,8 +430,9 @@ impl Signature {
             }
             let Ok(root) = get_merkle_root_from_auth(
                 &mut auth[e],
-                commitments_prime,
+                &commitments_prime,
                 &view_opening_challenges[e],
+                Some(salt),
             ) else {
                 return false;
             };
@@ -515,19 +516,24 @@ mod signature_tests {
         let input_shares = [[[5u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU];
         let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
         let mut commitments = Vec::with_capacity(PARAM_TAU);
+
         for e in 0..PARAM_TAU {
-            commitments.push(
-                input_shares[e]
-                    .iter()
-                    .map(|is| commit_share(&salt, e as u16, 0, is))
-                    .collect::<Vec<Hash>>(),
-            );
+            commitments.push(vec![]);
+            for i in 0..PARAM_N {
+                commitments[e].push(commit_share(
+                    &salt,
+                    e as u16,
+                    i as u16,
+                    &[i.try_into().unwrap(); INPUT_SIZE],
+                ));
+            }
 
             merkle_trees.push(MerkleTree::new(
                 commitments[e].as_slice().try_into().unwrap(),
                 Some(salt),
             ));
         }
+
         let mut signature = Signature::new(
             salt,
             h1,
@@ -537,21 +543,22 @@ mod signature_tests {
             &merkle_trees,
             input_shares,
         );
+
         for e in 0..PARAM_TAU {
             let mut chosen_commitments = vec![];
             assert_eq!(
                 signature.auth[e],
                 merkle_trees[e].get_merkle_path(&view_opening_challenges[e])
             );
-            for (i, i_val) in view_opening_challenges[e].iter().enumerate() {
+            for i_val in view_opening_challenges[e].iter() {
                 chosen_commitments.push(commitments[e][*i_val as usize]);
             }
-            println!("{:?}", chosen_commitments);
             assert_eq!(
                 get_merkle_root_from_auth(
                     &mut signature.auth[e],
                     chosen_commitments.as_slice().try_into().unwrap(),
-                    &view_opening_challenges[e]
+                    &view_opening_challenges[e],
+                    Some(salt)
                 )
                 .unwrap(),
                 merkle_trees[e].get_root()

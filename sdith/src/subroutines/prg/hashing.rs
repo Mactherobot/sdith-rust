@@ -6,7 +6,7 @@ use crate::constants::types::Hash;
 pub(crate) const HASH_PREFIX_CHALLENGE_1: [u8; 1] = [1];
 pub(crate) const HASH_PREFIX_CHALLENGE_2: [u8; 1] = [2];
 
-pub(crate) fn get_hasher() -> Sha3 {
+pub(crate) fn sha3() -> Sha3 {
     return Sha3::v256();
 
     // TODO Return different hashers for different security levels
@@ -26,7 +26,7 @@ pub(crate) fn hash_finalize(hasher: Sha3) -> Hash {
 }
 
 pub(crate) fn hash(data: &[u8]) -> Hash {
-    let mut hasher = get_hasher();
+    let mut hasher = sha3();
     hasher.update(data);
     return hash_finalize(hasher);
 }
