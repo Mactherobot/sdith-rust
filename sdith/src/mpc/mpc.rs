@@ -224,7 +224,7 @@ impl MPC {
     /// TODO: This is missing the share part of this
     pub(crate) fn inverse_party_computation(
         solution_plain: [u8; SOLUTION_PLAIN_SIZE],
-        broadcast_share: BroadcastShare,
+        broadcast_share: &BroadcastShare,
         chal: &Challenge,
         h_prime: HPrimeMatrix,
         y: [u8; PARAM_M_SUB_K],
@@ -418,7 +418,7 @@ mod mpc_tests {
 
     /// Test that we can compute the party computation and inverse it again
     #[test]
-    fn test_compute_party_computation() {
+    fn test_compute_party_computation_and_inverted_computation_are_the_same() {
         let mseed = Seed::from([0; 16]);
         let hseed = Seed::from([0; 16]);
         let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
@@ -458,7 +458,7 @@ mod mpc_tests {
 
         let inverse_party_computation = MPC::inverse_party_computation(
             Input::truncate_beaver_triples(input.serialise()),
-            party_computation,
+            &party_computation,
             &chal,
             h_prime,
             y,

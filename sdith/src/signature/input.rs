@@ -167,4 +167,25 @@ mod input_tests {
         assert_eq!(input.solution.q_poly, deserialised_solution.q_poly);
         assert_eq!(input.solution.p_poly, deserialised_solution.p_poly);
     }
+
+    #[test]
+    fn test_append_beaver_triples() {
+        let (_pk, sk) = keygen([0u8; PARAM_SEED_SIZE]);
+        let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], Some(&[0u8; PARAM_SALT_SIZE]));
+        let (a, b, c) = Beaver::generate_beaver_triples(&mut prg);
+
+        let input = Input {
+            solution: sk.solution,
+            beaver_ab: (a, b),
+            beaver_c: c,
+        };
+
+        let input_plain = input.serialise();
+        let solution_plain = Input::truncate_beaver_triples(input_plain);
+
+        let beaver_triples = (a, b, c);
+        let input_with_beaver_triples = Input::append_beaver_triples(solution_plain, beaver_triples);
+
+        assert_eq!(input_plain, input_with_beaver_triples);
+    }
 }

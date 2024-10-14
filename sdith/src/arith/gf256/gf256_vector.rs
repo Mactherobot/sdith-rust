@@ -10,7 +10,7 @@ pub(crate) fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
         vz[i] = gf256_add(vz[i], vx[i]);
     }
 }
-/// vz'[] = vz[] + (vx[], 0000000000000...)
+/// vz'[] = vz[] + (vx[], 00000...)
 pub(crate) fn gf256_add_vector_with_padding(vz: &mut [u8], vx: &[u8]) {
     assert!(vz.len() >= vx.len());
     let bytes = vx.len();

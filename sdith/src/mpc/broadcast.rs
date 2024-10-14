@@ -4,6 +4,7 @@ use crate::{
 };
 
 type BroadcastValue = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];
+
 #[derive(Clone)]
 pub(crate) struct Broadcast {
     pub(crate) alpha: BroadcastValue,
@@ -75,6 +76,16 @@ fn deserialise_broadcast_value(
         }
     }
     broadcast_value
+}
+
+impl std::fmt::Debug for Broadcast {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Broadcast {{ alpha: {:?}, beta: {:?} }}",
+            &self.alpha[0][0], &self.beta[0][0]
+        )
+    }
 }
 
 pub(crate) struct BroadcastShare {

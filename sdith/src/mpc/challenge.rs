@@ -1,3 +1,6 @@
+use core::fmt;
+use std::fmt::Formatter;
+
 use crate::{
     arith::gf256::gf256_ext::FPoint,
     constants::{
@@ -34,6 +37,17 @@ impl Challenge {
 impl Default for Challenge {
     fn default() -> Self {
         Self::new(Hash::default())
+    }
+}
+
+impl std::fmt::Debug for Challenge {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Challenge {{ r: {:?}, e: {:?} }}",
+            &self.r[0],
+            &self.e[0]
+        )
     }
 }
 

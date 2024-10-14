@@ -87,6 +87,11 @@ impl MerkleTree {
         self.nodes[1]
     }
 
+    pub(crate) fn get_leaf(&self, n: u16) -> Hash {
+        assert!(n <= self.n_leaves as u16, "Invalid leaf index: {}", n);
+        self.nodes[(self.n_leaves - 1 + (n as usize)).to_usize().unwrap()]
+    }
+
     /// Return non-zero based index of the leaf in the tree
     fn get_leaf_index(&self, n: usize) -> u16 {
         assert!(
@@ -284,13 +289,30 @@ pub(crate) fn get_merkle_root_from_auth(
 #[cfg(test)]
 mod test {
     use core::panic;
+    use std::panic::AssertUnwindSafe;
 
     use crate::{
         constants::params::{PARAM_L, PARAM_N},
-        subroutines::prg::prg::PRG,
+        subroutines::{commitments, prg::prg::PRG},
     };
 
     use super::*;
+
+    #[test]
+    fn test_get_leaf() {
+        let mut commitments = [[1_u8; 32]; PARAM_N];
+        for i in 1..=PARAM_N {
+            commitments[i - 1] = [i as u8; 32];
+        }
+        let tree = MerkleTree::new(commitments, None);
+
+        for i in 1..=PARAM_N {
+            assert_eq!(tree.get_leaf(i as u16), [i as u8; 32]);
+        }
+
+        let result = std::panic::catch_unwind(|| tree.get_leaf(257));
+        assert!(result.is_err());
+    }
 
     #[test]
     fn test_merkle_tree() {
@@ -486,6 +508,7 @@ mod test {
             else {
                 panic!("Could not get merkle root from auth")
             };
+
             assert_eq!(
                 tree.get_root(),
                 root,
