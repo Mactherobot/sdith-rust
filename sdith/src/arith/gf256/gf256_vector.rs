@@ -74,4 +74,14 @@ mod tests_vector_ops {
         gf256_add_vector_mul_scalar(&mut vz, &vx, y);
         assert_eq!(vz, expected);
     }
+
+    #[test]
+    fn test_gf256_add_vector_with_padding() {
+        let mut vz = [0x01, 0x02, 0x03, 0x04];
+        let vx = [0x05, 0x06];
+        let expected = [0x04, 0x04, 0x03, 0x04];
+
+        gf256_add_vector_with_padding(&mut vz, &vx);
+        assert_eq!(vz, expected);
+    }
 }

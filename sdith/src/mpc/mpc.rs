@@ -111,7 +111,7 @@ impl MPC {
 
         for j in 0..PARAM_T {
             for d in 0..PARAM_SPLITTING_FACTOR {
-                // α[d][j] = ε[d][j] ⊗ Evaluate(Q[ν], r[j]) + a[d][j]
+                // α[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
                 broadcast.alpha[d][j] = gf256_ext32_add(
                     gf256_ext32_mul(
                         e[d][j],
@@ -120,7 +120,7 @@ impl MPC {
                     a[d][j],
                 );
 
-                // β[d][j] = Evaluate(S[ν], r[j]) + b[d][j]
+                // β[d][j] = Evaluate(S[d], r[j]) + b[d][j]
                 broadcast.beta[d][j] =
                     gf256_ext32_add(MPC::polynomial_evaluation(&s_poly[d], r[j]), b[d][j]);
             }
@@ -153,13 +153,13 @@ impl MPC {
         let s_a = solution.s_a;
 
         if with_offset {
-            // Generate s = (sA, y + H's_a)
+            // Generate s = (s_a | y + H's_a)
             _s = compute_s(&s_a, &h_prime, &y);
 
             // Compute the completed q_poly by inserting the leading coefficient
             complete_q(&mut q_poly_complete, solution.q_poly, 1u8);
         } else {
-            // Generate s = (sA, y + H's_a)
+            // Generate s = (s_a | H's_a)
             let s_b: [u8; PARAM_M_SUB_K] = h_prime.gf256_mul_vector(&s_a);
             _s = concat_arrays_stable(s_a, s_b);
 
@@ -179,36 +179,37 @@ impl MPC {
             // Set v[j] to the negated correlated value from c
             v[j] = c[j];
             for d in 0..PARAM_SPLITTING_FACTOR {
-                // Set alpha as ε[j][ν] ⊗ Evaluate(Q[ν], r[j]) + a[j][ν]
+                let a = a[d][j];
+                let b = b[d][j];
+                let epsilon = e[d][j];
+
+                // α[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
                 let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], r[j]);
-                let _a = a[d][j];
-                let _epsilon = e[d][j];
-                alpha_share[d][j] = gf256_ext32_add(gf256_ext32_mul(_epsilon, eval_q), _a);
+                alpha_share[d][j] = gf256_ext32_add(gf256_ext32_mul(epsilon, eval_q), a);
 
-                // Set beta as Evaluate(S[d], r[j]) + b[j][d]
+                // β[d][j] = Evaluate(S[d], r[j]) + b[d][j]
                 let eval_s = MPC::polynomial_evaluation(&s_poly[d], r[j]);
-                let _b = b[d][j];
-                beta_share[d][j] = gf256_ext32_add(eval_s, _b);
+                beta_share[d][j] = gf256_ext32_add(eval_s, b);
 
-                // Add ε[j][ν] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[ν], r[j]) to v[j]
+                // v[j] += ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
                 let eval_p = MPC::polynomial_evaluation(&solution.p_poly[d], r[j]);
                 let eval_f = MPC::polynomial_evaluation(&PRECOMPUTED_F_POLY, r[j]);
-                let eval_f_p = gf256_ext32_mul(eval_f, eval_p);
-                let eval_epsilon_f_p = gf256_ext32_mul(_epsilon, eval_f_p);
+                let eval_epsilon_f_p = gf256_ext32_mul(epsilon, gf256_ext32_mul(eval_f, eval_p));
                 v[j] = gf256_ext32_add(v[j], eval_epsilon_f_p);
 
-                // Add α[j][ν] ⊗ b[j][ν] + ¯β[j][ν] ⊗ a[j][ν] to v[j]
+                // v[j] += ¯α[d][j] ⊗ b[d][j] + ¯β[d][j] ⊗ a[d][j]
                 let plain_alpha = alpha[d][j];
                 let plain_beta = beta[d][j];
-                let eval_plain_alpha_b = gf256_ext32_mul(plain_alpha, _b);
-                let eval_plain_beta_a = gf256_ext32_mul(plain_beta, _a);
-                let eval_alpha_beta = gf256_ext32_add(eval_plain_alpha_b, eval_plain_beta_a);
+                let eval_alpha_beta = gf256_ext32_add(
+                    gf256_ext32_mul(plain_alpha, b),
+                    gf256_ext32_mul(plain_beta, a),
+                );
                 v[j] = gf256_ext32_add(v[j], eval_alpha_beta);
 
-                // If with_offset then add − α[j][ν] ⊗ β[j][ν] to v[j]
                 if with_offset {
-                    let eval_alpha_beta = gf256_ext32_mul(plain_alpha, plain_beta);
-                    v[j] = gf256_ext32_add(v[j], eval_alpha_beta);
+                    // v[j] =+ -α[d][j] ⊗ β[d][j]
+                    v[j] =
+                        gf256_ext32_add(v[j], gf256_ext32_mul(alpha_share[d][j], beta_share[d][j]));
                 }
             }
         }
@@ -233,7 +234,7 @@ impl MPC {
     ) -> (BeaverA, BeaverB, BeaverC) {
         let solution = Solution::parse(solution_plain);
         // (α, β, v) The broadcast share values
-        let (alpha_share, beta_share, _v) = (
+        let (alpha_share, beta_share, v) = (
             broadcast_share.alpha,
             broadcast_share.beta,
             broadcast_share.v,
@@ -271,39 +272,41 @@ impl MPC {
         let mut b = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         let mut c = [FPoint::default(); PARAM_T];
         for j in 0..PARAM_T {
-            // Set c[j] to the negated correlated value from v
-            c[j] = _v[j];
+            // c[j] = -v[j]
+            c[j] = v[j];
             for d in 0..PARAM_SPLITTING_FACTOR {
-                // First we need to set alpha as ε[j][ν] ⊗ Evaluate(Q[ν], r[j]) + a[j][ν]
-                let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], r[j]);
-                let _alpha_share = alpha_share[d][j];
-                let _epsilon = e[d][j];
-                a[d][j] = gf256_ext32_add(gf256_ext32_mul(_epsilon, eval_q), _alpha_share);
+                let alpha_share = alpha_share[d][j];
+                let beta_share = beta_share[d][j];
+                let epsilon = e[d][j];
 
-                // Next we need to set beta as Evaluate(S[d], r[j]) + b[j][d]
-                let eval_s = MPC::polynomial_evaluation(&s_poly[d], r[j]);
-                let _beta_share = beta_share[d][j];
-                b[d][j] = gf256_ext32_add(eval_s, _beta_share);
-
-                // Now we need to add  ε[j][ν] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[ν], r[j]) to c[j]
-                let eval_p = MPC::polynomial_evaluation(&solution.p_poly[d], r[j]);
-                let eval_f = MPC::polynomial_evaluation(&PRECOMPUTED_F_POLY, r[j]);
-                let eval_f_p = gf256_ext32_mul(eval_f, eval_p);
-                let eval_epsilon_f_p = gf256_ext32_mul(_epsilon, eval_f_p);
-                c[j] = gf256_ext32_add(c[j], eval_epsilon_f_p);
-
-                // Add α[j][ν] ⊗ b[j][ν] + ¯β[j][ν] ⊗ a[j][ν] to c[j]
+                // Values from the broadcast ¯α[d][j] and ¯β[d][j]
                 let plain_alpha = alpha[d][j];
                 let plain_beta = beta[d][j];
-                let eval_plain_alpha_b = gf256_ext32_mul(plain_alpha, b[d][j]);
-                let eval_plain_beta_a = gf256_ext32_mul(plain_beta, a[d][j]);
-                let eval_alpha_beta = gf256_ext32_add(eval_plain_alpha_b, eval_plain_beta_a);
+
+                // a[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
+                let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], r[j]);
+                a[d][j] = gf256_ext32_add(gf256_ext32_mul(epsilon, eval_q), alpha_share);
+
+                // b[d][j] = Evaluate(S[d], r[j]) + b[d][j]
+                let eval_s = MPC::polynomial_evaluation(&s_poly[d], r[j]);
+                b[d][j] = gf256_ext32_add(eval_s, beta_share);
+
+                // c[j] +=  ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
+                let eval_p = MPC::polynomial_evaluation(&solution.p_poly[d], r[j]);
+                let eval_f = MPC::polynomial_evaluation(&PRECOMPUTED_F_POLY, r[j]);
+                let eval_epsilon_f_p = gf256_ext32_mul(epsilon, gf256_ext32_mul(eval_f, eval_p));
+                c[j] = gf256_ext32_add(c[j], eval_epsilon_f_p);
+
+                // c[j] += ¯α[d][j] ⊗ b[d][j] + ¯β[d][j] ⊗ a[d][j]
+                let eval_alpha_beta = gf256_ext32_add(
+                    gf256_ext32_mul(plain_alpha, b[d][j]),
+                    gf256_ext32_mul(plain_beta, a[d][j]),
+                );
                 c[j] = gf256_ext32_add(c[j], eval_alpha_beta);
 
-                // If with_offset then add − α[j][ν] ⊗ β[j][ν] to c[j]
                 if with_offset {
-                    let eval_alpha_beta = gf256_ext32_mul(plain_alpha, plain_beta);
-                    c[j] = gf256_ext32_add(c[j], eval_alpha_beta);
+                    // c[j] += -α[d][j] ⊗ β[d][j]
+                    c[j] = gf256_ext32_add(c[j], gf256_ext32_mul(alpha_share, beta_share));
                 }
             }
         }
@@ -314,14 +317,52 @@ impl MPC {
 #[cfg(test)]
 mod mpc_tests {
     use crate::{
+        arith::gf256::gf256_vector::{gf256_add_vector, gf256_add_vector_with_padding},
         constants::{
-            params::{PARAM_DIGEST_SIZE, PARAM_N, PARAM_SALT_SIZE},
+            params::{PARAM_DIGEST_SIZE, PARAM_K, PARAM_N, PARAM_SALT_SIZE},
             types::Seed,
         },
+        signature::input::INPUT_SIZE,
         witness::{generate_witness, sample_witness},
     };
 
     use super::*;
+
+    fn prepare() -> (
+        Input,
+        Broadcast,
+        Challenge,
+        [[u8; PARAM_K]; PARAM_M_SUB_K],
+        [u8; PARAM_M_SUB_K],
+    ) {
+        let mseed = Seed::from([0; 16]);
+        let hseed = Seed::from([0; 16]);
+        let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
+
+        let (q, s, p, _) = sample_witness(mseed);
+        let witness = generate_witness(hseed, (q, s, p));
+
+        let beaver_triples = Beaver::generate_beaver_triples(&mut prg);
+        let chal = Challenge::new(Hash::default());
+
+        let solution = Solution {
+            s_a: witness.s_a,
+            q_poly: q,
+            p_poly: p,
+        };
+
+        let input = Input {
+            solution: solution.clone(),
+            beaver_ab: (beaver_triples.0, beaver_triples.1),
+            beaver_c: beaver_triples.2,
+        };
+
+        let broadcast = MPC::compute_broadcast(input.clone(), &chal, witness.h_prime, witness.y);
+
+        let h_prime = witness.h_prime;
+        let y = witness.y;
+        return (input, broadcast, chal, h_prime, y);
+    }
 
     #[test]
     fn test_expand_view_challenges_threshold() {
@@ -419,42 +460,10 @@ mod mpc_tests {
     /// Test that we can compute the party computation and inverse it again
     #[test]
     fn test_compute_party_computation_and_inverted_computation_are_the_same() {
-        let mseed = Seed::from([0; 16]);
-        let hseed = Seed::from([0; 16]);
-        let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
+        let (input, broadcast, chal, h_prime, y) = prepare();
 
-        let (q, s, p, _) = sample_witness(mseed);
-        let witness = generate_witness(hseed, (q, s, p));
-
-        let beaver_triples = Beaver::generate_beaver_triples(&mut prg);
-        let chal = Challenge::new(Hash::default());
-
-        let solution = Solution {
-            s_a: witness.s_a,
-            q_poly: q,
-            p_poly: p,
-        };
-
-        let input = Input {
-            solution: solution.clone(),
-            beaver_ab: (beaver_triples.0, beaver_triples.1),
-            beaver_c: beaver_triples.2,
-        };
-
-        let broadcast = MPC::compute_broadcast(input.clone(), &chal, witness.h_prime, witness.y);
-
-        let with_offset = false;
-        let h_prime = witness.h_prime;
-        let y = witness.y;
-
-        let party_computation = MPC::party_computation(
-            input.serialise(),
-            &chal,
-            h_prime,
-            y,
-            &broadcast,
-            with_offset,
-        );
+        let party_computation =
+            MPC::party_computation(input.serialise(), &chal, h_prime, y, &broadcast, false);
 
         let inverse_party_computation = MPC::inverse_party_computation(
             Input::truncate_beaver_triples(input.serialise()),
@@ -463,18 +472,53 @@ mod mpc_tests {
             h_prime,
             y,
             &broadcast,
-            with_offset,
+            false,
         );
 
         let (a, b, c) = inverse_party_computation;
 
         // Assert that the computed values are the same as the original values
-        for i in 0..PARAM_SPLITTING_FACTOR {
-            for j in 0..PARAM_T {
-                assert_eq!(a[i][j], beaver_triples.0[i][j]);
-                assert_eq!(b[i][j], beaver_triples.1[i][j]);
-                assert_eq!(c[i], beaver_triples.2[i]);
-            }
-        }
+
+        assert_eq!(a, input.beaver_ab.0);
+        assert_eq!(b, input.beaver_ab.1);
+        assert_eq!(c, input.beaver_c);
+    }
+
+    #[test]
+    fn mpc_test_homomorphism() {
+        let (input, broadcast, chal, h_prime, y) = prepare();
+
+        let random_input_plain: InputSharePlain = [1; INPUT_SIZE];
+
+        // input + random
+        let mut input_share = input.serialise();
+        gf256_add_vector(&mut input_share, &random_input_plain);
+
+        // compute shares of the randomness
+        let mut broadcast_shares =
+            MPC::party_computation(random_input_plain, &chal, h_prime, y, &broadcast, false)
+                .serialise();
+
+        // recompute shares of the randomness
+        // (alpha, beta, v=0) + randomness_shares
+        gf256_add_vector_with_padding(&mut broadcast_shares, &broadcast.serialise());
+
+        let broadcast_shares = BroadcastShare::parse(broadcast_shares);
+
+        let recomputed_input_share_triples = MPC::inverse_party_computation(
+            Input::truncate_beaver_triples(input_share),
+            &broadcast_shares,
+            &chal,
+            h_prime,
+            y,
+            &broadcast,
+            true,
+        );
+
+        let input_share = Input::parse(input_share);
+
+        assert_eq!(recomputed_input_share_triples.0, input_share.beaver_ab.0);
+        assert_eq!(recomputed_input_share_triples.1, input_share.beaver_ab.1);
+        assert_eq!(recomputed_input_share_triples.2, input_share.beaver_c);
     }
 }

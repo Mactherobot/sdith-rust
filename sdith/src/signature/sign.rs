@@ -133,13 +133,7 @@ impl Signature {
         }
 
         // Second challenge (view-opening challenge)
-        let h2 = Signature::gen_h2(
-            message,
-            &salt,
-            &h1,
-            &broad_plain,
-            &broad_shares,
-        );
+        let h2 = Signature::gen_h2(message, &salt, &h1, &broad_plain, &broad_shares);
 
         // Create the set of view-opening challenges
         let view_opening_challenges = MPC::expand_view_challenges_threshold(h2);
@@ -157,14 +151,7 @@ impl Signature {
         }
 
         // Build the signature
-        let signature = Signature::new(
-            salt,
-            h1,
-            broad_plain,
-            broad_shares,
-            auth,
-            wit_share,
-        );
+        let signature = Signature::new(salt, h1, broad_plain, broad_shares, auth, wit_share);
 
         signature
     }

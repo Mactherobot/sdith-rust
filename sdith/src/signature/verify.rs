@@ -29,7 +29,7 @@ impl Signature {
         let h_prime = HPrimeMatrix::gen_random(&mut PRG::init(&public_key.seed_h, None));
 
         // Signature parsing
-        let (salt, h1, broad_plain, broad_share, wit_share, mut auth) = (
+        let (salt, h1, broad_plain, broadcast_shares_plain, wit_share, mut auth) = (
             signature.salt,
             signature.h1,
             signature.broadcast_plain,
@@ -42,23 +42,17 @@ impl Signature {
         let chal = Challenge::new(h1);
 
         // Second challenge (view-opening challenge)
-        let h2 = Signature::gen_h2(
-            message,
-            &salt,
-            &h1,
-            &broad_plain,
-            &broad_share,
-        );
+        let h2 = Signature::gen_h2(message, &salt, &h1, &broad_plain, &broadcast_shares_plain);
 
         // Compute the view-opening challenges
         let view_opening_challenges = MPC::expand_view_challenges_threshold(h2);
 
         let broadcast = Broadcast::parse(broad_plain);
-        let mut broadcast_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
+        let mut broad_share = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
         for e in 0..PARAM_TAU {
             for j in 0..PARAM_L {
                 let offset = BROADCAST_SHARE_PLAIN_SIZE * (e * PARAM_L + j);
-                broadcast_shares[e][j] = broad_share
+                broad_share[e][j] = broadcast_shares_plain
                     [offset..offset + BROADCAST_SHARE_PLAIN_SIZE]
                     .try_into()
                     .unwrap();
@@ -72,12 +66,11 @@ impl Signature {
         for e in 0..PARAM_TAU {
             let mut commitments_prime = [Hash::default(); PARAM_L];
             for (li, i) in view_opening_challenges[e].iter().enumerate() {
-                let mut with_offset = true;
+                let with_offset = (*i as usize) != PARAM_N;
 
                 if *i as usize == PARAM_N {
                     // TODO test this case
-                    sh_broadcast[e][li] = broadcast_shares[e][li as usize];
-                    with_offset = false;
+                    sh_broadcast[e][li] = broad_share[e][li as usize];
                 } else {
                     // We need to compute the following:
                     // sh_broadcast[e][i] = (broad_plain, 0) + sum^ℓ_(j=1) fi^j · broad_share[e][j]
@@ -90,7 +83,7 @@ impl Signature {
                     for j in 0..PARAM_L {
                         gf256_add_vector_mul_scalar(
                             &mut eval_sum,
-                            &broadcast_shares[e][j],
+                            &broad_share[e][j],
                             f_i.field_pow((j + 1) as u8),
                         );
                     }
@@ -115,8 +108,7 @@ impl Signature {
                     with_offset,
                 );
 
-                let input_share =
-                    Input::append_beaver_triples(wit_share[e][li], beaver_triples);
+                let input_share = Input::append_beaver_triples(wit_share[e][li], beaver_triples);
 
                 // Commit to the shares
                 commitments_prime[li] = commit_share(&salt, e as u16, *i - 1, &input_share);
