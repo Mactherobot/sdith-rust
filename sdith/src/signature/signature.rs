@@ -9,7 +9,7 @@ use crate::{
     },
     subroutines::{
         commitments::commit_share,
-        merkle_tree::MerkleTree,
+        merkle_tree::get_auth_size,
         prg::hashing::{hash_1, hash_2},
     },
     witness::SOLUTION_PLAIN_SIZE,
@@ -39,6 +39,7 @@ impl Signature {
     /// * `view_opening_challenges` - The view opening challenges I[e] = {1.. / N} / *i
     /// * `merkle_trees` - The Merkle trees for each iteration
     /// * `input_shares` - The input shares for each party
+    /// TODO: Change to have the shares in a tuple instead
     pub(super) fn new(
         salt: Salt,
         h1: Hash,
@@ -80,7 +81,7 @@ impl Signature {
         serialised
     }
 
-    pub(crate) fn parse(signature_plain: Vec<u8>) -> Signature {
+    pub(crate) fn parse(signature_plain: Vec<u8>, message: &[u8]) -> Signature {
         let mut bytes_required = PARAM_DIGEST_SIZE + PARAM_SALT_SIZE;
         bytes_required += BROADCAST_PLAIN_SIZE;
         bytes_required += PARAM_TAU * PARAM_L * BROADCAST_SHARE_PLAIN_SIZE;
@@ -128,13 +129,16 @@ impl Signature {
         // We need to create the view opening challenges in order to get the auth paths.
         // We can do this by computing the second hash
         // and then expanding the view opening challenges
-        let h2 = Signature::gen_h2(&[], &salt, &h1, &broadcast_plain, &broadcast_shares);
+        let h2 = Signature::gen_h2(message, &salt, &h1, &broadcast_plain, &broadcast_shares);
 
         let view_opening_challenges = MPC::expand_view_challenges_threshold(h2);
         // Expand the view opening challenges
 
-        // Get
-        let auth_lengths = MerkleTree::get_auth_size(view_opening_challenges);
+        let mut auth_lengths = [0u16; PARAM_TAU];
+        // Get the auth sizes
+        for e in 0..PARAM_TAU {
+            auth_lengths[e] = get_auth_size(&view_opening_challenges[e]);
+        }
 
         let mut auth: [Vec<Hash>; PARAM_TAU] = Default::default();
         for (e, auth_len) in auth_lengths.iter().enumerate() {
@@ -176,7 +180,7 @@ impl Signature {
     }
 
     /// Fiat-Shamir Hash2
-    /// h2 = Hash (2, message, salt, h1, broadcast_plain, broadcast_shares_plain)
+    /// h2 = Hash (2, message, salt, h1, broadcast_plain, broadcast_shares)
     pub(super) fn gen_h2(
         message: &[u8],
         salt: &Salt,
@@ -199,41 +203,34 @@ impl Signature {
 mod signature_tests {
 
     use super::*;
-    use crate::constants::params::{PARAM_DIGEST_SIZE, PARAM_SEED_SIZE};
+    use crate::{
+        constants::params::{PARAM_DIGEST_SIZE, PARAM_SEED_SIZE},
+        keygen::{self, keygen},
+        signature,
+    };
 
     #[test]
     fn test_serialise_deserialise_signature() {
         let auth_lengths: [usize; PARAM_TAU] = [5, 6, 7, 8, 9, 10];
-        let auth_vec = auth_lengths
-            .iter()
-            .map(|&len| vec![Hash::default(); len])
-            .collect::<Vec<Vec<Hash>>>();
+        let message = [0u8; INPUT_SIZE];
+        let seed_root = [0u8; PARAM_SEED_SIZE];
+        let salt = [1u8; PARAM_SALT_SIZE];
+        let entropy = (seed_root, salt);
+        let (_, sk) = keygen::keygen(seed_root);
 
-        let mut auth: [Vec<Hash>; PARAM_TAU] = Default::default();
-        for (i, vec) in auth_vec.into_iter().enumerate() {
-            auth[i] = vec;
-        }
+        let signature = Signature::sign_message(entropy, sk, &message);
 
-        let sign = Signature {
-            salt: [1u8; PARAM_SALT_SIZE],
-            h1: [2u8; PARAM_DIGEST_SIZE],
-            broadcast_plain: [3u8; BROADCAST_PLAIN_SIZE],
-            broadcast_shares: [[[4u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
-            solution_share: [[[5u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
-            auth,
-        };
+        let serialised = signature.serialise();
+        let deserialised = Signature::parse(serialised, &message);
 
-        let serialised = sign.serialise();
-        let deserialised = Signature::parse(serialised);
-
-        assert_eq!(sign.salt, deserialised.salt);
-        assert_eq!(sign.h1, deserialised.h1);
-        assert_eq!(sign.broadcast_plain, deserialised.broadcast_plain);
-        assert_eq!(sign.broadcast_shares, deserialised.broadcast_shares);
-        assert_eq!(sign.solution_share, deserialised.solution_share);
+        assert_eq!(signature.salt, deserialised.salt);
+        assert_eq!(signature.h1, deserialised.h1);
+        assert_eq!(signature.broadcast_plain, deserialised.broadcast_plain);
+        assert_eq!(signature.broadcast_shares, deserialised.broadcast_shares);
+        assert_eq!(signature.solution_share, deserialised.solution_share);
 
         // Check auths
-        for (i, auth) in sign.auth.iter().enumerate() {
+        for (i, auth) in signature.auth.iter().enumerate() {
             for (j, hash) in auth.iter().enumerate() {
                 assert_eq!(hash, &deserialised.auth[i][j]);
             }

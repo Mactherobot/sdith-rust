@@ -177,15 +177,16 @@ fn merkle_hash(parent_index: u16, left: Hash, right: Option<Hash>, salt: Option<
 }
 
 pub(crate) fn get_auth_size(selected_leaves: &[u16]) -> u16 {
-    get_revealed_nodes(selected_leaves) * PARAM_DIGEST_SIZE as u16
+    (get_revealed_nodes(selected_leaves).len() * PARAM_DIGEST_SIZE) as u16
 }
 
-pub(crate) fn get_revealed_nodes(selected_leaves: &[u16]) -> u16 {
-    let mut revealed_nodes = 0u16;
+pub(crate) fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
+    let mut revealed_nodes = vec![];
 
     // Initialize
-    let mut first_index = PARAM_MERKLE_TREE_NODES as u16 - PARAM_N as u16;
-    let mut last_index = PARAM_MERKLE_TREE_NODES as u16 - 1;
+    let (mut height_index, mut last_index) =
+        (1 << PARAM_MERKLE_TREE_HEIGHT, PARAM_MERKLE_TREE_NODES - 1);
+    let nb_selected_leaves = selected_leaves.len() as u16;
 
     // We use "leaves" as a circular queue, so it destroys the input data.
     let mut q: Queue<usize> = queue![];
@@ -195,7 +196,45 @@ pub(crate) fn get_revealed_nodes(selected_leaves: &[u16]) -> u16 {
         let add = q.add((1 << PARAM_MERKLE_TREE_HEIGHT) + *selected_leaf as usize - 1);
 
         if add.is_err() {
-            return Err("Could not add element to queue");
+            panic!("Could not add element to queue");
+        }
+    }
+
+    // While the next element is not the root of the tree
+    while q.peek().unwrap() != 1 {
+        // Get the first node from the queue
+        let index = q.remove().unwrap();
+
+        // if the height is more than the index then divide the height and last_index by 2
+        if index < height_index {
+            height_index >>= 1;
+            last_index >>= 1;
+        }
+
+        // Check if the current node is the left child of the parent
+        let is_left_child = index % 2 == 0; // if the index is even then it is the left child
+
+        if is_left_child && index == last_index {
+            // The node has no sibling node
+        } else {
+            // The node HAS a sibling node
+            // Check if the queue is empty
+            let queue_is_empty = q.peek().is_err();
+            let mut candidate_index = 0;
+            if !queue_is_empty {
+                candidate_index = q.remove().unwrap();
+            }
+            if is_left_child && (candidate_index == index + 1) {
+            } else if is_left_child {
+                revealed_nodes.push((index + 1) as u16);
+            } else {
+                revealed_nodes.push((index - 1) as u16);
+            }
+        }
+        let parent_index = index >> 1;
+        let add = q.add(parent_index);
+        if add.is_err() {
+            panic!("Could not add element to queue");
         }
     }
 

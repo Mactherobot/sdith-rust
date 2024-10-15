@@ -59,7 +59,7 @@ impl Signature {
 
                 if *i as usize == PARAM_N {
                     // TODO test this case
-                    sh_broadcast[e][li] = broad_share[e][li as usize];
+                    sh_broadcast[e][li] = broadcast_shares[e][li as usize];
                 } else {
                     // We need to compute the following:
                     // sh_broadcast[e][i] = (broad_plain, 0) + sum^ℓ_(j=1) fi^j · broad_share[e][j]
@@ -72,7 +72,7 @@ impl Signature {
                     for j in 0..PARAM_L {
                         gf256_add_vector_mul_scalar(
                             &mut eval_sum,
-                            &broad_share[e][j],
+                            &broadcast_shares[e][j],
                             f_i.field_pow((j + 1) as u8),
                         );
                     }
