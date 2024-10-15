@@ -5,18 +5,12 @@ use crate::{
         gf256_vector::gf256_mul_vector_by_scalar,
     },
     constants::{
-        params::{
-            PARAM_CHUNK_W, PARAM_L, PARAM_LOG_N, PARAM_M_SUB_K, PARAM_SPLITTING_FACTOR, PARAM_T,
-            PARAM_TAU,
-        },
+        params::{PARAM_L, PARAM_LOG_N, PARAM_M_SUB_K, PARAM_SPLITTING_FACTOR, PARAM_T, PARAM_TAU},
         types::Hash,
     },
     signature::input::{Input, InputSharePlain},
     subroutines::prg::prg::PRG,
-    witness::{
-        complete_q, compute_s, compute_s_poly, HPrimeMatrix, QPolyComplete, Solution,
-        SOLUTION_PLAIN_SIZE,
-    },
+    witness::{complete_q, compute_s, compute_s_poly, HPrimeMatrix, Solution, SOLUTION_PLAIN_SIZE},
 };
 
 use super::{
@@ -93,38 +87,20 @@ impl MPC {
         h_prime: HPrimeMatrix,
         y: [u8; PARAM_M_SUB_K],
     ) -> Broadcast {
-        let (a, b) = input.beaver_ab;
-        let solution = input.solution;
-        let (pw_r, e) = (chal.powers_of_r, chal.eps);
+        let broadcast = MPC::_party_computation(
+            input.serialise(),
+            chal,
+            h_prime,
+            y,
+            &Broadcast::default(),
+            false,
+            false,
+        );
 
-        // Generate s = (sA, y + H's_a)
-        let s = compute_s(&solution.s_a, &h_prime, Some(&y));
-        let s_poly = compute_s_poly(s);
-
-        // CompleteQ(Q', 1)
-        let q_poly_complete: QPolyComplete = complete_q(solution.q_poly, 1);
-
-        // Output
-        let mut broadcast = Broadcast::default();
-
-        for j in 0..PARAM_T {
-            for d in 0..PARAM_SPLITTING_FACTOR {
-                // α[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
-                broadcast.alpha[d][j] = gf256_ext32_add(
-                    gf256_ext32_mul(
-                        e[d][j],
-                        MPC::polynomial_evaluation(&q_poly_complete[d], &pw_r[d][j]),
-                    ),
-                    a[d][j],
-                );
-
-                // β[d][j] = Evaluate(S[d], r[j]) + b[d][j]
-                broadcast.beta[d][j] =
-                    gf256_ext32_add(MPC::polynomial_evaluation(&s_poly[d], &pw_r[d][j]), b[d][j]);
-            }
+        Broadcast {
+            alpha: broadcast.alpha,
+            beta: broadcast.beta,
         }
-
-        broadcast
     }
 
     /// Compute the shares broadcast by a party. It takes the input shares of the party `(sA, Q', P )_i` and `(a, b, c)_i`,
@@ -137,6 +113,26 @@ impl MPC {
         y: [u8; PARAM_M_SUB_K],
         broadcast: &Broadcast,
         with_offset: bool,
+    ) -> BroadcastShare {
+        return MPC::_party_computation(
+            input_share_plain,
+            chal,
+            h_prime,
+            y,
+            broadcast,
+            with_offset,
+            true,
+        );
+    }
+
+    fn _party_computation(
+        input_share_plain: InputSharePlain,
+        chal: &Challenge,
+        h_prime: HPrimeMatrix,
+        y: [u8; PARAM_M_SUB_K],
+        broadcast: &Broadcast,
+        with_offset: bool,
+        compute_v: bool,
     ) -> BroadcastShare {
         let input_share = Input::parse(input_share_plain);
         let (a, b) = input_share.beaver_ab;
@@ -161,7 +157,9 @@ impl MPC {
 
         for j in 0..PARAM_T {
             // v[j] = -c[j]
-            v[j] = c[j];
+            if compute_v {
+                v[j] = c[j];
+            }
             for d in 0..PARAM_SPLITTING_FACTOR {
                 let a = a[d][j];
                 let b = b[d][j];
@@ -183,22 +181,23 @@ impl MPC {
                 let eval_s = MPC::polynomial_evaluation(&s_poly[d], &powers_of_r_j);
                 beta_share[d][j] = gf256_ext32_add(eval_s, b);
 
-                // v[j] += ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
-                let eval_p = MPC::polynomial_evaluation(&p_poly[d], &powers_of_r_j);
-                let eval_epsilon_f_p = gf256_ext32_mul(f_eval_times_eps, eval_p);
-                v[j] = gf256_ext32_add(v[j], eval_epsilon_f_p);
+                if compute_v {
+                    // v[j] += ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
+                    let eval_p = MPC::polynomial_evaluation(&p_poly[d], &powers_of_r_j);
+                    let eval_epsilon_f_p = gf256_ext32_mul(f_eval_times_eps, eval_p);
+                    v[j] = gf256_ext32_add(v[j], eval_epsilon_f_p);
 
-                // v[j] += α'[d][j] ⊗ b[d][j] + β'[d][j] ⊗ a[d][j]
-                let eval_alpha_beta = gf256_ext32_add(
-                    gf256_ext32_mul(plain_alpha, b),
-                    gf256_ext32_mul(plain_beta, a),
-                );
-                v[j] = gf256_ext32_add(v[j], eval_alpha_beta);
+                    // v[j] += α'[d][j] ⊗ b[d][j] + β'[d][j] ⊗ a[d][j]
+                    v[j] = gf256_ext32_add(v[j], gf256_ext32_mul(plain_alpha, b));
+                    v[j] = gf256_ext32_add(v[j], gf256_ext32_mul(plain_beta, a));
 
-                if with_offset {
-                    // v[j] =+ -α[d][j] ⊗ β[d][j]
-                    v[j] =
-                        gf256_ext32_add(v[j], gf256_ext32_mul(alpha_share[d][j], beta_share[d][j]));
+                    if with_offset {
+                        // v[j] =+ -α[d][j] ⊗ β[d][j]
+                        v[j] = gf256_ext32_add(
+                            v[j],
+                            gf256_ext32_mul(alpha_share[d][j], beta_share[d][j]),
+                        );
+                    }
                 }
             }
         }
@@ -271,11 +270,8 @@ impl MPC {
                 c[j] = gf256_ext32_add(c[j], eval_epsilon_f_p);
 
                 // c[j] += α'[d][j] ⊗ b[d][j] + β'[d][j] ⊗ a[d][j]
-                let eval_alpha_beta = gf256_ext32_add(
-                    gf256_ext32_mul(plain_alpha, b[d][j]),
-                    gf256_ext32_mul(plain_beta, a[d][j]),
-                );
-                c[j] = gf256_ext32_add(c[j], eval_alpha_beta);
+                c[j] = gf256_ext32_add(c[j], gf256_ext32_mul(plain_alpha, b[d][j]));
+                c[j] = gf256_ext32_add(c[j], gf256_ext32_mul(plain_beta, a[d][j]));
 
                 if with_offset {
                     // c[j] += -α[d][j] ⊗ β[d][j]
@@ -500,5 +496,16 @@ mod mpc_tests {
         assert_eq!(recomputed_input_share_triples.0, input_share.beaver_ab.0);
         assert_eq!(recomputed_input_share_triples.1, input_share.beaver_ab.1);
         assert_eq!(recomputed_input_share_triples.2, input_share.beaver_c);
+    }
+
+    #[test]
+    fn test_compute_broadcast_v_is_zero_always() {
+        let (input, _broadcast, chal, h_prime, y) = prepare();
+
+        let broadcast_plain = MPC::compute_broadcast(input, &chal, h_prime, y);
+
+        let v = Beaver::inner_product(broadcast_plain.alpha, broadcast_plain.beta);
+
+        assert_eq!(v, [FPoint::default(); PARAM_T]);
     }
 }
