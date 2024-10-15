@@ -1,6 +1,5 @@
 use crate::{
     arith::{
-        concat_arrays_stable,
         gf256::{
             gf256_arith::{gf256_add, gf256_mul},
             gf256_poly::gf256_remove_one_degree_factor_monic,
@@ -39,7 +38,7 @@ impl MatrixGF256<{ PARAM_M_SUB_K }, { PARAM_K }> for HPrimeMatrix {}
 pub(crate) struct Instance {
     pub(crate) seed_h: Seed,
     pub(crate) y: [u8; PARAM_M_SUB_K],
-    pub(crate) matrix_h_prime: HPrimeMatrix,
+    pub(crate) h_prime: HPrimeMatrix,
 }
 
 /// Solution Definition: (s_a, Q', P)
@@ -169,7 +168,7 @@ pub(crate) fn generate_instance_with_solution(seed_root: Seed) -> (Instance, Sol
     let instance = Instance {
         seed_h: witness.seed_h,
         y: witness.y,
-        matrix_h_prime: witness.h_prime,
+        h_prime: witness.h_prime,
     };
 
     let solution = Solution {
@@ -414,12 +413,8 @@ fn compute_q_prime_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N] {
 }
 
 /// Completes the q polynomial by inserting the leading coefficient at the beginning of each d-split
-pub(crate) fn complete_q(q_poly_out: &mut QPolyComplete, q_poly: QPoly, leading: u8) {
-    assert!(q_poly_out.len() == PARAM_SPLITTING_FACTOR);
-    assert!(
-        q_poly_out[0].len() == PARAM_CHUNK_W + 1,
-        "Need space for leading coef"
-    );
+pub(crate) fn complete_q(q_poly: QPoly, leading: u8) -> QPolyComplete {
+    let mut q_poly_out = [[0_u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR];
 
     for d in 0..PARAM_SPLITTING_FACTOR {
         q_poly_out[d][0] = leading;
@@ -427,18 +422,35 @@ pub(crate) fn complete_q(q_poly_out: &mut QPolyComplete, q_poly: QPoly, leading:
             q_poly_out[d][i + 1] = q_poly[d][i];
         }
     }
+
+    q_poly_out
 }
 
-/// Generate s = (sA, y + H's_a),
+/// Generate `s = (s_a | s_b)` from `s_a`, `H'` and `y`. Optionally add `y` to `H's_a`.
+/// ```
+/// if has_offset is true:
+///     s_b = y + H's_a
+/// else s_b = H's_a
+/// ```
 pub(crate) fn compute_s(
     s_a: &[u8; PARAM_K],
     h_prime: &HPrimeMatrix,
-    y: &[u8; PARAM_M_SUB_K],
+    y: Option<&[u8; PARAM_M_SUB_K]>,
 ) -> [u8; PARAM_M] {
-    let mut h_prime_s_a: [u8; PARAM_M_SUB_K] = h_prime.gf256_mul_vector(s_a);
-    gf256_add_vector(&mut h_prime_s_a, y);
-    let s_b: [u8; PARAM_M_SUB_K] = h_prime_s_a;
-    let s: [u8; PARAM_M] = concat_arrays_stable(*s_a, s_b);
+    // (s_a | s_b)
+    let mut s = [0u8; PARAM_M];
+
+    // Set s_a
+    gf256_add_vector(&mut s[..PARAM_K], s_a);
+
+    // If has_offset, compute s_b = y + H's_a
+    if let Some(y) = y {
+        gf256_add_vector(&mut s[PARAM_K..], y);
+    }
+
+    // s_b += H's_a
+    let h_prime_s_a: [u8; PARAM_M_SUB_K] = h_prime.gf256_mul_vector(s_a);
+    gf256_add_vector(&mut s[PARAM_K..], &h_prime_s_a);
     s
 }
 
@@ -532,7 +544,7 @@ mod test_helpers {
         let y = witness.y;
         let h_prime = witness.h_prime;
         let s_a = witness.s_a;
-        let s = compute_s(&s_a, &h_prime, &y);
+        let s = compute_s(&s_a, &h_prime, Some(&y));
 
         assert_eq!(s.len(), PARAM_M);
         assert_eq!(s[..PARAM_K], witness.s_a);
@@ -540,27 +552,10 @@ mod test_helpers {
     }
 
     #[test]
-    fn test_compute_s_poly() {
-        let seed = [0u8; PARAM_SEED_SIZE];
-        let (q, s, p, ..) = sample_witness(seed);
-        let witness = generate_witness(seed, (q, s, p));
-        let y = witness.y;
-        let h_prime = witness.h_prime;
-        let s_a = witness.s_a;
-        let s = compute_s(&s_a, &h_prime, &y);
-        let s_poly = compute_s_poly(s);
-
-        assert_eq!(s_poly.len(), PARAM_SPLITTING_FACTOR);
-        assert_eq!(s_poly.as_flattened(), s);
-    }
-
-    #[test]
     fn test_complete_q() {
         let seed = [0u8; PARAM_SEED_SIZE];
-        let (q_poly, s, p, ..) = sample_witness(seed);
-        let witness = generate_witness(seed, (q_poly, s, p));
-        let mut q_complete = [[0_u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR];
-        complete_q(&mut q_complete, q_poly, 1);
+        let (q_poly, ..) = sample_witness(seed);
+        let q_complete = complete_q(q_poly, 1);
 
         for (i, q_comp) in q_complete.iter().enumerate() {
             assert_eq!(q_comp[0], 1);

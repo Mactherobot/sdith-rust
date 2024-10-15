@@ -55,12 +55,11 @@ impl Signature {
         for e in 0..PARAM_TAU {
             let mut commitments_prime = [Hash::default(); PARAM_L];
             for (li, i) in view_opening_challenges[e].iter().enumerate() {
-                let mut with_offset = true;
+                let with_offset = (*i as usize) != PARAM_N;
 
                 if *i as usize == PARAM_N {
                     // TODO test this case
-                    sh_broadcast[e][li] = broadcast_shares[e][li as usize];
-                    with_offset = false;
+                    sh_broadcast[e][li] = broad_share[e][li as usize];
                 } else {
                     // We need to compute the following:
                     // sh_broadcast[e][i] = (broad_plain, 0) + sum^ℓ_(j=1) fi^j · broad_share[e][j]
@@ -73,7 +72,7 @@ impl Signature {
                     for j in 0..PARAM_L {
                         gf256_add_vector_mul_scalar(
                             &mut eval_sum,
-                            &broadcast_shares[e][j],
+                            &broad_share[e][j],
                             f_i.field_pow((j + 1) as u8),
                         );
                     }

@@ -38,6 +38,18 @@ impl Beaver {
         (a, b, c)
     }
 
+    pub(crate) fn inner_product(a: BeaverA, b: BeaverB) -> BeaverC {
+        let mut c: BeaverC = [FPoint::default(); PARAM_T];
+
+        for d in 0..PARAM_SPLITTING_FACTOR {
+            for i in 0..PARAM_T {
+                c[i] = gf256_ext32_add(c[i], gf256_ext32_mul(a[d][i], b[d][i]));
+            }
+        }
+
+        c
+    }
+
     /// Serialise beaver a and b values
     pub(crate) fn serialise(
         a: BeaverA,

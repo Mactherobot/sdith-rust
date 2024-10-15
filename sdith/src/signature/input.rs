@@ -19,7 +19,7 @@ pub(crate) struct Input {
 }
 
 /// k+2w+t(2d+1)η
-pub(super) const INPUT_SIZE: usize = SOLUTION_PLAIN_SIZE + BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE;
+pub(crate) const INPUT_SIZE: usize = SOLUTION_PLAIN_SIZE + BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE;
 
 pub(crate) type InputSharePlain = [u8; INPUT_SIZE];
 pub(crate) type InputSharesPlain = [[InputSharePlain; PARAM_N]; PARAM_TAU];
