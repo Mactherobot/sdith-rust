@@ -141,7 +141,6 @@ impl MerkleTree {
 
         let mut auth = vec![];
 
-        println!("Missing nodes: {:?}", missing);
         // Fetch the missing nodes
         for h in (1..=self.height).rev() {
             for i in 1 << h..(1 << (h + 1)) {
@@ -240,7 +239,6 @@ pub(crate) fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
         }
     }
 
-    println!("Revealed nodes: {:?}", revealed_nodes);
     revealed_nodes
 }
 
