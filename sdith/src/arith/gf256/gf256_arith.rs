@@ -42,6 +42,10 @@ impl FieldArith for u8 {
         gf256_pow_lookup(*self, exp)
     }
 
+    fn field_neg(&self) -> Self {
+        *self
+    }
+
     fn field_sample(prg: &mut PRG) -> Self {
         let mut res = [0; 1];
         prg.sample_field_fq_elements(&mut res);
@@ -212,7 +216,10 @@ pub(crate) fn gf256_div(a: u8, b: u8) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{constants::params::PARAM_SEED_SIZE, subroutines::prg::prg::PRG};
+    use crate::{
+        arith::gf256::test_field_definitions, constants::params::PARAM_SEED_SIZE,
+        subroutines::prg::prg::PRG,
+    };
 
     // #[test]
     // fn test_all_add_cases() {
@@ -255,27 +262,7 @@ mod tests {
             panic!("Failed to sample 3 field elements");
         };
 
-        // Commutativity of addition and multiplication:
-        assert_eq!(a.field_add(b), b.field_add(a));
-        assert_eq!(a.field_mul(b), b.field_mul(a));
-
-        // Associativity of addition and multiplication:
-        assert_eq!(a.field_add(b.field_add(c)), a.field_add(b).field_add(c));
-        assert_eq!(a.field_mul(b.field_mul(c)), a.field_mul(b).field_mul(c));
-
-        // Identity of addition and multiplication:
-        assert_eq!(a.field_add(u8::field_zero()), a);
-        assert_eq!(a.field_mul(u8::field_one()), a);
-
-        // Inverse of addition and multiplication:
-        assert_eq!(a.field_sub(a), u8::field_zero());
-        assert_eq!(a.field_mul(b).field_div(b), a);
-
-        // Distributivity of multiplication over addition:
-        assert_eq!(
-            a.field_mul(b.field_add(c)),
-            a.field_mul(b).field_add(a.field_mul(c))
-        );
+        test_field_definitions(a, b, c);
     }
 
     #[test]

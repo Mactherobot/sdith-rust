@@ -135,6 +135,10 @@ impl FieldArith for FPoint {
         [0u8; 4]
     }
 
+    fn field_neg(&self) -> Self {
+        *self
+    }
+
     fn field_sample(prg: &mut PRG) -> Self {
         gf256_ext32_sample(prg)
     }
@@ -201,25 +205,6 @@ pub(crate) fn gf256_ext32_mul(a: FPoint, b: FPoint) -> FPoint {
     [r0, r1, r2, r3]
 }
 
-pub(crate) fn gf256_ext32_mul_inv(a: FPoint) -> FPoint {
-    let [a0, a1, a2, a3] = a;
-    let zero = u8::field_zero();
-
-    // Compute conjugate of the polynomial a(Z)
-    let conjugate = [a0, zero.field_sub(a1), a2, zero.field_sub(a3)];
-
-    // Compute Norm(a) = a * conjugate(a) (mod Z^2 + Z + 32(X))
-    let norm = gf256_ext32_mul(a, conjugate);
-
-    // Invert the norm (in the base field F_q)
-    let inv_norm = norm[0].field_mul_inverse(); // Assuming norm is scalar in F_q
-
-    // Return the inverse: conjugate(a) / Norm(a)
-    let inverse = gf256_ext32_gf256_mul(inv_norm, conjugate);
-
-    inverse
-}
-
 fn gf256_ext32_gf256_mul(a: u8, b: FPoint) -> FPoint {
     let [b0, b1, b2, b3] = b;
     let c0 = a.field_mul(b0);
@@ -227,22 +212,6 @@ fn gf256_ext32_gf256_mul(a: u8, b: FPoint) -> FPoint {
     let c2 = a.field_mul(b2);
     let c3 = a.field_mul(b3);
     [c0, c1, c2, c3]
-}
-
-/// Exponentiation: Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
-pub(crate) fn gf256_ext32_pow(a: FPoint, n: usize) -> FPoint {
-    // TODO: is this efficient? Used copilot to generate this
-    let mut res = GF256_32_ONE;
-    let mut base = a;
-    let mut n = n;
-    while n > 0 {
-        if n & 1 == 1 {
-            res = gf256_ext32_mul(res, base);
-        }
-        base = gf256_ext32_mul(base, base);
-        n >>= 1;
-    }
-    res
 }
 
 /// Sample a value from the extended field `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
@@ -254,7 +223,7 @@ pub(crate) fn gf256_ext32_sample(prg: &mut PRG) -> FPoint {
 mod ext32_tests {
     use super::*;
 
-    use crate::{constants::params::PARAM_SEED_SIZE, subroutines::prg::prg::PRG};
+    use crate::{arith::gf256::test_field_definitions, constants::params::PARAM_SEED_SIZE, subroutines::prg::prg::PRG};
 
     #[test]
     fn test_field_point_definitions() {
@@ -263,27 +232,8 @@ mod ext32_tests {
             panic!("Failed to sample 3 field elements");
         };
 
-        // Commutativity of addition and multiplication:
-        assert_eq!(a.field_add(b), b.field_add(a));
-        assert_eq!(a.field_mul(b), b.field_mul(a));
-
-        // Associativity of addition and multiplication:
-        assert_eq!(a.field_add(b.field_add(c)), a.field_add(b).field_add(c));
-        assert_eq!(a.field_mul(b.field_mul(c)), a.field_mul(b).field_mul(c));
-
-        // Identity of addition and multiplication:
-        assert_eq!(a.field_add(FPoint::field_zero()), a);
-        assert_eq!(a.field_mul(FPoint::field_one()), a);
-
-        // Inverse of addition and multiplication:
-        assert_eq!(a.field_sub(a), FPoint::field_zero());
-        // assert_eq!(a.field_mul(b).field_div(b), a); // Division not implemented
-
-        // Distributivity of multiplication over addition:
-        assert_eq!(
-            a.field_mul(b.field_add(c)),
-            a.field_mul(b).field_add(a.field_mul(c))
-        );
+        
+        test_field_definitions(a, b, c);
     }
 
     #[test]
@@ -291,30 +241,6 @@ mod ext32_tests {
     fn test_div_by_zero() {
         // Multiplicative identity with additive identity is None:
         FPoint::field_one().field_div(FPoint::field_zero());
-    }
-
-    #[test]
-    fn test_f_256_32_pow() {
-        let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], None);
-        let a: [u8; 4] = gf256_ext32_sample(&mut prg);
-        let n = 10;
-
-        let pow = gf256_ext32_pow(a, n);
-        let mut expected = GF256_32_ONE;
-        for _ in 0..n {
-            expected = gf256_ext32_mul(expected, a);
-        }
-
-        assert_eq!(pow, expected);
-    }
-
-    #[test]
-    fn test_f_256_32_pow_0() {
-        let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], None);
-        let a: [u8; 4] = gf256_ext32_sample(&mut prg);
-        let n = 0;
-        let pow = gf256_ext32_pow(a, n);
-        assert_eq!(pow, GF256_32_ONE);
     }
 
     //// Polynomial evaluation

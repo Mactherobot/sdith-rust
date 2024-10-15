@@ -1,8 +1,7 @@
 use crate::{
     arith::gf256::{
-        gf256_ext::{gf256_ext32_add, gf256_ext32_mul, FPoint},
-        gf256_poly::gf256_evaluate_polynomial_horner,
-        gf256_vector::gf256_mul_vector_by_scalar,
+        gf256_ext::FPoint, gf256_poly::gf256_evaluate_polynomial_horner,
+        gf256_vector::gf256_mul_vector_by_scalar, FieldArith,
     },
     constants::{
         params::{PARAM_L, PARAM_LOG_N, PARAM_M_SUB_K, PARAM_SPLITTING_FACTOR, PARAM_T, PARAM_TAU},
@@ -68,7 +67,7 @@ impl MPC {
             let eval_poly = gf256_evaluate_polynomial_horner(poly_d, i as u8);
             gf256_mul_vector_by_scalar(&mut r_n, eval_poly);
 
-            sum = gf256_ext32_add(sum, r_n);
+            sum = sum.field_add(r_n);
         }
 
         sum
@@ -158,45 +157,36 @@ impl MPC {
         for j in 0..PARAM_T {
             // v[j] = -c[j]
             if compute_v {
-                v[j] = c[j];
+                v[j] = c[j].field_neg();
             }
             for d in 0..PARAM_SPLITTING_FACTOR {
                 let a = a[d][j];
                 let b = b[d][j];
 
                 // Challenge values
-                let epsilon = chal.eps[d][j];
                 let powers_of_r_j = chal.powers_of_r[d][j];
-                let f_eval_times_eps = chal.f_poly_eval_times_eps[d][j];
-
-                // Broadcast values (α', β')
-                let plain_alpha = broadcast.alpha[d][j];
-                let plain_beta = broadcast.beta[d][j];
 
                 // α[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
                 let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
-                alpha_share[d][j] = gf256_ext32_add(gf256_ext32_mul(epsilon, eval_q), a);
+                alpha_share[d][j] = chal.eps[d][j].field_mul(eval_q).field_add(a);
 
                 // β[d][j] = Evaluate(S[d], r[j]) + b[d][j]
                 let eval_s = MPC::polynomial_evaluation(&s_poly[d], &powers_of_r_j);
-                beta_share[d][j] = gf256_ext32_add(eval_s, b);
+                beta_share[d][j] = eval_s.field_add(b);
 
                 if compute_v {
                     // v[j] += ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
                     let eval_p = MPC::polynomial_evaluation(&p_poly[d], &powers_of_r_j);
-                    let eval_epsilon_f_p = gf256_ext32_mul(f_eval_times_eps, eval_p);
-                    v[j] = gf256_ext32_add(v[j], eval_epsilon_f_p);
+                    v[j] = v[j].field_add(chal.f_poly_eval_times_eps[d][j].field_mul(eval_p));
 
                     // v[j] += α'[d][j] ⊗ b[d][j] + β'[d][j] ⊗ a[d][j]
-                    v[j] = gf256_ext32_add(v[j], gf256_ext32_mul(plain_alpha, b));
-                    v[j] = gf256_ext32_add(v[j], gf256_ext32_mul(plain_beta, a));
+                    v[j] = v[j].field_add(broadcast.alpha[d][j].field_mul(b));
+                    v[j] = v[j].field_add(broadcast.beta[d][j].field_mul(a));
 
                     if with_offset {
                         // v[j] =+ -α[d][j] ⊗ β[d][j]
-                        v[j] = gf256_ext32_add(
-                            v[j],
-                            gf256_ext32_mul(alpha_share[d][j], beta_share[d][j]),
-                        );
+                        v[j] = v[j]
+                            .field_add(alpha_share[d][j].field_neg().field_mul(beta_share[d][j]));
                     }
                 }
             }
@@ -210,7 +200,6 @@ impl MPC {
 
     /// computes the shares of the Beaver triples from the shares of the witness and the broadcast
     /// shares of a party.
-    /// TODO: This is missing the share part of this
     pub(crate) fn inverse_party_computation(
         solution_plain: [u8; SOLUTION_PLAIN_SIZE],
         broadcast_share: &BroadcastShare,
@@ -242,40 +231,33 @@ impl MPC {
         let mut c = [FPoint::default(); PARAM_T];
         for j in 0..PARAM_T {
             // c[j] = -v[j]
-            c[j] = v[j];
+            c[j] = v[j].field_neg();
             for d in 0..PARAM_SPLITTING_FACTOR {
                 let alpha_share = alpha_share[d][j];
                 let beta_share = beta_share[d][j];
 
                 // Challenge values
-                let epsilon = chal.eps[d][j];
                 let powers_of_r_j = chal.powers_of_r[d][j];
-                let f_eval_times_eps = chal.f_poly_eval_times_eps[d][j];
 
-                // Broadcast values (α', β')
-                let plain_alpha = broadcast.alpha[d][j];
-                let plain_beta = broadcast.beta[d][j];
-
-                // a[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
+                // a[d][j] = α[d][j] - ε[d][j] ⊗ Evaluate(Q[d], r[j])
                 let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
-                a[d][j] = gf256_ext32_add(gf256_ext32_mul(epsilon, eval_q), alpha_share);
+                a[d][j] = alpha_share.field_sub(chal.eps[d][j].field_mul(eval_q));
 
-                // b[d][j] = Evaluate(S[d], r[j]) + b[d][j]
+                // b[d][j] = β[d][j] - Evaluate(S[d], r[j])
                 let eval_s = MPC::polynomial_evaluation(&s_poly[d], &powers_of_r_j);
-                b[d][j] = gf256_ext32_add(eval_s, beta_share);
+                b[d][j] = beta_share.field_sub(eval_s);
 
                 // c[j] +=  ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
                 let eval_p = MPC::polynomial_evaluation(&p_poly[d], &powers_of_r_j);
-                let eval_epsilon_f_p = gf256_ext32_mul(f_eval_times_eps, eval_p);
-                c[j] = gf256_ext32_add(c[j], eval_epsilon_f_p);
+                c[j] = c[j].field_add(chal.f_poly_eval_times_eps[d][j].field_mul(eval_p));
 
                 // c[j] += α'[d][j] ⊗ b[d][j] + β'[d][j] ⊗ a[d][j]
-                c[j] = gf256_ext32_add(c[j], gf256_ext32_mul(plain_alpha, b[d][j]));
-                c[j] = gf256_ext32_add(c[j], gf256_ext32_mul(plain_beta, a[d][j]));
+                c[j] = c[j].field_add(broadcast.alpha[d][j].field_mul(b[d][j]));
+                c[j] = c[j].field_add(broadcast.beta[d][j].field_mul(a[d][j]));
 
                 if with_offset {
                     // c[j] += -α[d][j] ⊗ β[d][j]
-                    c[j] = gf256_ext32_add(c[j], gf256_ext32_mul(alpha_share, beta_share));
+                    c[j] = c[j].field_add(alpha_share.field_neg().field_mul(beta_share));
                 }
             }
         }

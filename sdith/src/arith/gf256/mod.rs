@@ -16,6 +16,7 @@ where
     }
     fn field_add(&self, rhs: Self) -> Self;
     fn field_sub(&self, rhs: Self) -> Self;
+    fn field_neg(&self) -> Self;
     fn field_mul(&self, rhs: Self) -> Self;
     fn field_mul_inverse(&self) -> Self;
     fn field_div(&self, rhs: Self) -> Self
@@ -61,4 +62,34 @@ where
     }
 
     fn field_sample(prg: &mut PRG) -> Self;
+}
+
+pub(super) fn test_field_definitions<T>(a: T, b: T, c: T)
+where
+    T: FieldArith + std::fmt::Debug,
+{
+    // Commutativity of addition and multiplication:
+    assert_eq!(a.field_add(b), b.field_add(a));
+    assert_eq!(a.field_mul(b), b.field_mul(a));
+
+    // Associativity of addition and multiplication:
+    assert_eq!(a.field_add(b.field_add(c)), a.field_add(b).field_add(c));
+    assert_eq!(a.field_mul(b.field_mul(c)), a.field_mul(b).field_mul(c));
+
+    // Identity of addition and multiplication:
+    assert_eq!(a.field_add(T::field_zero()), a);
+    assert_eq!(a.field_mul(T::field_one()), a);
+
+    // Inverse of addition and multiplication:
+    assert_eq!(a.field_sub(a), T::field_zero());
+    // assert_eq!(a.field_mul(b).field_div(b), a); // Division not implemented
+
+    // Distributivity of multiplication over addition:
+    assert_eq!(
+        a.field_mul(b.field_add(c)),
+        a.field_mul(b).field_add(a.field_mul(c))
+    );
+
+    // Negation
+    assert_eq!(b.field_add(a.field_neg()), b.field_sub(a));
 }
