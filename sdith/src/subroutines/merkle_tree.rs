@@ -141,6 +141,7 @@ impl MerkleTree {
 
         let mut auth = vec![];
 
+        println!("Missing nodes: {:?}", missing);
         // Fetch the missing nodes
         for h in (1..=self.height).rev() {
             for i in 1 << h..(1 << (h + 1)) {
@@ -176,8 +177,8 @@ fn merkle_hash(parent_index: u16, left: Hash, right: Option<Hash>, salt: Option<
     hash_finalize(hasher)
 }
 
-pub(crate) fn get_auth_size(selected_leaves: &[u16]) -> u16 {
-    (get_revealed_nodes(selected_leaves).len() * PARAM_DIGEST_SIZE) as u16
+pub(crate) fn get_auth_size(selected_leaves: &[u16]) -> usize {
+    get_revealed_nodes(selected_leaves).len() * PARAM_DIGEST_SIZE
 }
 
 pub(crate) fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
@@ -186,7 +187,6 @@ pub(crate) fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
     // Initialize
     let (mut height_index, mut last_index) =
         (1 << PARAM_MERKLE_TREE_HEIGHT, PARAM_MERKLE_TREE_NODES - 1);
-    let nb_selected_leaves = selected_leaves.len() as u16;
 
     // We use "leaves" as a circular queue, so it destroys the input data.
     let mut q: Queue<usize> = queue![];
@@ -222,10 +222,12 @@ pub(crate) fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
             let queue_is_empty = q.peek().is_err();
             let mut candidate_index = 0;
             if !queue_is_empty {
-                candidate_index = q.remove().unwrap();
+                candidate_index = q.peek().unwrap();
             }
             if is_left_child && (candidate_index == index + 1) {
+                candidate_index = q.remove().unwrap();
             } else if is_left_child {
+                // The sibling node is given in the authentication paths
                 revealed_nodes.push((index + 1) as u16);
             } else {
                 revealed_nodes.push((index - 1) as u16);
@@ -238,6 +240,7 @@ pub(crate) fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
         }
     }
 
+    println!("Revealed nodes: {:?}", revealed_nodes);
     revealed_nodes
 }
 

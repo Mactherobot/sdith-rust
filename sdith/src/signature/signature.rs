@@ -132,26 +132,22 @@ impl Signature {
         let h2 = Signature::gen_h2(message, &salt, &h1, &broadcast_plain, &broadcast_shares);
 
         let view_opening_challenges = MPC::expand_view_challenges_threshold(h2);
-        // Expand the view opening challenges
 
-        let mut auth_lengths = [0u16; PARAM_TAU];
+        // Expand the view opening challenges
+        let mut auth_lengths = [0; PARAM_TAU];
         // Get the auth sizes
         for e in 0..PARAM_TAU {
             auth_lengths[e] = get_auth_size(&view_opening_challenges[e]);
         }
+        println!("Auth lengths: {:?}", auth_lengths);
 
         let mut auth: [Vec<Hash>; PARAM_TAU] = Default::default();
         for (e, auth_len) in auth_lengths.iter().enumerate() {
-            let mut auth_path = Vec::with_capacity(*auth_len as usize);
-            for _ in 0..*auth_len {
-                auth_path.push(
-                    signature_plain[offset..offset + PARAM_DIGEST_SIZE]
-                        .try_into()
-                        .unwrap(),
-                );
-                offset += PARAM_DIGEST_SIZE;
-            }
-            auth[e] = (auth_path);
+            auth[e] = signature_plain[offset..offset + *auth_len]
+                .chunks_exact(PARAM_DIGEST_SIZE)
+                .map(|chunk| chunk.try_into().unwrap())
+                .collect();
+            offset += *auth_len;
         }
 
         Signature {
@@ -211,7 +207,6 @@ mod signature_tests {
 
     #[test]
     fn test_serialise_deserialise_signature() {
-        let auth_lengths: [usize; PARAM_TAU] = [5, 6, 7, 8, 9, 10];
         let message = [0u8; INPUT_SIZE];
         let seed_root = [0u8; PARAM_SEED_SIZE];
         let salt = [1u8; PARAM_SALT_SIZE];
