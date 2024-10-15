@@ -3,7 +3,10 @@ use crate::{
         params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_M_SUB_K, PARAM_N, PARAM_SALT_SIZE, PARAM_TAU},
         types::{Hash, Salt, Seed},
     },
-    mpc::broadcast::{BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
+    mpc::{
+        broadcast::{BroadcastShare, BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
+        mpc::MPC,
+    },
     subroutines::{
         commitments::commit_share,
         merkle_tree::MerkleTree,
@@ -18,7 +21,7 @@ pub(super) struct Signature {
     pub(super) salt: Salt,
     pub(super) h1: Hash,
     pub(super) broadcast_plain: [u8; BROADCAST_PLAIN_SIZE],
-    pub(super) broadcast_shares_plain: [u8; BROADCAST_SHARE_PLAIN_SIZE * PARAM_L * PARAM_TAU],
+    pub(super) broadcast_shares: [[[u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
     // wit_share from spec
     pub(super) solution_share: [[[u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
     pub(super) auth: [Vec<Hash>; PARAM_TAU],
@@ -40,7 +43,7 @@ impl Signature {
         salt: Salt,
         h1: Hash,
         broadcast_plain: [u8; BROADCAST_PLAIN_SIZE],
-        broadcast_shares_plain: [u8; BROADCAST_SHARE_PLAIN_SIZE * PARAM_L * PARAM_TAU],
+        broadcast_shares: [[[u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
         auth: [Vec<Hash>; PARAM_TAU],
         solution_share: [[[u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
     ) -> Self {
@@ -48,7 +51,7 @@ impl Signature {
             salt,
             h1,
             broadcast_plain,
-            broadcast_shares_plain,
+            broadcast_shares,
             auth,
             solution_share,
         }
@@ -59,17 +62,12 @@ impl Signature {
         serialised.extend_from_slice(&self.salt);
         serialised.extend_from_slice(&self.h1);
         serialised.extend_from_slice(&self.broadcast_plain);
-        serialised.extend_from_slice(&self.broadcast_shares_plain);
 
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_L {
+                serialised.extend_from_slice(&self.broadcast_shares[e][i]);
                 serialised.extend_from_slice(&self.solution_share[e][i]);
             }
-        }
-
-        // Append auth sizes
-        for auth in &self.auth {
-            serialised.extend_from_slice(&(auth.len() as u16).to_le_bytes());
         }
 
         // Append auth
@@ -83,47 +81,60 @@ impl Signature {
     }
 
     pub(crate) fn parse(signature_plain: Vec<u8>) -> Signature {
+        let mut bytes_required = PARAM_DIGEST_SIZE + PARAM_SALT_SIZE;
+        bytes_required += BROADCAST_PLAIN_SIZE;
+        bytes_required += PARAM_TAU * PARAM_L * BROADCAST_SHARE_PLAIN_SIZE;
+        bytes_required += PARAM_TAU * PARAM_L * SOLUTION_PLAIN_SIZE;
+        assert!(signature_plain.len() > bytes_required);
+        // Create offset to be used for inserting into the sig byte array
         let mut offset = 0;
+
         let salt: Salt = signature_plain[offset..offset + PARAM_SALT_SIZE]
             .try_into()
             .unwrap();
         offset += PARAM_SALT_SIZE;
 
+        // H1
         let h1: Hash = signature_plain[offset..offset + PARAM_DIGEST_SIZE]
             .try_into()
             .unwrap();
         offset += PARAM_DIGEST_SIZE;
 
+        // Plain Broadcast
         let broadcast_plain: [u8; BROADCAST_PLAIN_SIZE] = signature_plain
             [offset..offset + BROADCAST_PLAIN_SIZE]
             .try_into()
             .unwrap();
         offset += BROADCAST_PLAIN_SIZE;
 
-        let broadcast_shares_plain: [u8; BROADCAST_SHARE_PLAIN_SIZE * PARAM_TAU * PARAM_L] =
-            signature_plain[offset..offset + BROADCAST_SHARE_PLAIN_SIZE * PARAM_TAU * PARAM_L]
-                .try_into()
-                .unwrap();
-        offset += BROADCAST_SHARE_PLAIN_SIZE * PARAM_TAU * PARAM_L;
-
         let mut solution_share = [[[0u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
+        let mut broadcast_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_L {
+                // Broadcast shares
+                broadcast_shares[e][i] = signature_plain
+                    [offset..offset + BROADCAST_SHARE_PLAIN_SIZE]
+                    .try_into()
+                    .unwrap();
+                offset += BROADCAST_SHARE_PLAIN_SIZE;
+
+                // Witness shares
                 solution_share[e][i] = signature_plain[offset..offset + SOLUTION_PLAIN_SIZE]
                     .try_into()
                     .unwrap();
                 offset += SOLUTION_PLAIN_SIZE;
             }
         }
+        // We need to create the view opening challenges in order to get the auth paths.
+        // We can do this by computing the second hash
+        // and then expanding the view opening challenges
+        let h2 = Signature::gen_h2(&[], &salt, &h1, &broadcast_plain, &broadcast_shares);
 
-        let auth_lengths = (0..PARAM_TAU)
-            .map(|_| {
-                let len =
-                    u16::from_le_bytes(signature_plain[offset..offset + 2].try_into().unwrap());
-                offset += 2;
-                len
-            })
-            .collect::<Vec<u16>>();
+        let view_opening_challenges = MPC::expand_view_challenges_threshold(h2);
+        // Expand the view opening challenges
+
+        // Get
+        let auth_lengths = MerkleTree::get_auth_size(view_opening_challenges);
 
         let mut auth: [Vec<Hash>; PARAM_TAU] = Default::default();
         for (e, auth_len) in auth_lengths.iter().enumerate() {
@@ -143,7 +154,7 @@ impl Signature {
             salt,
             h1,
             broadcast_plain,
-            broadcast_shares_plain,
+            broadcast_shares,
             solution_share,
             auth,
         }
@@ -171,9 +182,15 @@ impl Signature {
         salt: &Salt,
         h1: &Hash,
         broadcast_plain: &[u8],
-        broadcast_shares_plain: &[u8],
+        broadcast_shares: &[[[u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
     ) -> Hash {
-        let h2_data: Vec<&[u8]> = vec![message, salt, h1, broadcast_plain, broadcast_shares_plain];
+        let mut h2_data: Vec<&[u8]> = vec![message, salt, h1, broadcast_plain];
+        for e in 0..PARAM_TAU {
+            for i in 0..PARAM_L {
+                h2_data.push(&broadcast_shares[e][i]);
+            }
+        }
+
         hash_2(h2_data)
     }
 }
@@ -201,7 +218,7 @@ mod signature_tests {
             salt: [1u8; PARAM_SALT_SIZE],
             h1: [2u8; PARAM_DIGEST_SIZE],
             broadcast_plain: [3u8; BROADCAST_PLAIN_SIZE],
-            broadcast_shares_plain: [4u8; BROADCAST_SHARE_PLAIN_SIZE * PARAM_L * PARAM_TAU],
+            broadcast_shares: [[[4u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
             solution_share: [[[5u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
             auth,
         };
@@ -212,17 +229,10 @@ mod signature_tests {
         assert_eq!(sign.salt, deserialised.salt);
         assert_eq!(sign.h1, deserialised.h1);
         assert_eq!(sign.broadcast_plain, deserialised.broadcast_plain);
-        assert_eq!(
-            sign.broadcast_shares_plain,
-            deserialised.broadcast_shares_plain
-        );
+        assert_eq!(sign.broadcast_shares, deserialised.broadcast_shares);
         assert_eq!(sign.solution_share, deserialised.solution_share);
 
         // Check auths
-        for (i, auth_len) in auth_lengths.iter().enumerate() {
-            assert_eq!(auth_len, &deserialised.auth[i].len());
-        }
-
         for (i, auth) in sign.auth.iter().enumerate() {
             for (j, hash) in auth.iter().enumerate() {
                 assert_eq!(hash, &deserialised.auth[i][j]);

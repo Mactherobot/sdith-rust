@@ -136,6 +136,15 @@ impl BroadcastShare {
 
         Self { alpha, beta, v }
     }
+
+    pub(crate) fn default() -> BroadcastShare {
+        return BroadcastShare {
+            alpha: [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR],
+
+            beta: [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR],
+            v: [FPoint::default(); PARAM_T],
+        };
+    }
 }
 
 #[cfg(test)]

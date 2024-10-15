@@ -176,6 +176,32 @@ fn merkle_hash(parent_index: u16, left: Hash, right: Option<Hash>, salt: Option<
     hash_finalize(hasher)
 }
 
+pub(crate) fn get_auth_size(selected_leaves: &[u16]) -> u16 {
+    get_revealed_nodes(selected_leaves) * PARAM_DIGEST_SIZE as u16
+}
+
+pub(crate) fn get_revealed_nodes(selected_leaves: &[u16]) -> u16 {
+    let mut revealed_nodes = 0u16;
+
+    // Initialize
+    let mut first_index = PARAM_MERKLE_TREE_NODES as u16 - PARAM_N as u16;
+    let mut last_index = PARAM_MERKLE_TREE_NODES as u16 - 1;
+
+    // We use "leaves" as a circular queue, so it destroys the input data.
+    let mut q: Queue<usize> = queue![];
+
+    // Add the commitments to the queue but with the correct index in the tree
+    for (i, selected_leaf) in selected_leaves.iter().enumerate() {
+        let add = q.add((1 << PARAM_MERKLE_TREE_HEIGHT) + *selected_leaf as usize - 1);
+
+        if add.is_err() {
+            return Err("Could not add element to queue");
+        }
+    }
+
+    revealed_nodes
+}
+
 /// Recalculates the merkle root from the commitments and the auth
 pub(crate) fn get_merkle_root_from_auth(
     auth: &mut Vec<Hash>,

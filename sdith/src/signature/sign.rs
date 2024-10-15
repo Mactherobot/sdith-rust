@@ -112,7 +112,7 @@ impl Signature {
         let broadcast = MPC::compute_broadcast(input, &chal, h_prime, secret_key.y);
         let broad_plain = broadcast.serialise();
 
-        let mut broad_shares = [0u8; BROADCAST_SHARE_PLAIN_SIZE * PARAM_L * PARAM_TAU];
+        let mut broad_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
 
         // Run through Tau and l to compute the broadcast shares
         for e in 0..PARAM_TAU {
@@ -126,20 +126,12 @@ impl Signature {
                     false,
                 );
 
-                let offset = BROADCAST_SHARE_PLAIN_SIZE * (e * PARAM_L + j);
-                broad_shares[offset..offset + BROADCAST_SHARE_PLAIN_SIZE]
-                    .copy_from_slice(&broadcast_share.serialise());
+                broad_shares[e][j] = broadcast_share.serialise();
             }
         }
 
         // Second challenge (view-opening challenge)
-        let h2 = Signature::gen_h2(
-            message,
-            &salt,
-            &h1,
-            &broad_plain,
-            &broad_shares,
-        );
+        let h2 = Signature::gen_h2(message, &salt, &h1, &broad_plain, &broad_shares);
 
         // Create the set of view-opening challenges
         let view_opening_challenges = MPC::expand_view_challenges_threshold(h2);
@@ -157,14 +149,7 @@ impl Signature {
         }
 
         // Build the signature
-        let signature = Signature::new(
-            salt,
-            h1,
-            broad_plain,
-            broad_shares,
-            auth,
-            wit_share,
-        );
+        let signature = Signature::new(salt, h1, broad_plain, broad_shares, auth, wit_share);
 
         signature
     }

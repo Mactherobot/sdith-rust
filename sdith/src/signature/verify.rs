@@ -29,11 +29,11 @@ impl Signature {
         let h_prime = HPrimeMatrix::gen_random(&mut PRG::init(&public_key.seed_h, None));
 
         // Signature parsing
-        let (salt, h1, broad_plain, broad_share, wit_share, mut auth) = (
+        let (salt, h1, broad_plain, broadcast_shares, wit_share, mut auth) = (
             signature.salt,
             signature.h1,
             signature.broadcast_plain,
-            signature.broadcast_shares_plain,
+            signature.broadcast_shares,
             signature.solution_share,
             signature.auth,
         );
@@ -42,29 +42,12 @@ impl Signature {
         let chal = Challenge::new(h1);
 
         // Second challenge (view-opening challenge)
-        let h2 = Signature::gen_h2(
-            message,
-            &salt,
-            &h1,
-            &broad_plain,
-            &broad_share,
-        );
+        let h2 = Signature::gen_h2(message, &salt, &h1, &broad_plain, &broadcast_shares);
 
         // Compute the view-opening challenges
         let view_opening_challenges = MPC::expand_view_challenges_threshold(h2);
 
         let broadcast = Broadcast::parse(broad_plain);
-        let mut broadcast_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
-        for e in 0..PARAM_TAU {
-            for j in 0..PARAM_L {
-                let offset = BROADCAST_SHARE_PLAIN_SIZE * (e * PARAM_L + j);
-                broadcast_shares[e][j] = broad_share
-                    [offset..offset + BROADCAST_SHARE_PLAIN_SIZE]
-                    .try_into()
-                    .unwrap();
-            }
-        }
-
         let mut sh_broadcast = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
         let mut commitments: [Hash; PARAM_TAU] = [Hash::default(); PARAM_TAU];
 
@@ -115,8 +98,7 @@ impl Signature {
                     with_offset,
                 );
 
-                let input_share =
-                    Input::append_beaver_triples(wit_share[e][li], beaver_triples);
+                let input_share = Input::append_beaver_triples(wit_share[e][li], beaver_triples);
 
                 // Commit to the shares
                 commitments_prime[li] = commit_share(&salt, e as u16, *i - 1, &input_share);
