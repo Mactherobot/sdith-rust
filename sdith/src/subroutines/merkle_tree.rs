@@ -155,8 +155,10 @@ pub(crate) fn get_auth_size(selected_leaves: &[u16]) -> usize {
     get_revealed_nodes(selected_leaves).len() * PARAM_DIGEST_SIZE
 }
 
+/// Gets the revealed nodes from the selected leaves in the tree. This is a bottom up approach to
+/// figuring out which nodes are needed to calculate the merkle root from the selected leaves.
 pub(crate) fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
-    if selected_leaves.len() == 0 {
+    if selected_leaves.is_empty() {
         return vec![];
     }
 
@@ -170,7 +172,7 @@ pub(crate) fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
     let mut q: Queue<usize> = queue![];
 
     // Add the commitments to the queue but with the correct index in the tree
-    for (i, selected_leaf) in selected_leaves.iter().enumerate() {
+    for selected_leaf in selected_leaves.iter() {
         let add = q.add((1 << PARAM_MERKLE_TREE_HEIGHT) + *selected_leaf as usize - 1);
 
         if add.is_err() {
@@ -203,7 +205,8 @@ pub(crate) fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
                 candidate_index = q.peek().unwrap();
             }
             if is_left_child && (candidate_index == index + 1) {
-                candidate_index = q.remove().unwrap();
+                // Remove the sibling node from the queue as we know it is not needed
+                q.remove().unwrap();
             } else if is_left_child {
                 // The sibling node is given in the authentication paths
                 revealed_nodes.push((index + 1) as u16);
