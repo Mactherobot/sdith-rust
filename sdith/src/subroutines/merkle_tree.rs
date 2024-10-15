@@ -112,40 +112,15 @@ impl MerkleTree {
     ///
     /// If you supply all leaves or none, the auth path will be empty.
     pub(crate) fn get_merkle_path(&self, selected_leaves: &[u16]) -> Vec<Hash> {
-        // Find the missing nodes
-        // missing ← {2n + i − 1, i not in selected_leaves}
-        let mut missing = (self.n_leaves..=self.n_nodes)
-            .filter(|i| !selected_leaves.contains(&(self.get_leaf_index(*i as usize) as u16)))
-            .collect::<Vec<usize>>();
-
-        // Remove the leaves from the missing list
-        for parent_index in (1..=(1 << self.height) - 1).rev() {
-            // If both children are missing, add the parent to the missing list
-            let left_child = missing.iter().position(|v| v == &(parent_index * 2));
-            let right_child = missing.iter().position(|v| v == &(parent_index * 2 + 1));
-
-            if let Some(left_child_index) = left_child {
-                if let Some(right_child_index) = right_child {
-                    // Remove the 2 children from the missing list and add the parent instead
-                    if left_child_index < right_child_index {
-                        missing.remove(right_child_index);
-                        missing.remove(left_child_index);
-                    } else {
-                        missing.remove(left_child_index);
-                        missing.remove(right_child_index);
-                    }
-                    missing.push(parent_index);
-                }
-            }
-        }
+        let revealed_nodes = get_revealed_nodes(selected_leaves);
 
         let mut auth = vec![];
 
         // Fetch the missing nodes
         for h in (1..=self.height).rev() {
             for i in 1 << h..(1 << (h + 1)) {
-                if missing.contains(&i) {
-                    auth.push(self.nodes[i]);
+                if revealed_nodes.contains(&i) {
+                    auth.push(self.nodes[i as usize]);
                 }
             }
         }
@@ -181,6 +156,10 @@ pub(crate) fn get_auth_size(selected_leaves: &[u16]) -> usize {
 }
 
 pub(crate) fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
+    if selected_leaves.len() == 0 {
+        return vec![];
+    }
+
     let mut revealed_nodes = vec![];
 
     // Initialize
