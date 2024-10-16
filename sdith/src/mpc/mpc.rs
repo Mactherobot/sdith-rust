@@ -1,13 +1,18 @@
 use crate::{
     arith::gf256::{
-        gf256_ext::FPoint, gf256_poly::gf256_evaluate_polynomial_horner,
-        gf256_vector::gf256_mul_vector_by_scalar, FieldArith,
+        gf256_ext::FPoint,
+        gf256_poly::gf256_evaluate_polynomial_horner,
+        gf256_vector::{gf256_add_vector, gf256_add_vector_mul_scalar, gf256_mul_vector_by_scalar},
+        FieldArith,
     },
     constants::{
-        params::{PARAM_L, PARAM_LOG_N, PARAM_M_SUB_K, PARAM_SPLITTING_FACTOR, PARAM_T, PARAM_TAU},
+        params::{
+            PARAM_L, PARAM_LOG_N, PARAM_M_SUB_K, PARAM_N, PARAM_SPLITTING_FACTOR, PARAM_T,
+            PARAM_TAU,
+        },
         types::Hash,
     },
-    signature::input::{Input, InputSharePlain},
+    signature::input::{Input, InputSharePlain, INPUT_SIZE},
     subroutines::prg::prg::PRG,
     witness::{complete_q, compute_s, compute_s_poly, HPrimeMatrix, Solution, SOLUTION_PLAIN_SIZE},
 };
@@ -54,6 +59,60 @@ impl MPC {
         }
 
         view_challenges
+    }
+
+    /// Compute shamir secret sharing of the [`Input`]'s.
+    /// Returns (shares, coefficients).
+    ///
+    /// Randomly
+    pub(crate) fn compute_input_shares(
+        input_plain: [u8; INPUT_SIZE],
+        prg: &mut PRG,
+    ) -> (
+        [[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU],
+        [[[u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU],
+    ) {
+        let mut input_shares = [[[0u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU];
+
+        // Generate coefficients
+        let mut input_coefs = [[[0u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU];
+        for e in 0..PARAM_TAU {
+            for i in 0..PARAM_L {
+                prg.sample_field_fq_elements(&mut input_coefs[e][i]);
+            }
+        }
+
+        for e in 0..PARAM_TAU {
+            for i in 0..(PARAM_N - 1) {
+                // We need to compute the following:
+                // input_share[e][i] = input_plain + sum^ℓ_(j=1) fi^j · input_coef[e][j]
+                let f_i = u8::try_from(i + 1).unwrap();
+                let mut eval_sum = [0u8; INPUT_SIZE];
+
+                // Compute the inner sum
+                // sum^ℓ_(j=1) fij · input coef[e][j]
+                for j in 0..PARAM_L {
+                    gf256_add_vector_mul_scalar(
+                        &mut eval_sum,
+                        &input_coefs[e][j],
+                        f_i.field_pow((j + 1) as u8),
+                    );
+                }
+
+                // Add the input_plain to the sum
+                // input_plain + eval_sum
+                gf256_add_vector(&mut eval_sum, &input_plain);
+
+                // input_shares[e][i] = ...
+                gf256_add_vector(&mut input_shares[e][i], &eval_sum);
+            }
+
+            // From line 13 in Algorithm 12
+            // input[e][N-1] = input_coef[e][L-1]
+            input_shares[e][PARAM_N - 1] = input_coefs[e][PARAM_L - 1];
+        }
+
+        (input_shares, input_coefs)
     }
 
     /// Evaluate the polynomial at a given point in FPoint. See p. 20 of the specification.
@@ -273,6 +332,7 @@ mod mpc_tests {
             params::{PARAM_DIGEST_SIZE, PARAM_K, PARAM_N, PARAM_SALT_SIZE},
             types::Seed,
         },
+        mpc::broadcast::BroadcastShare,
         mpc::challenge::get_powers,
         signature::input::INPUT_SIZE,
         witness::{generate_witness, sample_witness},
@@ -445,23 +505,24 @@ mod mpc_tests {
     #[test]
     fn mpc_test_homomorphism() {
         let (input, broadcast, chal, h_prime, y) = prepare();
-
         let random_input_plain: InputSharePlain = [1; INPUT_SIZE];
+
+        // Here N = 1, l = 1 so the shamir secret sharing
 
         // input + random
         let mut input_share = input.serialise();
         gf256_add_vector(&mut input_share, &random_input_plain);
 
         // compute shares of the randomness
-        let mut broadcast_shares =
+        let mut broadcast_share =
             MPC::party_computation(random_input_plain, &chal, h_prime, y, &broadcast, false)
                 .serialise();
 
         // recompute shares of the randomness
-        // (alpha, beta, v=0) + randomness_shares
-        gf256_add_vector_with_padding(&mut broadcast_shares, &broadcast.serialise());
+        // randomness_shares += (alpha, beta, v=0)
+        gf256_add_vector_with_padding(&mut broadcast_share, &broadcast.serialise());
 
-        let broadcast_shares = BroadcastShare::parse(broadcast_shares);
+        let broadcast_shares = BroadcastShare::parse(broadcast_share);
 
         let recomputed_input_share_triples = MPC::inverse_party_computation(
             Input::truncate_beaver_triples(input_share),
@@ -480,14 +541,24 @@ mod mpc_tests {
         assert_eq!(recomputed_input_share_triples.2, input_share.beaver_c);
     }
 
+    /// For the plain broadcast, [`BroadcastShare`].v should always be zero,
     #[test]
     fn test_compute_broadcast_v_is_zero_always() {
         let (input, _broadcast, chal, h_prime, y) = prepare();
 
-        let broadcast_plain = MPC::compute_broadcast(input, &chal, h_prime, y);
+        let input_plain = input.serialise();
 
-        let v = Beaver::inner_product(broadcast_plain.alpha, broadcast_plain.beta);
+        // Run MPC::compute_broadcast, but calculate v
+        let broadcast_plain_with_v = MPC::_party_computation(
+            input_plain,
+            &chal,
+            h_prime,
+            y,
+            &Broadcast::default(),
+            false,
+            true,
+        );
 
-        assert_eq!(v, [FPoint::default(); PARAM_T]);
+        assert_eq!(broadcast_plain_with_v.v, [FPoint::default(); PARAM_T]);
     }
 }

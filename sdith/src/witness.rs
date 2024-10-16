@@ -8,12 +8,10 @@ use crate::{
         matrices::MatrixGF256,
     },
     constants::{
-        params::{
+        f_poly::compute_vanishing_polynomial, params::{
             PARAM_CHUNK_M, PARAM_CHUNK_W, PARAM_K, PARAM_M, PARAM_M_SUB_K, PARAM_SALT_SIZE,
             PARAM_SEED_SIZE, PARAM_SPLITTING_FACTOR,
-        },
-        precomputed::{PRECOMPUTED_F_POLY, PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S},
-        types::Seed,
+        }, precomputed::{PRECOMPUTED_F_POLY, PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S}, types::Seed
     },
     subroutines::prg::prg::PRG,
 };
@@ -124,12 +122,12 @@ pub(crate) fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly))
     let s_b: [u8; PARAM_M_SUB_K] = s_flat[PARAM_K..].try_into().expect("Failed to convert s_b");
 
     // Build H
-    let matrix_h_prime = HPrimeMatrix::gen_random(&mut PRG::init(&seed_h, None));
+    let h_prime = HPrimeMatrix::gen_random(&mut PRG::init(&seed_h, None));
 
     // Build y = s_B + H' s_A
 
     // H' s_A
-    let mut y: [u8; PARAM_M_SUB_K] = matrix_h_prime.gf256_mul_vector(&s_a);
+    let mut y: [u8; PARAM_M_SUB_K] = h_prime.gf256_mul_vector(&s_a);
 
     // s_B + ...
     for i in 0..y.len() {
@@ -141,7 +139,7 @@ pub(crate) fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly))
         s_b,
         y,
         seed_h,
-        h_prime: matrix_h_prime,
+        h_prime,
         q_poly: _q_poly,
         p_poly: _p_poly,
     }
@@ -401,15 +399,7 @@ fn sample_x(prg: &mut PRG) -> ([u8; PARAM_CHUNK_M], [u8; PARAM_CHUNK_W]) {
 /// Essentially this computes the monic polynomial from the roots. I.e. Q(root) = 0.
 /// Returns truncated polynomial to PARAM_CHUNK_W. (removing the leading coefficient 1)
 fn compute_q_prime_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N] {
-    let mut q_coeffs = [1u8; N];
-
-    for (i, pos) in positions.iter().enumerate() {
-        for j in (1..=i).rev() {
-            q_coeffs[j] = gf256_add(q_coeffs[j - 1], gf256_mul(q_coeffs[j], *pos));
-        }
-        q_coeffs[0] = gf256_mul(q_coeffs[0], *pos);
-    }
-    q_coeffs
+    compute_vanishing_polynomial(positions)
 }
 
 /// Completes the q polynomial by inserting the leading coefficient at the beginning of each d-split

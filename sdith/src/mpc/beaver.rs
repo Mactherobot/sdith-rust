@@ -128,7 +128,12 @@ impl Beaver {
 #[cfg(test)]
 mod beaver_tests {
     use super::*;
-    use crate::constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
+    use crate::{
+        constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
+        keygen::keygen,
+        mpc::challenge::Challenge,
+        witness::{self, HPrimeMatrix},
+    };
 
     #[test]
     fn test_generate() {
@@ -164,8 +169,7 @@ mod beaver_tests {
     #[test]
     fn test_serialise() {
         let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], Some(&[0u8; PARAM_SALT_SIZE]));
-        let (a, b, c) =
-            Beaver::generate_beaver_triples(&mut prg);
+        let (a, b, c) = Beaver::generate_beaver_triples(&mut prg);
 
         let plain = Beaver::serialise(a, b, c);
 
@@ -176,5 +180,20 @@ mod beaver_tests {
         assert_eq!(a, a_des);
         assert_eq!(b, b_des);
         assert_eq!(c, c_des);
+    }
+
+    #[test]
+    fn test_mpc_computation() {
+        let mseed = [0u8; PARAM_SEED_SIZE];
+        let salt = [0u8; PARAM_SALT_SIZE];
+        let mut prg = PRG::init(&mseed, Some(&salt));
+        let witness = witness::generate_instance_with_solution(mseed);
+        let (a, b, c) = Beaver::generate_beaver_triples(&mut prg);
+        let y = witness.0.y;
+        let h_prime = witness.0.h_prime;
+        let chal = Challenge::new([0u8; 32]);
+        let (eps, r) = (chal.eps, chal.r);
+
+
     }
 }

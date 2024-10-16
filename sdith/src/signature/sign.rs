@@ -1,28 +1,17 @@
 use crate::arith::matrices::MatrixGF256;
 use crate::witness::SOLUTION_PLAIN_SIZE;
 use crate::{
-    arith::gf256::{
-        gf256_vector::{gf256_add_vector, gf256_add_vector_mul_scalar},
-        FieldArith,
-    },
     constants::{
         params::{PARAM_L, PARAM_N, PARAM_TAU},
         types::{Hash, Salt, Seed},
     },
     keygen::SecretKey,
     mpc::{broadcast::BROADCAST_SHARE_PLAIN_SIZE, challenge::Challenge, mpc::MPC},
-    subroutines::{
-        commitments::commit_share,
-        merkle_tree::MerkleTree,
-        prg::{hashing::hash_2, prg::PRG},
-    },
+    subroutines::{commitments::commit_share, merkle_tree::MerkleTree, prg::prg::PRG},
     witness::HPrimeMatrix,
 };
 
-use super::{
-    input::{Input, INPUT_SIZE},
-    signature::Signature,
-};
+use super::{input::Input, signature::Signature};
 
 impl Signature {
     pub(crate) fn sign_message(
@@ -45,47 +34,8 @@ impl Signature {
         };
 
         // Compute input shares for the MPC
-        // let mut input_shares
         let input_plain = input.serialise();
-        let mut input_shares = [[[0u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU];
-
-        // Generate coefficients
-        let mut input_coefs = [[[0u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU];
-        for e in 0..PARAM_TAU {
-            for i in 0..PARAM_L {
-                prg.sample_field_fq_elements(&mut input_coefs[e][i]);
-            }
-        }
-
-        for e in 0..PARAM_TAU {
-            for i in 0..(PARAM_N - 1) {
-                // We need to compute the following:
-                // input_share[e][i] = input_plain + sum^ℓ_(j=1) fij · input coef[e][j]
-                let f_i = u8::try_from(i + 1).unwrap();
-                let mut eval_sum = [0u8; INPUT_SIZE];
-
-                // Compute the inner sum
-                // sum^ℓ_(j=1) fij · input coef[e][j]
-                for j in 0..PARAM_L {
-                    gf256_add_vector_mul_scalar(
-                        &mut eval_sum,
-                        &input_coefs[e][j],
-                        f_i.field_pow((j + 1) as u8),
-                    );
-                }
-
-                // Add the input_plain to the sum
-                // input_plain + eval_sum
-                gf256_add_vector(&mut eval_sum, &input_plain);
-
-                // input_shares[e][i] = ...
-                gf256_add_vector(&mut input_shares[e][i], &eval_sum);
-            }
-
-            // From line 13 in Algorithm 12
-            // input[e][N-1] = input_coef[e][L-1]
-            input_shares[e][PARAM_N - 1] = input_coefs[e][PARAM_L - 1];
-        }
+        let (input_shares, input_coefs) = MPC::compute_input_shares(input_plain, &mut prg);
 
         // Commit shares
         let mut commitments: [Hash; PARAM_TAU] = [Hash::default(); PARAM_TAU];
