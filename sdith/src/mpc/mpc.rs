@@ -151,7 +151,7 @@ impl MPC {
             h_prime,
             y,
             &Broadcast::default(),
-            false,
+            true,
             false,
         );
 
@@ -503,7 +503,7 @@ mod mpc_tests {
     }
 
     #[test]
-    fn mpc_test_homomorphism() {
+    fn mpc_test_toy_example() {
         let (input, broadcast, chal, h_prime, y) = prepare();
         let random_input_plain: InputSharePlain = [1; INPUT_SIZE];
 
