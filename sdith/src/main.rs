@@ -9,6 +9,7 @@ mod mpc;
 mod subroutines;
 mod witness;
 mod signature;
+mod spec_tests;
 
 fn main() {
     println!("Hello, world!");
