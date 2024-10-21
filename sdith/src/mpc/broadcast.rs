@@ -14,6 +14,7 @@ pub(crate) struct Broadcast {
 const BROADCAST_VALUE_PLAIN_SIZE: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR;
 
 pub(crate) const BROADCAST_PLAIN_SIZE: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR * 2;
+const BROADCAST_V_PLAIN_SIZE: usize = PARAM_ETA * PARAM_T;
 
 impl Broadcast {
     pub(crate) fn default() -> Self {

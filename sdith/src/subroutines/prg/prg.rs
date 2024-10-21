@@ -1,6 +1,6 @@
 use std::fmt::Error;
 
-use tiny_keccak::{Shake, Xof};
+use tiny_keccak::{KangarooTwelve, KangarooTwelveXof, Xof};
 
 use crate::{
     arith::gf256::gf256_ext::FPoint,
@@ -9,26 +9,26 @@ use crate::{
 
 use super::xof::{xof_init, xof_init_base};
 
-pub(crate)struct PRG {
-    xof: Shake,
+pub(crate) struct PRG {
+    xof: KangarooTwelveXof,
 }
 
 impl PRG {
     /// Initialize the PRG with a seed and optional salt
-    pub(crate)fn init(seed: &[u8; PARAM_SEED_SIZE], salt: Option<&[u8; PARAM_SALT_SIZE]>) -> Self {
+    pub(crate) fn init(seed: &[u8; PARAM_SEED_SIZE], salt: Option<&[u8; PARAM_SALT_SIZE]>) -> Self {
         PRG {
             xof: xof_init(seed, salt),
         }
     }
 
     /// Initialize the PRG with a base value e.g for h1 in the spec `PRG::init_base(HASH_PREFIX_CHALLENGE_1)`
-    pub(crate)fn init_base(x: &[u8]) -> Self {
+    pub(crate) fn init_base(x: &[u8]) -> Self {
         PRG {
             xof: xof_init_base(x),
         }
     }
 
-    pub(crate)fn sample_field_fq_non_zero(&mut self, output: &mut [u8]) {
+    pub(crate) fn sample_field_fq_non_zero(&mut self, output: &mut [u8]) {
         for i in 0..output.len() {
             self.sample_field_fq_elements(&mut output[i..i + 1]);
             if output[i] == 0 {
@@ -37,7 +37,7 @@ impl PRG {
         }
     }
 
-    pub(crate)fn sample_field_fq_non_zero_set(&mut self, output: &mut [u8]) -> Result<(), Error> {
+    pub(crate) fn sample_field_fq_non_zero_set(&mut self, output: &mut [u8]) -> Result<(), Error> {
         if output.len() >= 256 {
             return Err(Error);
         };
@@ -57,7 +57,7 @@ impl PRG {
 
     /// Sample a random value in the field F_q = F_256
     /// The byte B_i is returned as the sampled field element. XOF is called to generate n bytes
-    pub(crate)fn sample_field_fq_elements_vec(&mut self, n: usize) -> Vec<u8> {
+    pub(crate) fn sample_field_fq_elements_vec(&mut self, n: usize) -> Vec<u8> {
         let mut f = vec![0u8; n];
         self.xof.squeeze(&mut f);
 
@@ -66,19 +66,19 @@ impl PRG {
 
     /// Sample a random value in the field F_q = F_256
     /// The byte B_i is returned as the sampled field element. XOF is called to generate n bytes
-    pub(crate)fn sample_field_fq_elements(&mut self, out: &mut [u8]) {
+    pub(crate) fn sample_field_fq_elements(&mut self, out: &mut [u8]) {
         self.xof.squeeze(out);
     }
 
     /// Sample a random value in the field F_q^η
-    pub(crate)fn sample_field_fpoint_elements(&mut self, out: &mut [FPoint]) {
+    pub(crate) fn sample_field_fpoint_elements(&mut self, out: &mut [FPoint]) {
         for i in 0..out.len() {
             self.xof.squeeze(&mut out[i]);
         }
     }
 
     /// Sample a random value in the field F_q^η
-    pub(crate)fn sample_field_fpoint_elements_vec(&mut self, n: usize) -> Vec<FPoint> {
+    pub(crate) fn sample_field_fpoint_elements_vec(&mut self, n: usize) -> Vec<FPoint> {
         let mut f = vec![FPoint::default(); n];
         for i in 0..n {
             self.xof.squeeze(&mut f[i]);

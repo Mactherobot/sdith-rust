@@ -7,28 +7,27 @@
 /// associated to x. The concrete instance of the XOF we use in the SD-in-the-Head scheme is given
 /// in Section 4.5. In our context, we use the XOF as a secure pseudorandom generator (PRG)
 /// which tolerates input seeds of variable lengths.
-use tiny_keccak::{Hasher, Shake};
+use tiny_keccak::{Hasher, IntoXof, KangarooTwelve, KangarooTwelveXof, Shake};
 
-use crate::constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
-
-fn get_hasher() -> Shake {
-    Shake::v256()
-}
+use crate::constants::params::{PARAM_DIGEST_SIZE, PARAM_SALT_SIZE, PARAM_SEED_SIZE};
 
 pub(crate) fn xof_init(
     seed: &[u8; PARAM_SEED_SIZE],
     salt: Option<&[u8; PARAM_SALT_SIZE]>,
-) -> Shake {
-    let mut xof = get_hasher();
+) -> KangarooTwelveXof {
+    let mut hasher = KangarooTwelve::new([31u8]);
+
     if let Some(salt) = salt {
-        xof.update(salt);
+        hasher.update(salt);
     }
-    xof.update(seed);
-    xof
+    hasher.update(seed);
+
+    hasher.into_xof()
 }
 
-pub(crate) fn xof_init_base(x: &[u8]) -> Shake {
-    let mut xof = get_hasher();
-    xof.update(x);
-    xof
+pub(crate) fn xof_init_base(x: &[u8]) -> KangarooTwelveXof {
+    let mut hasher = KangarooTwelve::new([31u8]);
+
+    hasher.update(x);
+    hasher.into_xof()
 }

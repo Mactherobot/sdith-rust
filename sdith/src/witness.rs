@@ -8,10 +8,13 @@ use crate::{
         matrices::MatrixGF256,
     },
     constants::{
-        f_poly::compute_vanishing_polynomial, params::{
+        f_poly::compute_vanishing_polynomial,
+        params::{
             PARAM_CHUNK_M, PARAM_CHUNK_W, PARAM_K, PARAM_M, PARAM_M_SUB_K, PARAM_SALT_SIZE,
             PARAM_SEED_SIZE, PARAM_SPLITTING_FACTOR,
-        }, precomputed::{PRECOMPUTED_F_POLY, PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S}, types::Seed
+        },
+        precomputed::{PRECOMPUTED_F_POLY, PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S},
+        types::Seed,
     },
     subroutines::prg::prg::PRG,
 };
@@ -54,7 +57,8 @@ pub(crate) struct Solution {
 }
 
 /// k + 2w
-pub(crate) const SOLUTION_PLAIN_SIZE: usize = PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2;
+pub(crate) const SOLUTION_PLAIN_SIZE: usize =
+    PARAM_K + (PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2);
 
 impl Solution {
     pub(crate) fn serialise(&self) -> [u8; SOLUTION_PLAIN_SIZE] {
@@ -147,7 +151,7 @@ pub(crate) fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly))
 
 /// Expand a seed into multiple seeds.
 /// (seed_1, seed_2, ..., seed_n) = ExpandSeed(seed_root, salt := 0, n)
-fn expand_seed<const SEEDS: usize>(seed_root: Seed) -> [Seed; SEEDS] {
+pub(crate) fn expand_seed<const SEEDS: usize>(seed_root: Seed) -> [Seed; SEEDS] {
     let mut prg = PRG::init(&seed_root, Some(&[0u8; PARAM_SALT_SIZE]));
     let mut seeds = Vec::<Seed>::with_capacity(SEEDS);
     for _ in 0..SEEDS {

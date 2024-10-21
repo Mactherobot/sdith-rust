@@ -61,6 +61,44 @@ impl MPC {
         view_challenges
     }
 
+    pub(crate) fn expand_view_challenge_hash(digest: Hash) -> [[u16; PARAM_L]; PARAM_TAU] {
+        // Initialize the XOF (extendable output function) context with the digest
+        let mut prg = PRG::init_base(&digest);
+
+        // Define a mask for reducing the value range
+        let mask: u16 = (1 << PARAM_LOG_N) - 1;
+        let mut opened_views = [[0u16; PARAM_L]; PARAM_TAU]; // Array for storing the opened views
+
+        let mut tmp = [0u8; 2]; // Temporary buffer for sampled bytes
+        let mut value: u16; // The sampled value
+
+        // Loop through all sets (PARAM_TAU sets)
+        for i in 0..PARAM_TAU {
+            let mut unique_values = std::collections::HashSet::new(); // To ensure uniqueness within a set
+
+            // Generate unique values for the set (PARAM_L values per set)
+            for j in 0..PARAM_L {
+                loop {
+                    // Sample bytes from entropy and convert to u16 (handling endianness)
+                    prg.sample_field_fq_elements(&mut tmp);
+                    value = (tmp[0] as u16) | ((tmp[1] as u16) << 8);
+                    value &= mask; // Apply mask to limit value range
+
+                    // Ensure the value is within valid range and is unique
+                    if value < PARAM_N as u16 && unique_values.insert(value) {
+                        break;
+                    }
+                }
+
+                // Store the unique value in the output array
+                opened_views[i][j] = value;
+            }
+            opened_views[i].sort();
+        }
+        // Return the resulting array of opened views
+        opened_views
+    }
+
     /// Compute shamir secret sharing of the [`Input`]'s.
     /// Returns (shares, coefficients).
     ///
@@ -555,10 +593,29 @@ mod mpc_tests {
             h_prime,
             y,
             &Broadcast::default(),
-            false,
+            true,
             true,
         );
 
         assert_eq!(broadcast_plain_with_v.v, [FPoint::default(); PARAM_T]);
+    }
+
+    /// Test that the opened views are unique and within the valid range and are of a correct value
+    #[test]
+    fn test_expand_view_challenges_threshold_correct_value() {
+        let h2: Hash = [
+            253, 110, 109, 150, 126, 122, 237, 98, 46, 235, 26, 232, 204, 57, 25, 230, 165, 176,
+            207, 174, 32, 137, 6, 253, 110, 92, 165, 196, 229, 37, 219, 3,
+        ];
+        let view_challenges = MPC::expand_view_challenges_threshold(h2);
+        let correct_views = [
+            [3, 119, 169],
+            [19, 33, 51],
+            [50, 63, 86],
+            [114, 152, 232],
+            [50, 52, 70],
+            [6, 88, 249],
+        ];
+        assert_eq!(view_challenges, correct_views);
     }
 }

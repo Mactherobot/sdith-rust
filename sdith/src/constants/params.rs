@@ -6,7 +6,7 @@ pub(crate) const PARAM_M: usize = 230;
 /// Vector dimension PARAM_CODE_DIMENSION
 pub(crate) const PARAM_K: usize = 126;
 /// The Hamming weight bound PARAM_CODE_WEIGHT
-pub(crate) const PARAM_W: usize = 79;
+pub(crate) const PARAM_W: usize = 87;
 /// m - k
 pub(crate) const PARAM_M_SUB_K: usize = PARAM_M - PARAM_K;
 

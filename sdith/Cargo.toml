@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tiny-keccak = { version = "2.0.2", features = ["shake", "sha3"] }
+tiny-keccak = { version = "2.0.2", features = ["k12", "shake", "sha3"] }
 queues = "1.0.2"
 num-traits = "0.2.19"
 hex = "0.4.3"
+nist-pqc-seeded-rng = "0.2.0"
