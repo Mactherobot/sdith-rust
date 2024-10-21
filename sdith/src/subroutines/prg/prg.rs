@@ -1,6 +1,6 @@
 use std::fmt::Error;
 
-use tiny_keccak::{KangarooTwelve, KangarooTwelveXof, Xof};
+use tiny_keccak::{Shake, Xof};
 
 use crate::{
     arith::gf256::gf256_ext::FPoint,
@@ -10,7 +10,7 @@ use crate::{
 use super::xof::{xof_init, xof_init_base};
 
 pub(crate) struct PRG {
-    xof: KangarooTwelveXof,
+    xof: Shake,
 }
 
 impl PRG {
