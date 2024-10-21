@@ -21,6 +21,9 @@
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[section]
 
+\theoremstyle{plain}
+\newtheorem{lemma}{Lemma}[section]
+
 \renewcommand*\sfdefault{lmss}
 \renewcommand*\ttdefault{txtt}
 
@@ -93,6 +96,14 @@ Syndrome detection problem
 Fiat-Shamir heuristic
 
 
+
+
+\section{Syndrome Detection Problem}
+\label{sec:syndrome}
+
+Describe the the syndrome detection problem introducing why we need ZKAoK, LSSS, Beaver triples and MPC construction from \cite{baum2020concretely} section 3.3.
+
+
 \section{Galois Finite Field}
 \label{sec:gf256}
 
@@ -110,8 +121,8 @@ A group for bytes
   \textit{$S$ is a $(\ell,n)$ threshold SSS if it satisfies the following properties}:
 
   \begin{itemize}
-    \item \textbf{Share generation}: Given a secret $s$, the scheme generates $n$ shares $[[s]] = [[s_1, s_2, \dots, s_n]]$ such that $s = \text{Reconstruct}([[s]])$.
-    \item \textbf{Reconstruction}: Given a subset of shares $[[s']]$ of size $\ell$, the scheme can reconstruct the secret $s = \text{Reconstruct}([[s']])$.
+    \item \textbf{Share generation}: Given a secret $s$, the scheme generates $n$ shares $\texttt{share}(s) = [[s]] = [[s_1, s_2, \dots, s_n]]$.
+    \item \textbf{Reconstruction}: Given a subset of shares $[[s']]$ of size $\ell$, the scheme can reconstruct the secret $s = \texttt{open}([[s']])$.
   \end{itemize}
 
 \end{definition}
@@ -129,6 +140,10 @@ For a secret $s$ and a given security threshold $\ell$, the share $[[s]]$ is gen
 
 The $(t,n)$ Shamir's polynomial based secret sharing scheme is $(+,+)$-homomorphic in which the addition of two polynomials secrets equals the Lagrange's interpolation of the sum-of-shares for the same subset of shares.
 
+\todo{Write about creating shares, addition}
+
+\subsection{Multiplication and Beaver Triples}
+\label{sec:beaver}
 
 \section{Zero-Knowledge Proofs}
 \label{sec:zkp}
@@ -150,10 +165,34 @@ The framework benefits from previous efficiency improvements in MPC protocols to
 
 We first generalize the idea of [KKW18] to work over arithmetic circuits using a variant of the SPDZ MPC protocol [DPSZ12,LN17] and provide a formal proof of security to their "cut-and-choose" preprocessing heuristic. Then, we present a new construction where we replace the "cut-and-choose" mechanism with a "sacrificing"-based approach. While both approaches have similar cost per MPC instance, our "sacrificing"-based approach yields a smaller cheating probability, which means that the number of MPC instances simulated in the proof can be significantly smaller, thus reducing the overall communication footprint. Our scheme is highly flexible in its choice of parameters. In particular, by changing the number of parties in the underlying MPC protocol, one can alternate between achieving low communication and low running time. Our construction only requires efficient standard symmetric primitives, and thus is plausibly post-quantum secure even in the non-interactive case [DFMS19]. The two constructions can be found in \cite{baum2020concretely} \todo{Copied from citation. rewrite this}
 
-\section{Syndrome Detection Problem}
-\label{sec:syndrome}
+\subsection{Verification of a multiplication triple using another}
+\label{sec:verify}
+Given a random triple $([[a]], [[b]], [[c]])$, it is possible to verify the correctness of a triple $([[x]], [[y]], [[z]])$, i.e., that $z = x \cdot y$, without revealing any information on either of the triples, in the following way \cite{baum2020concretely}.
 
-Describe the the syndrome detection problem...
+\begin{enumerate}
+  \item The parties generate a random $\epsilon \in \mathbb{F}$.
+  \item The parties locally set $[[\alpha]] = \epsilon[[x]] + [[a]], [[\beta]] = [[y]] + [[b]]$.
+  \item The parties run \texttt{open}$([[\alpha]])$ and \texttt{open}$([[\beta]])$ to obtain $\alpha$ and $\beta$.
+  \item The parties locally set $[[v]] = \epsilon[[z]] - [[c]] + \alpha  \cdot [[b]] + \beta  \cdot [[a]] - \alpha  \cdot \beta$.
+  \item The parties run \texttt{open}$([[v]])$ to obtain $v$ and accept iff $v = 0$.
+
+\end{enumerate}
+Observe that if both triples are correct multiplication triples (i.e., $z = xy$ and $c = ab$) then the parties will always accept since
+\begin{align}
+  v & = \epsilon \cdot z - c + \alpha \cdot b + \beta \cdot a - \alpha \cdot \beta                                            \\
+    & = \epsilon \cdot xy - ab + (\epsilon \cdot x + a)b + (y + b)a - (\epsilon \cdot x + a)(y + b)                           \\
+    & = \epsilon \cdot xy - ab + \epsilon \cdot xb + ab + ya + ba - \epsilon \cdot xy - \epsilon \cdot xb - ay - ab           \\
+    & = (\epsilon \cdot xy - \epsilon \cdot xy) + (ab - ab) + (\epsilon \cdot xb - \epsilon \cdot xb) + (ya - ay) + (ba - ab) \\
+    & = 0
+\end{align}
+
+\subsection{Error probability}
+
+\begin{lemma}
+   If $([[a]], [[b]], [[c]])$ or $([[x]], [[y]], [[z]])$ is an incorrect multiplication triple then the parties output \texttt{accept} in the sub-protocol above with probability $\frac{1}{|\mathbb{F}|}$.
+\end{lemma}
+
+\todo{Proof of lemma and solution}
 
 \section{Fiat-Shamir Heuristic}
 \label{sec:fiatshamir}
@@ -167,6 +206,12 @@ Describe the the syndrome detection problem...
 more detailed description of the algorithm
 e.g. how we sampled I[e] witness challenge
 table of spec params (with our code naming and different categories)
+
+\section{Merkle Tree Commitment}
+
+\section{Hashing and XOF}
+
+\todo{Write about Shake, Keccak} and how we initiate the hash function and XOF
 
 \section{MPC computation}
 
