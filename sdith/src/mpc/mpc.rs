@@ -101,19 +101,17 @@ impl MPC {
 
     /// Compute shamir secret sharing of the [`Input`]'s.
     /// Returns (shares, coefficients).
-    ///
-    /// Randomly
     pub(crate) fn compute_input_shares(
         input_plain: [u8; INPUT_SIZE],
         prg: &mut PRG,
     ) -> (
-        [[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU],
-        [[[u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU],
+        Box<[[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU]>,
+        Box<[[[u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU]>,
     ) {
-        let mut input_shares = [[[0u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU];
+        let mut input_shares = Box::new([[[0u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU]);
 
         // Generate coefficients
-        let mut input_coefs = [[[0u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU];
+        let mut input_coefs = Box::new([[[0u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU]);
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_L {
                 prg.sample_field_fq_elements(&mut input_coefs[e][i]);

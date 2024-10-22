@@ -1,9 +1,6 @@
 // Field extension `F_q^2 = F_q[X] / (X^2 + X + 32)`. Here "/" means "over"
 
-use crate::{
-    constants::params::PARAM_L,
-    subroutines::{prg::prg::PRG, shamir::Shamir},
-};
+use crate::{constants::params::PARAM_L, subroutines::prg::prg::PRG};
 
 use super::{
     gf256_arith::{gf256_add, gf256_mul},
@@ -67,49 +64,6 @@ mod ext16_tests {
     use crate::{constants::params::PARAM_SEED_SIZE, subroutines::prg::prg::PRG};
 
     #[test]
-    fn test_f_256_16_extension() {
-        let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], None);
-        let a: [u8; 2] = prg.sample_field_fq_elements_vec(2).try_into().unwrap();
-        let b: [u8; 2] = prg.sample_field_fq_elements_vec(2).try_into().unwrap();
-        let c: [u8; 2] = prg.sample_field_fq_elements_vec(2).try_into().unwrap();
-
-        // Commutativity of addition and multiplication:
-        assert_eq!(gf256_ext16_add(a, b), gf256_ext16_add(b, a));
-        assert_eq!(gf256_ext16_mul(a, b), gf256_ext16_mul(b, a));
-
-        // Associativity of addition and multiplication:
-        assert_eq!(
-            gf256_ext16_add(a, gf256_ext16_add(b, c)),
-            gf256_ext16_add(gf256_ext16_add(a, b), c)
-        );
-        assert_eq!(
-            gf256_ext16_mul(a, gf256_ext16_mul(b, c)),
-            gf256_ext16_mul(gf256_ext16_mul(a, b), c)
-        );
-
-        // Identity of addition and multiplication:
-        let additive_inverse = [0u8, 0u8];
-        assert_eq!(gf256_ext16_add(a, additive_inverse), a);
-        let multiplicative_inverse = GF256_16_ONE;
-        assert_eq!(gf256_ext16_mul(a, multiplicative_inverse), a);
-
-        // Inverse of addition and multiplication:
-        assert_eq!(gf256_ext16_add(a, a), additive_inverse);
-        // No division implemented for now
-        // assert_eq!((a * b) / b, a);
-
-        // Multiplicative identity with additive identity is None:
-        // No division implemented for now
-        // assert_eq!(a.checked_div(&gf256!(0)), None);
-
-        // Distributivity of multiplication over addition:
-        assert_eq!(
-            gf256_ext16_mul(a, gf256_ext16_add(b, c)),
-            gf256_ext16_add(gf256_ext16_mul(a, b), gf256_ext16_mul(a, c))
-        );
-    }
-
-    #[test]
     fn test_f_256_16_mul_32() {
         let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], None);
         let a: [u8; 2] = prg.sample_field_fq_elements_vec(2).try_into().unwrap();
@@ -160,25 +114,6 @@ impl FieldArith for FPoint {
     }
 }
 
-impl Shamir<PARAM_L> for FPoint {
-    fn sample_field_elements(prg: &mut PRG) -> [Self; PARAM_L - 1] {
-        let mut res = [FPoint::default(); PARAM_L - 1];
-        prg.sample_field_fpoint_elements(&mut res);
-        res
-    }
-
-    fn from_usize(x: usize) -> Self {
-        assert!(x < 256usize.pow(4));
-        let mut res = [0u8; 4];
-        let mut x = x;
-        for i in 0..4 {
-            res[i] = (x % 256) as u8;
-            x /= 256;
-        }
-        res
-    }
-}
-
 /// Addition: Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
 pub(crate) fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
     let [a0, a1, a2, a3] = a;
@@ -223,7 +158,10 @@ pub(crate) fn gf256_ext32_sample(prg: &mut PRG) -> FPoint {
 mod ext32_tests {
     use super::*;
 
-    use crate::{arith::gf256::test_field_definitions, constants::params::PARAM_SEED_SIZE, subroutines::prg::prg::PRG};
+    use crate::{
+        arith::gf256::test_field_definitions, constants::params::PARAM_SEED_SIZE,
+        subroutines::prg::prg::PRG,
+    };
 
     #[test]
     fn test_field_point_definitions() {
@@ -232,7 +170,6 @@ mod ext32_tests {
             panic!("Failed to sample 3 field elements");
         };
 
-        
         test_field_definitions(a, b, c);
     }
 
@@ -257,19 +194,5 @@ mod ext32_tests {
         let expected = a.field_pow(3).field_add(a.field_mul(a)).field_add(a);
 
         assert_eq!(eval, expected);
-    }
-
-    //// Shamir's Secret Sharing Scheme for points
-
-    #[test]
-    fn test_shamir_secret_sharing() {
-        let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], None);
-        let secret = FPoint::field_sample(&mut prg);
-
-        let shares = secret.share(PARAM_L, &mut prg);
-        // let reconstructed = FPoint::reconstruct(shares.try_into().unwrap()); // Division not implemented
-        // TODO: Implement division?
-
-        // assert_eq!(secret, reconstructed);
     }
 }

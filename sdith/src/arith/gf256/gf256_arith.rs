@@ -2,10 +2,7 @@
 
 use std::num::Wrapping;
 
-use crate::{
-    constants::params::PARAM_L,
-    subroutines::{prg::prg::PRG, shamir::Shamir},
-};
+use crate::{constants::params::PARAM_L, subroutines::prg::prg::PRG};
 
 use super::FieldArith;
 
@@ -50,17 +47,6 @@ impl FieldArith for u8 {
         let mut res = [0; 1];
         prg.sample_field_fq_elements(&mut res);
         res[0]
-    }
-}
-
-impl Shamir<PARAM_L> for u8 {
-    fn sample_field_elements(prg: &mut PRG) -> [u8; PARAM_L - 1] {
-        let mut elements = [0; PARAM_L - 1];
-        prg.sample_field_fq_elements(&mut elements);
-        elements
-    }
-    fn from_usize(x: usize) -> Self {
-        x.try_into().expect("Failed to convert usize to u8")
     }
 }
 

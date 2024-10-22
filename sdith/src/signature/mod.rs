@@ -9,11 +9,8 @@ mod signing_and_verifying_tests {
 
     use super::signature::Signature;
     use crate::{
-        constants::{
-            params::{PARAM_L, PARAM_SALT_SIZE, PARAM_SEED_SIZE, PARAM_TAU},
-            precomputed::PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S,
-        },
-        keygen, witness,
+        constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
+        keygen,
     };
 
     #[test]
