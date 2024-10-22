@@ -1,5 +1,3 @@
-use core::fmt;
-
 use crate::{
     constants::{
         params::{PARAM_M_SUB_K, PARAM_SEED_SIZE},
@@ -81,7 +79,7 @@ impl SecretKey {
     }
 }
 
-pub(crate) fn keygen(seed_root: Seed) -> (PublicKey, SecretKey) {
+pub(crate) fn keygen(seed_root: Seed) -> (Box<PublicKey>, Box<SecretKey>) {
     let (instance, solution) = generate_instance_with_solution(seed_root);
     let pk = PublicKey {
         seed_h: instance.seed_h,
@@ -94,5 +92,5 @@ pub(crate) fn keygen(seed_root: Seed) -> (PublicKey, SecretKey) {
         solution,
     };
 
-    (pk, sk)
+    (Box::new(pk), Box::new(sk))
 }

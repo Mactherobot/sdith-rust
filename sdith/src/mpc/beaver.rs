@@ -1,9 +1,6 @@
 use crate::{
-    arith::gf256::gf256_ext::{gf256_ext32_add, gf256_ext32_mul, FPoint},
-    constants::{
-        params::{PARAM_ETA, PARAM_SPLITTING_FACTOR, PARAM_T},
-        types::{Salt, Seed},
-    },
+    arith::gf256::{gf256_ext::FPoint, FieldArith},
+    constants::params::{PARAM_ETA, PARAM_SPLITTING_FACTOR, PARAM_T},
     subroutines::prg::prg::PRG,
 };
 
@@ -38,7 +35,7 @@ impl Beaver {
 
         for d in 0..PARAM_SPLITTING_FACTOR {
             for j in 0..PARAM_T {
-                c[j] = gf256_ext32_add(c[j], gf256_ext32_mul(a[d][j], b[d][j]));
+                c[j] = c[j].field_add(a[d][j].field_mul(b[d][j]));
             }
         }
 
@@ -128,19 +125,46 @@ impl Beaver {
 #[cfg(test)]
 mod beaver_tests {
     use super::*;
-    use crate::{
-        constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
-        keygen::keygen,
-        mpc::challenge::Challenge,
-        witness::{self, HPrimeMatrix},
+    use crate::constants::{
+        params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
+        types::Hash,
     };
+
+    #[test]
+    fn test_inner_product() {
+        let mut prg = PRG::init_base(&Hash::default());
+        let mut a: BeaverA = Default::default();
+        let mut b: BeaverB = Default::default();
+
+        for d in 0..PARAM_SPLITTING_FACTOR {
+            prg.sample_field_fpoint_elements(&mut a[d]);
+            prg.sample_field_fpoint_elements(&mut b[d]);
+        }
+
+        let mut c = Beaver::inner_product(a, b);
+
+        for d in 0..PARAM_SPLITTING_FACTOR {
+            for j in 0..PARAM_T {
+                assert_eq!(a[d][j].len(), PARAM_ETA);
+                assert_eq!(b[d][j].len(), PARAM_ETA);
+
+                // Check that c = sum_d(a[d] * b[d]). Add is the same as substract
+                c[j] = c[j].field_add(a[d][j].field_mul(b[d][j]));
+            }
+        }
+
+        for j in 0..PARAM_T {
+            // Should be zero
+            assert_eq!(c[j], [0u8; 4]);
+        }
+    }
 
     #[test]
     fn test_generate() {
         let mseed = [0u8; PARAM_SEED_SIZE];
         let salt = [0u8; PARAM_SALT_SIZE];
         let mut prg = PRG::init(&mseed, Some(&salt));
-        let (a, b, mut c) = Beaver::generate_beaver_triples(&mut prg);
+        let (a, b, c) = Beaver::generate_beaver_triples(&mut prg);
 
         assert_eq!(a.len(), PARAM_SPLITTING_FACTOR);
         assert_eq!(b.len(), PARAM_SPLITTING_FACTOR);
@@ -148,21 +172,6 @@ mod beaver_tests {
 
         for i in 0..PARAM_T {
             assert_eq!(c[i].len(), PARAM_ETA);
-        }
-
-        for d in 0..PARAM_SPLITTING_FACTOR {
-            for i in 0..PARAM_T {
-                assert_eq!(a[d][i].len(), PARAM_ETA);
-                assert_eq!(b[d][i].len(), PARAM_ETA);
-
-                // Check that c = sum_d(a[d] * b[d]). Add is the same as substract
-                c[i] = gf256_ext32_add(c[i], gf256_ext32_mul(a[d][i], b[d][i]));
-            }
-        }
-
-        for i in 0..PARAM_T {
-            // Should be zero
-            assert_eq!(c[i], [0u8; 4]);
         }
     }
 
@@ -180,20 +189,5 @@ mod beaver_tests {
         assert_eq!(a, a_des);
         assert_eq!(b, b_des);
         assert_eq!(c, c_des);
-    }
-
-    #[test]
-    fn test_mpc_computation() {
-        let mseed = [0u8; PARAM_SEED_SIZE];
-        let salt = [0u8; PARAM_SALT_SIZE];
-        let mut prg = PRG::init(&mseed, Some(&salt));
-        let witness = witness::generate_instance_with_solution(mseed);
-        let (a, b, c) = Beaver::generate_beaver_triples(&mut prg);
-        let y = witness.0.y;
-        let h_prime = witness.0.h_prime;
-        let chal = Challenge::new([0u8; 32]);
-        let (eps, r) = (chal.eps, chal.r);
-
-
     }
 }

@@ -21,7 +21,7 @@ use super::{input::Input, signature::Signature};
 
 impl Signature {
     pub(crate) fn verify_signature(
-        public_key: PublicKey,
+        public_key: Box<PublicKey>,
         signature: Signature,
         message: &[u8],
     ) -> Result<bool, &'static str> {

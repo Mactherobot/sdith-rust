@@ -1,4 +1,3 @@
-pub(crate) mod beaver_triples;
 pub(crate) mod gf256;
 pub(crate) mod matrices;
 

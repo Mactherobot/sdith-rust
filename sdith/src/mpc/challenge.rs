@@ -81,7 +81,8 @@ impl std::fmt::Debug for Challenge {
 /// Compute the powers of a point for fixed length. Used for precomputing the powers of r.
 pub(crate) fn get_powers(point: FPoint, out: &mut [FPoint]) {
     out[0] = FPoint::field_one();
-    for i in 1..out.len() {
+    out[1] = point.clone();
+    for i in 2..out.len() {
         out[i] = out[i - 1].field_mul(point);
     }
 }
@@ -123,6 +124,17 @@ mod challenge_tests {
                         .field_mul(challenge.eps[d][t])
                 );
             }
+        }
+    }
+
+    #[test]
+    fn test_powers() {
+        let mut prg = PRG::init_base(&Hash::default());
+        let point = FPoint::field_sample(&mut prg);
+        let mut out = [FPoint::default(); PARAM_CHUNK_M + 1];
+        get_powers(point, &mut out);
+        for i in 0..PARAM_CHUNK_M + 1 {
+            assert_eq!(out[i], point.field_pow(i as u8));
         }
     }
 }

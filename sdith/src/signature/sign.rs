@@ -16,7 +16,7 @@ use super::{input::Input, signature::Signature};
 impl Signature {
     pub(crate) fn sign_message(
         entropy: (Seed, Salt),
-        secret_key: SecretKey,
+        secret_key: Box<SecretKey>,
         message: &[u8],
     ) -> Signature {
         // Expansion of the parity matrix H'

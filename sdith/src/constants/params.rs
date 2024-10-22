@@ -2,7 +2,7 @@
 /// (q) The Galois field size GL(q) = GL(2^8) = GL(256)
 pub(crate) const PARAM_Q: usize = 256;
 /// Code length PARAM_CODE_LENGTH
-pub(crate) const PARAM_M: usize = 230;
+pub(crate) const PARAM_M: usize = 242;
 /// Vector dimension PARAM_CODE_DIMENSION
 pub(crate) const PARAM_K: usize = 126;
 /// The Hamming weight bound PARAM_CODE_WEIGHT
