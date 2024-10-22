@@ -1,11 +1,8 @@
 use std::ops::Index;
 
-use crate::{
-    arith::gf256::gf256_arith::{gf256_add, gf256_mul},
-    subroutines::prg::prg::PRG,
-};
+use crate::{arith::gf256::FieldArith, subroutines::prg::prg::PRG};
 
-pub(crate)trait MatrixGF256<const ROWS: usize, const COLS: usize>:
+pub(crate) trait MatrixGF256<const ROWS: usize, const COLS: usize>:
     Index<usize, Output = [u8; COLS]>
 {
     /// Multiply the matrix self `A` by a vector `x` in GF(256).
@@ -35,7 +32,7 @@ pub(crate)trait MatrixGF256<const ROWS: usize, const COLS: usize>:
         for i in 0..ROWS {
             let mut sum = 0u8;
             for j in 0..COLS {
-                sum = gf256_add(sum, gf256_mul(self[i][j], x[i]));
+                sum = sum.field_add(self[i][j].field_mul(x[i]));
             }
             result[i] = sum;
         }

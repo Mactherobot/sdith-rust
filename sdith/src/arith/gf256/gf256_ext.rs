@@ -1,13 +1,13 @@
 // Field extension `F_q^2 = F_q[X] / (X^2 + X + 32)`. Here "/" means "over"
 
-use crate::{constants::params::PARAM_L, subroutines::prg::prg::PRG};
+use crate::subroutines::prg::prg::PRG;
 
 use super::{
     gf256_arith::{gf256_add, gf256_mul},
     FieldArith,
 };
 
-const GF256_16_ONE: [u8; 2] = [1, 0];
+const _GF256_16_ONE: [u8; 2] = [1, 0];
 const GF256_32_ONE: [u8; 4] = [1, 0, 0, 0];
 
 /// First field extension F_256^2 = F_256[X] / (X^2 + X + 32)
@@ -115,7 +115,7 @@ impl FieldArith for FPoint {
 }
 
 /// Addition: Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
-pub(crate) fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
+pub(super) fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
     let [a0, a1, a2, a3] = a;
     let [b0, b1, b2, b3] = b;
     let [r0, r1] = gf256_ext16_add([a0, a1], [b0, b1]);
@@ -125,7 +125,7 @@ pub(crate) fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
 }
 
 /// Multiplication: Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
-pub(crate) fn gf256_ext32_mul(a: FPoint, b: FPoint) -> FPoint {
+pub(super) fn gf256_ext32_mul(a: FPoint, b: FPoint) -> FPoint {
     let [a0, a1, a2, a3] = a;
     let [b0, b1, b2, b3] = b;
 
@@ -150,7 +150,7 @@ fn gf256_ext32_gf256_mul(a: u8, b: FPoint) -> FPoint {
 }
 
 /// Sample a value from the extended field `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
-pub(crate) fn gf256_ext32_sample(prg: &mut PRG) -> FPoint {
+pub(super) fn gf256_ext32_sample(prg: &mut PRG) -> FPoint {
     prg.sample_field_fq_elements_vec(4).try_into().unwrap()
 }
 

@@ -159,6 +159,7 @@ impl MPC {
         for i in 1..poly_d.len() {
             // sum += r^(i-1) * q_poly_d[i]
             let mut r_n = powers_of_r[i - 1];
+            // r * q_poly_d[i] = [r_1 * q_poly_d[i], r_2 * q_poly_d[i], r_3 * q_poly_d[i], r_4 * q_poly_d[i]]
             gf256_mul_vector_by_scalar(&mut r_n, poly_d[i]);
 
             sum = sum.field_add(r_n);
@@ -364,11 +365,11 @@ mod mpc_tests {
     use crate::{
         arith::gf256::gf256_vector::{gf256_add_vector, gf256_add_vector_with_padding},
         constants::{
-            params::{PARAM_DIGEST_SIZE, PARAM_K, PARAM_N, PARAM_SALT_SIZE},
+            params::{PARAM_DIGEST_SIZE, PARAM_K, PARAM_M, PARAM_N, PARAM_SALT_SIZE},
+            precomputed::PRECOMPUTED_F_POLY,
             types::Seed,
         },
-        mpc::broadcast::BroadcastShare,
-        mpc::challenge::get_powers,
+        mpc::{broadcast::BroadcastShare, challenge::get_powers},
         signature::input::INPUT_SIZE,
         witness::{generate_witness, sample_witness},
     };
@@ -543,23 +544,47 @@ mod mpc_tests {
         assert_eq!(recomputed_input_share_triples.2, input_share.beaver_c);
     }
 
+    #[test]
+    fn test_that_f_times_p_is_zero() {
+        let (input, _broadcast, ..) = prepare();
+        let mut prg = PRG::init_base(&[0]);
+        let r = FPoint::field_sample(&mut prg);
+        let mut powers_of_r = [FPoint::default(); PARAM_M + 1];
+        get_powers(r, &mut powers_of_r);
+
+        let f_r = MPC::polynomial_evaluation(&PRECOMPUTED_F_POLY, &powers_of_r);
+        let p_r = MPC::polynomial_evaluation(&input.solution.p_poly[0], &powers_of_r);
+
+        assert_eq!(f_r.field_mul(p_r), FPoint::field_zero());
+    }
+
+    #[test]
+    fn test_that_q_times_s_is_zero() {
+        let (input, _broadcast, _chal, h_prime, y) = prepare();
+        let mut prg = PRG::init_base(&[0]);
+        let r = FPoint::field_sample(&mut prg);
+        let mut powers_of_r = [FPoint::default(); PARAM_M + 1];
+        get_powers(r, &mut powers_of_r);
+
+        let q_poly = complete_q(input.solution.q_poly, 1);
+        let s_poly = compute_s_poly(compute_s(&input.solution.s_a, &h_prime, Some(&y)));
+
+        let q_r = MPC::polynomial_evaluation(&q_poly[0], &powers_of_r);
+        let s_r = MPC::polynomial_evaluation(&s_poly[0], &powers_of_r);
+
+        assert_eq!(q_r.field_mul(s_r), FPoint::field_zero());
+    }
+
     /// For the plain broadcast, [`BroadcastShare`].v should always be zero,
     #[test]
     fn test_compute_broadcast_v_is_zero_always() {
-        let (input, _broadcast, chal, h_prime, y) = prepare();
+        let (input, broadcast, chal, h_prime, y) = prepare();
 
         let input_plain = input.serialise();
 
         // Run MPC::compute_broadcast, but calculate v
-        let broadcast_plain_with_v = MPC::_party_computation(
-            input_plain,
-            &chal,
-            h_prime,
-            y,
-            &Broadcast::default(),
-            true,
-            true,
-        );
+        let broadcast_plain_with_v =
+            MPC::_party_computation(input_plain, &chal, h_prime, y, &broadcast, true, true);
 
         assert_eq!(broadcast_plain_with_v.v, [FPoint::default(); PARAM_T]);
     }

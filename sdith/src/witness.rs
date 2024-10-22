@@ -1,9 +1,9 @@
 use crate::{
     arith::{
         gf256::{
-            gf256_arith::{gf256_add, gf256_mul},
             gf256_poly::gf256_remove_one_degree_factor_monic,
             gf256_vector::{gf256_add_vector, gf256_mul_vector_by_scalar},
+            FieldArith,
         },
         matrices::MatrixGF256,
     },
@@ -135,7 +135,7 @@ pub(crate) fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly))
 
     // s_B + ...
     for i in 0..y.len() {
-        y[i] = gf256_add(y[i], s_b[i]);
+        y[i] = y[i].field_add(s_b[i]);
     }
 
     Witness {
@@ -225,7 +225,7 @@ pub(crate) fn sample_witness(
         // Compute S and P
         let mut tmp_poly = [0_u8; PARAM_CHUNK_M]; // holder of intermediate results for S and P
         for i in 0..PARAM_CHUNK_M {
-            let scalar = gf256_mul(x_vector[i], PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S[i]);
+            let scalar = x_vector[i].field_mul(PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S[i]);
 
             // Compute S polynomial
             gf256_remove_one_degree_factor_monic(&mut tmp_poly, &PRECOMPUTED_F_POLY, i as u8);
@@ -326,12 +326,9 @@ mod test_witness {
 
             // Compute S · Q and P · F
             for i in 0..PARAM_CHUNK_M {
-                s_q[i] = gf256_mul(
-                    gf256_evaluate_polynomial_horner(&s_poly_d, i as u8),
-                    gf256_evaluate_polynomial_horner_monic(&q_poly_d, i as u8),
-                );
-                p_f[i] = gf256_mul(
-                    gf256_evaluate_polynomial_horner(&p_poly_d, i as u8),
+                s_q[i] = gf256_evaluate_polynomial_horner(&s_poly_d, i as u8)
+                    .field_mul(gf256_evaluate_polynomial_horner_monic(&q_poly_d, i as u8));
+                p_f[i] = gf256_evaluate_polynomial_horner(&p_poly_d, i as u8).field_mul(
                     gf256_evaluate_polynomial_horner(&PRECOMPUTED_F_POLY, i as u8),
                 );
             }

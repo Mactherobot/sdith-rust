@@ -113,11 +113,11 @@ fn log_lookup(a: u8) -> u16 {
     LOG_TABLE_0X03[a as usize]
 }
 
-pub(crate) fn gf256_add(a: u8, b: u8) -> u8 {
+pub(super) fn gf256_add(a: u8, b: u8) -> u8 {
     a ^ b
 }
 
-pub(crate) fn gf256_mul(a: u8, b: u8) -> u8 {
+pub(super) fn gf256_mul(a: u8, b: u8) -> u8 {
     if (a == 0) || (b == 0) {
         return 0;
     }
@@ -189,13 +189,13 @@ fn gf256_pow_lookup(a: u8, b: u8) -> u8 {
 }
 
 /// Inverse using log table lookup a^-1 = g^(|g| - log_g(a))
-pub(crate) fn gf256_mul_inverse_lookup(a: u8) -> u8 {
+pub(super) fn gf256_mul_inverse_lookup(a: u8) -> u8 {
     let log_a = log_lookup(a);
     let log_a_inv = ORDER - log_a;
     power_lookup(log_a_inv)
 }
 
-pub(crate) fn gf256_div(a: u8, b: u8) -> u8 {
+pub(super) fn gf256_div(a: u8, b: u8) -> u8 {
     gf256_mul(a, gf256_mul_inverse_lookup(b))
 }
 
