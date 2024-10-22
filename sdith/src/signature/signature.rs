@@ -132,6 +132,7 @@ impl Signature {
         let h2 = Signature::gen_h2(message, &salt, &h1, &broadcast_plain, &broadcast_shares);
 
         let view_opening_challenges = MPC::expand_view_challenges_threshold(h2);
+        println!("view_opening_challenges: {:?}", view_opening_challenges);
 
         // Expand the view opening challenges
         let mut auth_lengths = [0; PARAM_TAU];
