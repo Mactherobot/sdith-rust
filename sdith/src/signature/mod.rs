@@ -53,8 +53,12 @@ mod signing_and_verifying_tests {
         rng.fill_bytes(&mut salt);
         let entropy = (seed_root, salt);
 
-        let parsed_signature = Signature::parse(sm.clone(), &message);
-        let serialised = parsed_signature.serialise();
+        // Fetch the message from the sm after the smlen and to the message length
+        let sig_message = &sm[4_usize..message.len() + 4];
+        assert_eq!(message, sig_message);
+
+        let signature_to_parse = sm[4 + message.len()..].to_vec();
+        let parsed_signature = Signature::parse(signature_to_parse, &message);
         // Compare bytes in sm with the serialised, and output when they differ
 
         // Now compute the signature based on the information given above
@@ -92,7 +96,6 @@ mod signing_and_verifying_tests {
         // Prepend the length and then the message to the serialised signature
         serialised.splice(0..0, smlen.to_le_bytes().to_vec());
         serialised.splice(4..4, message.to_vec());
-
-        assert_eq!(sm.to_vec(), serialised);
+        assert_eq!(sm, serialised.as_slice());
     }
 }

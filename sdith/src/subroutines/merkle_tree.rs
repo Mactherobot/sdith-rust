@@ -152,7 +152,8 @@ fn merkle_hash(parent_index: u16, left: Hash, right: Option<Hash>, salt: Option<
 }
 
 pub(crate) fn get_auth_size(selected_leaves: &[u16]) -> usize {
-    get_revealed_nodes(selected_leaves).len() * PARAM_DIGEST_SIZE
+    let get_revealed_nodes = get_revealed_nodes(selected_leaves);
+    get_revealed_nodes.len() * PARAM_DIGEST_SIZE
 }
 
 /// Gets the revealed nodes from the selected leaves in the tree. This is a bottom up approach to
@@ -173,7 +174,8 @@ pub(crate) fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
 
     // Add the commitments to the queue but with the correct index in the tree
     for selected_leaf in selected_leaves.iter() {
-        let add = q.add((1 << PARAM_MERKLE_TREE_HEIGHT) + *selected_leaf as usize - 1);
+        let val = (1 << PARAM_MERKLE_TREE_HEIGHT) + *selected_leaf as usize;
+        let add = q.add(val);
 
         if add.is_err() {
             panic!("Could not add element to queue");
@@ -248,7 +250,7 @@ pub(crate) fn get_merkle_root_from_auth(
     for (i, selected_leaf) in selected_leaves.iter().enumerate() {
         let add = q.add((
             commitments[i],
-            (1 << PARAM_MERKLE_TREE_HEIGHT) + *selected_leaf as usize - 1,
+            (1 << PARAM_MERKLE_TREE_HEIGHT) + *selected_leaf as usize,
         ));
 
         if add.is_err() {
@@ -544,7 +546,7 @@ mod test {
             // Get the commitments for the selected leaves
             let mut commitments_tau = vec![];
             for i in _selected_leaves {
-                commitments_tau.push(commitments[*i as usize - 1]);
+                commitments_tau.push(commitments[*i as usize]);
             }
 
             // Get the auth path for the selected leaves
@@ -653,7 +655,7 @@ mod test {
 
         let mut commitments_tau = vec![];
         for i in &selected_leaves {
-            commitments_tau.push(commitments[*i as usize - 1]);
+            commitments_tau.push(commitments[*i as usize]);
         }
 
         let mut auth = tree.get_merkle_path(&selected_leaves);
