@@ -168,9 +168,7 @@ impl MPC {
         for i in 0..degree {
             // sum += r^(i-1) * q_poly_d[i]
             let mut r_n = powers_of_r[i];
-            // print!("{:?}\t+\t{:?}\t*\t{:?}\t=\t", sum, r_n, poly_d[i-1]);
             gf256_mul_vector_by_scalar(&mut r_n, poly_d[i]);
-            // println!("{:?}", sum.field_add(r_n));
             sum = sum.field_add(r_n);
         }
 

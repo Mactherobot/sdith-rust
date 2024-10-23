@@ -20,9 +20,9 @@ use super::{input::Input, signature::Signature};
 
 impl Signature {
     pub(crate) fn verify_signature(
-        public_key: Box<PublicKey>,
+        public_key: PublicKey,
         signature: Signature,
-        message: &[u8],
+        message: &Vec<u8>,
     ) -> Result<bool, &'static str> {
         // Expansion of parity-check matrix
         let h_prime: HPrimeMatrix = gen_hmatrix(public_key.seed_h);

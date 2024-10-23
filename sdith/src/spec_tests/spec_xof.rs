@@ -22,12 +22,10 @@ mod xof_tests {
         // From https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/sha3/shakebytetestvectors.zip
         let msg = hex::decode("1b3b6e").unwrap();
         let output = hex::decode("d7335497e4cd3666885edbb0824d7a75").unwrap();
-        println!("{:?}", msg);
         let mut xof = xof_init_base(&msg);
         let mut out = vec![0u8; output.len()];
         xof.squeeze(&mut out);
 
-        println!("{:?}", out);
         assert_eq!(out, output);
     }
 }

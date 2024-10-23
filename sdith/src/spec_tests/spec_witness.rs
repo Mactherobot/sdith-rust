@@ -7,7 +7,7 @@ mod tests {
         },
         constants::params::PARAM_M_SUB_K,
         spec_tests::{
-            constants::{SPEC_MAT_H, SPEC_SEED_H},
+            spec_constants::{SPEC_MAT_H, SPEC_SEED_H},
             SPEC_MASTER_SEED,
         },
         subroutines::prg::prg::PRG,

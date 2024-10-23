@@ -146,7 +146,6 @@ pub(crate) fn compute_y(
     h_prime: &HPrimeMatrix,
 ) -> [u8; PARAM_M_SUB_K] {
     let mut y = s_b.clone();
-    println!("y: {:?}", y);
     mul_hprime_vector(&mut y, &h_prime, s_a);
     y
 }

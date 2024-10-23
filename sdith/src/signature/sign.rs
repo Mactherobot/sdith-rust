@@ -15,8 +15,8 @@ use super::{input::Input, signature::Signature};
 impl Signature {
     pub(crate) fn sign_message(
         entropy: (Seed, Salt),
-        secret_key: Box<SecretKey>,
-        message: &[u8],
+        secret_key: SecretKey,
+        message: &Vec<u8>,
     ) -> Signature {
         // Expansion of the parity matrix H'
         let h_prime: HPrimeMatrix = gen_hmatrix(secret_key.seed_h);
@@ -59,9 +59,9 @@ impl Signature {
 
         // MPC Simulation
         let broadcast = MPC::compute_broadcast(input, &chal, h_prime, secret_key.y);
-        let broad_plain = broadcast.serialise();
+        let broadcast_plain = broadcast.serialise();
 
-        let mut broad_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
+        let mut broadcast_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
 
         // Run through Tau and l to compute the broadcast shares
         for e in 0..PARAM_TAU {
@@ -75,29 +75,37 @@ impl Signature {
                     false,
                 );
 
-                broad_shares[e][j] = broadcast_share.serialise();
+                broadcast_shares[e][j] = broadcast_share.serialise();
             }
         }
 
         // Second challenge (view-opening challenge)
-        let h2 = Signature::gen_h2(message, &salt, &h1, &broad_plain, &broad_shares);
+        let h2 = Signature::gen_h2(message, &salt, &h1, &broadcast_plain, &broadcast_shares);
 
         // Create the set of view-opening challenges
         let view_opening_challenges = MPC::expand_view_challenges_threshold(h2);
 
         // Signature building
-        let mut wit_share = [[[0u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
+        let mut solution_share = [[[0u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
         let mut auth: [Vec<Hash>; PARAM_TAU] = Default::default();
         for e in 0..PARAM_TAU {
             auth[e] = merkle_trees[e].get_merkle_path(&view_opening_challenges[e]);
             for (li, i) in view_opening_challenges[e].iter().enumerate() {
                 // Truncate witness share by removing beaver triples from the plain value
-                wit_share[e][li] =
+                solution_share[e][li] =
                     Input::truncate_beaver_triples(input_shares[e][(*i - 1) as usize]);
             }
         }
 
         // Build the signature
-        Signature::new(salt, h1, broad_plain, broad_shares, auth, wit_share)
+        Signature {
+            message: message.clone(),
+            salt,
+            h1,
+            broadcast_plain,
+            broadcast_shares,
+            auth,
+            solution_share,
+        }
     }
 }
