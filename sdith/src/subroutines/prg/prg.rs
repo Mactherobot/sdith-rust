@@ -4,7 +4,7 @@ use tiny_keccak::{Shake, Xof};
 
 use crate::{
     arith::gf256::gf256_ext::FPoint,
-    constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
+    constants::{params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE}, types::Seed},
 };
 
 use super::xof::{xof_init, xof_init_base};
@@ -85,12 +85,17 @@ impl PRG {
         }
         f
     }
+
+    pub(crate) fn sample_seed(&mut self) -> Seed {
+        let mut seed = [0u8; PARAM_SEED_SIZE];
+        self.xof.squeeze(&mut seed);
+        seed
+
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::constants::types::Seed;
-
     use super::*;
 
     #[test]

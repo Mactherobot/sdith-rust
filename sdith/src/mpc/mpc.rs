@@ -389,7 +389,6 @@ mod mpc_tests {
         },
         mpc::{broadcast::BroadcastShare, challenge::get_powers},
         signature::input::INPUT_SIZE,
-        spec_tests,
         witness::{generate_witness, sample_witness},
     };
 
@@ -406,7 +405,7 @@ mod mpc_tests {
         let hseed = Seed::from([0; 16]);
         let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
 
-        let (q, s, p, _) = sample_witness(mseed);
+        let (q, s, p, _) = sample_witness(&mut prg);
         let witness = generate_witness(hseed, (q, s, p));
 
         let beaver_triples = Beaver::generate_beaver_triples(&mut prg);
@@ -467,7 +466,7 @@ mod mpc_tests {
         let hseed = Seed::from([0; 16]);
         let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
 
-        let (q, s, p, _) = sample_witness(mseed);
+        let (q, s, p, _) = sample_witness(&mut prg);
         let witness = generate_witness(hseed, (q, s, p));
         let beaver_triples = Beaver::generate_beaver_triples(&mut prg);
 

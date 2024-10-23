@@ -8,7 +8,7 @@ use crate::{
 };
 
 impl PublicKey {
-    pub(crate) fn parse_from_hex(hex: &str) -> Self {
+    pub(super) fn parse_from_hex(hex: &str) -> Self {
         let bytes = hex::decode(hex).unwrap();
         assert!(
             bytes.len() == PARAM_SEED_SIZE + PARAM_M_SUB_K,
@@ -21,7 +21,7 @@ impl PublicKey {
         PublicKey { seed_h, y }
     }
 
-    pub(crate) fn to_hex(&self) -> String {
+    pub(super) fn to_hex(&self) -> String {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&self.seed_h);
         bytes.extend_from_slice(&self.y);
@@ -30,7 +30,7 @@ impl PublicKey {
 }
 
 impl SecretKey {
-    pub(crate) fn parse_from_hex(hex: &str) -> Self {
+    pub(super) fn parse_from_hex(hex: &str) -> Self {
         let bytes = hex::decode(hex).unwrap();
 
         assert!(
@@ -59,7 +59,7 @@ impl SecretKey {
         }
     }
 
-    pub(crate) fn to_hex(&self) -> String {
+    pub(super) fn to_hex(&self) -> String {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&self.seed_h);
         bytes.extend_from_slice(&self.y);

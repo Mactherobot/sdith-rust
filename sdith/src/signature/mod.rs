@@ -78,6 +78,7 @@ mod signing_and_verifying_tests {
 
     #[test]
     fn test_parse_serialise() {
+        todo!("don't want this print");
         // Parse hex values
         let message =
             hex::decode("D81C4D8D734FCBFBEADE3D3F8A039FAA2A2C9957E835AD55B22E75BF57BB556AC8")
