@@ -31,8 +31,8 @@ impl PRG {
     pub(crate) fn sample_field_fq_non_zero(&mut self, output: &mut [u8]) {
         for i in 0..output.len() {
             self.sample_field_fq_elements(&mut output[i..i + 1]);
-            if output[i] == 0 {
-                output[i] += 1;
+            while output[i] == 0 {
+                self.sample_field_fq_elements(&mut output[i..i + 1]);
             }
         }
     }
@@ -89,6 +89,8 @@ impl PRG {
 
 #[cfg(test)]
 mod tests {
+    use crate::constants::types::Seed;
+
     use super::*;
 
     #[test]

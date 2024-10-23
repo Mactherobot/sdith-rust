@@ -7,7 +7,7 @@
 /// associated to x. The concrete instance of the XOF we use in the SD-in-the-Head scheme is given
 /// in Section 4.5. In our context, we use the XOF as a secure pseudorandom generator (PRG)
 /// which tolerates input seeds of variable lengths.
-use tiny_keccak::{Hasher, Shake};
+use tiny_keccak::{Hasher, Shake, Xof};
 
 use crate::constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
 
@@ -24,6 +24,8 @@ pub(crate) fn xof_init(
         xof.update(salt);
     }
     xof.update(seed);
+    let mut tmp = [0u8; 0];
+    xof.squeeze(&mut tmp);
     xof
 }
 
@@ -48,9 +50,23 @@ mod xof_tests {
         ];
         let mut xof = xof_init_base(&h2);
 
-        let correct = [119u8, 105];
+        let correct = [224, 181];
         let mut out = [0u8; 2];
         xof.squeeze(&mut out);
         assert_eq!(out, correct);
+    }
+
+    #[test]
+    fn test_vector() {
+        // From https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/sha3/shakebytetestvectors.zip
+        let msg = hex::decode("1b3b6e").unwrap();
+        let output = hex::decode("d7335497e4cd3666885edbb0824d7a75").unwrap();
+        println!("{:?}", msg);
+        let mut xof = xof_init_base(&msg);
+        let mut out = vec![0u8; output.len()];
+        xof.squeeze(&mut out);
+
+        println!("{:?}", out);
+        assert_eq!(out, output);
     }
 }
