@@ -153,15 +153,19 @@ impl MPC {
 
     /// Evaluate the polynomial at a given point in FPoint. See p. 20 of the specification.
     /// Q(r) = Σ_{i=0}^{ℓ-1} q_i · r^i
+    ///
+    /// # Arguments
+    /// * `poly_d` - The polynomial to evaluate coefficients in order [1, 2, 3] represents p(x) = 3x^2 + 2x + 1
     pub(super) fn polynomial_evaluation(poly_d: &[u8], powers_of_r: &[FPoint]) -> FPoint {
         assert!(powers_of_r.len() >= poly_d.len());
         let mut sum = FPoint::default();
-        for i in 1..poly_d.len() {
+        let degree = poly_d.len();
+        for i in 0..degree {
             // sum += r^(i-1) * q_poly_d[i]
-            let mut r_n = powers_of_r[i - 1];
-            // r * q_poly_d[i] = [r_1 * q_poly_d[i], r_2 * q_poly_d[i], r_3 * q_poly_d[i], r_4 * q_poly_d[i]]
+            let mut r_n = powers_of_r[i];
+            // print!("{:?}\t+\t{:?}\t*\t{:?}\t=\t", sum, r_n, poly_d[i-1]);
             gf256_mul_vector_by_scalar(&mut r_n, poly_d[i]);
-
+            // println!("{:?}", sum.field_add(r_n));
             sum = sum.field_add(r_n);
         }
 
@@ -254,12 +258,14 @@ impl MPC {
             if compute_v {
                 v[j] = c[j].field_neg();
             }
+
+            let powers_of_r_j = chal.powers_of_r[j];
+
             for d in 0..PARAM_SPLITTING_FACTOR {
                 let a = a[d][j];
                 let b = b[d][j];
 
                 // Challenge values
-                let powers_of_r_j = chal.powers_of_r[d][j];
 
                 // α[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
                 let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
@@ -272,7 +278,11 @@ impl MPC {
                 if compute_v {
                     // v[j] += ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
                     let eval_p = MPC::polynomial_evaluation(&p_poly[d], &powers_of_r_j);
-                    v[j] = v[j].field_add(chal.f_poly_eval_times_eps[d][j].field_mul(eval_p));
+                    v[j] = v[j].field_add(
+                        chal.f_poly_eval[j]
+                            .field_mul(eval_p)
+                            .field_mul(chal.eps[d][j]),
+                    );
 
                     // v[j] += α'[d][j] ⊗ b[d][j] + β'[d][j] ⊗ a[d][j]
                     v[j] = v[j].field_add(broadcast.alpha[d][j].field_mul(b));
@@ -327,12 +337,14 @@ impl MPC {
         for j in 0..PARAM_T {
             // c[j] = -v[j]
             c[j] = v[j].field_neg();
+
+            let powers_of_r_j = chal.powers_of_r[j];
+
             for d in 0..PARAM_SPLITTING_FACTOR {
                 let alpha_share = alpha_share[d][j];
                 let beta_share = beta_share[d][j];
 
                 // Challenge values
-                let powers_of_r_j = chal.powers_of_r[d][j];
 
                 // a[d][j] = α[d][j] - ε[d][j] ⊗ Evaluate(Q[d], r[j])
                 let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
@@ -344,7 +356,11 @@ impl MPC {
 
                 // c[j] +=  ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
                 let eval_p = MPC::polynomial_evaluation(&p_poly[d], &powers_of_r_j);
-                c[j] = c[j].field_add(chal.f_poly_eval_times_eps[d][j].field_mul(eval_p));
+                c[j] = c[j].field_add(
+                    chal.f_poly_eval[j]
+                        .field_mul(eval_p)
+                        .field_mul(chal.eps[d][j]),
+                );
 
                 // c[j] += α'[d][j] ⊗ b[d][j] + β'[d][j] ⊗ a[d][j]
                 c[j] = c[j].field_add(broadcast.alpha[d][j].field_mul(b[d][j]));
@@ -365,7 +381,9 @@ mod mpc_tests {
     use crate::{
         arith::gf256::gf256_vector::{gf256_add_vector, gf256_add_vector_with_padding},
         constants::{
-            params::{PARAM_DIGEST_SIZE, PARAM_K, PARAM_M, PARAM_N, PARAM_SALT_SIZE},
+            params::{
+                PARAM_CHUNK_M, PARAM_DIGEST_SIZE, PARAM_K, PARAM_M, PARAM_N, PARAM_SALT_SIZE,
+            },
             precomputed::PRECOMPUTED_F_POLY,
             types::Seed,
         },
@@ -387,7 +405,7 @@ mod mpc_tests {
         let hseed = Seed::from([0; 16]);
         let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
 
-        let (q, s, p, _) = sample_witness(mseed);
+        let (q, s, p, _) = sample_witness(&mut prg);
         let witness = generate_witness(hseed, (q, s, p));
 
         let beaver_triples = Beaver::generate_beaver_triples(&mut prg);
@@ -448,7 +466,7 @@ mod mpc_tests {
         let hseed = Seed::from([0; 16]);
         let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
 
-        let (q, s, p, _) = sample_witness(mseed);
+        let (q, s, p, _) = sample_witness(&mut prg);
         let witness = generate_witness(hseed, (q, s, p));
         let beaver_triples = Beaver::generate_beaver_triples(&mut prg);
 
@@ -544,24 +562,11 @@ mod mpc_tests {
         assert_eq!(recomputed_input_share_triples.2, input_share.beaver_c);
     }
 
+    /// Test that for some random point r_k we have that S(r_k) * Q'(r_k) = F * P(r_k)
     #[test]
-    fn test_that_f_times_p_is_zero() {
-        let (input, _broadcast, ..) = prepare();
-        let mut prg = PRG::init_base(&[0]);
-        let r = FPoint::field_sample(&mut prg);
-        let mut powers_of_r = [FPoint::default(); PARAM_M + 1];
-        get_powers(r, &mut powers_of_r);
-
-        let f_r = MPC::polynomial_evaluation(&PRECOMPUTED_F_POLY, &powers_of_r);
-        let p_r = MPC::polynomial_evaluation(&input.solution.p_poly[0], &powers_of_r);
-
-        assert_eq!(f_r.field_mul(p_r), FPoint::field_zero());
-    }
-
-    #[test]
-    fn test_that_q_times_s_is_zero() {
+    fn test_relation_sq_eq_pf() {
         let (input, _broadcast, _chal, h_prime, y) = prepare();
-        let mut prg = PRG::init_base(&[0]);
+        let mut prg = PRG::init_base(&[2]);
         let r = FPoint::field_sample(&mut prg);
         let mut powers_of_r = [FPoint::default(); PARAM_M + 1];
         get_powers(r, &mut powers_of_r);
@@ -569,10 +574,13 @@ mod mpc_tests {
         let q_poly = complete_q(input.solution.q_poly, 1);
         let s_poly = compute_s_poly(compute_s(&input.solution.s_a, &h_prime, Some(&y)));
 
-        let q_r = MPC::polynomial_evaluation(&q_poly[0], &powers_of_r);
-        let s_r = MPC::polynomial_evaluation(&s_poly[0], &powers_of_r);
+        let q_eval = MPC::polynomial_evaluation(&q_poly[0], &powers_of_r);
+        let s_eval = MPC::polynomial_evaluation(&s_poly[0], &powers_of_r);
 
-        assert_eq!(q_r.field_mul(s_r), FPoint::field_zero());
+        let f_eval = MPC::polynomial_evaluation(&PRECOMPUTED_F_POLY, &powers_of_r);
+        let p_eval = MPC::polynomial_evaluation(&input.solution.p_poly[0], &powers_of_r);
+
+        assert_eq!(q_eval.field_mul(s_eval), f_eval.field_mul(p_eval));
     }
 
     /// For the plain broadcast, [`BroadcastShare`].v should always be zero,
@@ -606,5 +614,53 @@ mod mpc_tests {
             [6, 88, 249],
         ];
         assert_eq!(view_challenges, correct_views);
+    }
+
+    #[test]
+    fn test_mpc_polynomial_evaluation_vs_spec() {
+        let spec_points = [
+            [101, 240, 130, 70],
+            [188, 62, 92, 104],
+            [217, 118, 89, 108],
+            [217, 191, 97, 2],
+            [230, 184, 239, 173],
+            [233, 129, 202, 172],
+            [56, 189, 15, 1],
+        ];
+
+        let spec_points_exp2 = [
+            [149, 81, 148, 191],
+            [18, 212, 171, 135],
+            [58, 133, 140, 151],
+            [42, 32, 70, 4],
+            [185, 29, 47, 167],
+            [26, 94, 114, 166],
+            [49, 190, 117, 1],
+        ];
+        let spec_f_evals = [
+            [188, 71, 118, 91],
+            [17, 165, 132, 51],
+            [133, 81, 123, 176],
+            [74, 131, 161, 189],
+            [179, 195, 88, 253],
+            [89, 33, 109, 134],
+            [12, 207, 24, 210],
+        ];
+
+        let mut f_evals = [FPoint::default(); 7];
+
+        for i in 0..7 {
+            let mut powers_of_r = [FPoint::default(); PARAM_CHUNK_M + 1];
+            get_powers(spec_points[i], &mut powers_of_r);
+
+            assert_eq!(spec_points[i], powers_of_r[1]);
+            assert_eq!(spec_points_exp2[i], powers_of_r[2]);
+
+            f_evals[i] = MPC::polynomial_evaluation(&PRECOMPUTED_F_POLY, &powers_of_r);
+        }
+
+        for i in 0..7 {
+            assert_eq!(f_evals[i], spec_f_evals[i]);
+        }
     }
 }

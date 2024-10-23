@@ -6,9 +6,9 @@ mod arith;
 mod constants;
 mod keygen;
 mod mpc;
+mod signature;
 mod subroutines;
 mod witness;
-mod signature;
 mod spec_tests;
 
 fn main() {

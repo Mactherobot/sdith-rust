@@ -1,7 +1,16 @@
+mod utils;
+mod witness;
+mod xof;
+mod keygen;
+
 use crate::{
     constants::{params::PARAM_SEED_SIZE, types::Seed},
     keygen::{PublicKey, SecretKey},
 };
+
+pub(self) const SPEC_MASTER_SEED: Seed = [
+    124, 153, 53, 160, 176, 118, 148, 170, 12, 109, 16, 228, 219, 107, 26, 221,
+];
 
 struct TestVectorResponse {
     count: usize,

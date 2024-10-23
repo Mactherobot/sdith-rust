@@ -23,7 +23,7 @@ use crate::{
 /// QPoly is a polynomial of degree PARAM_CHUNK_WEIGHT * PARAM_SPLITTING_FACTOR. Split into a matrix of PARAM_SPLITTING_FACTOR rows and PARAM_CHUNK_WEIGHT columns.
 pub(crate) type QPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
 pub(crate) type QPolyComplete = [[u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR];
-type PPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
+pub(crate) type PPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
 pub(crate) type SPoly = [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
 
 pub(crate) type HPrimeMatrix = [[u8; PARAM_K]; PARAM_M_SUB_K];
@@ -162,9 +162,14 @@ pub(crate) fn expand_seed<const SEEDS: usize>(seed_root: Seed) -> [Seed; SEEDS] 
     seeds.try_into().expect("Failed to convert seeds")
 }
 
-pub(crate) fn generate_instance_with_solution(seed_root: Seed) -> (Instance, Solution) {
-    let [seed_h, seed_witness] = expand_seed(seed_root);
-    let (q, s, p, _x) = sample_witness(seed_witness);
+pub(crate) fn generate_instance_with_solution(master_seed: Seed) -> (Instance, Solution) {
+    let mut prg = PRG::init(&master_seed, None);
+
+    let (q, s, p, _x) = sample_witness(&mut prg);
+
+    // Sample a seed for matrix H
+    let seed_h = prg.sample_seed();
+
     let witness = generate_witness(seed_h, (q, s, p));
 
     let instance = Instance {
@@ -197,15 +202,13 @@ pub(crate) fn generate_instance_with_solution(seed_root: Seed) -> (Instance, Sol
 /// A tuple containing the generated polynomials: `(Q', S, P, x)`.
 /// `x` is only used for testing purposes.
 pub(crate) fn sample_witness(
-    seed_witness: Seed,
+    prg: &mut PRG,
 ) -> (
     QPoly,
     SPoly,
     PPoly,
     [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR],
 ) {
-    let mut prg = PRG::init(&seed_witness, None);
-
     // Initiate variables
     let mut q_poly: QPoly = [[0_u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
     let mut p_poly: PPoly = [[0_u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
@@ -216,7 +219,7 @@ pub(crate) fn sample_witness(
 
     for n_poly in 0..PARAM_SPLITTING_FACTOR {
         // Sample x vector
-        let (x_vector, positions) = sample_x(&mut prg);
+        let (x_vector, positions) = sample_x(prg);
         x_vectors[n_poly] = x_vector;
 
         // Compute Q
@@ -228,12 +231,22 @@ pub(crate) fn sample_witness(
             let scalar = x_vector[i].field_mul(PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S[i]);
 
             // Compute S polynomial
-            gf256_remove_one_degree_factor_monic(&mut tmp_poly, &PRECOMPUTED_F_POLY, i as u8);
+            gf256_remove_one_degree_factor_monic(
+                &mut tmp_poly,
+                &PRECOMPUTED_F_POLY,
+                PARAM_M,
+                i as u8,
+            );
             gf256_mul_vector_by_scalar(&mut tmp_poly, scalar);
             gf256_add_vector(&mut s_poly[n_poly], &tmp_poly);
 
             // Compute P polynomial
-            gf256_remove_one_degree_factor_monic(&mut tmp_poly, &q_poly[n_poly], i as u8);
+            gf256_remove_one_degree_factor_monic(
+                &mut tmp_poly,
+                &q_poly[n_poly],
+                PARAM_CHUNK_W,
+                i as u8,
+            );
             gf256_mul_vector_by_scalar(&mut tmp_poly, scalar);
             gf256_add_vector(&mut p_poly[n_poly], &tmp_poly);
         }
@@ -258,7 +271,8 @@ mod test_witness {
     #[test]
     fn test_generate_witness() {
         let seed_test = [0u8; PARAM_SEED_SIZE];
-        let (q, s, p, ..) = sample_witness(seed_test);
+        let mut prg = PRG::init(&seed_test, None);
+        let (q, s, p, ..) = sample_witness(&mut prg);
         let result = generate_witness(seed_test, (q, s, p));
 
         let h_prime = result.h_prime;
@@ -277,7 +291,8 @@ mod test_witness {
     #[test]
     fn test_compute_polynomials() {
         let seed = [0u8; PARAM_SEED_SIZE];
-        let (q_poly, s_poly, p_poly, x_vectors) = sample_witness(seed);
+        let mut prg = PRG::init(&seed, None);
+        let (q_poly, s_poly, p_poly, x_vectors) = sample_witness(&mut prg);
 
         assert_eq!(q_poly.len(), PARAM_SPLITTING_FACTOR);
         assert_eq!(s_poly.len(), PARAM_SPLITTING_FACTOR);
@@ -340,7 +355,8 @@ mod test_witness {
     #[test]
     fn test_serialise() {
         let seed = [0u8; PARAM_SEED_SIZE];
-        let (q_poly, s_poly, p_poly, ..) = sample_witness(seed);
+        let mut prg = PRG::init(&seed, None);
+        let (q_poly, s_poly, p_poly, ..) = sample_witness(&mut prg);
         let witness = generate_witness(seed, (q_poly, s_poly, p_poly));
         let solution = Solution {
             s_a: witness.s_a,
@@ -384,11 +400,14 @@ fn sample_non_zero_x_positions(prg: &mut PRG) -> [u8; PARAM_CHUNK_W] {
 
 /// Create a vector x with hamming weight PARAM_CHUNK_WEIGHT.
 /// Returns x_vector and the non-zero positions.
-fn sample_x(prg: &mut PRG) -> ([u8; PARAM_CHUNK_M], [u8; PARAM_CHUNK_W]) {
+pub(crate) fn sample_x(prg: &mut PRG) -> ([u8; PARAM_CHUNK_M], [u8; PARAM_CHUNK_W]) {
     let positions = sample_non_zero_x_positions(prg);
     let mut x_vector = [0_u8; PARAM_CHUNK_M];
     let mut non_zero_coordinates = [1u8; PARAM_CHUNK_W];
+
+    // Sample non-zero coordinates for x
     prg.sample_field_fq_non_zero(&mut non_zero_coordinates);
+
     for (j, pos) in positions.iter().enumerate() {
         x_vector[*pos as usize] ^= non_zero_coordinates[j];
     }
@@ -457,6 +476,7 @@ pub(crate) fn compute_s_poly(s: [u8; PARAM_M]) -> SPoly {
 
 #[cfg(test)]
 mod test_helpers {
+
     use crate::{
         arith::{
             gf256::gf256_poly::{
@@ -530,7 +550,8 @@ mod test_helpers {
     #[test]
     fn test_compute_s() {
         let seed = [0u8; PARAM_SEED_SIZE];
-        let (q, s, p, ..) = sample_witness(seed);
+        let mut prg = PRG::init(&seed, None);
+        let (q, s, p, ..) = sample_witness(&mut prg);
         let witness = generate_witness(seed, (q, s, p));
         let y = witness.y;
         let h_prime = witness.h_prime;
@@ -545,7 +566,8 @@ mod test_helpers {
     #[test]
     fn test_complete_q() {
         let seed = [0u8; PARAM_SEED_SIZE];
-        let (q_poly, ..) = sample_witness(seed);
+        let mut prg = PRG::init(&seed, None);
+        let (q_poly, ..) = sample_witness(&mut prg);
         let q_complete = complete_q(q_poly, 1);
 
         for (i, q_comp) in q_complete.iter().enumerate() {
