@@ -400,8 +400,8 @@ mod test {
         let tree = MerkleTree::new(commitments, None);
 
         let mut selected_leaves = [0u16; PARAM_N];
-        for i in 1..=PARAM_N {
-            selected_leaves[i - 1] = i as u16;
+        for i in 0..PARAM_N {
+            selected_leaves[i] = i as u16;
         }
 
         let auth = tree.get_merkle_path(&selected_leaves);
@@ -442,7 +442,7 @@ mod test {
         let commitments = [[1_u8; 32]; PARAM_N];
         let tree = MerkleTree::new(commitments, None);
 
-        let auth = tree.get_merkle_path(&[1, 2]);
+        let auth = tree.get_merkle_path(&[0, 1]);
 
         // The auth path should have 7 nodes (one from each level)
         assert_eq!(auth.len(), PARAM_MERKLE_TREE_HEIGHT - 1);
@@ -465,7 +465,7 @@ mod test {
         let commitments = [[1_u8; 32]; PARAM_N];
         let tree = MerkleTree::new(commitments, None);
 
-        let auth = tree.get_merkle_path(&[1, 256]);
+        let auth = tree.get_merkle_path(&[0, 255]);
 
         // The auth path should have 7 nodes (one from each level)
         assert_eq!(auth.len(), (PARAM_MERKLE_TREE_HEIGHT - 1) * 2);
