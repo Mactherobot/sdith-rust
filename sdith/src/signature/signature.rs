@@ -81,12 +81,12 @@ impl Signature {
         ]);
 
         // Extract the message
-        let message_length = signature_plain.len() - 4 - signature_len as usize;
+        let message_length = signature_plain.len() - signature_len as usize;
         let mut message = Vec::with_capacity(message_length);
         message.extend_from_slice(&signature_plain[4usize..message_length]);
 
         // Create offset to be used for inserting into the sig byte array
-        let mut offset = 4 + message_length;
+        let mut offset = message_length;
 
         // Salt
         let salt: Salt = signature_plain[offset..offset + PARAM_SALT_SIZE]
@@ -202,7 +202,7 @@ mod signature_tests {
 
     #[test]
     fn test_serialise_parse_signature() {
-        let message = vec![0u8; INPUT_SIZE];
+        let message = vec![1u8, 2u8, 3u8, 4u8];
         let seed_root = [0u8; PARAM_SEED_SIZE];
         let salt = [1u8; PARAM_SALT_SIZE];
         let entropy = (seed_root, salt);
@@ -213,7 +213,6 @@ mod signature_tests {
         let serialised = signature.serialise();
         let deserialised = Signature::parse(serialised);
 
-        assert_eq!(signature.get_length(), deserialised.get_length());
         assert_eq!(signature.message, deserialised.message);
         assert_eq!(signature.salt, deserialised.salt);
         assert_eq!(signature.h1, deserialised.h1);
@@ -227,5 +226,6 @@ mod signature_tests {
                 assert_eq!(hash, &deserialised.auth[i][j]);
             }
         }
+        assert_eq!(signature.get_length(), deserialised.get_length());
     }
 }

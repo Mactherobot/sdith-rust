@@ -166,15 +166,12 @@ mod spec_tests {
 
     #[test]
     fn test_parse_serialise_signature_from_spec() {
-        let test_vectors = read_response_test_vectors(1); // TODO: test all 100 vectors
+        let test_vectors = read_response_test_vectors(100); // TODO: test all 100 vectors
 
         for tv in test_vectors {
             let parsed_signature = Signature::parse(tv.sm.clone());
+            assert_eq!(tv.smlen, tv.sm.len());
 
-            assert_eq!(
-                parsed_signature.get_length(),
-                (tv.smlen as u32).to_le_bytes()
-            );
             assert_eq!(parsed_signature.message, tv.msg);
             assert_eq!(parsed_signature.salt, tv.nist_entropy.sign_salt);
 
