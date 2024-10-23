@@ -122,7 +122,13 @@ fn create_master_seed_from_vector_seed(seed: nist_pqc_seeded_rng::Seed) -> Seed 
 mod spec_tests {
     use super::*;
 
-    use crate::{keygen::keygen, signature::signature::Signature};
+    use crate::{
+        constants::params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_TAU},
+        keygen::keygen,
+        mpc::broadcast::{BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
+        signature::signature::Signature,
+        witness::SOLUTION_PLAIN_SIZE,
+    };
 
     #[test]
     fn test_read_test_vectors() {
@@ -160,7 +166,7 @@ mod spec_tests {
                 &tv.msg,
             );
 
-            assert_eq!(sign.serialise(), tv.sm);
+            assert!(sign.serialise() == tv.sm, "Signature mismatch");
         }
     }
 
@@ -168,14 +174,78 @@ mod spec_tests {
     fn test_parse_serialise_signature_from_spec() {
         let test_vectors = read_response_test_vectors(100); // TODO: test all 100 vectors
 
-        for tv in test_vectors {
+        for (i, tv) in test_vectors.iter().enumerate() {
             let parsed_signature = Signature::parse(tv.sm.clone());
+            // Testing the length of the signature
             assert_eq!(tv.smlen, tv.sm.len());
+            assert_eq!((tv.smlen - tv.mlen - 4).to_le_bytes()[..4], tv.sm[..4]);
 
+            let mut offset = 4;
+            // Test message
             assert_eq!(parsed_signature.message, tv.msg);
-            assert_eq!(parsed_signature.salt, tv.nist_entropy.sign_salt);
+            assert_eq!(
+                parsed_signature.message,
+                tv.sm[offset..offset + tv.mlen].to_vec()
+            );
+            offset += tv.mlen;
 
-            assert_eq!(parsed_signature.serialise(), tv.sm);
+            // Test salt
+            assert_eq!(parsed_signature.salt, tv.nist_entropy.sign_salt);
+            assert_eq!(
+                parsed_signature.salt,
+                tv.sm[offset..offset + PARAM_SALT_SIZE]
+            );
+            offset += PARAM_SALT_SIZE;
+
+            // Test h1
+            assert_eq!(
+                parsed_signature.h1,
+                tv.sm[offset..offset + PARAM_DIGEST_SIZE]
+            );
+            offset += PARAM_DIGEST_SIZE;
+
+            // Test broadcast_plain
+            assert_eq!(
+                parsed_signature.broadcast_plain,
+                tv.sm[offset..offset + BROADCAST_PLAIN_SIZE]
+            );
+            offset += BROADCAST_PLAIN_SIZE;
+
+            // Test broadcast_shares and solution_shares
+            for e in 0..PARAM_TAU {
+                for i in 0..PARAM_L {
+                    assert_eq!(
+                        parsed_signature.broadcast_shares[e][i],
+                        tv.sm[offset..offset + BROADCAST_SHARE_PLAIN_SIZE]
+                    );
+                    offset += BROADCAST_SHARE_PLAIN_SIZE;
+                    assert_eq!(
+                        parsed_signature.solution_share[e][i],
+                        tv.sm[offset..offset + SOLUTION_PLAIN_SIZE]
+                    );
+                    offset += SOLUTION_PLAIN_SIZE;
+                }
+            }
+
+            // Test auth
+            for e in 0..PARAM_TAU {
+                for j in 0..parsed_signature.auth[e].len() {
+                    assert_eq!(
+                        parsed_signature.auth[e][j],
+                        tv.sm[offset..offset + PARAM_DIGEST_SIZE]
+                    );
+                    offset += PARAM_DIGEST_SIZE;
+                }
+            }
+
+            assert_eq!(offset, tv.sm.len(), "Rest?: {:?}", &tv.sm[offset..]);
+
+            // Test re-serialisation
+            assert_eq!(
+                parsed_signature.serialise(),
+                tv.sm,
+                "Incorrect serialisation of signature"
+            );
         }
     }
 }

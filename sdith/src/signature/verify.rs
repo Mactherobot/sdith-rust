@@ -44,7 +44,7 @@ impl Signature {
         let h2 = Signature::gen_h2(message, &salt, &h1, &broad_plain, &broadcast_shares);
 
         // Compute the view-opening challenges
-        let view_opening_challenges = MPC::expand_view_challenges_threshold(h2);
+        let view_opening_challenges = MPC::expand_view_challenge_hash(h2);
 
         let broadcast = Broadcast::parse(broad_plain);
         let mut sh_broadcast = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];

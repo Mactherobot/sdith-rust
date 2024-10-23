@@ -83,7 +83,7 @@ impl Signature {
         let h2 = Signature::gen_h2(message, &salt, &h1, &broadcast_plain, &broadcast_shares);
 
         // Create the set of view-opening challenges
-        let view_opening_challenges = MPC::expand_view_challenges_threshold(h2);
+        let view_opening_challenges = MPC::expand_view_challenge_hash(h2);
 
         // Signature building
         let mut solution_share = [[[0u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
