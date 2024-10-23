@@ -1,3 +1,5 @@
+mod utils;
+
 use crate::{
     constants::{params::PARAM_SEED_SIZE, types::Seed},
     keygen::{PublicKey, SecretKey},
