@@ -1,5 +1,5 @@
 use crate::arith::gf256::gf256_vector::gf256_add_vector_with_padding;
-use crate::arith::matrices::MatrixGF256;
+use crate::arith::matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::keygen::PublicKey;
 use crate::mpc::broadcast::{Broadcast, BroadcastShare};
 use crate::subroutines::merkle_tree::get_merkle_root_from_auth;
@@ -13,8 +13,7 @@ use crate::{
         types::Hash,
     },
     mpc::{broadcast::BROADCAST_SHARE_PLAIN_SIZE, challenge::Challenge, mpc::MPC},
-    subroutines::{commitments::commit_share, prg::prg::PRG},
-    witness::HPrimeMatrix,
+    subroutines::commitments::commit_share,
 };
 
 use super::{input::Input, signature::Signature};
@@ -26,7 +25,7 @@ impl Signature {
         message: &[u8],
     ) -> Result<bool, &'static str> {
         // Expansion of parity-check matrix
-        let h_prime = HPrimeMatrix::gen_random(&mut PRG::init(&public_key.seed_h, None));
+        let h_prime: HPrimeMatrix = gen_hmatrix(public_key.seed_h);
 
         // Signature parsing
         let (salt, h1, broad_plain, broadcast_shares, wit_share, mut auth) = (

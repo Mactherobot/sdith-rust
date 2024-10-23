@@ -1,9 +1,14 @@
 use crate::{
-    arith::gf256::{
-        gf256_ext::FPoint,
-        gf256_poly::gf256_evaluate_polynomial_horner,
-        gf256_vector::{gf256_add_vector, gf256_add_vector_mul_scalar, gf256_mul_vector_by_scalar},
-        FieldArith,
+    arith::{
+        gf256::{
+            gf256_ext::FPoint,
+            gf256_poly::gf256_evaluate_polynomial_horner,
+            gf256_vector::{
+                gf256_add_vector, gf256_add_vector_mul_scalar, gf256_mul_vector_by_scalar,
+            },
+            FieldArith,
+        },
+        matrices::HPrimeMatrix,
     },
     constants::{
         params::{
@@ -14,7 +19,7 @@ use crate::{
     },
     signature::input::{Input, InputSharePlain, INPUT_SIZE},
     subroutines::prg::prg::PRG,
-    witness::{complete_q, compute_s, compute_s_poly, HPrimeMatrix, Solution, SOLUTION_PLAIN_SIZE},
+    witness::{complete_q, compute_s, compute_s_poly, Solution, SOLUTION_PLAIN_SIZE},
 };
 
 use super::{
@@ -381,9 +386,7 @@ mod mpc_tests {
     use crate::{
         arith::gf256::gf256_vector::{gf256_add_vector, gf256_add_vector_with_padding},
         constants::{
-            params::{
-                PARAM_CHUNK_M, PARAM_DIGEST_SIZE, PARAM_K, PARAM_M, PARAM_N, PARAM_SALT_SIZE,
-            },
+            params::{PARAM_CHUNK_M, PARAM_DIGEST_SIZE, PARAM_M, PARAM_N, PARAM_SALT_SIZE},
             precomputed::PRECOMPUTED_F_POLY,
             types::Seed,
         },
@@ -398,7 +401,7 @@ mod mpc_tests {
         Input,
         Broadcast,
         Challenge,
-        [[u8; PARAM_K]; PARAM_M_SUB_K],
+        HPrimeMatrix,
         [u8; PARAM_M_SUB_K],
     ) {
         let mseed = Seed::from([0; 16]);

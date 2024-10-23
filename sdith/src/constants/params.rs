@@ -42,3 +42,7 @@ pub(crate) const PARAM_SPLITTING_FACTOR: usize = 1;
 pub(crate) const PARAM_CHUNK_M: usize = PARAM_M / PARAM_SPLITTING_FACTOR;
 /// Chunk size for the splitting variant of the Syndrome Decoding Problem for Hamming weight w
 pub(crate) const PARAM_CHUNK_W: usize = PARAM_W / PARAM_SPLITTING_FACTOR;
+
+// Weird params from spec, TODO remove?
+pub(crate) const PARAM_M_SUB_K_CEIL32: usize = ((PARAM_M_SUB_K + 31) >> 5) << 5;
+pub(crate) const PARAM_M_CEIL32: usize = ((PARAM_M + 31) >> 5) << 5;

@@ -3,7 +3,7 @@ use crate::{
         params::{PARAM_M_SUB_K, PARAM_SEED_SIZE},
         types::Seed,
     },
-    witness::{generate_instance_with_solution, Solution},
+    witness::{generate_instance_with_solution, Solution, SOLUTION_PLAIN_SIZE},
 };
 
 #[derive(Debug)]
@@ -38,6 +38,25 @@ pub(crate) struct SecretKey {
     pub(crate) y: [u8; PARAM_M_SUB_K],
     /// Solution to the instance (s_a, Q', )
     pub(crate) solution: Solution,
+}
+
+impl SecretKey {
+    pub(crate) fn parse(serialised: &[u8]) -> Self {
+        assert!(
+            serialised.len() == PARAM_SEED_SIZE + PARAM_M_SUB_K + SOLUTION_PLAIN_SIZE,
+            "Invalid secret key length. Got {}, expected {}",
+            serialised.len(),
+            PARAM_SEED_SIZE + PARAM_M_SUB_K + SOLUTION_PLAIN_SIZE
+        );
+        let seed_h: Seed = serialised[..PARAM_SEED_SIZE].try_into().unwrap();
+        let y = serialised[PARAM_SEED_SIZE..PARAM_SEED_SIZE + PARAM_M_SUB_K].try_into().unwrap();
+        let solution = Solution::parse(
+            serialised[PARAM_SEED_SIZE + PARAM_M_SUB_K..PARAM_SEED_SIZE + PARAM_M_SUB_K + SOLUTION_PLAIN_SIZE]
+                .try_into()
+                .unwrap(),
+        );
+        SecretKey { seed_h, y, solution }
+    }
 }
 
 pub(crate) fn keygen(seed_root: Seed) -> (Box<PublicKey>, Box<SecretKey>) {

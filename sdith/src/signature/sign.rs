@@ -1,4 +1,4 @@
-use crate::arith::matrices::MatrixGF256;
+use crate::arith::matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::witness::SOLUTION_PLAIN_SIZE;
 use crate::{
     constants::{
@@ -8,7 +8,6 @@ use crate::{
     keygen::SecretKey,
     mpc::{broadcast::BROADCAST_SHARE_PLAIN_SIZE, challenge::Challenge, mpc::MPC},
     subroutines::{commitments::commit_share, merkle_tree::MerkleTree, prg::prg::PRG},
-    witness::HPrimeMatrix,
 };
 
 use super::{input::Input, signature::Signature};
@@ -20,7 +19,7 @@ impl Signature {
         message: &[u8],
     ) -> Signature {
         // Expansion of the parity matrix H'
-        let h_prime = HPrimeMatrix::gen_random(&mut PRG::init(&secret_key.seed_h, None));
+        let h_prime: HPrimeMatrix = gen_hmatrix(secret_key.seed_h);
 
         // Randomness generation for the Beaver triples and the shares
         let (mseed, salt) = entropy;

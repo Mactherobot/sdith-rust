@@ -1,3 +1,4 @@
+mod constants;
 mod keygen;
 mod utils;
 mod witness;
