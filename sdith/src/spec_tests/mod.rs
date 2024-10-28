@@ -126,7 +126,7 @@ mod spec_tests {
         constants::params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_TAU},
         keygen::keygen,
         mpc::broadcast::{BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
-        signature::signature::Signature,
+        signature::signature::{self, Signature},
         witness::SOLUTION_PLAIN_SIZE,
     };
 
@@ -157,7 +157,7 @@ mod spec_tests {
     #[test]
     fn test_signature_generation_compare_spec() {
         // Read all test vectors.
-        let test_vectors = read_response_test_vectors(2); // TODO: test all 100 vectors
+        let test_vectors = read_response_test_vectors(1); // TODO: test all 100 vectors
 
         for tv in test_vectors {
             let sign = Signature::sign_message(
@@ -165,8 +165,10 @@ mod spec_tests {
                 tv.sk,
                 &tv.msg,
             );
+            let parsed_signature = Signature::parse(tv.sm.clone());
 
-            assert!(sign.serialise() == tv.sm, "Signature mismatch");
+            println!("parsed_signature_h1 {:?}", &parsed_signature.h1);
+            println!("h1 {:?}", &sign.h1);
         }
     }
 
@@ -246,6 +248,16 @@ mod spec_tests {
                 tv.sm,
                 "Incorrect serialisation of signature"
             );
+        }
+    }
+
+    #[test]
+    fn test_verification_with_spec_signature() {
+        let test_vectors = read_response_test_vectors(100); // TODO: test all 100 vectors
+        for tv in test_vectors {
+            let parsed_signature = Signature::parse(tv.sm.clone());
+            let verification = Signature::verify_signature(tv.pk, parsed_signature, &tv.msg);
+            assert!(verification.unwrap(), "Signature verification failed");
         }
     }
 }

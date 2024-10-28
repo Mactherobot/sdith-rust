@@ -184,7 +184,8 @@ mod input_tests {
         let solution_plain = Input::truncate_beaver_triples(input_plain);
 
         let beaver_triples = (a, b, c);
-        let input_with_beaver_triples = Input::append_beaver_triples(solution_plain, beaver_triples);
+        let input_with_beaver_triples =
+            Input::append_beaver_triples(solution_plain, beaver_triples);
 
         assert_eq!(input_plain, input_with_beaver_triples);
     }

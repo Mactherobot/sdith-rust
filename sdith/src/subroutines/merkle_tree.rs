@@ -28,21 +28,30 @@ pub(crate) struct MerkleTree {
 
 impl MerkleTree {
     pub(crate) fn new(commitments: CommitmentsArray, salt: Option<Hash>) -> Self {
-        let mut nodes: [Hash; PARAM_MERKLE_TREE_NODES] = [Hash::default(); PARAM_MERKLE_TREE_NODES];
+        // Print the last 3 commitments
+        println!("last commitment: {:?}", commitments[252]);
+        println!("last commitment: {:?}", commitments[253]);
+        println!("last commitment: {:?}", commitments[254]);
+
         let nb_leaves = commitments.len();
         let height: i32 = nb_leaves
             .to_f32()
             .expect("could not convert to f32")
             .log2()
             .ceil() as i32;
-        let nb_nodes = (1 << (height)) + nb_leaves - 1;
+        let mut tree = Self {
+            height,
+            n_nodes: (1 << (height)) + nb_leaves - 1,
+            n_leaves: nb_leaves,
+            nodes: [Hash::default(); PARAM_MERKLE_TREE_NODES],
+        };
 
-        let mut first_index = nb_nodes - nb_leaves + 1;
-        let mut last_index = nb_nodes;
+        let mut first_index = tree.n_nodes - nb_leaves + 1;
+        let mut last_index = tree.n_nodes;
 
         // Add leaves to the tree
         (0..nb_leaves).for_each(|i| {
-            nodes[first_index + i] = commitments[i];
+            tree.set_node(first_index + i, commitments[i]);
         }); // TODO: Optimize the loop below with batch processing https://github.com/sdith/sdith/blob/main/Optimized_Implementation/Threshold_Variant/sdith_threshold_cat1_gf256/merkle-tree.c
 
         for _h in (0..height).rev() {
@@ -59,27 +68,45 @@ impl MerkleTree {
                 let right_child_index = 2 * parent_index + 1;
 
                 // Finalize the hash and add it to the parent node
-                nodes[parent_index] = merkle_hash(
-                    parent_index as u16,
-                    nodes[left_child_index],
-                    if (parent_index < last_index) || last_is_isolated == 0 {
-                        Some(nodes[right_child_index])
-                    } else {
-                        None
-                    },
-                    salt,
+                tree.set_node(
+                    parent_index,
+                    merkle_hash(
+                        parent_index as u16,
+                        tree.get_node(left_child_index),
+                        if (parent_index < last_index) || last_is_isolated == 0 {
+                            Some(tree.get_node(right_child_index))
+                        } else {
+                            None
+                        },
+                        salt,
+                    ),
                 );
+
+                if parent_index == last_index {
+                    println!(
+                        "right_child_index: {:?}, {:?}",
+                        right_child_index,
+                        tree.get_node(257)
+                    );
+                    println!(
+                        "left_child_index: {:?}, {:?}",
+                        left_child_index,
+                        tree.get_node(256)
+                    );
+                    println!(
+                        "Parent: {:?} {:?}",
+                        parent_index,
+                        tree.get_node(parent_index)
+                    );
+                }
 
                 parent_index += 1;
             }
         }
-
-        Self {
-            height,
-            n_nodes: nb_nodes,
-            n_leaves: nb_leaves,
-            nodes,
-        }
+        // Print the first parent
+        println!("Parent: {:?}", tree.nodes[255]);
+        println!("Parent: {:?}", tree.nodes[254]);
+        tree
     }
 
     /// Returns the root of the merkle tree
@@ -126,6 +153,14 @@ impl MerkleTree {
         }
 
         auth
+    }
+    /// Returns the node at the specified index
+    pub(super) fn get_node(&self, index: usize) -> Hash {
+        self.nodes[index - 1]
+    }
+
+    pub(super) fn set_node(&mut self, index: usize, hash: Hash) {
+        self.nodes[index - 1] = hash;
     }
 }
 

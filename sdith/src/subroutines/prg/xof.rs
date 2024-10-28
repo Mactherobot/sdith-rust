@@ -32,5 +32,7 @@ pub(crate) fn xof_init(
 pub(crate) fn xof_init_base(x: &[u8]) -> Shake {
     let mut xof = get_hasher();
     xof.update(x);
+    let mut tmp = [0u8; 0];
+    xof.squeeze(&mut tmp);
     xof
 }
