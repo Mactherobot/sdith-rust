@@ -46,12 +46,10 @@ impl Signature {
                 commitments_prime[i] = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
             }
 
-            let merkle_tree = MerkleTree::new(commitments_prime, Some(salt));
+            let merkle_tree = MerkleTree::new(commitments_prime, None);
             commitments[e] = merkle_tree.get_root();
             merkle_trees.push(merkle_tree);
         }
-        println!("Commitments: {:?}", commitments[0]);
-        println!("Commitments: {:?}", commitments[1]);
 
         // First challenge (MPC challenge)
 

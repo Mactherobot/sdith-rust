@@ -46,7 +46,7 @@ pub(crate) struct Instance {
 /// It is part of the secret key of the signature scheme.
 ///
 /// It corresponds to the extended solution, meaning that it contains all the secret values which can be deterministically built from the solution itself and which are inputs of the underlying MPC protocol.
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Solution {
     pub(crate) s_a: [u8; PARAM_K],
     pub(crate) q_poly: QPoly,

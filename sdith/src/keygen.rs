@@ -33,6 +33,7 @@ impl PublicKey {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct SecretKey {
     pub(crate) seed_h: Seed,
     pub(crate) y: [u8; PARAM_M_SUB_K],

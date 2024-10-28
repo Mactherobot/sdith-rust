@@ -68,6 +68,7 @@ impl Signature {
 
                     // Compute the inner sum
                     // sum^ℓ_(j=1) fi^j · broad_share[e][j]
+                    // TODO: update to fit 
                     for j in 0..PARAM_L {
                         gf256_add_vector_mul_scalar(
                             &mut eval_sum,

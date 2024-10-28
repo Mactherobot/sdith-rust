@@ -28,11 +28,6 @@ pub(crate) struct MerkleTree {
 
 impl MerkleTree {
     pub(crate) fn new(commitments: CommitmentsArray, salt: Option<Hash>) -> Self {
-        // Print the last 3 commitments
-        println!("last commitment: {:?}", commitments[252]);
-        println!("last commitment: {:?}", commitments[253]);
-        println!("last commitment: {:?}", commitments[254]);
-
         let nb_leaves = commitments.len();
         let height: i32 = nb_leaves
             .to_f32()
@@ -73,7 +68,7 @@ impl MerkleTree {
                     merkle_hash(
                         parent_index as u16,
                         tree.get_node(left_child_index),
-                        if (parent_index < last_index) || last_is_isolated == 0 {
+                        if last_is_isolated == 0 {
                             Some(tree.get_node(right_child_index))
                         } else {
                             None
@@ -82,36 +77,15 @@ impl MerkleTree {
                     ),
                 );
 
-                if parent_index == last_index {
-                    println!(
-                        "right_child_index: {:?}, {:?}",
-                        right_child_index,
-                        tree.get_node(257)
-                    );
-                    println!(
-                        "left_child_index: {:?}, {:?}",
-                        left_child_index,
-                        tree.get_node(256)
-                    );
-                    println!(
-                        "Parent: {:?} {:?}",
-                        parent_index,
-                        tree.get_node(parent_index)
-                    );
-                }
-
                 parent_index += 1;
             }
         }
-        // Print the first parent
-        println!("Parent: {:?}", tree.nodes[255]);
-        println!("Parent: {:?}", tree.nodes[254]);
         tree
     }
 
     /// Returns the root of the merkle tree
     pub(crate) fn get_root(&self) -> Hash {
-        self.nodes[1]
+        self.get_node(1)
     }
 
     pub(crate) fn get_leaf(&self, n: u16) -> Hash {
@@ -684,9 +658,6 @@ mod test {
         }
 
         let tree = MerkleTree::new(commitments, None);
-        selected_leaves
-            .iter()
-            .for_each(|l| println!("{}", l + tree.n_leaves as u16));
 
         let mut commitments_tau = vec![];
         for i in &selected_leaves {

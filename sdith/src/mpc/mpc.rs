@@ -2,9 +2,8 @@ use crate::{
     arith::{
         gf256::{
             gf256_ext::FPoint,
-            gf256_poly::gf256_evaluate_polynomial_horner,
             gf256_vector::{
-                gf256_add_vector, gf256_add_vector_mul_scalar, gf256_mul_vector_by_scalar,
+                gf256_add_vector, gf256_add_vector_add_scalar, gf256_mul_vector_by_scalar,
             },
             FieldArith,
         },
@@ -107,7 +106,7 @@ impl MPC {
         }
 
         for e in 0..PARAM_TAU {
-            for i in 0..(PARAM_N) {
+            for i in 0..PARAM_N {
                 // We need to compute the following:
                 // input_share[e][i] = input_plain + sum^ℓ_(j=1) fi^j · input_coef[e][j]
                 let mut eval_sum = input_coefs[e][PARAM_L - 1].clone();
@@ -115,13 +114,13 @@ impl MPC {
                 // Compute the inner sum
                 // sum^ℓ_(j=1) fij · input coef[e][j]
                 // Horner method
-                if (i != 0) {
+                if i != 0 {
                     for j in (0..(PARAM_L - 1)).rev() {
-                        gf256_add_vector_mul_scalar(&mut eval_sum, &input_coefs[e][j], i as u8);
+                        gf256_add_vector_add_scalar(&mut eval_sum, &input_coefs[e][j], i as u8);
                     }
                     // Add the input_plain to the sum
                     // input_plain + eval_sum
-                    gf256_add_vector(&mut eval_sum, &input_plain);
+                    gf256_add_vector_add_scalar(&mut eval_sum, &input_plain, i as u8);
                 }
 
                 // input_shares[e][i] = ...
@@ -227,11 +226,6 @@ impl MPC {
         // Complete Q
         let q_poly_complete = complete_q(q_poly, if with_offset { 1u8 } else { 0u8 });
 
-        if (!compute_v) {
-            println!("Q: {:?}", q_poly);
-            println!("Power of r: {:?}", &chal.powers_of_r[0][..3]);
-        }
-
         // Outputs
         let mut alpha_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         let mut beta_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
@@ -258,23 +252,11 @@ impl MPC {
 
                 // α[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
                 let eval_s = MPC::polynomial_evaluation(&s_poly[d], &powers_of_r_j);
-                if d == 0 && j == 0 && !compute_v {
-                    // Print the alpha and beta values
-                    println!("Before calculation: ");
-                    println!("Alpha: {:?}", eval_q_array[j]);
-                    println!("Beta: {:?}", eval_s);
-                }
                 alpha_share[d][j] = chal.eps[d][j].field_mul(eval_q_array[j]).field_add(a);
 
                 // β[d][j] = Evaluate(S[d], r[j]) + b[d][j]
                 beta_share[d][j] = eval_s.field_add(b);
 
-                if d == 0 && j == 0 && !compute_v {
-                    // Print the alpha and beta values
-                    println!("After calculation: ");
-                    println!("Alpha: {:?}", alpha_share[d][j]);
-                    println!("Beta: {:?}", beta_share[d][j]);
-                }
                 if compute_v {
                     // v[j] += ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
                     let eval_p = MPC::polynomial_evaluation(&p_poly[d], &powers_of_r_j);

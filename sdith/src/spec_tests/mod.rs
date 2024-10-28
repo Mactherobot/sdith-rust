@@ -159,7 +159,7 @@ mod spec_tests {
         // Read all test vectors.
         let test_vectors = read_response_test_vectors(1); // TODO: test all 100 vectors
 
-        for tv in test_vectors {
+        for (vi, tv) in test_vectors.iter().enumerate() {
             let sign = Signature::sign_message(
                 (tv.nist_entropy.sign_seed, tv.nist_entropy.sign_salt),
                 tv.sk,
@@ -167,8 +167,42 @@ mod spec_tests {
             );
             let parsed_signature = Signature::parse(tv.sm.clone());
 
-            println!("parsed_signature_h1 {:?}", &parsed_signature.h1);
-            println!("h1 {:?}", &sign.h1);
+            // Test the signature parts
+            assert_eq!(
+                sign.message, parsed_signature.message,
+                "Message mismatch ({})",
+                vi
+            );
+            assert_eq!(sign.salt, parsed_signature.salt, "Salt mismatch ({})", vi);
+            assert_eq!(sign.h1, parsed_signature.h1, "H1 mismatch ({})", vi);
+            assert_eq!(
+                sign.broadcast_plain, parsed_signature.broadcast_plain,
+                "Broadcast plain mismatch ({})",
+                vi
+            );
+            for e in 0..PARAM_TAU {
+                for i in 0..PARAM_L {
+                    assert_eq!(
+                        sign.broadcast_shares[e][i], parsed_signature.broadcast_shares[e][i],
+                        "Broadcast shares mismatch ({})",
+                        vi
+                    );
+                    assert_eq!(
+                        sign.solution_share[e][i], parsed_signature.solution_share[e][i],
+                        "Solution shares mismatch ({})",
+                        vi
+                    );
+                }
+            }
+            for e in 0..PARAM_TAU {
+                for j in 0..sign.auth[e].len() {
+                    assert_eq!(
+                        sign.auth[e][j], parsed_signature.auth[e][j],
+                        "Auth mismatch ({}) for e: {}, j: {}",
+                        vi, e, j
+                    );
+                }
+            }
         }
     }
 

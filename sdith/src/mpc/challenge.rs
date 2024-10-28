@@ -30,7 +30,6 @@ impl Challenge {
     /// Generate `number_of_pairs` of challenges (r, e) ∈ F_point^t, (F_point^t)^d
     /// Uses h1 hash for Fiat-Shamir Transform
     pub(crate) fn new(h1: Hash) -> Self {
-        println!("h1 {:?}", h1);
         let mut prg = PRG::init_base(&h1);
         let mut r = [FPoint::default(); PARAM_T];
         prg.sample_field_fpoint_elements(&mut r);
