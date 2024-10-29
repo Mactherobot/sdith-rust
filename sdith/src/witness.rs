@@ -571,7 +571,7 @@ mod test_helpers {
         let q_complete = complete_q(q_poly, 1);
 
         for (i, q_comp) in q_complete.iter().enumerate() {
-            assert_eq!(q_comp[0], 1);
+            assert_eq!(q_comp.last(), Some(&1u8));
 
             // Check that this is the same as using the monic polynomial evaluation on the original q_poly
             assert_eq!(
