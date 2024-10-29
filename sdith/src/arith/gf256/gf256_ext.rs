@@ -115,27 +115,41 @@ impl FieldArith for FPoint {
 }
 
 /// Addition: Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
+///
+/// For u = (p,q) = p + qZ
+///
+/// u + v = (p + qZ) + (r + sZ) = (p + r) + (q + s)Z
 pub(super) fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
-    let [a0, a1, a2, a3] = a;
-    let [b0, b1, b2, b3] = b;
-    let [r0, r1] = gf256_ext16_add([a0, a1], [b0, b1]);
-    let [r2, r3] = gf256_ext16_add([a2, a3], [b2, b3]);
+    let [p0, p1, q0, q1] = a;
+    let [r0, r1, s0, s1] = b;
+
+    let [r0, r1] = gf256_ext16_add([p0, p1], [r0, r1]);
+    let [r2, r3] = gf256_ext16_add([q0, q1], [s0, s1]);
 
     [r0, r1, r2, r3]
 }
 
 /// Multiplication: Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
+///
+/// For u = (p,q) = p + qZ,
+///
+/// u * v = (p + qZ) * (r + sZ)
+///       = pr + psZ + qrZ + qsZ^2
+///       = pr + (ps + qr)Z + qs(Z + 32X)  # Z^2 = Z + 32X i.e. modulo
+///       = pr + (ps + qr)Z + qsZ + 32qsX
+///       = (pr + 32qsX) + (ps + qr + qs)Z
+///       = (pr + 32qsX) + ((p + q) * (r + s) - pr)Z
 pub(super) fn gf256_ext32_mul(a: FPoint, b: FPoint) -> FPoint {
-    let [a0, a1, a2, a3] = a;
-    let [b0, b1, b2, b3] = b;
+    let [p0, p1, q0, q1] = a;
+    let [r0, r1, s0, s1] = b;
 
-    let leading = gf256_ext16_mul([a2, a3], [b2, b3]);
-    let cnst = gf256_ext16_mul([a0, a1], [b0, b1]);
-    let sum_a = gf256_ext16_add([a0, a1], [a2, a3]);
-    let sum_b = gf256_ext16_add([b0, b1], [b2, b3]);
+    let qs = gf256_ext16_mul([q0, q1], [s0, s1]);
+    let pr = gf256_ext16_mul([p0, p1], [r0, r1]);
+    let p_plus_q = gf256_ext16_add([p0, p1], [q0, q1]);
+    let r_plus_s = gf256_ext16_add([r0, r1], [s0, s1]);
 
-    let [r0, r1] = gf256_ext16_add(gf256_ext16_mul32(leading), cnst);
-    let [r2, r3] = gf256_ext16_add(gf256_ext16_mul(sum_a, sum_b), cnst);
+    let [r0, r1] = gf256_ext16_add(gf256_ext16_mul32(qs), pr);
+    let [r2, r3] = gf256_ext16_add(gf256_ext16_mul(p_plus_q, r_plus_s), pr);
 
     [r0, r1, r2, r3]
 }

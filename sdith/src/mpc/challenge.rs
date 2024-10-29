@@ -71,8 +71,8 @@ impl std::fmt::Debug for Challenge {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Challenge {{ r: {:?}, e: {:?} }}",
-            &self.r[0], &self.eps[0]
+            "Challenge {{ \n\tr: {:?}, \n\teps[0]: {:?} \n\tpowers_of_r[0][..5]: {:?} \n}}",
+            &self.r, &self.eps[0], &self.powers_of_r[0][..5]
         )
     }
 }

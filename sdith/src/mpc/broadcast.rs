@@ -95,8 +95,9 @@ pub(crate) struct BroadcastShare {
     pub(crate) v: [FPoint; PARAM_T],
 }
 
-pub(crate) const BROADCAST_SHARE_PLAIN_SIZE: usize =
-    PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR * 2 + PARAM_ETA * PARAM_T;
+const BROADCAST_SHARE_PLAIN_SIZE_AB: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR * 2;
+const BROADCAST_SHARE_PLAIN_SIZE_V: usize = PARAM_ETA * PARAM_T;
+pub(crate) const BROADCAST_SHARE_PLAIN_SIZE: usize = BROADCAST_SHARE_PLAIN_SIZE_AB + BROADCAST_SHARE_PLAIN_SIZE_V;
 
 impl BroadcastShare {
     pub(crate) fn serialise(&self) -> [u8; BROADCAST_SHARE_PLAIN_SIZE] {
@@ -106,10 +107,12 @@ impl BroadcastShare {
             serialise_broadcast_value(result.as_mut_slice(), v, n);
         }
 
+
+        let mut offset = BROADCAST_SHARE_PLAIN_SIZE_AB;
         for j in 0..PARAM_T {
-            let offset = BROADCAST_SHARE_PLAIN_SIZE - PARAM_ETA * PARAM_T + j;
             let point = self.v[j];
             result[offset..(offset + PARAM_ETA)].copy_from_slice(&point);
+            offset += PARAM_ETA;
         }
 
         result

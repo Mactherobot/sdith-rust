@@ -11,7 +11,7 @@ use crate::{
     },
     constants::{
         params::{
-            PARAM_L, PARAM_LOG_N, PARAM_M_SUB_K, PARAM_N, PARAM_SPLITTING_FACTOR, PARAM_T,
+            PARAM_K, PARAM_L, PARAM_LOG_N, PARAM_M_SUB_K, PARAM_N, PARAM_SPLITTING_FACTOR, PARAM_T,
             PARAM_TAU,
         },
         types::Hash,
@@ -141,12 +141,11 @@ impl MPC {
         let mut sum = FPoint::default();
         let degree = poly_d.len();
         for i in 0..degree {
-            // sum += r^(i-1) * q_poly_d[i]
-            let mut r_n = powers_of_r[i];
-            gf256_mul_vector_by_scalar(&mut r_n, poly_d[i]);
-            sum = sum.field_add(r_n);
+            // sum += r_j^(i-1) * q_poly_d[i]
+            let mut r_i = powers_of_r[i];
+            gf256_mul_vector_by_scalar(&mut r_i, poly_d[i]);
+            sum = sum.field_add(r_i);
         }
-
         sum
     }
 
@@ -230,11 +229,6 @@ impl MPC {
         let mut alpha_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         let mut beta_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         let mut v = [FPoint::default(); PARAM_T];
-        let mut eval_q_array = [FPoint::default(); PARAM_T];
-        for j in 0..PARAM_T {
-            let powers_of_r_j = chal.powers_of_r[j];
-            eval_q_array[j] = MPC::polynomial_evaluation(&q_poly_complete[0], &powers_of_r_j);
-        }
 
         for j in 0..PARAM_T {
             // v[j] = -c[j]
@@ -251,8 +245,9 @@ impl MPC {
                 // Challenge values
 
                 // α[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
+                let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
                 let eval_s = MPC::polynomial_evaluation(&s_poly[d], &powers_of_r_j);
-                alpha_share[d][j] = chal.eps[d][j].field_mul(eval_q_array[j]).field_add(a);
+                alpha_share[d][j] = chal.eps[d][j].field_mul(eval_q).field_add(a);
 
                 // β[d][j] = Evaluate(S[d], r[j]) + b[d][j]
                 beta_share[d][j] = eval_s.field_add(b);
@@ -265,7 +260,6 @@ impl MPC {
                             .field_mul(eval_p)
                             .field_mul(chal.eps[d][j]),
                     );
-
                     // v[j] += α'[d][j] ⊗ b[d][j] + β'[d][j] ⊗ a[d][j]
                     v[j] = v[j].field_add(broadcast.alpha[d][j].field_mul(b));
                     v[j] = v[j].field_add(broadcast.beta[d][j].field_mul(a));

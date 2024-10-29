@@ -428,10 +428,10 @@ pub(crate) fn complete_q(q_poly: QPoly, leading: u8) -> QPolyComplete {
     let mut q_poly_out = [[0_u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR];
 
     for d in 0..PARAM_SPLITTING_FACTOR {
-        q_poly_out[d][0] = leading;
         for i in 0..PARAM_CHUNK_W {
-            q_poly_out[d][i + 1] = q_poly[d][i];
+            q_poly_out[d][i] = q_poly[d][i];
         }
+        q_poly_out[d][PARAM_CHUNK_W] = leading;
     }
 
     q_poly_out

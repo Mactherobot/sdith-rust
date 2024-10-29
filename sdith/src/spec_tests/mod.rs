@@ -111,13 +111,6 @@ fn read_response_test_vectors(n: usize) -> Vec<TestVectorResponse> {
     test_vectors
 }
 
-fn create_master_seed_from_vector_seed(seed: nist_pqc_seeded_rng::Seed) -> Seed {
-    let mut rng = NistPqcAes256CtrRng::from_seed(seed);
-    let mut master_seed = [0u8; PARAM_SEED_SIZE];
-    rng.fill_bytes(&mut master_seed);
-    master_seed
-}
-
 #[cfg(test)]
 mod spec_tests {
     use super::*;
@@ -126,7 +119,7 @@ mod spec_tests {
         constants::params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_TAU},
         keygen::keygen,
         mpc::broadcast::{BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
-        signature::signature::{self, Signature},
+        signature::signature::Signature,
         witness::SOLUTION_PLAIN_SIZE,
     };
 
@@ -180,17 +173,18 @@ mod spec_tests {
                 "Broadcast plain mismatch ({})",
                 vi
             );
+
             for e in 0..PARAM_TAU {
                 for i in 0..PARAM_L {
                     assert_eq!(
                         sign.broadcast_shares[e][i], parsed_signature.broadcast_shares[e][i],
-                        "Broadcast shares mismatch ({})",
-                        vi
+                        "Broadcast shares mismatch e: {}, i: {} ({})",
+                        e, i, vi
                     );
                     assert_eq!(
                         sign.solution_share[e][i], parsed_signature.solution_share[e][i],
-                        "Solution shares mismatch ({})",
-                        vi
+                        "Solution shares mismatch e: {}, i: {} ({})",
+                        e, i, vi
                     );
                 }
             }
