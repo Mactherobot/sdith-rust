@@ -86,6 +86,37 @@ impl MPC {
         opened_views
     }
 
+    /// Compute `share = plain + sum^ℓ_(j=1) fi^j · rnd_coefs[j]`
+    /// Returns the computed share
+    /// # Arguments
+    /// * `plain` - The plain value to be shared
+    /// * `rnd_coefs` - The random coefficients
+    /// * `fi` - The challenge value
+    /// * `skip_loop` - If true, will return rnd_coefs.last().clone()
+    pub(crate) fn compute_share<const Size: usize>(
+        plain: [u8; Size],
+        rnd_coefs: &[[u8; Size]],
+        fi: u8,
+        skip_loop: bool,
+    ) -> [u8; Size] {
+        // We need to compute the following:
+        // input_share[e][i] = input_plain + sum^ℓ_(j=1) fi^j · input_coef[e][j]
+        let mut share = rnd_coefs.last().unwrap().clone();
+
+        // Compute the inner sum
+        // sum^ℓ_(j=1) fi · coef[j]
+        // Horner method
+        if !skip_loop {
+            for j in (0..(rnd_coefs.len() - 1)).rev() {
+                gf256_add_vector_add_scalar(&mut share, &rnd_coefs[j], fi);
+            }
+            // Add the plain to the share
+            gf256_add_vector_add_scalar(&mut share, &plain, fi);
+        }
+
+        share
+    }
+
     /// Compute shamir secret sharing of the [`Input`]'s.
     /// Returns (shares, coefficients).
     pub(crate) fn compute_input_shares(
@@ -107,24 +138,8 @@ impl MPC {
 
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_N {
-                // We need to compute the following:
-                // input_share[e][i] = input_plain + sum^ℓ_(j=1) fi^j · input_coef[e][j]
-                let mut eval_sum = input_coefs[e][PARAM_L - 1].clone();
-
-                // Compute the inner sum
-                // sum^ℓ_(j=1) fij · input coef[e][j]
-                // Horner method
-                if i != 0 {
-                    for j in (0..(PARAM_L - 1)).rev() {
-                        gf256_add_vector_add_scalar(&mut eval_sum, &input_coefs[e][j], i as u8);
-                    }
-                    // Add the input_plain to the sum
-                    // input_plain + eval_sum
-                    gf256_add_vector_add_scalar(&mut eval_sum, &input_plain, i as u8);
-                }
-
-                // input_shares[e][i] = ...
-                gf256_add_vector(&mut input_shares[e][i], &eval_sum);
+                input_shares[e][i] =
+                    Self::compute_share(input_plain, &input_coefs[e], i as u8, i == 0);
             }
         }
 

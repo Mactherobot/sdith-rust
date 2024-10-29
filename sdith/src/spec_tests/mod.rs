@@ -150,7 +150,7 @@ mod spec_tests {
     #[test]
     fn test_signature_generation_compare_spec() {
         // Read all test vectors.
-        let test_vectors = read_response_test_vectors(1); // TODO: test all 100 vectors
+        let test_vectors = read_response_test_vectors(10); // TODO: test all 100 vectors
 
         for (vi, tv) in test_vectors.iter().enumerate() {
             let sign = Signature::sign_message(

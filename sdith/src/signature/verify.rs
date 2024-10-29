@@ -3,7 +3,7 @@ use crate::arith::gf256::gf256_vector::{
 };
 use crate::arith::matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::keygen::PublicKey;
-use crate::mpc::broadcast::{Broadcast, BroadcastShare};
+use crate::mpc::broadcast::{Broadcast, BroadcastShare, BROADCAST_SHARE_PLAIN_SIZE_AB};
 use crate::subroutines::merkle_tree::get_merkle_root_from_auth;
 use crate::{
     arith::gf256::{
@@ -38,7 +38,6 @@ impl Signature {
             signature.solution_share,
             signature.auth,
         );
-        println!("salt {:?}", salt);
 
         // First challenge (MPC challenge) Only generate one in the case of threshold variant
         let chal = Challenge::new(h1);
@@ -54,13 +53,16 @@ impl Signature {
         let mut commitments: [Hash; PARAM_TAU] = [Hash::default(); PARAM_TAU];
 
         // Party computation and regeneration of Merkle commitments
+
+        // (broad_plain | 000..)
+        let mut plain = [0u8; BROADCAST_SHARE_PLAIN_SIZE];
+        plain[..BROADCAST_SHARE_PLAIN_SIZE_AB].copy_from_slice(&broad_plain);
         for e in 0..PARAM_TAU {
             let mut commitments_prime = [Hash::default(); PARAM_L];
             for (li, i) in view_opening_challenges[e].iter().enumerate() {
                 let with_offset = (*i as usize) != PARAM_N;
-                println!("broadcast_shares: {:?}", broadcast_shares[e]);
 
-                if *i as usize == PARAM_N {
+                if *i as usize == 0 {
                     // TODO test this case
                     sh_broadcast[e][li] = broadcast_shares[e][li];
                 } else {
@@ -68,26 +70,8 @@ impl Signature {
                     // sh_broadcast[e][i] = (broad_plain, 0) + sum^ℓ_(j=1) fi^j · broad_share[e][j]
                     let f_i = i.to_le_bytes()[0];
 
-                    let mut eval_sum = broadcast_shares[e][PARAM_L - 1].clone();
-
-                    // Compute the inner sum
-                    // sum^ℓ_(j=1) fi^j · broad_share[e][j]
-                    // TODO: update to fit
-                    if *i != 0u16 {
-                        for j in (0..(PARAM_L - 1)).rev() {
-                            gf256_add_vector_add_scalar(
-                                &mut eval_sum,
-                                &broadcast_shares[e][j],
-                                f_i,
-                            );
-                        }
-                        // Add the input_plain to the sum
-                        //  + eval_sum
-                        gf256_add_vector_with_padding(&mut eval_sum, &broad_plain);
-                    }
-
-                    // sh_broadcast[e][i] = ...
-                    gf256_add_vector(&mut sh_broadcast[e][li], &eval_sum);
+                    sh_broadcast[e][li] =
+                        MPC::compute_share(plain, &broadcast_shares[e], f_i, *i == 0u16);
                 }
 
                 // Verify the Merkle path
