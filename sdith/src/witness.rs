@@ -46,7 +46,7 @@ pub(crate) struct Instance {
 /// It is part of the secret key of the signature scheme.
 ///
 /// It corresponds to the extended solution, meaning that it contains all the secret values which can be deterministically built from the solution itself and which are inputs of the underlying MPC protocol.
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Solution {
     pub(crate) s_a: [u8; PARAM_K],
     pub(crate) q_poly: QPoly,
@@ -579,5 +579,29 @@ mod test_helpers {
                 gf256_evaluate_polynomial_horner(q_comp, 1)
             )
         }
+    }
+
+    #[test]
+    fn test_serialise_parse() {
+        let seed = [0u8; PARAM_SEED_SIZE];
+        let mut prg = PRG::init(&seed, None);
+        let (q_poly, s_poly, p_poly, ..) = sample_witness(&mut prg);
+        let witness = generate_witness(seed, (q_poly, s_poly, p_poly));
+        let solution = Solution {
+            s_a: witness.s_a,
+            q_poly: witness.q_poly,
+            p_poly: witness.p_poly,
+        };
+
+        let serialised = solution.serialise();
+        assert_eq!(
+            serialised.len(),
+            PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2
+        );
+
+        let deserialised = Solution::parse(serialised);
+        assert_eq!(solution.s_a, deserialised.s_a);
+        assert_eq!(solution.q_poly, deserialised.q_poly);
+        assert_eq!(solution.p_poly, deserialised.p_poly);
     }
 }

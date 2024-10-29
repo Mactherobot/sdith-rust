@@ -39,14 +39,14 @@ impl Signature {
         // Commit shares
         let mut commitments: [Hash; PARAM_TAU] = [Hash::default(); PARAM_TAU];
         let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
+        let mut commitments_prime = [Hash::default(); PARAM_N];
         for e in 0..PARAM_TAU {
-            let mut commitments_prime = [Hash::default(); PARAM_N];
             for i in 0..PARAM_N {
                 // Commit to the shares
                 commitments_prime[i] = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
             }
 
-            let merkle_tree = MerkleTree::new(commitments_prime, Some(salt));
+            let merkle_tree = MerkleTree::new(commitments_prime, None); // TODO: I spec there is a salt here. In implementation there is not.
             commitments[e] = merkle_tree.get_root();
             merkle_trees.push(merkle_tree);
         }

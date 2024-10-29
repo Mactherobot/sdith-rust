@@ -2,9 +2,8 @@ use crate::{
     arith::{
         gf256::{
             gf256_ext::FPoint,
-            gf256_poly::gf256_evaluate_polynomial_horner,
             gf256_vector::{
-                gf256_add_vector, gf256_add_vector_mul_scalar, gf256_mul_vector_by_scalar,
+                gf256_add_vector, gf256_add_vector_add_scalar, gf256_mul_vector_by_scalar,
             },
             FieldArith,
         },
@@ -107,33 +106,26 @@ impl MPC {
         }
 
         for e in 0..PARAM_TAU {
-            for i in 0..(PARAM_N - 1) {
+            for i in 0..PARAM_N {
                 // We need to compute the following:
                 // input_share[e][i] = input_plain + sum^ℓ_(j=1) fi^j · input_coef[e][j]
-                let f_i = u8::try_from(i + 1).unwrap();
-                let mut eval_sum = [0u8; INPUT_SIZE];
+                let mut eval_sum = input_coefs[e][PARAM_L - 1].clone();
 
                 // Compute the inner sum
                 // sum^ℓ_(j=1) fij · input coef[e][j]
-                for j in 0..PARAM_L {
-                    gf256_add_vector_mul_scalar(
-                        &mut eval_sum,
-                        &input_coefs[e][j],
-                        f_i.field_pow((j + 1) as u8),
-                    );
+                // Horner method
+                if i != 0 {
+                    for j in (0..(PARAM_L - 1)).rev() {
+                        gf256_add_vector_add_scalar(&mut eval_sum, &input_coefs[e][j], i as u8);
+                    }
+                    // Add the input_plain to the sum
+                    // input_plain + eval_sum
+                    gf256_add_vector_add_scalar(&mut eval_sum, &input_plain, i as u8);
                 }
-
-                // Add the input_plain to the sum
-                // input_plain + eval_sum
-                gf256_add_vector(&mut eval_sum, &input_plain);
 
                 // input_shares[e][i] = ...
                 gf256_add_vector(&mut input_shares[e][i], &eval_sum);
             }
-
-            // From line 13 in Algorithm 12
-            // input[e][N-1] = input_coef[e][L-1]
-            input_shares[e][PARAM_N - 1] = input_coefs[e][PARAM_L - 1];
         }
 
         (input_shares, input_coefs)
@@ -238,6 +230,11 @@ impl MPC {
         let mut alpha_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         let mut beta_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         let mut v = [FPoint::default(); PARAM_T];
+        let mut eval_q_array = [FPoint::default(); PARAM_T];
+        for j in 0..PARAM_T {
+            let powers_of_r_j = chal.powers_of_r[j];
+            eval_q_array[j] = MPC::polynomial_evaluation(&q_poly_complete[0], &powers_of_r_j);
+        }
 
         for j in 0..PARAM_T {
             // v[j] = -c[j]
@@ -254,11 +251,10 @@ impl MPC {
                 // Challenge values
 
                 // α[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
-                let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
-                alpha_share[d][j] = chal.eps[d][j].field_mul(eval_q).field_add(a);
+                let eval_s = MPC::polynomial_evaluation(&s_poly[d], &powers_of_r_j);
+                alpha_share[d][j] = chal.eps[d][j].field_mul(eval_q_array[j]).field_add(a);
 
                 // β[d][j] = Evaluate(S[d], r[j]) + b[d][j]
-                let eval_s = MPC::polynomial_evaluation(&s_poly[d], &powers_of_r_j);
                 beta_share[d][j] = eval_s.field_add(b);
 
                 if compute_v {

@@ -1,6 +1,9 @@
 // ----------------------- Vector operations -----------------------
 
-use super::gf256_arith::{gf256_add, gf256_mul};
+use super::{
+    gf256_arith::{gf256_add, gf256_mul},
+    FieldArith,
+};
 
 /// vz'[] = vz[] + vx[]
 pub(crate) fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
@@ -32,6 +35,14 @@ pub(crate) fn gf256_add_vector_mul_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) 
     let bytes = vz.len();
     for i in 0..bytes {
         vz[i] = gf256_add(vz[i], gf256_mul(vx[i], scalar));
+    }
+}
+
+/// vz'[] = vz[] * scalar + vx[]
+pub(crate) fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) {
+    let bytes = vz.len();
+    for i in 0..bytes {
+        vz[i] = vx[i].field_add(vz[i].field_mul(scalar));
     }
 }
 

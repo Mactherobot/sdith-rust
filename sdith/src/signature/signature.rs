@@ -14,6 +14,7 @@ use crate::{
     witness::SOLUTION_PLAIN_SIZE,
 };
 
+#[derive(Debug, PartialEq)]
 pub(crate) struct Signature {
     pub(crate) message: Vec<u8>,
     pub(crate) salt: Salt,

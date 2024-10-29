@@ -1,13 +1,6 @@
 use crate::{
-    arith::gf256::{
-        gf256_vector::{gf256_add_vector, gf256_add_vector_mul_scalar},
-        FieldArith,
-    },
-    constants::params::{PARAM_L, PARAM_N, PARAM_TAU},
-    mpc::beaver::{
-        self, Beaver, BeaverA, BeaverB, BeaverC, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE,
-    },
-    subroutines::prg::prg::PRG,
+    constants::params::{PARAM_N, PARAM_TAU},
+    mpc::beaver::{Beaver, BeaverA, BeaverB, BeaverC, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE},
     witness::{Solution, SOLUTION_PLAIN_SIZE},
 };
 
@@ -77,68 +70,13 @@ impl Input {
         ));
         input
     }
-
-    /// Compute the input shares for Algorithm 12, p. 38
-    ///
-    /// ```
-    /// for e in [1, τ] and i in [1, N]
-    ///   input_share[e][i] = input_plain + sum^l_(j=1) fij · input coef[e][j]    if i != N
-    ///                       input_coef[e][l]                                    if i == N
-    /// ```
-    pub(super) fn compute_input_shares(
-        &self,
-        prg: &mut PRG,
-    ) -> (InputSharesPlain, [[[u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU]) {
-        let input_plain = self.serialise();
-        let mut input_shares = [[[0u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU];
-
-        // Generate coefficients
-        let mut input_coefs = [[[0u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU];
-        for e in 0..PARAM_TAU {
-            for i in 0..PARAM_L {
-                prg.sample_field_fq_elements(&mut input_coefs[e][i]);
-            }
-        }
-
-        for e in 0..PARAM_TAU {
-            for i in 0..(PARAM_N - 1) {
-                // We need to compute the following:
-                // input_share[e][i] = input_plain + sum^ℓ_(j=1) fij · input coef[e][j]
-                let f_i = u8::try_from(i + 1).unwrap();
-                let mut eval_sum = [0u8; INPUT_SIZE];
-
-                // Compute the inner sum
-                // sum^ℓ_(j=1) fij · input coef[e][j]
-                for j in 0..PARAM_L {
-                    gf256_add_vector_mul_scalar(
-                        &mut eval_sum,
-                        &input_coefs[e][j],
-                        f_i.field_pow((j + 1) as u8),
-                    );
-                }
-
-                // Add the input_plain to the sum
-                // input_plain + eval_sum
-                gf256_add_vector(&mut eval_sum, &input_plain);
-
-                // input_shares[e][i] = ...
-                gf256_add_vector(&mut input_shares[e][i], &eval_sum);
-            }
-
-            // From line 13 in Algorithm 12
-            // input[e][N-1] = input_coef[e][L-1]
-            input_shares[e][PARAM_N - 1] = input_coefs[e][PARAM_L - 1];
-        }
-
-        (input_shares, input_coefs)
-    }
 }
 
 #[cfg(test)]
 mod input_tests {
     use crate::{
         constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
-        keygen::keygen,
+        keygen::keygen, subroutines::prg::prg::PRG,
     };
 
     use super::*;
@@ -184,7 +122,8 @@ mod input_tests {
         let solution_plain = Input::truncate_beaver_triples(input_plain);
 
         let beaver_triples = (a, b, c);
-        let input_with_beaver_triples = Input::append_beaver_triples(solution_plain, beaver_triples);
+        let input_with_beaver_triples =
+            Input::append_beaver_triples(solution_plain, beaver_triples);
 
         assert_eq!(input_plain, input_with_beaver_triples);
     }

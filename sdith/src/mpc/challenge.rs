@@ -34,6 +34,8 @@ impl Challenge {
         let mut r = [FPoint::default(); PARAM_T];
         prg.sample_field_fpoint_elements(&mut r);
 
+        // Print r
+
         let mut eps = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         for e_i in eps.iter_mut() {
             prg.sample_field_fpoint_elements(e_i);
