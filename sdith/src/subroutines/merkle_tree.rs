@@ -121,7 +121,7 @@ impl MerkleTree {
         for h in (1..=self.height).rev() {
             for i in 1 << h..(1 << (h + 1)) {
                 if revealed_nodes.contains(&i) {
-                    auth.push(self.nodes[i as usize]);
+                    auth.push(self.get_node(i as usize));
                 }
             }
         }
@@ -434,14 +434,14 @@ mod test {
         assert_eq!(
             auth,
             vec![
-                tree.nodes[257],
-                tree.nodes[129],
-                tree.nodes[65],
-                tree.nodes[33],
-                tree.nodes[17],
-                tree.nodes[9],
-                tree.nodes[5],
-                tree.nodes[3],
+                tree.get_leaf(1),
+                tree.get_node(129),
+                tree.get_node(65),
+                tree.get_node(33),
+                tree.get_node(17),
+                tree.get_node(9),
+                tree.get_node(5),
+                tree.get_node(3),
             ]
         );
     }
@@ -458,13 +458,13 @@ mod test {
         assert_eq!(
             auth,
             vec![
-                tree.nodes[129],
-                tree.nodes[65],
-                tree.nodes[33],
-                tree.nodes[17],
-                tree.nodes[9],
-                tree.nodes[5],
-                tree.nodes[3],
+                tree.get_node(129),
+                tree.get_node(65),
+                tree.get_node(33),
+                tree.get_node(17),
+                tree.get_node(9),
+                tree.get_node(5),
+                tree.get_node(3),
             ]
         );
     }
