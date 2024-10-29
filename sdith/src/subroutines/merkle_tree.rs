@@ -138,7 +138,7 @@ fn merkle_hash(parent_index: usize, left: Hash, right: Option<Hash>, salt: Optio
     }
 
     // Hash the parent_index
-    hasher.update(&parent_index.to_le_bytes());
+    hasher.update(&(parent_index as u16).to_le_bytes());
 
     // Hash the left and right children
     hasher.update(&left);

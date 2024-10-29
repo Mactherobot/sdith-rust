@@ -51,8 +51,6 @@ impl Signature {
             merkle_trees.push(merkle_tree);
         }
 
-        println!("Commitments: {:?}", commitments);
-
         // First challenge (MPC challenge)
 
         // h1 = Hash1 (seedH , y, salt, com[1], . . . , com[τ ])
