@@ -344,7 +344,11 @@ impl MPC {
 
                 if with_offset {
                     // c[j] += -α[d][j] ⊗ β[d][j]
-                    c[j] = c[j].field_add(alpha_share.field_neg().field_mul(beta_share));
+                    c[j] = c[j].field_add(
+                        broadcast.alpha[d][j]
+                            .field_neg()
+                            .field_mul(broadcast.beta[d][j]),
+                    );
                 }
             }
         }

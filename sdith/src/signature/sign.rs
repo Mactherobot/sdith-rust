@@ -93,7 +93,7 @@ impl Signature {
             for (li, i) in view_opening_challenges[e].iter().enumerate() {
                 // Truncate witness share by removing beaver triples from the plain value
                 solution_share[e][li] =
-                    Input::truncate_beaver_triples(input_shares[e][(*i - 1) as usize]);
+                    Input::truncate_beaver_triples(input_shares[e][(*i) as usize]);
             }
         }
 

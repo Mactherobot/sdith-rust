@@ -1,4 +1,6 @@
-use crate::arith::gf256::gf256_vector::gf256_add_vector_with_padding;
+use crate::arith::gf256::gf256_vector::{
+    gf256_add_vector_add_scalar, gf256_add_vector_with_padding,
+};
 use crate::arith::matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::keygen::PublicKey;
 use crate::mpc::broadcast::{Broadcast, BroadcastShare};
@@ -36,6 +38,7 @@ impl Signature {
             signature.solution_share,
             signature.auth,
         );
+        println!("salt {:?}", salt);
 
         // First challenge (MPC challenge) Only generate one in the case of threshold variant
         let chal = Challenge::new(h1);
@@ -55,31 +58,33 @@ impl Signature {
             let mut commitments_prime = [Hash::default(); PARAM_L];
             for (li, i) in view_opening_challenges[e].iter().enumerate() {
                 let with_offset = (*i as usize) != PARAM_N;
+                println!("broadcast_shares: {:?}", broadcast_shares[e]);
 
                 if *i as usize == PARAM_N {
                     // TODO test this case
-                    sh_broadcast[e][li] = broadcast_shares[e][li as usize];
+                    sh_broadcast[e][li] = broadcast_shares[e][li];
                 } else {
                     // We need to compute the following:
                     // sh_broadcast[e][i] = (broad_plain, 0) + sum^ℓ_(j=1) fi^j · broad_share[e][j]
                     let f_i = i.to_le_bytes()[0];
 
-                    let mut eval_sum = [0u8; BROADCAST_SHARE_PLAIN_SIZE];
+                    let mut eval_sum = broadcast_shares[e][PARAM_L - 1].clone();
 
                     // Compute the inner sum
                     // sum^ℓ_(j=1) fi^j · broad_share[e][j]
-                    // TODO: update to fit 
-                    for j in 0..PARAM_L {
-                        gf256_add_vector_mul_scalar(
-                            &mut eval_sum,
-                            &broadcast_shares[e][j],
-                            f_i.field_pow((j + 1) as u8),
-                        );
+                    // TODO: update to fit
+                    if *i != 0u16 {
+                        for j in (0..(PARAM_L - 1)).rev() {
+                            gf256_add_vector_add_scalar(
+                                &mut eval_sum,
+                                &broadcast_shares[e][j],
+                                f_i,
+                            );
+                        }
+                        // Add the input_plain to the sum
+                        //  + eval_sum
+                        gf256_add_vector_with_padding(&mut eval_sum, &broad_plain);
                     }
-
-                    // Add the input_plain to the sum
-                    // (broad_plain, 0) + eval_sum
-                    gf256_add_vector_with_padding(&mut eval_sum, &broad_plain);
 
                     // sh_broadcast[e][i] = ...
                     gf256_add_vector(&mut sh_broadcast[e][li], &eval_sum);
@@ -100,14 +105,14 @@ impl Signature {
                 let input_share = Input::append_beaver_triples(wit_share[e][li], beaver_triples);
 
                 // Commit to the shares
-                commitments_prime[li] = commit_share(&salt, e as u16, *i - 1, &input_share);
+                commitments_prime[li] = commit_share(&salt, e as u16, *i, &input_share);
             }
 
             let Ok(root) = get_merkle_root_from_auth(
                 &mut auth[e],
                 &commitments_prime,
                 &view_opening_challenges[e],
-                Some(salt),
+                None,
             ) else {
                 return Err("Merkle root verification failed");
             };
