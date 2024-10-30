@@ -9,3 +9,8 @@ queues = "1.0.2"
 num-traits = "0.2.19"
 hex = "0.4.3"
 nist-pqc-seeded-rng = "0.2.0"
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "my_benchmark"
+harness = false

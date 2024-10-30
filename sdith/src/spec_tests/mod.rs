@@ -153,23 +153,28 @@ mod spec_tests {
         let test_vectors = read_response_test_vectors(10); // TODO: test all 100 vectors
 
         for (vi, tv) in test_vectors.iter().enumerate() {
-            let sign = Signature::sign_message(
+            let signature_plain = Signature::sign_message(
                 (tv.nist_entropy.sign_seed, tv.nist_entropy.sign_salt),
                 tv.sk,
                 &tv.msg,
             );
-            let parsed_signature = Signature::parse(tv.sm.clone());
+            let spec_signature_parsed = Signature::parse(&tv.sm);
+            let sign = Signature::parse(&signature_plain);
 
             // Test the signature parts
             assert_eq!(
-                sign.message, parsed_signature.message,
+                sign.message, spec_signature_parsed.message,
                 "Message mismatch ({})",
                 vi
             );
-            assert_eq!(sign.salt, parsed_signature.salt, "Salt mismatch ({})", vi);
-            assert_eq!(sign.h1, parsed_signature.h1, "H1 mismatch ({})", vi);
             assert_eq!(
-                sign.broadcast_plain, parsed_signature.broadcast_plain,
+                sign.salt, spec_signature_parsed.salt,
+                "Salt mismatch ({})",
+                vi
+            );
+            assert_eq!(sign.h1, spec_signature_parsed.h1, "H1 mismatch ({})", vi);
+            assert_eq!(
+                sign.broadcast_plain, spec_signature_parsed.broadcast_plain,
                 "Broadcast plain mismatch ({})",
                 vi
             );
@@ -177,12 +182,12 @@ mod spec_tests {
             for e in 0..PARAM_TAU {
                 for i in 0..PARAM_L {
                     assert_eq!(
-                        sign.broadcast_shares[e][i], parsed_signature.broadcast_shares[e][i],
+                        sign.broadcast_shares[e][i], spec_signature_parsed.broadcast_shares[e][i],
                         "Broadcast shares mismatch e: {}, i: {} ({})",
                         e, i, vi
                     );
                     assert_eq!(
-                        sign.solution_share[e][i], parsed_signature.solution_share[e][i],
+                        sign.solution_share[e][i], spec_signature_parsed.solution_share[e][i],
                         "Solution shares mismatch e: {}, i: {} ({})",
                         e, i, vi
                     );
@@ -191,7 +196,7 @@ mod spec_tests {
             for e in 0..PARAM_TAU {
                 for j in 0..sign.auth[e].len() {
                     assert_eq!(
-                        sign.auth[e][j], parsed_signature.auth[e][j],
+                        sign.auth[e][j], spec_signature_parsed.auth[e][j],
                         "Auth mismatch ({}) for e: {}, j: {}",
                         vi, e, j
                     );
@@ -205,7 +210,7 @@ mod spec_tests {
         let test_vectors = read_response_test_vectors(100); // TODO: test all 100 vectors
 
         for (i, tv) in test_vectors.iter().enumerate() {
-            let parsed_signature = Signature::parse(tv.sm.clone());
+            let parsed_signature = Signature::parse(&tv.sm);
             // Testing the length of the signature
             assert_eq!(tv.smlen, tv.sm.len());
             assert_eq!((tv.smlen - tv.mlen - 4).to_le_bytes()[..4], tv.sm[..4]);
@@ -283,8 +288,7 @@ mod spec_tests {
     fn test_verification_with_spec_signature() {
         let test_vectors = read_response_test_vectors(100); // TODO: test all 100 vectors
         for tv in test_vectors {
-            let parsed_signature = Signature::parse(tv.sm.clone());
-            let verification = Signature::verify_signature(tv.pk, parsed_signature, &tv.msg);
+            let verification = Signature::verify_signature(tv.pk, &tv.sm);
             assert!(verification.unwrap(), "Signature verification failed");
         }
     }

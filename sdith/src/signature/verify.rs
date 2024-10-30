@@ -21,43 +21,33 @@ use crate::{
 use super::{input::Input, signature::Signature};
 
 impl Signature {
-    pub(crate) fn verify_signature(
+    pub fn verify_signature(
         public_key: PublicKey,
-        signature: Signature,
-        message: &Vec<u8>,
+        signature: &Vec<u8>,
     ) -> Result<bool, &'static str> {
         // Expansion of parity-check matrix
         let h_prime: HPrimeMatrix = gen_hmatrix(public_key.seed_h);
 
         // Signature parsing
-        let (salt, h1, broad_plain, broadcast_shares, wit_share, mut auth) = (
+        let signature = Signature::parse(signature);
+        let (salt, h1, broad_plain, broadcast_shares, wit_share, mut auth, view_opening_challenges) = (
             signature.salt,
             signature.h1,
             signature.broadcast_plain,
             signature.broadcast_shares,
             signature.solution_share,
             signature.auth,
+            signature.view_opening_challenges,
         );
 
         // First challenge (MPC challenge) Only generate one in the case of threshold variant
         let chal = Challenge::new(h1);
-
-        // Second challenge (view-opening challenge)
-        // TODO: move into the parsing of the signature
-        let h2 = Signature::gen_h2(message, &salt, &h1, &broad_plain, &broadcast_shares);
-
-        // Compute the view-opening challenges
-        // TODO: move into the parsing of the signature
-        let view_opening_challenges = MPC::expand_view_challenge_hash(h2);
 
         let broadcast = Broadcast::parse(broad_plain);
         let mut sh_broadcast = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
         let mut commitments: [Hash; PARAM_TAU] = [Hash::default(); PARAM_TAU];
 
         // Party computation and regeneration of Merkle commitments
-
-        println!("Verification");
-        // (broad_plain | 000..)
         let mut plain = [0u8; BROADCAST_SHARE_PLAIN_SIZE];
         plain[..BROADCAST_SHARE_PLAIN_SIZE_AB].copy_from_slice(&broad_plain);
         for e in 0..PARAM_TAU {
@@ -83,7 +73,6 @@ impl Signature {
                     &broadcast,
                     with_offset,
                 );
-                println!("Beaver triples: {:?}", beaver_triples);
 
                 let input_share = Input::append_beaver_triples(wit_share[e][li], beaver_triples);
 

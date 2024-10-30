@@ -15,7 +15,7 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct Signature {
+pub struct Signature {
     pub(crate) message: Vec<u8>,
     pub(crate) salt: Salt,
     pub(crate) h1: Hash,
@@ -24,6 +24,8 @@ pub(crate) struct Signature {
     // wit_share from spec
     pub(crate) solution_share: [[[u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
     pub(crate) auth: [Vec<Hash>; PARAM_TAU],
+    // Calculated in parsing
+    pub(crate) view_opening_challenges: [[u16; PARAM_L]; PARAM_TAU],
 }
 
 impl Signature {
@@ -72,7 +74,7 @@ impl Signature {
     }
 
     /// Parse a signature from a byte array of form (signature_len:[u8; 4] | msg | salt | h1 | broadcast_plain | broadcast_shares | auth)
-    pub(crate) fn parse(signature_plain: Vec<u8>) -> Signature {
+    pub(crate) fn parse(signature_plain: &Vec<u8>) -> Signature {
         // Extract the signature length
         let signature_len = u32::from_le_bytes([
             signature_plain[0],
@@ -157,6 +159,7 @@ impl Signature {
             broadcast_shares,
             solution_share,
             auth,
+            view_opening_challenges,
         }
     }
 
@@ -199,7 +202,7 @@ impl Signature {
 mod signature_tests {
 
     use super::*;
-    use crate::{constants::params::PARAM_SEED_SIZE, keygen::keygen, signature::input::INPUT_SIZE};
+    use crate::{constants::params::PARAM_SEED_SIZE, keygen::keygen};
 
     #[test]
     fn test_serialise_parse_signature() {
@@ -211,22 +214,10 @@ mod signature_tests {
 
         let signature = Signature::sign_message(entropy, sk, &message);
 
-        let serialised = signature.serialise();
-        let deserialised = Signature::parse(serialised);
+        let deserialised = Signature::parse(&signature);
 
-        assert_eq!(signature.message, deserialised.message);
-        assert_eq!(signature.salt, deserialised.salt);
-        assert_eq!(signature.h1, deserialised.h1);
-        assert_eq!(signature.broadcast_plain, deserialised.broadcast_plain);
-        assert_eq!(signature.broadcast_shares, deserialised.broadcast_shares);
-        assert_eq!(signature.solution_share, deserialised.solution_share);
-
-        // Check auths
-        for (i, auth) in signature.auth.iter().enumerate() {
-            for (j, hash) in auth.iter().enumerate() {
-                assert_eq!(hash, &deserialised.auth[i][j]);
-            }
-        }
-        assert_eq!(signature.get_length(), deserialised.get_length());
+        assert_eq!(message, deserialised.message);
+        assert_eq!(salt, deserialised.salt);
+        assert_eq!(signature, deserialised.serialise());
     }
 }

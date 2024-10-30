@@ -1,13 +1,16 @@
-pub(crate) mod input;
+pub mod input;
 mod sign;
-pub(crate) mod signature;
+pub mod signature;
 mod verify;
 
 #[cfg(test)]
 mod signing_and_verifying_tests {
 
     use super::signature::Signature;
-    use crate::{constants::{params::PARAM_SALT_SIZE, types::Seed}, keygen::keygen};
+    use crate::{
+        constants::{params::PARAM_SALT_SIZE, types::Seed},
+        keygen::keygen,
+    };
 
     #[test]
     fn test_sign_verify_signature() {
@@ -19,7 +22,7 @@ mod signing_and_verifying_tests {
         let entropy = (spec_master_seed, [0u8; PARAM_SALT_SIZE]);
 
         let signature = Signature::sign_message(entropy, sk, &message);
-        let valid = Signature::verify_signature(pk, signature, &message);
+        let valid = Signature::verify_signature(pk, &signature);
 
         if valid.is_err() {
             println!("{:?}", valid);

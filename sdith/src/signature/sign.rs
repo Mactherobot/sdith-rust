@@ -13,11 +13,11 @@ use crate::{
 use super::{input::Input, signature::Signature};
 
 impl Signature {
-    pub(crate) fn sign_message(
+    pub fn sign_message(
         entropy: (Seed, Salt),
         secret_key: SecretKey,
         message: &Vec<u8>,
-    ) -> Signature {
+    ) -> Vec<u8> {
         // Expansion of the parity matrix H'
         let h_prime: HPrimeMatrix = gen_hmatrix(secret_key.seed_h);
 
@@ -98,7 +98,7 @@ impl Signature {
         }
 
         // Build the signature
-        Signature {
+        let signature = Signature {
             message: message.clone(),
             salt,
             h1,
@@ -106,6 +106,8 @@ impl Signature {
             broadcast_shares,
             auth,
             solution_share,
-        }
+            view_opening_challenges,
+        };
+        signature.serialise()
     }
 }

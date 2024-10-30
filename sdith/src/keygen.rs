@@ -6,8 +6,8 @@ use crate::{
     witness::{generate_instance_with_solution, Solution, SOLUTION_PLAIN_SIZE},
 };
 
-#[derive(Debug)]
-pub(crate) struct PublicKey {
+#[derive(Debug, Clone, Copy)]
+pub struct PublicKey {
     pub(crate) seed_h: Seed,
     pub(crate) y: [u8; PARAM_M_SUB_K],
 }
@@ -34,7 +34,7 @@ impl PublicKey {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct SecretKey {
+pub struct SecretKey {
     pub(crate) seed_h: Seed,
     pub(crate) y: [u8; PARAM_M_SUB_K],
     /// Solution to the instance (s_a, Q', )
@@ -75,7 +75,7 @@ impl SecretKey {
     }
 }
 
-pub(crate) fn keygen(seed_root: Seed) -> (PublicKey, SecretKey) {
+pub fn keygen(seed_root: Seed) -> (PublicKey, SecretKey) {
     let (instance, solution) = generate_instance_with_solution(seed_root);
     let pk = PublicKey {
         seed_h: instance.seed_h,
