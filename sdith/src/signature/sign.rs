@@ -46,7 +46,7 @@ impl Signature {
                 commitments_prime[i] = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
             }
 
-            let merkle_tree = MerkleTree::new(commitments_prime, None); // TODO: I spec there is a salt here. In implementation there is not.
+            let merkle_tree = MerkleTree::new(commitments_prime, Some(salt)); // TODO: I spec there is a salt here. In implementation there is not.
             commitments[e] = merkle_tree.get_root();
             merkle_trees.push(merkle_tree);
         }

@@ -84,7 +84,7 @@ impl Signature {
                 &mut auth[e],
                 &commitments_prime,
                 &view_opening_challenges[e],
-                None,
+                Some(salt),
             ) else {
                 return Err("Merkle root verification failed");
             };

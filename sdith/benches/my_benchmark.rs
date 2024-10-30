@@ -1,4 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
+use criterion_cycles_per_byte::CyclesPerByte;
 use nist_pqc_seeded_rng::{NistPqcAes256CtrRng, RngCore, Seed, SeedableRng};
 use sdith::keygen::keygen;
 use sdith::keygen::{PublicKey, SecretKey};
@@ -44,5 +45,9 @@ fn verification_bench(pk: PublicKey, signature: &Vec<u8>) {
     let _verification = Signature::verify_signature(pk, signature);
 }
 
-criterion_group!(benches, criterion_benchmark);
+criterion_group!(
+    name = my_bench;
+    config = Criterion::default().with_measurement(CyclesPerByte);
+    targets = bench
+);
 criterion_main!(benches);
