@@ -89,6 +89,7 @@ impl std::fmt::Debug for Broadcast {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct BroadcastShare {
     pub(crate) alpha: BroadcastValue,
     pub(crate) beta: BroadcastValue,
@@ -132,10 +133,11 @@ impl BroadcastShare {
 
         let mut v = [FPoint::default(); PARAM_T];
 
+        let mut offset = BROADCAST_SHARE_PLAIN_SIZE_AB;
         for j in 0..PARAM_T {
-            let offset = BROADCAST_SHARE_PLAIN_SIZE - PARAM_ETA * PARAM_T + j;
             let point = &broadcast_share_plain[offset..(offset + PARAM_ETA)];
             v[j].copy_from_slice(point);
+            offset += PARAM_ETA;
         }
 
         Self { alpha, beta, v }
@@ -184,11 +186,18 @@ mod broadcast_tests {
 
     #[test]
     fn test_serialise_deserialise_broadcast_share() {
-        let broadcast_share = BroadcastShare {
+        let mut broadcast_share = BroadcastShare {
             alpha: [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR],
             beta: [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR],
             v: [FPoint::default(); PARAM_T],
         };
+
+        let mut prg = PRG::init_base(&[1, 2, 3]);
+        for d in 0..PARAM_SPLITTING_FACTOR {
+            prg.sample_field_fpoint_elements(&mut broadcast_share.alpha[d]);
+            prg.sample_field_fpoint_elements(&mut broadcast_share.beta[d]);
+        }
+        prg.sample_field_fpoint_elements(&mut broadcast_share.v);
 
         let serialised = broadcast_share.serialise();
         let deserialised = BroadcastShare::parse(serialised);
