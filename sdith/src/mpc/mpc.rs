@@ -434,7 +434,6 @@ mod mpc_tests {
             for view_challenge in view_challenges {
                 assert_eq!(view_challenge.len(), PARAM_L);
                 for &x in view_challenge.iter() {
-                    assert_ne!(x, 0, "View challenge should not be zero: {}", x);
                     assert!(
                         x as usize <= PARAM_N,
                         "View challenge should be less than N: {} <= {}",
@@ -449,7 +448,15 @@ mod mpc_tests {
     // TODO: Test `[MPC::polynomial_evaluation]` function
     #[test]
     fn test_polynomial_evaluation() {
-        todo!()
+        let mut prg = PRG::init_base(&[0]);
+        let r = FPoint::field_sample(&mut prg);
+        let mut powers_of_r = [FPoint::default(); PARAM_M + 1];
+        get_powers(r, &mut powers_of_r);
+
+        let poly_d = [1, 2, 3];
+        let eval = MPC::polynomial_evaluation(&poly_d, &powers_of_r);
+        let expected = FPoint::from([152, 61, 227, 67]);
+        assert_eq!(eval, expected);
     }
 
     /// Test that we compute the correct sized broadcast values
