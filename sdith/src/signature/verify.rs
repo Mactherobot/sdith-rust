@@ -43,9 +43,11 @@ impl Signature {
         let chal = Challenge::new(h1);
 
         // Second challenge (view-opening challenge)
+        // TODO: move into the parsing of the signature
         let h2 = Signature::gen_h2(message, &salt, &h1, &broad_plain, &broadcast_shares);
 
         // Compute the view-opening challenges
+        // TODO: move into the parsing of the signature
         let view_opening_challenges = MPC::expand_view_challenge_hash(h2);
 
         let broadcast = Broadcast::parse(broad_plain);
@@ -54,25 +56,21 @@ impl Signature {
 
         // Party computation and regeneration of Merkle commitments
 
+        println!("Verification");
         // (broad_plain | 000..)
         let mut plain = [0u8; BROADCAST_SHARE_PLAIN_SIZE];
         plain[..BROADCAST_SHARE_PLAIN_SIZE_AB].copy_from_slice(&broad_plain);
         for e in 0..PARAM_TAU {
             let mut commitments_prime = [Hash::default(); PARAM_L];
             for (li, i) in view_opening_challenges[e].iter().enumerate() {
-                let with_offset = (*i as usize) != PARAM_N;
+                let with_offset = (*i as usize) != 0;
 
-                if *i as usize == 0 {
-                    // TODO test this case
-                    sh_broadcast[e][li] = broadcast_shares[e][li];
-                } else {
-                    // We need to compute the following:
-                    // sh_broadcast[e][i] = (broad_plain, 0) + sum^ℓ_(j=1) fi^j · broad_share[e][j]
-                    let f_i = i.to_le_bytes()[0];
+                // We need to compute the following:
+                // sh_broadcast[e][i] = (broad_plain, 0) + sum^ℓ_(j=1) fi^j · broad_share[e][j]
+                let f_i = i.to_le_bytes()[0];
 
-                    sh_broadcast[e][li] =
-                        MPC::compute_share(plain, &broadcast_shares[e], f_i, *i == 0u16);
-                }
+                sh_broadcast[e][li] =
+                    MPC::compute_share(plain, &broadcast_shares[e], f_i, *i == 0u16);
 
                 // Verify the Merkle path
                 let broadcast_share = BroadcastShare::parse(sh_broadcast[e][li]);
@@ -85,6 +83,7 @@ impl Signature {
                     &broadcast,
                     with_offset,
                 );
+                println!("Beaver triples: {:?}", beaver_triples);
 
                 let input_share = Input::append_beaver_triples(wit_share[e][li], beaver_triples);
 

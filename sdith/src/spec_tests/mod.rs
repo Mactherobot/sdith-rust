@@ -281,7 +281,7 @@ mod spec_tests {
 
     #[test]
     fn test_verification_with_spec_signature() {
-        let test_vectors = read_response_test_vectors(1); // TODO: test all 100 vectors
+        let test_vectors = read_response_test_vectors(100); // TODO: test all 100 vectors
         for tv in test_vectors {
             let parsed_signature = Signature::parse(tv.sm.clone());
             let verification = Signature::verify_signature(tv.pk, parsed_signature, &tv.msg);
