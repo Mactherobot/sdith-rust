@@ -3,6 +3,7 @@ use crate::{
         params::{PARAM_M_SUB_K, PARAM_SEED_SIZE},
         types::Seed,
     },
+    subroutines::marshalling::Marshalling,
     witness::{generate_instance_with_solution, Solution, SOLUTION_PLAIN_SIZE},
 };
 
@@ -12,24 +13,25 @@ pub struct PublicKey {
     pub(crate) y: [u8; PARAM_M_SUB_K],
 }
 
-impl PublicKey {
-    pub(crate) fn serialise(&self) -> Vec<u8> {
+impl Marshalling for PublicKey {
+    fn serialise(&self) -> Vec<u8> {
         let mut serialised = Vec::new();
         serialised.extend_from_slice(&self.seed_h);
         serialised.extend_from_slice(&self.y);
         serialised
     }
 
-    pub(crate) fn parse(serialised: &[u8]) -> Self {
-        assert!(
-            serialised.len() == PARAM_SEED_SIZE + PARAM_M_SUB_K,
-            "Invalid public key length. Got {}, expected {}",
-            serialised.len(),
-            PARAM_SEED_SIZE + PARAM_M_SUB_K
-        );
+    fn parse(serialised: &Vec<u8>) -> Result<Self, String> {
+        if serialised.len() != PARAM_SEED_SIZE + PARAM_M_SUB_K {
+            return Err(format!(
+                "Invalid public key length. Got {}, expected {}",
+                serialised.len(),
+                PARAM_SEED_SIZE + PARAM_M_SUB_K
+            ));
+        }
         let seed_h: Seed = serialised[..PARAM_SEED_SIZE].try_into().unwrap();
         let y = serialised[PARAM_SEED_SIZE..].try_into().unwrap();
-        PublicKey { seed_h, y }
+        Ok(PublicKey { seed_h, y })
     }
 }
 
@@ -41,8 +43,8 @@ pub struct SecretKey {
     pub(crate) solution: Solution,
 }
 
-impl SecretKey {
-    pub(crate) fn serialise(&self) -> Vec<u8> {
+impl Marshalling for SecretKey {
+    fn serialise(&self) -> Vec<u8> {
         let mut serialised = Vec::new();
         serialised.extend_from_slice(&self.seed_h);
         serialised.extend_from_slice(&self.y);
@@ -50,13 +52,14 @@ impl SecretKey {
         serialised
     }
 
-    pub(crate) fn parse(serialised: &[u8]) -> Self {
-        assert!(
-            serialised.len() == PARAM_SEED_SIZE + PARAM_M_SUB_K + SOLUTION_PLAIN_SIZE,
-            "Invalid secret key length. Got {}, expected {}",
-            serialised.len(),
-            PARAM_SEED_SIZE + PARAM_M_SUB_K + SOLUTION_PLAIN_SIZE
-        );
+    fn parse(serialised: &Vec<u8>) -> Result<Self, String> {
+        if serialised.len() != PARAM_SEED_SIZE + PARAM_M_SUB_K + SOLUTION_PLAIN_SIZE {
+            return Err(format!(
+                "Invalid secret key length. Got {}, expected {}",
+                serialised.len(),
+                PARAM_SEED_SIZE + PARAM_M_SUB_K + SOLUTION_PLAIN_SIZE
+            ));
+        }
         let seed_h: Seed = serialised[..PARAM_SEED_SIZE].try_into().unwrap();
         let y = serialised[PARAM_SEED_SIZE..PARAM_SEED_SIZE + PARAM_M_SUB_K]
             .try_into()
@@ -67,11 +70,12 @@ impl SecretKey {
                 .try_into()
                 .unwrap(),
         );
-        SecretKey {
+
+        Ok(SecretKey {
             seed_h,
             y,
             solution,
-        }
+        })
     }
 }
 

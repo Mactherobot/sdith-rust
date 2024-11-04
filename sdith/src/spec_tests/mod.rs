@@ -120,6 +120,7 @@ mod spec_tests {
         keygen::keygen,
         mpc::broadcast::{BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
         signature::signature::Signature,
+        subroutines::marshalling::Marshalling as _,
         witness::SOLUTION_PLAIN_SIZE,
     };
 
@@ -157,9 +158,10 @@ mod spec_tests {
                 (tv.nist_entropy.sign_seed, tv.nist_entropy.sign_salt),
                 tv.sk,
                 &tv.msg,
-            );
-            let spec_signature_parsed = Signature::parse(&tv.sm);
-            let sign = Signature::parse(&signature_plain);
+            )
+            .unwrap();
+            let spec_signature_parsed = Signature::parse(&tv.sm).unwrap();
+            let sign = Signature::parse(&signature_plain).unwrap();
 
             // Test the signature parts
             assert_eq!(
@@ -210,7 +212,7 @@ mod spec_tests {
         let test_vectors = read_response_test_vectors(100); // TODO: test all 100 vectors
 
         for (i, tv) in test_vectors.iter().enumerate() {
-            let parsed_signature = Signature::parse(&tv.sm);
+            let parsed_signature = Signature::parse(&tv.sm).unwrap();
             // Testing the length of the signature
             assert_eq!(tv.smlen, tv.sm.len());
             assert_eq!((tv.smlen - tv.mlen - 4).to_le_bytes()[..4], tv.sm[..4]);
@@ -289,6 +291,7 @@ mod spec_tests {
         let test_vectors = read_response_test_vectors(100); // TODO: test all 100 vectors
         for tv in test_vectors {
             let verification = Signature::verify_signature(tv.pk, &tv.sm);
+            assert!(verification.is_ok(), "Signature verification failed: {:?}", verification);
             assert!(verification.unwrap(), "Signature verification failed");
         }
     }

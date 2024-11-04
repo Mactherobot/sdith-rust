@@ -8,6 +8,7 @@ use crate::{
         mpc::MPC,
     },
     subroutines::{
+        marshalling::Marshalling,
         merkle_tree::get_auth_size,
         prg::hashing::{hash_1, hash_2},
     },
@@ -47,8 +48,44 @@ impl Signature {
         ((length) as u32).to_le_bytes()
     }
 
+    /// Fiat-Shamir Hash1
+    /// h1 = Hash (1, seedH , y, salt, com[1], . . . , com[τ ])
+    pub(super) fn gen_h1(
+        seed_h: &Seed,
+        y: &[u8; PARAM_M_SUB_K],
+        salt: Salt,
+        commitments: [Hash; PARAM_TAU],
+    ) -> Hash {
+        let mut h1_data: Vec<&[u8]> = vec![seed_h, y, &salt];
+        for e in 0..PARAM_TAU {
+            h1_data.push(&commitments[e]);
+        }
+        hash_1(h1_data)
+    }
+
+    /// Fiat-Shamir Hash2
+    /// h2 = Hash (2, message, salt, h1, broadcast_plain, broadcast_shares)
+    pub(super) fn gen_h2(
+        message: &Vec<u8>,
+        salt: &Salt,
+        h1: &Hash,
+        broadcast_plain: &[u8],
+        broadcast_shares: &[[[u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
+    ) -> Hash {
+        let mut h2_data: Vec<&[u8]> = vec![message.as_slice(), salt, h1, broadcast_plain];
+        for e in 0..PARAM_TAU {
+            for i in 0..PARAM_L {
+                h2_data.push(&broadcast_shares[e][i]);
+            }
+        }
+
+        hash_2(h2_data)
+    }
+}
+
+impl Marshalling for Signature {
     // Serialise message into (signature_len:[u8; 4] | msg | salt | h1 | broadcast_plain | broadcast_shares | auth)
-    pub(crate) fn serialise(&self) -> Vec<u8> {
+    fn serialise(&self) -> Vec<u8> {
         let mut serialised = vec![];
         serialised.extend_from_slice(&self.get_length());
         serialised.extend_from_slice(&self.message);
@@ -74,7 +111,9 @@ impl Signature {
     }
 
     /// Parse a signature from a byte array of form (signature_len:[u8; 4] | msg | salt | h1 | broadcast_plain | broadcast_shares | auth)
-    pub(crate) fn parse(signature_plain: &Vec<u8>) -> Signature {
+    fn parse(signature_plain: &Vec<u8>) -> Result<Signature, String> {
+        // TODO: Check if the signature is valid
+
         // Extract the signature length
         let signature_len = u32::from_le_bytes([
             signature_plain[0],
@@ -151,7 +190,7 @@ impl Signature {
             offset += *auth_len;
         }
 
-        Signature {
+        Ok(Signature {
             message,
             salt,
             h1,
@@ -160,41 +199,7 @@ impl Signature {
             solution_share,
             auth,
             view_opening_challenges,
-        }
-    }
-
-    /// Fiat-Shamir Hash1
-    /// h1 = Hash (1, seedH , y, salt, com[1], . . . , com[τ ])
-    pub(super) fn gen_h1(
-        seed_h: &Seed,
-        y: &[u8; PARAM_M_SUB_K],
-        salt: Salt,
-        commitments: [Hash; PARAM_TAU],
-    ) -> Hash {
-        let mut h1_data: Vec<&[u8]> = vec![seed_h, y, &salt];
-        for e in 0..PARAM_TAU {
-            h1_data.push(&commitments[e]);
-        }
-        hash_1(h1_data)
-    }
-
-    /// Fiat-Shamir Hash2
-    /// h2 = Hash (2, message, salt, h1, broadcast_plain, broadcast_shares)
-    pub(super) fn gen_h2(
-        message: &Vec<u8>,
-        salt: &Salt,
-        h1: &Hash,
-        broadcast_plain: &[u8],
-        broadcast_shares: &[[[u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
-    ) -> Hash {
-        let mut h2_data: Vec<&[u8]> = vec![message.as_slice(), salt, h1, broadcast_plain];
-        for e in 0..PARAM_TAU {
-            for i in 0..PARAM_L {
-                h2_data.push(&broadcast_shares[e][i]);
-            }
-        }
-
-        hash_2(h2_data)
+        })
     }
 }
 
@@ -212,9 +217,9 @@ mod signature_tests {
         let entropy = (seed_root, salt);
         let (_, sk) = keygen(seed_root);
 
-        let signature = Signature::sign_message(entropy, sk, &message);
+        let signature = Signature::sign_message(entropy, sk, &message).unwrap();
 
-        let deserialised = Signature::parse(&signature);
+        let deserialised = Signature::parse(&signature).unwrap();
 
         assert_eq!(message, deserialised.message);
         assert_eq!(salt, deserialised.salt);

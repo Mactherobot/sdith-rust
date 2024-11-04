@@ -25,7 +25,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| signing_bench(entropy, sk, message.clone()))
     });
 
-    let signature: Vec<u8> = Signature::sign_message(entropy, sk, &message);
+    let signature: Vec<u8> = Signature::sign_message(entropy, sk, &message).unwrap();
     c.bench_function("verification", |b| {
         b.iter(|| verification_bench(pk, &signature))
     });

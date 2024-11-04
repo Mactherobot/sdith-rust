@@ -21,7 +21,7 @@ mod signing_and_verifying_tests {
         let message = b"Hello, World!".to_vec();
         let entropy = (spec_master_seed, [0u8; PARAM_SALT_SIZE]);
 
-        let signature = Signature::sign_message(entropy, sk, &message);
+        let signature = Signature::sign_message(entropy, sk, &message).unwrap();
         let valid = Signature::verify_signature(pk, &signature);
 
         if valid.is_err() {
