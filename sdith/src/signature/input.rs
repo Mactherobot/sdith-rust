@@ -14,13 +14,13 @@ pub(crate) struct Input {
 /// k+2w+t(2d+1)η
 pub(crate) const INPUT_SIZE: usize = SOLUTION_PLAIN_SIZE + BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE;
 
-pub(crate) type InputSharePlain = [u8; INPUT_SIZE];
+pub(crate) type InputSharePlain = Vec<u8>;
 pub(crate) type InputSharesPlain = [[InputSharePlain; PARAM_N]; PARAM_TAU];
 
 impl Input {
     // Turn the input into a byte array for mpc of `F_q^(k+2w+t(2d+1)η)`
-    pub(crate) fn serialise(&self) -> [u8; INPUT_SIZE] {
-        let mut serialised = [0u8; INPUT_SIZE];
+    pub(crate) fn serialise(&self) -> Vec<u8> {
+        let mut serialised = vec![0u8; INPUT_SIZE];
         serialised[..SOLUTION_PLAIN_SIZE].copy_from_slice(&self.solution.serialise());
         serialised[SOLUTION_PLAIN_SIZE..].copy_from_slice(&Beaver::serialise(
             self.beaver_ab.0,
@@ -30,9 +30,7 @@ impl Input {
         serialised
     }
 
-    pub(crate) fn deserialise_solution(
-        truncated_input_plain: [u8; SOLUTION_PLAIN_SIZE],
-    ) -> Solution {
+    pub(crate) fn deserialise_solution(truncated_input_plain: Vec<u8>) -> Solution {
         let solution = Solution::parse(truncated_input_plain);
         solution
     }
@@ -50,15 +48,13 @@ impl Input {
 
     /// Remove the Beaver triples from the input shares as they can be derived from the Solution shares
     /// {[x_A]_i, [P]_i, [Q]_i}_(i \in I) and broadcast shares {[α]_i, [β]_i, [v]_i}_(i \in I).
-    pub(crate) fn truncate_beaver_triples(
-        input_share: [u8; INPUT_SIZE],
-    ) -> [u8; SOLUTION_PLAIN_SIZE] {
+    pub(crate) fn truncate_beaver_triples(input_share: Vec<u8>) -> Vec<u8> {
         return input_share[..SOLUTION_PLAIN_SIZE].try_into().unwrap();
     }
 
     /// Append the Beaver triples from the input shares as they can be derived from the Solution shares
     pub(crate) fn append_beaver_triples(
-        solution_share: [u8; SOLUTION_PLAIN_SIZE],
+        solution_share: Vec<u8>,
         beaver_triples: (BeaverA, BeaverB, BeaverC),
     ) -> [u8; INPUT_SIZE] {
         let mut input = [0u8; INPUT_SIZE];
@@ -120,7 +116,7 @@ mod input_tests {
         };
 
         let input_plain = input.serialise();
-        let solution_plain = Input::truncate_beaver_triples(input_plain);
+        let solution_plain = Input::truncate_beaver_triples(input_plain.clone());
 
         let beaver_triples = (a, b, c);
         let input_with_beaver_triples =

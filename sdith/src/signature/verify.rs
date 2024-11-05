@@ -1,3 +1,4 @@
+use crate::arith::arrays::{Array3D, Array3DTrait};
 use crate::arith::gf256::gf256_vector::{
     gf256_add_vector_add_scalar, gf256_add_vector_with_padding,
 };
@@ -44,7 +45,7 @@ impl Signature {
         let chal = Challenge::new(h1);
 
         let broadcast = Broadcast::parse(broad_plain);
-        let mut sh_broadcast = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
+        let mut sh_broadcast = Array3D::new(BROADCAST_SHARE_PLAIN_SIZE, PARAM_L, PARAM_TAU);
         let mut commitments: [Hash; PARAM_TAU] = [Hash::default(); PARAM_TAU];
 
         // Party computation and regeneration of Merkle commitments
@@ -59,13 +60,18 @@ impl Signature {
                 // sh_broadcast[e][i] = (broad_plain, 0) + sum^ℓ_(j=1) fi^j · broad_share[e][j]
                 let f_i = i.to_le_bytes()[0];
 
-                sh_broadcast[e][li] =
-                    MPC::compute_share(plain, &broadcast_shares[e], f_i, *i == 0u16);
+                sh_broadcast.set_inner_slice(
+                    e,
+                    li,
+                    MPC::compute_share(plain.to_vec(), broadcast_shares.get_2d(e), f_i, *i == 0u16)
+                        .as_slice(),
+                );
 
                 // Verify the Merkle path
-                let broadcast_share = BroadcastShare::parse(sh_broadcast[e][li]);
+                let broadcast_share =
+                    BroadcastShare::parse(sh_broadcast.get_inner_slice(e, li).to_vec());
                 let beaver_triples = MPC::inverse_party_computation(
-                    wit_share[e][li],
+                    wit_share.get_inner_slice(e, li).to_vec(),
                     &broadcast_share,
                     &chal,
                     h_prime,
@@ -74,7 +80,10 @@ impl Signature {
                     with_offset,
                 );
 
-                let input_share = Input::append_beaver_triples(wit_share[e][li], beaver_triples);
+                let input_share = Input::append_beaver_triples(
+                    wit_share.get_inner_slice(e, li).to_vec(),
+                    beaver_triples,
+                );
 
                 // Commit to the shares
                 commitments_prime[li] = commit_share(&salt, e as u16, *i, &input_share);
@@ -84,7 +93,7 @@ impl Signature {
                 &mut auth[e],
                 &commitments_prime,
                 &view_opening_challenges[e],
-                Some(salt),
+                None,
             ) else {
                 return Err("Merkle root verification failed");
             };

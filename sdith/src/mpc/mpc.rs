@@ -1,5 +1,8 @@
+use std::borrow::BorrowMut;
+
 use crate::{
     arith::{
+        arrays::{Array2D, Array2DTrait, Array3D, Array3DTrait},
         gf256::{
             gf256_ext::FPoint,
             gf256_vector::{
@@ -93,53 +96,59 @@ impl MPC {
     /// * `rnd_coefs` - The random coefficients
     /// * `fi` - The challenge value
     /// * `skip_loop` - If true, will return rnd_coefs.last().clone()
-    pub(crate) fn compute_share<const Size: usize>(
-        plain: [u8; Size],
-        rnd_coefs: &[[u8; Size]],
+    /// TODO: Try to optimize
+    pub(crate) fn compute_share(
+        plain: Vec<u8>,
+        rnd_coefs: Array2D,
         fi: u8,
         skip_loop: bool,
-    ) -> [u8; Size] {
+    ) -> Vec<u8> {
         // We need to compute the following:
         // input_share[e][i] = input_plain + sum^ℓ_(j=1) fi^j · input_coef[e][j]
-        let mut share = rnd_coefs.last().unwrap().clone();
+        let mut binding = rnd_coefs.clone();
+        let share = binding.last_inner();
 
         // Compute the inner sum
         // sum^ℓ_(j=1) fi · coef[j]
         // Horner method
         if !skip_loop {
             for j in (0..(rnd_coefs.len() - 1)).rev() {
-                gf256_add_vector_add_scalar(&mut share, &rnd_coefs[j], fi);
+                gf256_add_vector_add_scalar(share, rnd_coefs.get_inner(j), fi);
             }
             // Add the plain to the share
-            gf256_add_vector_add_scalar(&mut share, &plain, fi);
+            gf256_add_vector_add_scalar(share, &plain, fi);
         }
 
-        share
+        share.to_vec()
     }
 
     /// Compute shamir secret sharing of the [`Input`]'s.
     /// Returns (shares, coefficients).
-    pub(crate) fn compute_input_shares(
-        input_plain: [u8; INPUT_SIZE],
-        prg: &mut PRG,
-    ) -> (
-        Box<[[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU]>,
-        Box<[[[u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU]>,
-    ) {
-        let mut input_shares = Box::new([[[0u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU]);
+    pub(crate) fn compute_input_shares(input_plain: Vec<u8>, prg: &mut PRG) -> (Array3D, Array3D) {
+        let mut input_shares = Array3D::new(INPUT_SIZE, PARAM_N, PARAM_TAU);
 
         // Generate coefficients
-        let mut input_coefs = Box::new([[[0u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU]);
+        let mut input_coefs = Array3D::new(INPUT_SIZE, PARAM_L, PARAM_TAU);
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_L {
-                prg.sample_field_fq_elements(&mut input_coefs[e][i]);
+                let mut rnd_coefs = [0u8; INPUT_SIZE];
+                prg.sample_field_fq_elements(&mut rnd_coefs);
+                input_coefs.set_inner_slice(e, i, &rnd_coefs);
             }
         }
 
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_N {
-                input_shares[e][i] =
-                    Self::compute_share(input_plain, &input_coefs[e], i as u8, i == 0);
+                input_shares.set_inner_slice(
+                    e,
+                    i,
+                    &Self::compute_share(
+                        input_plain.clone(),
+                        input_coefs.get_2d(e),
+                        i as u8,
+                        i == 0,
+                    ),
+                );
             }
         }
 
@@ -297,7 +306,7 @@ impl MPC {
     /// computes the shares of the Beaver triples from the shares of the witness and the broadcast
     /// shares of a party.
     pub(crate) fn inverse_party_computation(
-        solution_plain: [u8; SOLUTION_PLAIN_SIZE],
+        solution_plain: Vec<u8>,
         broadcast_share: &BroadcastShare,
         chal: &Challenge,
         h_prime: HPrimeMatrix,
@@ -526,7 +535,7 @@ mod mpc_tests {
     #[test]
     fn mpc_test_toy_example() {
         let (input, broadcast, chal, h_prime, y) = prepare();
-        let random_input_plain: InputSharePlain = [1; INPUT_SIZE];
+        let random_input_plain: InputSharePlain = vec![1; INPUT_SIZE];
 
         // Here N = 1, l = 1 so the shamir secret sharing
 
@@ -546,7 +555,7 @@ mod mpc_tests {
         let broadcast_shares = BroadcastShare::parse(broadcast_share);
 
         let recomputed_input_share_triples = MPC::inverse_party_computation(
-            Input::truncate_beaver_triples(input_share),
+            Input::truncate_beaver_triples(input_share.clone()),
             &broadcast_shares,
             &chal,
             h_prime,

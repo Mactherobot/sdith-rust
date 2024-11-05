@@ -1,3 +1,4 @@
+use crate::arith::arrays::{Array3D, Array3DTrait};
 use crate::arith::matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::witness::SOLUTION_PLAIN_SIZE;
 use crate::{
@@ -43,10 +44,15 @@ impl Signature {
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_N {
                 // Commit to the shares
-                commitments_prime[i] = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
+                commitments_prime[i] = commit_share(
+                    &salt,
+                    e as u16,
+                    i as u16,
+                    &input_shares.get_inner_slice(e, i),
+                );
             }
 
-            let merkle_tree = MerkleTree::new(commitments_prime, Some(salt)); // TODO: I spec there is a salt here. In implementation there is not.
+            let merkle_tree = MerkleTree::new(commitments_prime, None); // TODO: I spec there is a salt here. In implementation there is not.
             commitments[e] = merkle_tree.get_root();
             merkle_trees.push(merkle_tree);
         }
@@ -61,13 +67,13 @@ impl Signature {
         let broadcast = MPC::compute_broadcast(input, &chal, h_prime, secret_key.y);
         let broadcast_plain = broadcast.serialise();
 
-        let mut broadcast_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
+        let mut broadcast_shares = Array3D::new(BROADCAST_SHARE_PLAIN_SIZE, PARAM_L, PARAM_TAU);
 
         // Run through Tau and l to compute the broadcast shares
         for e in 0..PARAM_TAU {
             for j in 0..PARAM_L {
                 let broadcast_share = MPC::party_computation(
-                    input_coefs[e][j],
+                    input_coefs.get_inner_slice(e, j).to_vec(),
                     &chal,
                     h_prime,
                     secret_key.y,
@@ -75,7 +81,7 @@ impl Signature {
                     false,
                 );
 
-                broadcast_shares[e][j] = broadcast_share.serialise();
+                broadcast_shares.set_inner_slice(e, j, broadcast_share.serialise().as_slice());
             }
         }
 
@@ -86,14 +92,21 @@ impl Signature {
         let view_opening_challenges = MPC::expand_view_challenge_hash(h2);
 
         // Signature building
-        let mut solution_share = [[[0u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
+        let mut solution_share = Array3D::new(SOLUTION_PLAIN_SIZE, PARAM_L, PARAM_TAU);
+
         let mut auth: [Vec<Hash>; PARAM_TAU] = Default::default();
         for e in 0..PARAM_TAU {
             auth[e] = merkle_trees[e].get_merkle_path(&view_opening_challenges[e]);
             for (li, i) in view_opening_challenges[e].iter().enumerate() {
                 // Truncate witness share by removing beaver triples from the plain value
-                solution_share[e][li] =
-                    Input::truncate_beaver_triples(input_shares[e][(*i) as usize]);
+                solution_share.set_inner_slice(
+                    e,
+                    li,
+                    Input::truncate_beaver_triples(
+                        input_shares.get_inner_slice(e, *i as usize).to_vec(),
+                    )
+                    .as_slice(),
+                );
             }
         }
 

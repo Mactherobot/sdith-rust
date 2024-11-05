@@ -58,8 +58,8 @@ pub(crate) const SOLUTION_PLAIN_SIZE: usize =
     PARAM_K + (PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2);
 
 impl Solution {
-    pub(crate) fn serialise(&self) -> [u8; SOLUTION_PLAIN_SIZE] {
-        let mut serialised = [0u8; PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2];
+    pub(crate) fn serialise(&self) -> Vec<u8> {
+        let mut serialised = vec![0u8; PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2];
         serialised[..PARAM_K].copy_from_slice(&self.s_a);
         for i in 0..PARAM_SPLITTING_FACTOR {
             serialised[PARAM_K + i * PARAM_CHUNK_W..PARAM_K + (i + 1) * PARAM_CHUNK_W]
@@ -73,7 +73,7 @@ impl Solution {
         serialised
     }
 
-    pub(crate) fn parse(solution_plain: [u8; SOLUTION_PLAIN_SIZE]) -> Self {
+    pub(crate) fn parse(solution_plain: Vec<u8>) -> Self {
         let mut s_a = [0u8; PARAM_K];
         s_a.copy_from_slice(&solution_plain[..PARAM_K]);
         let mut q_poly = [[0u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
@@ -439,9 +439,9 @@ pub(crate) fn complete_q(q_poly: QPoly, leading: u8) -> QPolyComplete {
 
 /// Generate `s = (s_a | s_b)` from `s_a`, `H'` and `y`. Optionally add `y` to `H's_a`.
 /// ```
-/// if has_offset is true:
+// if has_offset is true:
 ///     s_b = y + H's_a
-/// else s_b = H's_a
+// else s_b = H's_a
 /// ```
 pub(crate) fn compute_s(
     s_a: &[u8; PARAM_K],

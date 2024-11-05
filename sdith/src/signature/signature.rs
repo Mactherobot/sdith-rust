@@ -1,4 +1,5 @@
 use crate::{
+    arith::arrays::{Array3D, Array3DTrait},
     constants::{
         params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_M_SUB_K, PARAM_SALT_SIZE, PARAM_TAU},
         types::{Hash, Salt, Seed},
@@ -20,9 +21,9 @@ pub struct Signature {
     pub(crate) salt: Salt,
     pub(crate) h1: Hash,
     pub(crate) broadcast_plain: [u8; BROADCAST_PLAIN_SIZE],
-    pub(crate) broadcast_shares: [[[u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
+    pub(crate) broadcast_shares: Array3D,
     // wit_share from spec
-    pub(crate) solution_share: [[[u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
+    pub(crate) solution_share: Array3D,
     pub(crate) auth: [Vec<Hash>; PARAM_TAU],
     // Calculated in parsing
     pub(crate) view_opening_challenges: [[u16; PARAM_L]; PARAM_TAU],
@@ -35,8 +36,8 @@ impl Signature {
         length += self.broadcast_plain.len();
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_L {
-                length += self.broadcast_shares[e][i].len();
-                length += self.solution_share[e][i].len();
+                length += self.broadcast_shares.get_inner_slice(e, i).len();
+                length += self.solution_share.get_inner_slice(e, i).len();
             }
         }
         for auth in &self.auth {
@@ -58,8 +59,8 @@ impl Signature {
 
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_L {
-                serialised.extend_from_slice(&self.broadcast_shares[e][i]);
-                serialised.extend_from_slice(&self.solution_share[e][i]);
+                serialised.extend_from_slice(&self.broadcast_shares.get_inner_slice(e, i));
+                serialised.extend_from_slice(&self.solution_share.get_inner_slice(e, i));
             }
         }
 
@@ -110,21 +111,28 @@ impl Signature {
             .unwrap();
         offset += BROADCAST_PLAIN_SIZE;
 
-        let mut solution_share = [[[0u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
-        let mut broadcast_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
+        let mut solution_share = Array3D::new(SOLUTION_PLAIN_SIZE, PARAM_L, PARAM_TAU);
+        let mut broadcast_shares = Array3D::new(BROADCAST_SHARE_PLAIN_SIZE, PARAM_L, PARAM_TAU);
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_L {
                 // Broadcast shares
-                broadcast_shares[e][i] = signature_plain
-                    [offset..offset + BROADCAST_SHARE_PLAIN_SIZE]
-                    .try_into()
-                    .unwrap();
+                broadcast_shares.set_inner_slice(
+                    e,
+                    i,
+                    signature_plain[offset..offset + BROADCAST_SHARE_PLAIN_SIZE]
+                        .try_into()
+                        .unwrap(),
+                );
                 offset += BROADCAST_SHARE_PLAIN_SIZE;
 
                 // Witness shares
-                solution_share[e][i] = signature_plain[offset..offset + SOLUTION_PLAIN_SIZE]
-                    .try_into()
-                    .unwrap();
+                solution_share.set_inner_slice(
+                    e,
+                    i,
+                    signature_plain[offset..offset + SOLUTION_PLAIN_SIZE]
+                        .try_into()
+                        .unwrap(),
+                );
                 offset += SOLUTION_PLAIN_SIZE;
             }
         }
@@ -185,14 +193,15 @@ impl Signature {
         salt: &Salt,
         h1: &Hash,
         broadcast_plain: &[u8],
-        broadcast_shares: &[[[u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
+        broadcast_shares: &Array3D,
     ) -> Hash {
-        let mut h2_data: Vec<&[u8]> = vec![message.as_slice(), salt, h1, broadcast_plain];
-        for e in 0..PARAM_TAU {
-            for i in 0..PARAM_L {
-                h2_data.push(&broadcast_shares[e][i]);
-            }
-        }
+        let h2_data: Vec<&[u8]> = vec![
+            message.as_slice(),
+            salt,
+            h1,
+            broadcast_plain,
+            broadcast_shares.to_bytes(),
+        ];
 
         hash_2(h2_data)
     }

@@ -1,3 +1,4 @@
+pub(crate) mod arrays;
 pub(crate) mod gf256;
 pub(crate) mod matrices;
 
