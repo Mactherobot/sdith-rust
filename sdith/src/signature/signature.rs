@@ -71,14 +71,10 @@ impl Signature {
         salt: &Salt,
         h1: &Hash,
         broadcast_plain: &[u8],
-        broadcast_shares: &[[[u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
+        broadcast_shares: &Array3D,
     ) -> Hash {
         let mut h2_data: Vec<&[u8]> = vec![message.as_slice(), salt, h1, broadcast_plain];
-        for e in 0..PARAM_TAU {
-            for i in 0..PARAM_L {
-                h2_data.push(&broadcast_shares[e][i]);
-            }
-        }
+        h2_data.push(broadcast_shares.to_bytes());
 
         hash_2(h2_data)
     }
