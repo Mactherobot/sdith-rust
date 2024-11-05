@@ -1,4 +1,4 @@
-use crate::arith::arrays::{Array3D, Array3DTrait};
+use crate::arith::arrays::{Array2DTrait, Array3D, Array3DTrait};
 use crate::arith::gf256::gf256_vector::{
     gf256_add_vector_add_scalar, gf256_add_vector_with_padding,
 };
@@ -43,7 +43,7 @@ impl Signature {
         let mut commitments: [Hash; PARAM_TAU] = [Hash::default(); PARAM_TAU];
 
         // Party computation and regeneration of Merkle commitments
-        let mut plain = [0u8; BROADCAST_SHARE_PLAIN_SIZE];
+        let mut plain = vec![0u8; BROADCAST_SHARE_PLAIN_SIZE];
         plain[..BROADCAST_SHARE_PLAIN_SIZE_AB].copy_from_slice(&broad_plain);
         for e in 0..PARAM_TAU {
             let mut commitments_prime = [Hash::default(); PARAM_L];
@@ -54,11 +54,20 @@ impl Signature {
                 // sh_broadcast[e][i] = (broad_plain, 0) + sum^ℓ_(j=1) fi^j · broad_share[e][j]
                 let f_i = i.to_le_bytes()[0];
 
+                let mut rnd_coefs = broadcast_shares.get_2d(e);
+                let coefs = rnd_coefs.len();
                 sh_broadcast.set_inner_slice(
                     e,
                     li,
-                    MPC::compute_share(plain.to_vec(), broadcast_shares.get_2d(e), f_i, *i == 0u16)
-                        .as_slice(),
+                    MPC::compute_share(
+                        &plain,
+                        rnd_coefs.clone(),
+                        rnd_coefs.last_inner(),
+                        f_i,
+                        coefs,
+                        *i == 0u16,
+                    )
+                    .as_slice(),
                 );
 
                 // Verify the Merkle path

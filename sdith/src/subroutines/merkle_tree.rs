@@ -1,11 +1,9 @@
-use std::{error::Error, fmt::Debug};
-
 use num_traits::ToPrimitive;
 use queues::Queue;
 use tiny_keccak::Hasher;
 
 use crate::constants::{
-    params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_LOG_N, PARAM_N, PARAM_TAU},
+    params::{PARAM_DIGEST_SIZE, PARAM_LOG_N, PARAM_N},
     types::{CommitmentsArray, Hash, Salt},
 };
 
@@ -23,7 +21,7 @@ pub(crate) struct MerkleTree {
     pub(crate) height: i32,
     pub(crate) n_nodes: usize,
     pub(crate) n_leaves: usize,
-    pub(crate) nodes: [Hash; PARAM_MERKLE_TREE_NODES as usize],
+    pub(crate) nodes: [Hash; PARAM_MERKLE_TREE_NODES],
 }
 
 impl MerkleTree {
@@ -87,7 +85,7 @@ impl MerkleTree {
 
     pub(crate) fn get_leaf(&self, n: usize) -> Hash {
         assert!(n <= self.n_leaves, "Invalid leaf index: {}", n);
-        self.nodes[(self.n_leaves + (n as usize)).to_usize().unwrap()]
+        self.nodes[(self.n_leaves + n).to_usize().unwrap()]
     }
 
     /// Return non-zero based index of the leaf in the tree

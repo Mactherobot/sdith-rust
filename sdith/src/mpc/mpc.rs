@@ -98,25 +98,25 @@ impl MPC {
     /// * `skip_loop` - If true, will return rnd_coefs.last().clone()
     /// TODO: Try to optimize
     pub(crate) fn compute_share(
-        plain: Vec<u8>,
+        plain: &[u8],
         rnd_coefs: Array2D,
+        share: &mut [u8],
         fi: u8,
+        coefs: usize,
         skip_loop: bool,
     ) -> Vec<u8> {
         // We need to compute the following:
         // input_share[e][i] = input_plain + sum^ℓ_(j=1) fi^j · input_coef[e][j]
-        let mut binding = rnd_coefs.clone();
-        let share = binding.last_inner();
 
         // Compute the inner sum
         // sum^ℓ_(j=1) fi · coef[j]
         // Horner method
         if !skip_loop {
-            for j in (0..(rnd_coefs.len() - 1)).rev() {
+            for j in (0..(coefs - 1)).rev() {
                 gf256_add_vector_add_scalar(share, rnd_coefs.get_inner(j), fi);
             }
             // Add the plain to the share
-            gf256_add_vector_add_scalar(share, &plain, fi);
+            gf256_add_vector_add_scalar(share, plain, fi);
         }
 
         share.to_vec()
@@ -139,13 +139,18 @@ impl MPC {
 
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_N {
+                let mut rnd_coefs = input_coefs.get_2d(e);
+                let coefs = rnd_coefs.len();
+
                 input_shares.set_inner_slice(
                     e,
                     i,
                     &Self::compute_share(
-                        input_plain.clone(),
-                        input_coefs.get_2d(e),
+                        &input_plain,
+                        rnd_coefs.clone(),
+                        rnd_coefs.last_inner(),
                         i as u8,
+                        coefs,
                         i == 0,
                     ),
                 );
