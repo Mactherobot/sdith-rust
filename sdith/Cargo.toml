@@ -10,6 +10,10 @@ num-traits = "0.2.19"
 hex = "0.4.3"
 nist-pqc-seeded-rng = "0.2.0"
 criterion = { version = "0.5", features = ["html_reports"] }
+criterion-cycles-per-byte = "0.6.1"
+clap = { version = "4.5.20", features = ["derive"] }
+rand = "0.8.5"
+base64 = "0.22.1"
 
 [[bench]]
 name = "my_benchmark"

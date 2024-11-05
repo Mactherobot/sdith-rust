@@ -1,5 +1,6 @@
 use crate::arith::arrays::{Array3D, Array3DTrait};
 use crate::arith::matrices::{gen_hmatrix, HPrimeMatrix};
+use crate::subroutines::marshalling::Marshalling;
 use crate::witness::SOLUTION_PLAIN_SIZE;
 use crate::{
     constants::{
@@ -18,7 +19,9 @@ impl Signature {
         entropy: (Seed, Salt),
         secret_key: SecretKey,
         message: &Vec<u8>,
-    ) -> Vec<u8> {
+    ) -> Result<Vec<u8>, String> {
+        // TODO: error handling
+
         // Expansion of the parity matrix H'
         let h_prime: HPrimeMatrix = gen_hmatrix(secret_key.seed_h);
 
@@ -121,6 +124,7 @@ impl Signature {
             solution_share,
             view_opening_challenges,
         };
-        signature.serialise()
+
+        Ok(signature.serialise())
     }
 }

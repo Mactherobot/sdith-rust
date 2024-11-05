@@ -2,12 +2,12 @@
 mod tests {
     use crate::{
         keygen::{keygen, PublicKey, SecretKey},
-        spec_tests::SPEC_MASTER_SEED,
+        spec_tests::SPEC_MASTER_SEED, subroutines::marshalling::Marshalling,
     };
 
     #[test]
     fn test_pk_compare_to_spec() {
-        let spec_pk = [
+        let spec_pk = vec![
             6u8, 168, 14, 105, 170, 134, 79, 217, 168, 237, 36, 80, 142, 124, 210, 149, 94, 199,
             184, 194, 151, 197, 189, 96, 35, 216, 242, 229, 32, 70, 37, 206, 221, 89, 225, 106,
             198, 103, 215, 143, 82, 37, 155, 22, 54, 229, 214, 230, 15, 233, 227, 235, 33, 16, 215,
@@ -19,7 +19,7 @@ mod tests {
 
         let (pk, ..) = keygen(SPEC_MASTER_SEED);
 
-        let spec_pk = PublicKey::parse(&spec_pk);
+        let spec_pk = PublicKey::parse(&spec_pk).unwrap();
 
         assert_eq!(pk.seed_h, spec_pk.seed_h, "seed_h mismatch");
         assert_eq!(pk.y, spec_pk.y, "y mismatch");
@@ -27,7 +27,7 @@ mod tests {
 
     #[test]
     fn test_sk_compare_to_spec() {
-        let spec_sk = [
+        let spec_sk = vec![
             6u8, 168, 14, 105, 170, 134, 79, 217, 168, 237, 36, 80, 142, 124, 210, 149, 94, 199, 184,
             194, 151, 197, 189, 96, 35, 216, 242, 229, 32, 70, 37, 206, 221, 89, 225, 106, 198,
             103, 215, 143, 82, 37, 155, 22, 54, 229, 214, 230, 15, 233, 227, 235, 33, 16, 215, 198,
@@ -55,7 +55,7 @@ mod tests {
 
         let (_pk, sk) = keygen(SPEC_MASTER_SEED);
 
-        let spec_sk = SecretKey::parse(&spec_sk);
+        let spec_sk = SecretKey::parse(&spec_sk).unwrap();
 
         assert_eq!(sk.seed_h, spec_sk.seed_h, "seed_h mismatch");
         assert_eq!(sk.y, spec_sk.y, "y mismatch");

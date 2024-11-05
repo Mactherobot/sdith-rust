@@ -5,14 +5,11 @@ use crate::arith::gf256::gf256_vector::{
 use crate::arith::matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::keygen::PublicKey;
 use crate::mpc::broadcast::{Broadcast, BroadcastShare, BROADCAST_SHARE_PLAIN_SIZE_AB};
+use crate::subroutines::marshalling::Marshalling;
 use crate::subroutines::merkle_tree::get_merkle_root_from_auth;
 use crate::{
-    arith::gf256::{
-        gf256_vector::{gf256_add_vector, gf256_add_vector_mul_scalar},
-        FieldArith,
-    },
     constants::{
-        params::{PARAM_L, PARAM_N, PARAM_TAU},
+        params::{PARAM_L, PARAM_TAU},
         types::Hash,
     },
     mpc::{broadcast::BROADCAST_SHARE_PLAIN_SIZE, challenge::Challenge, mpc::MPC},
@@ -22,15 +19,12 @@ use crate::{
 use super::{input::Input, signature::Signature};
 
 impl Signature {
-    pub fn verify_signature(
-        public_key: PublicKey,
-        signature: &Vec<u8>,
-    ) -> Result<bool, &'static str> {
+    pub fn verify_signature(public_key: PublicKey, signature: &Vec<u8>) -> Result<bool, String> {
         // Expansion of parity-check matrix
         let h_prime: HPrimeMatrix = gen_hmatrix(public_key.seed_h);
 
         // Signature parsing
-        let signature = Signature::parse(signature);
+        let signature = Signature::parse(signature)?;
         let (salt, h1, broad_plain, broadcast_shares, wit_share, mut auth, view_opening_challenges) = (
             signature.salt,
             signature.h1,
@@ -95,7 +89,7 @@ impl Signature {
                 &view_opening_challenges[e],
                 None,
             ) else {
-                return Err("Merkle root verification failed");
+                return Err("Merkle root verification failed".to_string());
             };
             commitments[e] = root;
         }
@@ -104,7 +98,7 @@ impl Signature {
         if h1 == Signature::gen_h1(&public_key.seed_h, &public_key.y, salt, commitments) {
             Ok(true)
         } else {
-            Err("Hashes do not match")
+            Err("Hashes do not match".to_string())
         }
     }
 }
