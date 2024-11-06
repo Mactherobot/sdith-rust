@@ -52,7 +52,7 @@ impl Signature {
         plain[..BROADCAST_SHARE_PLAIN_SIZE_AB].copy_from_slice(&broad_plain);
         for e in 0..PARAM_TAU {
             let mut commitments_prime = [Hash::default(); PARAM_L];
-            for (li, i) in view_opening_challenges.get_col(e).iter().enumerate() {
+            for (li, i) in view_opening_challenges.get_row(e).iter().enumerate() {
                 let with_offset = (*i as usize) != 0;
 
                 // We need to compute the following:
@@ -91,7 +91,7 @@ impl Signature {
             let Ok(root) = get_merkle_root_from_auth(
                 &mut auth[e],
                 &commitments_prime,
-                &view_opening_challenges.get_col(e),
+                &view_opening_challenges.get_row(e),
                 None,
             ) else {
                 return Err("Merkle root verification failed".to_string());

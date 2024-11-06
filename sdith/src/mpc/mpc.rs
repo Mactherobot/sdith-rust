@@ -83,7 +83,7 @@ impl MPC {
                 // Store the unique value in the output array
                 opened_views.set(i, j, value);
             }
-            opened_views.get_col_mut(i).sort();
+            opened_views.get_row_mut(i).sort();
         }
         // Return the resulting array of opened views
         opened_views
@@ -109,7 +109,7 @@ impl MPC {
         // input_share[e][i] = input_plain + sum^ℓ_(j=1) fi^j · input_coef[e][j]
 
         let mut share = Vec::with_capacity(INPUT_SIZE);
-        share.extend_from_slice(rnd_coefs.get_last_col_slice(depth));
+        share.extend_from_slice(rnd_coefs.get_last_row_slice(depth));
 
         // Compute the inner sum
         // sum^ℓ_(j=1) fi · coef[j]
@@ -140,7 +140,7 @@ impl MPC {
 
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_N {
-                input_shares.set_col_slice(
+                input_shares.set_row_slice(
                     e,
                     i,
                     &Self::compute_share(&input_plain, e, &input_coefs, i as u8, PARAM_L, i == 0),
@@ -435,7 +435,7 @@ mod mpc_tests {
         for _ in 0..1000 {
             prg.sample_field_fq_elements(&mut h2);
             let view_challenges = MPC::expand_view_challenge_hash(h2);
-            assert_eq!(view_challenges.col_len(), PARAM_TAU);
+            assert_eq!(view_challenges.row_len(), PARAM_TAU);
             for view_challenge in view_challenges.iter_cols() {
                 assert_eq!(view_challenge.len(), PARAM_L);
                 for &x in view_challenge.iter() {

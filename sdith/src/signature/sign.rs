@@ -95,8 +95,8 @@ impl Signature {
 
         let mut auth: [Vec<Hash>; PARAM_TAU] = Default::default();
         for e in 0..PARAM_TAU {
-            auth[e] = merkle_trees[e].get_merkle_path(&view_opening_challenges.get_col(e));
-            for (li, i) in view_opening_challenges.get_col(e).iter().enumerate() {
+            auth[e] = merkle_trees[e].get_merkle_path(&view_opening_challenges.get_row(e));
+            for (li, i) in view_opening_challenges.get_row(e).iter().enumerate() {
                 // Truncate witness share by removing beaver triples from the plain value
                 solution_share.set_row_slice(
                     e,

@@ -182,7 +182,7 @@ impl Marshalling for Signature {
         let mut auth_lengths = [0; PARAM_TAU];
         // Get the auth sizes
         for e in 0..PARAM_TAU {
-            auth_lengths[e] = get_auth_size(&view_opening_challenges.get_col(e));
+            auth_lengths[e] = get_auth_size(&view_opening_challenges.get_row(e));
         }
 
         let mut auth: [Vec<Hash>; PARAM_TAU] = Default::default();
