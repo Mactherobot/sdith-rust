@@ -185,16 +185,16 @@ mod spec_tests {
             for e in 0..PARAM_TAU {
                 for i in 0..PARAM_L {
                     assert_eq!(
-                        sign.broadcast_shares.get_col_slice(e, i),
-                        spec_signature_parsed.broadcast_shares.get_col_slice(e, i),
+                        sign.broadcast_shares.get_row_slice(e, i),
+                        spec_signature_parsed.broadcast_shares.get_row_slice(e, i),
                         "Broadcast shares mismatch e: {}, i: {} ({})",
                         e,
                         i,
                         vi
                     );
                     assert_eq!(
-                        sign.solution_share.get_col_slice(e, i),
-                        spec_signature_parsed.solution_share.get_col_slice(e, i),
+                        sign.solution_share.get_row_slice(e, i),
+                        spec_signature_parsed.solution_share.get_row_slice(e, i),
                         "Solution shares mismatch e: {}, i: {} ({})",
                         e,
                         i,
@@ -259,12 +259,12 @@ mod spec_tests {
             for e in 0..PARAM_TAU {
                 for i in 0..PARAM_L {
                     assert_eq!(
-                        *parsed_signature.broadcast_shares.get_col_slice(e, i),
+                        *parsed_signature.broadcast_shares.get_row_slice(e, i),
                         tv.sm[offset..offset + BROADCAST_SHARE_PLAIN_SIZE]
                     );
                     offset += BROADCAST_SHARE_PLAIN_SIZE;
                     assert_eq!(
-                        *parsed_signature.solution_share.get_col_slice(e, i),
+                        *parsed_signature.solution_share.get_row_slice(e, i),
                         tv.sm[offset..offset + SOLUTION_PLAIN_SIZE]
                     );
                     offset += SOLUTION_PLAIN_SIZE;
@@ -298,7 +298,11 @@ mod spec_tests {
         let test_vectors = read_response_test_vectors(100); // TODO: test all 100 vectors
         for tv in test_vectors {
             let verification = Signature::verify_signature(tv.pk, &tv.sm);
-            assert!(verification.is_ok(), "Signature verification failed: {:?}", verification);
+            assert!(
+                verification.is_ok(),
+                "Signature verification failed: {:?}",
+                verification
+            );
             assert!(verification.unwrap(), "Signature verification failed");
         }
     }

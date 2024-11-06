@@ -37,8 +37,8 @@ impl Signature {
         length += self.broadcast_plain.len();
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_L {
-                length += self.broadcast_shares.get_col_slice(e, i).len();
-                length += self.solution_share.get_col_slice(e, i).len();
+                length += self.broadcast_shares.get_row_slice(e, i).len();
+                length += self.solution_share.get_row_slice(e, i).len();
             }
         }
         for auth in &self.auth {
@@ -92,8 +92,8 @@ impl Marshalling for Signature {
 
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_L {
-                serialised.extend_from_slice(&self.broadcast_shares.get_col_slice(e, i));
-                serialised.extend_from_slice(&self.solution_share.get_col_slice(e, i));
+                serialised.extend_from_slice(&self.broadcast_shares.get_row_slice(e, i));
+                serialised.extend_from_slice(&self.solution_share.get_row_slice(e, i));
             }
         }
 
@@ -151,7 +151,7 @@ impl Marshalling for Signature {
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_L {
                 // Broadcast shares
-                broadcast_shares.set_col_slice(
+                broadcast_shares.set_row_slice(
                     e,
                     i,
                     signature_plain[offset..offset + BROADCAST_SHARE_PLAIN_SIZE]
@@ -161,7 +161,7 @@ impl Marshalling for Signature {
                 offset += BROADCAST_SHARE_PLAIN_SIZE;
 
                 // Witness shares
-                solution_share.set_col_slice(
+                solution_share.set_row_slice(
                     e,
                     i,
                     signature_plain[offset..offset + SOLUTION_PLAIN_SIZE]
