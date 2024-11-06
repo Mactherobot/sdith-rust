@@ -99,8 +99,8 @@ impl MPC {
     /// TODO: Try to optimize
     pub(crate) fn compute_share(
         plain: &[u8],
-        rnd_coefs: Array2D,
-        share: &mut [u8],
+        depth: usize,
+        rnd_coefs: &Array3D,
         fi: u8,
         coefs: usize,
         skip_loop: bool,
@@ -108,15 +108,18 @@ impl MPC {
         // We need to compute the following:
         // input_share[e][i] = input_plain + sum^ℓ_(j=1) fi^j · input_coef[e][j]
 
+        let mut share = Vec::with_capacity(INPUT_SIZE);
+        share.extend_from_slice(rnd_coefs.get_last_row_slice(depth));
+
         // Compute the inner sum
         // sum^ℓ_(j=1) fi · coef[j]
         // Horner method
         if !skip_loop {
             for j in (0..(coefs - 1)).rev() {
-                gf256_add_vector_add_scalar(share, rnd_coefs.get_inner(j), fi);
+                gf256_add_vector_add_scalar(&mut share, rnd_coefs.get_row_slice(depth, j), fi);
             }
             // Add the plain to the share
-            gf256_add_vector_add_scalar(share, plain, fi);
+            gf256_add_vector_add_scalar(&mut share, plain, fi);
         }
 
         share.to_vec()
@@ -129,30 +132,19 @@ impl MPC {
 
         // Generate coefficients
         let mut input_coefs = Array3D::new(INPUT_SIZE, PARAM_L, PARAM_TAU);
+        let mut tmp_coef = [0u8; INPUT_SIZE];
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_L {
-                let mut rnd_coefs = [0u8; INPUT_SIZE];
-                prg.sample_field_fq_elements(&mut rnd_coefs);
-                input_coefs.set_inner_slice(e, i, &rnd_coefs);
+                prg.sample_field_fq_elements(&mut input_coefs.get_row_slice_mut(e, i));
             }
         }
 
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_N {
-                let mut rnd_coefs = input_coefs.get_2d(e);
-                let coefs = rnd_coefs.len();
-
-                input_shares.set_inner_slice(
+                input_shares.set_row_slice(
                     e,
                     i,
-                    &Self::compute_share(
-                        &input_plain,
-                        rnd_coefs.clone(),
-                        rnd_coefs.last_inner(),
-                        i as u8,
-                        coefs,
-                        i == 0,
-                    ),
+                    &Self::compute_share(&input_plain, e, &input_coefs, i as u8, PARAM_L, i == 0),
                 );
             }
         }

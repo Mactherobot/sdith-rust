@@ -438,11 +438,6 @@ pub(crate) fn complete_q(q_poly: QPoly, leading: u8) -> QPolyComplete {
 }
 
 /// Generate `s = (s_a | s_b)` from `s_a`, `H'` and `y`. Optionally add `y` to `H's_a`.
-/// ```
-// if has_offset is true:
-///     s_b = y + H's_a
-// else s_b = H's_a
-/// ```
 pub(crate) fn compute_s(
     s_a: &[u8; PARAM_K],
     h_prime: &HPrimeMatrix,

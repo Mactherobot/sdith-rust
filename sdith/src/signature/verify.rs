@@ -1,7 +1,4 @@
-use crate::arith::arrays::{Array2DTrait, Array3D, Array3DTrait};
-use crate::arith::gf256::gf256_vector::{
-    gf256_add_vector_add_scalar, gf256_add_vector_with_padding,
-};
+use crate::arith::arrays::{Array3D, Array3DTrait};
 use crate::arith::matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::keygen::PublicKey;
 use crate::mpc::broadcast::{Broadcast, BroadcastShare, BROADCAST_SHARE_PLAIN_SIZE_AB};
@@ -25,7 +22,15 @@ impl Signature {
 
         // Signature parsing
         let signature = Signature::parse(signature)?;
-        let (salt, h1, broad_plain, broadcast_shares, wit_share, mut auth, view_opening_challenges) = (
+        let (
+            salt,
+            h1,
+            broad_plain,
+            mut broadcast_shares,
+            wit_share,
+            mut auth,
+            view_opening_challenges,
+        ) = (
             signature.salt,
             signature.h1,
             signature.broadcast_plain,
@@ -54,27 +59,18 @@ impl Signature {
                 // sh_broadcast[e][i] = (broad_plain, 0) + sum^ℓ_(j=1) fi^j · broad_share[e][j]
                 let f_i = i.to_le_bytes()[0];
 
-                let mut rnd_coefs = broadcast_shares.get_2d(e);
-                let coefs = rnd_coefs.len();
-                sh_broadcast.set_inner_slice(
+                sh_broadcast.set_row_slice(
                     e,
                     li,
-                    MPC::compute_share(
-                        &plain,
-                        rnd_coefs.clone(),
-                        rnd_coefs.last_inner(),
-                        f_i,
-                        coefs,
-                        *i == 0u16,
-                    )
-                    .as_slice(),
+                    MPC::compute_share(&plain, e, &broadcast_shares, f_i, PARAM_L, *i == 0u16)
+                        .as_slice(),
                 );
 
                 // Verify the Merkle path
                 let broadcast_share =
-                    BroadcastShare::parse(sh_broadcast.get_inner_slice(e, li).to_vec());
+                    BroadcastShare::parse(sh_broadcast.get_row_slice(e, li).to_vec());
                 let beaver_triples = MPC::inverse_party_computation(
-                    wit_share.get_inner_slice(e, li).to_vec(),
+                    wit_share.get_row_slice(e, li).to_vec(),
                     &broadcast_share,
                     &chal,
                     h_prime,
@@ -84,7 +80,7 @@ impl Signature {
                 );
 
                 let input_share = Input::append_beaver_triples(
-                    wit_share.get_inner_slice(e, li).to_vec(),
+                    wit_share.get_row_slice(e, li).to_vec(),
                     beaver_triples,
                 );
 

@@ -51,7 +51,7 @@ impl Signature {
                     &salt,
                     e as u16,
                     i as u16,
-                    &input_shares.get_inner_slice(e, i),
+                    &input_shares.get_row_slice(e, i),
                 );
             }
 
@@ -76,7 +76,7 @@ impl Signature {
         for e in 0..PARAM_TAU {
             for j in 0..PARAM_L {
                 let broadcast_share = MPC::party_computation(
-                    input_coefs.get_inner_slice(e, j).to_vec(),
+                    input_coefs.get_row_slice(e, j).to_vec(),
                     &chal,
                     h_prime,
                     secret_key.y,
@@ -84,7 +84,7 @@ impl Signature {
                     false,
                 );
 
-                broadcast_shares.set_inner_slice(e, j, broadcast_share.serialise().as_slice());
+                broadcast_shares.set_row_slice(e, j, broadcast_share.serialise().as_slice());
             }
         }
 
@@ -102,11 +102,11 @@ impl Signature {
             auth[e] = merkle_trees[e].get_merkle_path(&view_opening_challenges[e]);
             for (li, i) in view_opening_challenges[e].iter().enumerate() {
                 // Truncate witness share by removing beaver triples from the plain value
-                solution_share.set_inner_slice(
+                solution_share.set_row_slice(
                     e,
                     li,
                     Input::truncate_beaver_triples(
-                        input_shares.get_inner_slice(e, *i as usize).to_vec(),
+                        input_shares.get_row_slice(e, *i as usize).to_vec(),
                     )
                     .as_slice(),
                 );
