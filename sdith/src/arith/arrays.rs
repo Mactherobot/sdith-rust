@@ -1,8 +1,6 @@
 use std::fmt::Debug;
 
-// TODO: Flip row and column naming. array[[[0u8; rows]; cols]; depth] to array[[[0u8; cols]; rows]; depth]
-
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub(crate) struct Array2D<T> {
     rows: usize,
     columns: usize,
@@ -40,7 +38,10 @@ pub(crate) trait Array2DTrait<T> {
     fn set_row_slice(&mut self, row: usize, val: &[T]);
     /// Converts the array to a byte array
     fn to_bytes(&self) -> &[T];
-    fn iter_cols(&self) -> std::slice::ChunksExact<'_, T>;
+    /// Iterates over the rows of the array
+    fn iter_rows(&self) -> std::slice::ChunksExact<'_, T>;
+    /// Appends `val` to each row of the array
+    fn append_each_row(&mut self, val: T);
 }
 
 /// Impl of the Array2DTrait for the Array2D struct
@@ -70,8 +71,18 @@ where
         }
     }
 
-    fn iter_cols(&self) -> std::slice::ChunksExact<'_, T> {
+    fn iter_rows(&self) -> std::slice::ChunksExact<'_, T> {
         self.data.chunks_exact(self.columns)
+    }
+
+    fn append_each_row(&mut self, val: T) {
+        let mut new_data = Vec::with_capacity(self.rows * self.columns + self.rows);
+        for row in self.iter_rows() {
+            new_data.extend_from_slice(row);
+            new_data.push(val);
+        }
+        self.columns += 1;
+        self.data = new_data;
     }
 
     fn get(&self, row: usize, col: usize) -> T {
@@ -120,13 +131,27 @@ where
     }
 }
 
+impl<T> Debug for Array2D<T> where T: Debug, Self: Array2DTrait<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Print the 2D array as a list of rows
+        writeln!(f, "Array2D: {}x{}", self.rows, self.columns)?;
+        for i in 0..self.rows {
+            write!(f, "{:?}", self.get_row(i))?;
+            if (i + 1) < self.rows {
+                writeln!(f, ", ")?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl<T> PartialEq<Vec<Vec<T>>> for Array2D<T>
 where
     Self: Array2DTrait<T>,
     T: std::cmp::PartialEq,
 {
     fn eq(&self, other: &Vec<Vec<T>>) -> bool {
-        self.iter_cols()
+        self.iter_rows()
             .enumerate()
             .all(|(i, col)| col == &other[i])
     }
@@ -310,6 +335,17 @@ mod array_tests_2d {
         col[1] = 8;
         assert_eq!(array.get(2, 0), 5);
         assert_eq!(array.get(2, 1), 8);
+    }
+
+    #[test]
+    fn test_append_each_row() {
+        let mut array = setup();
+        array.append_each_row(1);
+
+        for row in array.iter_rows() {
+            assert_eq!(row.len(), 3);
+            assert_eq!(row.last().unwrap(), &1);
+        }
     }
 }
 

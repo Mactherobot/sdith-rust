@@ -1,5 +1,8 @@
+use queues::Queue;
+
 use crate::{
     arith::{
+        arrays::{Array2D, Array2DTrait},
         gf256::{
             gf256_poly::gf256_remove_one_degree_factor_monic,
             gf256_vector::{gf256_add_vector, gf256_mul_vector_by_scalar},
@@ -21,10 +24,11 @@ use crate::{
 
 // Polynomial types
 /// QPoly is a polynomial of degree PARAM_CHUNK_WEIGHT * PARAM_SPLITTING_FACTOR. Split into a matrix of PARAM_SPLITTING_FACTOR rows and PARAM_CHUNK_WEIGHT columns.
-pub(crate) type QPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
-pub(crate) type QPolyComplete = [[u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR];
-pub(crate) type PPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
-pub(crate) type SPoly = [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
+pub(crate) type QPoly = Array2D<u8>;
+/// PPoly is a polynomial of degree PARAM_CHUNK_WEIGHT * PARAM_SPLITTING_FACTOR. Split into a matrix of PARAM_SPLITTING_FACTOR rows and PARAM_CHUNK_WEIGHT columns.
+pub(crate) type PPoly = Array2D<u8>;
+/// SPoly is a polynomial of degree PARAM_M. Split into a matrix of PARAM_SPLITTING_FACTOR rows and PARAM_CHUNK_M columns.
+pub(crate) type SPoly = Array2D<u8>;
 
 /// Instance Definition:
 ///
@@ -63,12 +67,12 @@ impl Solution {
         serialised[..PARAM_K].copy_from_slice(&self.s_a);
         for i in 0..PARAM_SPLITTING_FACTOR {
             serialised[PARAM_K + i * PARAM_CHUNK_W..PARAM_K + (i + 1) * PARAM_CHUNK_W]
-                .copy_from_slice(&self.q_poly[i]);
+                .copy_from_slice(&self.q_poly.get_row(i));
         }
         for i in 0..PARAM_SPLITTING_FACTOR {
             serialised[PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR + i * PARAM_CHUNK_W
                 ..PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR + (i + 1) * PARAM_CHUNK_W]
-                .copy_from_slice(&self.p_poly[i]);
+                .copy_from_slice(&self.p_poly.get_row(i));
         }
         serialised
     }
@@ -76,15 +80,15 @@ impl Solution {
     pub(crate) fn parse(solution_plain: Vec<u8>) -> Self {
         let mut s_a = vec![0u8; PARAM_K];
         s_a.copy_from_slice(&solution_plain[..PARAM_K]);
-        let mut q_poly = [[0u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
+        let mut q_poly = Array2D::new(PARAM_CHUNK_W, PARAM_SPLITTING_FACTOR);
         for i in 0..PARAM_SPLITTING_FACTOR {
-            q_poly[i].copy_from_slice(
+            q_poly.set_row_slice(i,
                 &solution_plain[PARAM_K + i * PARAM_CHUNK_W..PARAM_K + (i + 1) * PARAM_CHUNK_W],
             );
         }
-        let mut p_poly = [[0u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
+        let mut p_poly = Array2D::new(PARAM_CHUNK_W, PARAM_SPLITTING_FACTOR);
         for i in 0..PARAM_SPLITTING_FACTOR {
-            p_poly[i].copy_from_slice(
+            p_poly.set_row_slice(i,
                 &solution_plain[PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR + i * PARAM_CHUNK_W
                     ..PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR + (i + 1) * PARAM_CHUNK_W],
             );
@@ -113,12 +117,12 @@ pub(crate) struct Witness {
 /// Inputs:
 /// - seed_h: Seed used to generate the H matrix.
 /// - polynomials: Tuple containing the polynomials Q', S, and P.
-pub(crate) fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly)) -> Witness {
+pub(crate) fn generate_witness(seed_h: Seed, polynomials: (&QPoly, &SPoly, &PPoly)) -> Witness {
     let (_q_poly, s_poly, _p_poly) = polynomials;
 
     // s is pre serialized as (s_A | s_B) due to the nature of SPoly
     // Split s as (s_A | s_B)
-    let s_flat = s_poly.as_flattened();
+    let s_flat = s_poly.data.clone();
     let s_a: Vec<u8> = s_flat[..PARAM_K].to_vec();
     let s_b: Vec<u8> = s_flat[PARAM_K..].to_vec();
 
@@ -134,8 +138,8 @@ pub(crate) fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly))
         y,
         seed_h,
         h_prime,
-        q_poly: _q_poly,
-        p_poly: _p_poly,
+        q_poly: _q_poly.clone(),
+        p_poly: _p_poly.clone(),
     }
 }
 
@@ -168,7 +172,7 @@ pub(crate) fn generate_instance_with_solution(master_seed: Seed) -> (Instance, S
     // Sample a seed for matrix H
     let seed_h = prg.sample_seed();
 
-    let witness = generate_witness(seed_h, (q, s, p));
+    let witness = generate_witness(seed_h, (&q, &s, &p));
 
     let instance = Instance {
         seed_h: witness.seed_h,
@@ -208,9 +212,9 @@ pub(crate) fn sample_witness(
     [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR],
 ) {
     // Initiate variables
-    let mut q_poly: QPoly = [[0_u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
-    let mut p_poly: PPoly = [[0_u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
-    let mut s_poly: SPoly = [[0_u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
+    let mut q_poly: QPoly = Array2D::new(PARAM_CHUNK_W, PARAM_SPLITTING_FACTOR);
+    let mut p_poly: PPoly = Array2D::new(PARAM_CHUNK_W, PARAM_SPLITTING_FACTOR);
+    let mut s_poly: SPoly = Array2D::new(PARAM_CHUNK_M, PARAM_SPLITTING_FACTOR);
 
     let mut x_vectors: [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR] =
         [[0; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
@@ -221,7 +225,7 @@ pub(crate) fn sample_witness(
         x_vectors[n_poly] = x_vector;
 
         // Compute Q
-        q_poly[n_poly] = compute_q_prime_chunk(&positions);
+        q_poly.set_row_slice(n_poly, &compute_q_prime_chunk(&positions));
 
         // Compute S and P
         let mut tmp_poly = [0_u8; PARAM_CHUNK_M]; // holder of intermediate results for S and P
@@ -236,17 +240,17 @@ pub(crate) fn sample_witness(
                 i as u8,
             );
             gf256_mul_vector_by_scalar(&mut tmp_poly, scalar);
-            gf256_add_vector(&mut s_poly[n_poly], &tmp_poly);
+            gf256_add_vector(&mut s_poly.get_row_mut(n_poly), &tmp_poly);
 
             // Compute P polynomial
             gf256_remove_one_degree_factor_monic(
                 &mut tmp_poly,
-                &q_poly[n_poly],
+                &q_poly.get_row(n_poly),
                 PARAM_CHUNK_W,
                 i as u8,
             );
             gf256_mul_vector_by_scalar(&mut tmp_poly, scalar);
-            gf256_add_vector(&mut p_poly[n_poly], &tmp_poly);
+            gf256_add_vector(&mut p_poly.get_row_mut(n_poly), &tmp_poly);
         }
     }
     return (q_poly, s_poly, p_poly, x_vectors);
@@ -271,7 +275,7 @@ mod test_witness {
         let seed_test = [0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed_test, None);
         let (q, s, p, ..) = sample_witness(&mut prg);
-        let result = generate_witness(seed_test, (q, s, p));
+        let result = generate_witness(seed_test, (&q, &s, &p));
 
         let h_prime = result.h_prime;
         let y = result.y;
@@ -292,15 +296,11 @@ mod test_witness {
         let mut prg = PRG::init(&seed, None);
         let (q_poly, s_poly, p_poly, x_vectors) = sample_witness(&mut prg);
 
-        assert_eq!(q_poly.len(), PARAM_SPLITTING_FACTOR);
-        assert_eq!(s_poly.len(), PARAM_SPLITTING_FACTOR);
-        assert_eq!(p_poly.len(), PARAM_SPLITTING_FACTOR);
-
         // Test that the evaluation of the s_poly forms a vector of hamming weight PARAM_CHUNK_W
         for d in 0..PARAM_SPLITTING_FACTOR {
-            let s_poly_d = s_poly[d];
-            let q_poly_d = q_poly[d];
-            let p_poly_d = p_poly[d];
+            let s_poly_d = s_poly.get_row(d);
+            let q_poly_d = q_poly.get_row(d);
+            let p_poly_d = p_poly.get_row(d);
             let x_vector_d = &x_vectors[d];
 
             // Check that the polynomials have the correct length
@@ -355,7 +355,7 @@ mod test_witness {
         let seed = [0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);
         let (q_poly, s_poly, p_poly, ..) = sample_witness(&mut prg);
-        let witness = generate_witness(seed, (q_poly, s_poly, p_poly));
+        let witness = generate_witness(seed, (&q_poly, &s_poly, &p_poly));
         let solution = Solution {
             s_a: witness.s_a,
             q_poly: witness.q_poly,
@@ -422,17 +422,8 @@ fn compute_q_prime_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N] {
 
 /// Completes the q polynomial by inserting the leading coefficient at the beginning of each d-split
 /// TODO: Find out why test didn't catch 1 being inserted at the incorrect position
-pub(crate) fn complete_q(q_poly: QPoly, leading: u8) -> QPolyComplete {
-    let mut q_poly_out = [[0_u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR];
-
-    for d in 0..PARAM_SPLITTING_FACTOR {
-        for i in 0..PARAM_CHUNK_W {
-            q_poly_out[d][i] = q_poly[d][i];
-        }
-        q_poly_out[d][PARAM_CHUNK_W] = leading;
-    }
-
-    q_poly_out
+pub(crate) fn complete_q(q_poly: &mut QPoly, leading: u8) {
+    q_poly.append_each_row(leading);
 }
 
 /// Generate `s = (s_a | s_b)` from `s_a`, `H'` and `y`. Optionally add `y` to `H's_a`.
@@ -455,14 +446,13 @@ pub(crate) fn compute_s(s_a: &Vec<u8>, h_prime: &HPrimeMatrix, y: Option<&Vec<u8
 
 /// Compute SPoly from s = Parse((s, F_q^(m/d), F_q^(m/d),...)
 pub(crate) fn compute_s_poly(s: Vec<u8>) -> SPoly {
-    let mut s_poly: SPoly = [[0u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
+    let mut s_poly: SPoly = Array2D::new(PARAM_CHUNK_M, PARAM_SPLITTING_FACTOR);
     for (i, s_poly_d) in s.chunks(PARAM_CHUNK_M).enumerate() {
-        s_poly[i] = s_poly_d.try_into().expect("Invalid chunk size");
+        s_poly.set_row_slice(i, s_poly_d.try_into().expect("Invalid chunk size"));
     }
 
     s_poly
 }
-
 #[cfg(test)]
 mod test_helpers {
 
@@ -541,7 +531,7 @@ mod test_helpers {
         let seed = [0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);
         let (q, s, p, ..) = sample_witness(&mut prg);
-        let witness = generate_witness(seed, (q, s, p));
+        let witness = generate_witness(seed, (&q, &s, &p));
         let s = compute_s(&witness.s_a, &witness.h_prime, Some(&witness.y));
 
         assert_eq!(s.len(), PARAM_M);
@@ -554,14 +544,15 @@ mod test_helpers {
         let seed = [0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);
         let (q_poly, ..) = sample_witness(&mut prg);
-        let q_complete = complete_q(q_poly, 1);
+        let mut q_complete = q_poly.clone();
+        complete_q(&mut q_complete, 1);
 
-        for (i, q_comp) in q_complete.iter().enumerate() {
+        for (i, q_comp) in q_complete.iter_rows().enumerate() {
             assert_eq!(q_comp.last(), Some(&1u8));
 
             // Check that this is the same as using the monic polynomial evaluation on the original q_poly
             assert_eq!(
-                gf256_evaluate_polynomial_horner_monic(&q_poly[i], 1),
+                gf256_evaluate_polynomial_horner_monic(&q_poly.get_row(i), 1),
                 gf256_evaluate_polynomial_horner(q_comp, 1)
             )
         }
@@ -572,7 +563,7 @@ mod test_helpers {
         let seed = [0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);
         let (q_poly, s_poly, p_poly, ..) = sample_witness(&mut prg);
-        let witness = generate_witness(seed, (q_poly, s_poly, p_poly));
+        let witness = generate_witness(seed, (&q_poly, &s_poly, &p_poly));
         let solution = Solution {
             s_a: witness.s_a,
             q_poly: witness.q_poly,

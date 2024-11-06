@@ -236,7 +236,7 @@ impl MPC {
             input_share.beaver.b,
             input_share.beaver.c,
         );
-        let (s_a, q_poly, p_poly) = (
+        let (s_a, mut q_poly, p_poly) = (
             input_share.solution.s_a,
             input_share.solution.q_poly,
             input_share.solution.p_poly,
@@ -247,7 +247,7 @@ impl MPC {
         let s_poly = compute_s_poly(s);
 
         // Complete Q
-        let q_poly_complete = complete_q(q_poly, if with_offset { 1u8 } else { 0u8 });
+        complete_q(&mut q_poly, if with_offset { 1u8 } else { 0u8 });
 
         // Outputs
         let mut alpha_share = Array2D::new(PARAM_T, PARAM_SPLITTING_FACTOR);
@@ -269,8 +269,8 @@ impl MPC {
                 // Challenge values
 
                 // α[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
-                let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
-                let eval_s = MPC::polynomial_evaluation(&s_poly[d], &powers_of_r_j);
+                let eval_q = MPC::polynomial_evaluation(&q_poly.get_row(d), &powers_of_r_j);
+                let eval_s = MPC::polynomial_evaluation(&s_poly.get_row(d), &powers_of_r_j);
                 alpha_share.set(d, j, chal.eps.get(d, j).field_mul(eval_q).field_add(a));
 
                 // β[d][j] = Evaluate(S[d], r[j]) + b[d][j]
@@ -278,7 +278,7 @@ impl MPC {
 
                 if compute_v {
                     // v[j] += ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
-                    let eval_p = MPC::polynomial_evaluation(&p_poly[d], &powers_of_r_j);
+                    let eval_p = MPC::polynomial_evaluation(&p_poly.get_row(d), &powers_of_r_j);
                     v[j] = v[j].field_add(
                         chal.f_poly_eval[j]
                             .field_mul(eval_p)
@@ -319,14 +319,14 @@ impl MPC {
         with_offset: bool,
     ) -> Beaver {
         let solution = Solution::parse(solution_plain);
-        let (s_a, q_poly, p_poly) = (solution.s_a, solution.q_poly, solution.p_poly);
+        let (s_a, mut q_poly, p_poly) = (solution.s_a, solution.q_poly, solution.p_poly);
 
         // Compute S
         let s = compute_s(&s_a, &h_prime, if with_offset { Some(&y) } else { None });
         let s_poly = compute_s_poly(s);
 
         // Complete Q
-        let q_poly_complete = complete_q(q_poly, if with_offset { 1u8 } else { 0u8 });
+        complete_q(&mut q_poly, if with_offset { 1u8 } else { 0u8 });
 
         let mut a = Array2D::new(PARAM_T, PARAM_SPLITTING_FACTOR);
         let mut b = Array2D::new(PARAM_T, PARAM_SPLITTING_FACTOR);
@@ -345,7 +345,7 @@ impl MPC {
                 // Challenge values
 
                 // a[d][j] = α[d][j] - ε[d][j] ⊗ Evaluate(Q[d], r[j])
-                let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
+                let eval_q = MPC::polynomial_evaluation(&q_poly.get_row(d), &powers_of_r_j);
                 a.set(
                     d,
                     j,
@@ -353,11 +353,11 @@ impl MPC {
                 );
 
                 // b[d][j] = β[d][j] - Evaluate(S[d], r[j])
-                let eval_s = MPC::polynomial_evaluation(&s_poly[d], &powers_of_r_j);
+                let eval_s = MPC::polynomial_evaluation(&s_poly.get_row(d), &powers_of_r_j);
                 b.set(d, j, beta_share.field_sub(eval_s));
 
                 // c[j] +=  ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
-                let eval_p = MPC::polynomial_evaluation(&p_poly[d], &powers_of_r_j);
+                let eval_p = MPC::polynomial_evaluation(&p_poly.get_row(d), &powers_of_r_j);
                 c[j] = c[j].field_add(
                     chal.f_poly_eval[j]
                         .field_mul(eval_p)
@@ -406,7 +406,7 @@ mod mpc_tests {
         let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
 
         let (q, s, p, _) = sample_witness(&mut prg);
-        let witness = generate_witness(hseed, (q, s, p));
+        let witness = generate_witness(hseed, (&q, &s, &p));
 
         let beaver = Beaver::generate_beaver_triples(&mut prg);
         let chal = Challenge::new(Hash::default());
@@ -435,7 +435,7 @@ mod mpc_tests {
             prg.sample_field_fq_elements(&mut h2);
             let view_challenges = MPC::expand_view_challenge_hash(h2);
             assert_eq!(view_challenges.row_len(), PARAM_TAU);
-            for view_challenge in view_challenges.iter_cols() {
+            for view_challenge in view_challenges.iter_rows() {
                 assert_eq!(view_challenge.len(), PARAM_L);
                 for &x in view_challenge.iter() {
                     assert!(
@@ -471,7 +471,7 @@ mod mpc_tests {
         let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
 
         let (q, s, p, _) = sample_witness(&mut prg);
-        let witness = generate_witness(hseed, (q, s, p));
+        let witness = generate_witness(hseed, (&q, &s, &p));
         let beaver = Beaver::generate_beaver_triples(&mut prg);
 
         let hash1 = Hash::default();
@@ -562,20 +562,20 @@ mod mpc_tests {
     /// Test that for some random point r_k we have that S(r_k) * Q'(r_k) = F * P(r_k)
     #[test]
     fn test_relation_sq_eq_pf() {
-        let (input, _broadcast, _chal, h_prime, y) = prepare();
+        let (mut input, _broadcast, _chal, h_prime, y) = prepare();
         let mut prg = PRG::init_base(&[2]);
         let r = FPoint::field_sample(&mut prg);
         let mut powers_of_r = [FPoint::default(); PARAM_M + 1];
         get_powers(r, &mut powers_of_r);
 
-        let q_poly = complete_q(input.solution.q_poly, 1);
+        complete_q(&mut input.solution.q_poly, 1);
         let s_poly = compute_s_poly(compute_s(&input.solution.s_a, &h_prime, Some(&y)));
 
-        let q_eval = MPC::polynomial_evaluation(&q_poly[0], &powers_of_r);
-        let s_eval = MPC::polynomial_evaluation(&s_poly[0], &powers_of_r);
+        let q_eval = MPC::polynomial_evaluation(&input.solution.q_poly.get_row(0), &powers_of_r);
+        let s_eval = MPC::polynomial_evaluation(&s_poly.get_row(0), &powers_of_r);
 
         let f_eval = MPC::polynomial_evaluation(&PRECOMPUTED_F_POLY, &powers_of_r);
-        let p_eval = MPC::polynomial_evaluation(&input.solution.p_poly[0], &powers_of_r);
+        let p_eval = MPC::polynomial_evaluation(&input.solution.p_poly.get_row(0), &powers_of_r);
 
         assert_eq!(q_eval.field_mul(s_eval), f_eval.field_mul(p_eval));
     }
