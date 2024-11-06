@@ -1,5 +1,6 @@
-use crate::arith::arrays::{Array2DTrait, Array3D, Array3DTrait};
+use crate::arith::arrays::{Array2D, Array2DTrait, Array3D, Array3DTrait};
 use crate::arith::matrices::{gen_hmatrix, HPrimeMatrix};
+use crate::constants::params::PARAM_DIGEST_SIZE;
 use crate::keygen::PublicKey;
 use crate::mpc::broadcast::{Broadcast, BroadcastShare, BROADCAST_SHARE_PLAIN_SIZE_AB};
 use crate::subroutines::marshalling::Marshalling;
@@ -37,13 +38,13 @@ impl Signature {
 
         let broadcast = Broadcast::parse(broad_plain.to_vec()); // TODO fix
         let mut sh_broadcast = Array3D::new(BROADCAST_SHARE_PLAIN_SIZE, PARAM_L, PARAM_TAU);
-        let mut commitments: Vec<Hash> = Vec::with_capacity(PARAM_TAU); // TODO: Use Array2D
+        let mut commitments: Array2D<u8> = Array2D::new(PARAM_DIGEST_SIZE, PARAM_TAU);
 
         // Party computation and regeneration of Merkle commitments
         let mut plain = vec![0u8; BROADCAST_SHARE_PLAIN_SIZE];
         plain[..BROADCAST_SHARE_PLAIN_SIZE_AB].copy_from_slice(&broad_plain);
         for e in 0..PARAM_TAU {
-            let mut commitments_prime: Vec<Hash> = Vec::with_capacity(PARAM_L); // TODO: Use Array2D
+            let mut commitments_prime: Array2D<u8> = Array2D::new(PARAM_DIGEST_SIZE, PARAM_L);
             for (li, i) in view_opening_challenges.get_row(e).iter().enumerate() {
                 let with_offset = (*i as usize) != 0;
 
