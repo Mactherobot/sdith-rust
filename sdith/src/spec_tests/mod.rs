@@ -157,7 +157,7 @@ mod spec_tests {
         for (vi, tv) in test_vectors.iter().enumerate() {
             let signature_plain = Signature::sign_message(
                 (tv.nist_entropy.sign_seed, tv.nist_entropy.sign_salt),
-                tv.sk,
+                tv.sk.clone(),
                 &tv.msg,
             )
             .unwrap();

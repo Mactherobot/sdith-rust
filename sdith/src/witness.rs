@@ -35,7 +35,7 @@ pub(crate) type SPoly = [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
 /// Some member can be pointers when they are generated at each signing and verification from the others members.
 pub(crate) struct Instance {
     pub(crate) seed_h: Seed,
-    pub(crate) y: [u8; PARAM_M_SUB_K],
+    pub(crate) y: Vec<u8>,
     pub(crate) h_prime: HPrimeMatrix,
 }
 
@@ -101,7 +101,7 @@ pub(crate) struct Witness {
     pub(crate) s_a: [u8; PARAM_K],
     /// s_b is only used for testing purposes
     s_b: [u8; PARAM_M_SUB_K],
-    pub(crate) y: [u8; PARAM_M_SUB_K],
+    pub(crate) y: Vec<u8>,
     pub(crate) h_prime: HPrimeMatrix,
     pub(crate) seed_h: Seed,
     pub(crate) q_poly: QPoly,
@@ -144,8 +144,9 @@ pub(crate) fn compute_y(
     s_b: &[u8; PARAM_M_SUB_K],
     s_a: &[u8; PARAM_K],
     h_prime: &HPrimeMatrix,
-) -> [u8; PARAM_M_SUB_K] {
-    let mut y = s_b.clone();
+) -> Vec<u8> {
+    let mut y = vec![0u8; PARAM_M_SUB_K];
+    y[..PARAM_M_SUB_K].copy_from_slice(s_b);
     mul_hprime_vector(&mut y, &h_prime, s_a);
     y
 }
@@ -424,6 +425,7 @@ fn compute_q_prime_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N] {
 }
 
 /// Completes the q polynomial by inserting the leading coefficient at the beginning of each d-split
+/// TODO: Find out why test didn't catch 1 being inserted at the incorrect position
 pub(crate) fn complete_q(q_poly: QPoly, leading: u8) -> QPolyComplete {
     let mut q_poly_out = [[0_u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR];
 
@@ -441,10 +443,10 @@ pub(crate) fn complete_q(q_poly: QPoly, leading: u8) -> QPolyComplete {
 pub(crate) fn compute_s(
     s_a: &[u8; PARAM_K],
     h_prime: &HPrimeMatrix,
-    y: Option<&[u8; PARAM_M_SUB_K]>,
-) -> [u8; PARAM_M] {
+    y: Option<&Vec<u8>>,
+) -> Vec<u8> {
     // (s_a | s_b)
-    let mut s = [0u8; PARAM_M];
+    let mut s = vec![0u8; PARAM_M];
 
     // Set s_a
     gf256_add_vector(&mut s[..PARAM_K], s_a);
@@ -460,7 +462,7 @@ pub(crate) fn compute_s(
 }
 
 /// Compute SPoly from s = Parse((s, F_q^(m/d), F_q^(m/d),...)
-pub(crate) fn compute_s_poly(s: [u8; PARAM_M]) -> SPoly {
+pub(crate) fn compute_s_poly(s: Vec<u8>) -> SPoly {
     let mut s_poly: SPoly = [[0u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
     for (i, s_poly_d) in s.chunks(PARAM_CHUNK_M).enumerate() {
         s_poly[i] = s_poly_d.try_into().expect("Invalid chunk size");

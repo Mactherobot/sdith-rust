@@ -53,7 +53,7 @@ impl Signature {
     /// h1 = Hash (1, seedH , y, salt, com[1], . . . , com[τ ])
     pub(super) fn gen_h1(
         seed_h: &Seed,
-        y: &[u8; PARAM_M_SUB_K],
+        y: &Vec<u8>, // Vector of size PARAM_M_SUB_K
         salt: Salt,
         commitments: [Hash; PARAM_TAU],
     ) -> Hash {

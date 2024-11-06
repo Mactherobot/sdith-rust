@@ -1,14 +1,13 @@
 use crate::{
     constants::params::{PARAM_N, PARAM_TAU},
-    mpc::beaver::{Beaver, BeaverA, BeaverB, BeaverC, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE},
+    mpc::beaver::{Beaver, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE},
     witness::{Solution, SOLUTION_PLAIN_SIZE},
 };
 
 #[derive(Clone)]
 pub(crate) struct Input {
     pub(crate) solution: Solution,
-    pub(crate) beaver_ab: (BeaverA, BeaverB),
-    pub(crate) beaver_c: BeaverC,
+    pub(crate) beaver: Beaver,
 }
 
 /// k+2w+t(2d+1)η
@@ -22,11 +21,7 @@ impl Input {
     pub(crate) fn serialise(&self) -> Vec<u8> {
         let mut serialised = vec![0u8; INPUT_SIZE];
         serialised[..SOLUTION_PLAIN_SIZE].copy_from_slice(&self.solution.serialise());
-        serialised[SOLUTION_PLAIN_SIZE..].copy_from_slice(&Beaver::serialise(
-            self.beaver_ab.0,
-            self.beaver_ab.1,
-            self.beaver_c,
-        ));
+        serialised[SOLUTION_PLAIN_SIZE..].copy_from_slice(&self.beaver.serialise());
         serialised
     }
 
@@ -37,13 +32,9 @@ impl Input {
 
     pub(crate) fn parse(input_plain: InputSharePlain) -> Input {
         let solution = Solution::parse(input_plain[..SOLUTION_PLAIN_SIZE].try_into().unwrap());
-        let (a, b, c) = Beaver::parse(input_plain[SOLUTION_PLAIN_SIZE..].try_into().unwrap());
+        let beaver = Beaver::parse(input_plain[SOLUTION_PLAIN_SIZE..].to_vec());
 
-        Input {
-            solution,
-            beaver_ab: (a, b),
-            beaver_c: c,
-        }
+        Input { solution, beaver }
     }
 
     /// Remove the Beaver triples from the input shares as they can be derived from the Solution shares
@@ -55,15 +46,11 @@ impl Input {
     /// Append the Beaver triples from the input shares as they can be derived from the Solution shares
     pub(crate) fn append_beaver_triples(
         solution_share: Vec<u8>,
-        beaver_triples: (BeaverA, BeaverB, BeaverC),
+        beaver: &Beaver,
     ) -> [u8; INPUT_SIZE] {
         let mut input = [0u8; INPUT_SIZE];
         input[..SOLUTION_PLAIN_SIZE].copy_from_slice(&solution_share);
-        input[SOLUTION_PLAIN_SIZE..].copy_from_slice(&Beaver::serialise(
-            beaver_triples.0,
-            beaver_triples.1,
-            beaver_triples.2,
-        ));
+        input[SOLUTION_PLAIN_SIZE..].copy_from_slice(&beaver.serialise());
         input
     }
 }
@@ -82,12 +69,11 @@ mod input_tests {
     fn test_serialise_deserialise_input() {
         let (_pk, sk) = keygen([0u8; PARAM_SEED_SIZE]);
         let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], Some(&[0u8; PARAM_SALT_SIZE]));
-        let (a, b, c) = Beaver::generate_beaver_triples(&mut prg);
+        let beaver = Beaver::generate_beaver_triples(&mut prg);
 
         let input = Input {
             solution: sk.solution,
-            beaver_ab: (a, b),
-            beaver_c: c,
+            beaver,
         };
 
         let input_plain = input.serialise();
@@ -107,20 +93,17 @@ mod input_tests {
     fn test_append_beaver_triples() {
         let (_pk, sk) = keygen([0u8; PARAM_SEED_SIZE]);
         let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], Some(&[0u8; PARAM_SALT_SIZE]));
-        let (a, b, c) = Beaver::generate_beaver_triples(&mut prg);
+        let beaver = Beaver::generate_beaver_triples(&mut prg);
 
         let input = Input {
             solution: sk.solution,
-            beaver_ab: (a, b),
-            beaver_c: c,
+            beaver: beaver.clone(),
         };
 
         let input_plain = input.serialise();
         let solution_plain = Input::truncate_beaver_triples(input_plain.clone());
 
-        let beaver_triples = (a, b, c);
-        let input_with_beaver_triples =
-            Input::append_beaver_triples(solution_plain, beaver_triples);
+        let input_with_beaver_triples = Input::append_beaver_triples(solution_plain, &beaver);
 
         assert_eq!(input_plain, input_with_beaver_triples);
     }

@@ -7,10 +7,10 @@ use crate::{
     witness::{generate_instance_with_solution, Solution, SOLUTION_PLAIN_SIZE},
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct PublicKey {
     pub(crate) seed_h: Seed,
-    pub(crate) y: [u8; PARAM_M_SUB_K],
+    pub(crate) y: Vec<u8>, // Vector of size PARAM_M_SUB_K
 }
 
 impl Marshalling for PublicKey {
@@ -35,10 +35,10 @@ impl Marshalling for PublicKey {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct SecretKey {
     pub(crate) seed_h: Seed,
-    pub(crate) y: [u8; PARAM_M_SUB_K],
+    pub(crate) y: Vec<u8>, // Vector of size PARAM_M_SUB_K
     /// Solution to the instance (s_a, Q', )
     pub(crate) solution: Solution,
 }
@@ -83,7 +83,7 @@ pub fn keygen(seed_root: Seed) -> (PublicKey, SecretKey) {
     let (instance, solution) = generate_instance_with_solution(seed_root);
     let pk = PublicKey {
         seed_h: instance.seed_h,
-        y: instance.y,
+        y: instance.y.clone(),
     };
     let sk = SecretKey {
         seed_h: instance.seed_h,

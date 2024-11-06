@@ -28,12 +28,11 @@ impl Signature {
         // Randomness generation for the Beaver triples and the shares
         let (mseed, salt) = entropy;
         let mut prg = PRG::init(&mseed, Some(&salt));
-        let (a, b, c) = MPC::generate_beaver_triples(&mut prg);
+        let beaver = MPC::generate_beaver_triples(&mut prg);
 
         let input = Input {
             solution: secret_key.solution,
-            beaver_ab: (a, b),
-            beaver_c: c,
+            beaver,
         };
 
         // Compute input shares for the MPC
@@ -59,11 +58,16 @@ impl Signature {
         // First challenge (MPC challenge)
 
         // h1 = Hash1 (seedH , y, salt, com[1], . . . , com[τ ])
-        let h1 = Signature::gen_h1(&secret_key.seed_h, &secret_key.y, salt, commitments);
+        let h1 = Signature::gen_h1(
+            &secret_key.seed_h,
+            &secret_key.y,
+            salt,
+            commitments,
+        );
         let chal = Challenge::new(h1);
 
         // MPC Simulation
-        let broadcast = MPC::compute_broadcast(input, &chal, h_prime, secret_key.y);
+        let broadcast = MPC::compute_broadcast(input, &chal, h_prime, &secret_key.y);
         let broadcast_plain = broadcast.serialise();
 
         let mut broadcast_shares = Array3D::new(BROADCAST_SHARE_PLAIN_SIZE, PARAM_L, PARAM_TAU);
@@ -75,7 +79,7 @@ impl Signature {
                     input_coefs.get_row_slice(e, j).to_vec(),
                     &chal,
                     h_prime,
-                    secret_key.y,
+                    &secret_key.y,
                     &broadcast,
                     false,
                 );
@@ -114,7 +118,7 @@ impl Signature {
             message: message.clone(),
             salt,
             h1,
-            broadcast_plain,
+            broadcast_plain: broadcast_plain.try_into().unwrap(),
             broadcast_shares,
             auth,
             solution_share,

@@ -22,15 +22,7 @@ impl Signature {
 
         // Signature parsing
         let signature = Signature::parse(signature)?;
-        let (
-            salt,
-            h1,
-            broad_plain,
-            mut broadcast_shares,
-            wit_share,
-            mut auth,
-            view_opening_challenges,
-        ) = (
+        let (salt, h1, broad_plain, broadcast_shares, wit_share, mut auth, view_opening_challenges) = (
             signature.salt,
             signature.h1,
             signature.broadcast_plain,
@@ -43,7 +35,7 @@ impl Signature {
         // First challenge (MPC challenge) Only generate one in the case of threshold variant
         let chal = Challenge::new(h1);
 
-        let broadcast = Broadcast::parse(broad_plain);
+        let broadcast = Broadcast::parse(broad_plain.to_vec()); // TODO fix
         let mut sh_broadcast = Array3D::new(BROADCAST_SHARE_PLAIN_SIZE, PARAM_L, PARAM_TAU);
         let mut commitments: [Hash; PARAM_TAU] = [Hash::default(); PARAM_TAU];
 
@@ -74,14 +66,14 @@ impl Signature {
                     &broadcast_share,
                     &chal,
                     h_prime,
-                    public_key.y,
+                    &public_key.y,
                     &broadcast,
                     with_offset,
                 );
 
                 let input_share = Input::append_beaver_triples(
                     wit_share.get_row_slice(e, li).to_vec(),
-                    beaver_triples,
+                    &beaver_triples,
                 );
 
                 // Commit to the shares

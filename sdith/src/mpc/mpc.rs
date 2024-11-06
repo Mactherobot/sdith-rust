@@ -25,7 +25,7 @@ use crate::{
 };
 
 use super::{
-    beaver::{Beaver, BeaverA, BeaverB, BeaverC},
+    beaver::Beaver,
     broadcast::{Broadcast, BroadcastShare},
     challenge::Challenge,
 };
@@ -37,7 +37,7 @@ pub(crate) struct MPC {}
 const MASK: u16 = (1 << PARAM_LOG_N) - 1;
 
 impl MPC {
-    pub(crate) fn generate_beaver_triples(prg: &mut PRG) -> (BeaverA, BeaverB, BeaverC) {
+    pub(crate) fn generate_beaver_triples(prg: &mut PRG) -> Beaver {
         Beaver::generate_beaver_triples(prg)
     }
 
@@ -180,7 +180,8 @@ impl MPC {
         input: Input,
         chal: &Challenge,
         h_prime: HPrimeMatrix,
-        y: [u8; PARAM_M_SUB_K],
+        // Vector of size PARAM_M_SUB_K
+        y: &Vec<u8>,
     ) -> Broadcast {
         let broadcast = MPC::_party_computation(
             input.serialise(),
@@ -205,7 +206,7 @@ impl MPC {
         input_share_plain: InputSharePlain,
         chal: &Challenge,
         h_prime: HPrimeMatrix,
-        y: [u8; PARAM_M_SUB_K],
+        y: &Vec<u8>, // Vector of size PARAM_M_SUB_K
         broadcast: &Broadcast,
         with_offset: bool,
     ) -> BroadcastShare {
@@ -224,14 +225,17 @@ impl MPC {
         input_share_plain: InputSharePlain,
         chal: &Challenge,
         h_prime: HPrimeMatrix,
-        y: [u8; PARAM_M_SUB_K],
+        y: &Vec<u8>, // Vector of size PARAM_M_SUB_K
         broadcast: &Broadcast,
         with_offset: bool,
         compute_v: bool,
     ) -> BroadcastShare {
         let input_share = Input::parse(input_share_plain);
-        let (a, b) = input_share.beaver_ab;
-        let c = input_share.beaver_c;
+        let (a, b, c) = (
+            input_share.beaver.a,
+            input_share.beaver.b,
+            input_share.beaver.c,
+        );
         let (s_a, q_poly, p_poly) = (
             input_share.solution.s_a,
             input_share.solution.q_poly,
@@ -246,9 +250,9 @@ impl MPC {
         let q_poly_complete = complete_q(q_poly, if with_offset { 1u8 } else { 0u8 });
 
         // Outputs
-        let mut alpha_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
-        let mut beta_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
-        let mut v = [FPoint::default(); PARAM_T];
+        let mut alpha_share = Array2D::new(PARAM_T, PARAM_SPLITTING_FACTOR);
+        let mut beta_share = Array2D::new(PARAM_T, PARAM_SPLITTING_FACTOR);
+        let mut v = vec![FPoint::default(); PARAM_T];
 
         for j in 0..PARAM_T {
             // v[j] = -c[j]
@@ -256,21 +260,21 @@ impl MPC {
                 v[j] = c[j].field_neg();
             }
 
-            let powers_of_r_j = chal.powers_of_r[j];
+            let powers_of_r_j = chal.powers_of_r.get_row(j);
 
             for d in 0..PARAM_SPLITTING_FACTOR {
-                let a = a[d][j];
-                let b = b[d][j];
+                let a = a.get(d, j);
+                let b = b.get(d, j);
 
                 // Challenge values
 
                 // α[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
                 let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
                 let eval_s = MPC::polynomial_evaluation(&s_poly[d], &powers_of_r_j);
-                alpha_share[d][j] = chal.eps[d][j].field_mul(eval_q).field_add(a);
+                alpha_share.set(d, j, chal.eps.get(d, j).field_mul(eval_q).field_add(a));
 
                 // β[d][j] = Evaluate(S[d], r[j]) + b[d][j]
-                beta_share[d][j] = eval_s.field_add(b);
+                beta_share.set(d, j, eval_s.field_add(b));
 
                 if compute_v {
                     // v[j] += ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
@@ -278,16 +282,20 @@ impl MPC {
                     v[j] = v[j].field_add(
                         chal.f_poly_eval[j]
                             .field_mul(eval_p)
-                            .field_mul(chal.eps[d][j]),
+                            .field_mul(chal.eps.get(d, j)),
                     );
                     // v[j] += α'[d][j] ⊗ b[d][j] + β'[d][j] ⊗ a[d][j]
-                    v[j] = v[j].field_add(broadcast.alpha[d][j].field_mul(b));
-                    v[j] = v[j].field_add(broadcast.beta[d][j].field_mul(a));
+                    v[j] = v[j].field_add(broadcast.alpha.get(d, j).field_mul(b));
+                    v[j] = v[j].field_add(broadcast.beta.get(d, j).field_mul(a));
 
                     if with_offset {
                         // v[j] =+ -α[d][j] ⊗ β[d][j]
-                        v[j] = v[j]
-                            .field_add(alpha_share[d][j].field_neg().field_mul(beta_share[d][j]));
+                        v[j] = v[j].field_add(
+                            alpha_share
+                                .get(d, j)
+                                .field_neg()
+                                .field_mul(beta_share.get(d, j)),
+                        );
                     }
                 }
             }
@@ -306,19 +314,12 @@ impl MPC {
         broadcast_share: &BroadcastShare,
         chal: &Challenge,
         h_prime: HPrimeMatrix,
-        y: [u8; PARAM_M_SUB_K],
+        y: &Vec<u8>, // Vector of size PARAM_M_SUB_K
         broadcast: &Broadcast,
         with_offset: bool,
-    ) -> (BeaverA, BeaverB, BeaverC) {
+    ) -> Beaver {
         let solution = Solution::parse(solution_plain);
         let (s_a, q_poly, p_poly) = (solution.s_a, solution.q_poly, solution.p_poly);
-
-        // (α, β, v) The broadcast share values
-        let (alpha_share, beta_share, v) = (
-            broadcast_share.alpha,
-            broadcast_share.beta,
-            broadcast_share.v,
-        );
 
         // Compute S
         let s = compute_s(&s_a, &h_prime, if with_offset { Some(&y) } else { None });
@@ -327,52 +328,59 @@ impl MPC {
         // Complete Q
         let q_poly_complete = complete_q(q_poly, if with_offset { 1u8 } else { 0u8 });
 
-        let mut a = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
-        let mut b = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
-        let mut c = [FPoint::default(); PARAM_T];
+        let mut a = Array2D::new(PARAM_T, PARAM_SPLITTING_FACTOR);
+        let mut b = Array2D::new(PARAM_T, PARAM_SPLITTING_FACTOR);
+        let mut c = vec![FPoint::default(); PARAM_T];
+        // TODO: Can we instead iterate over j in the Array2D using `iter_rows`? Would skip having to calculate start and end indices
         for j in 0..PARAM_T {
             // c[j] = -v[j]
-            c[j] = v[j].field_neg();
+            c[j] = broadcast_share.v[j].field_neg();
 
-            let powers_of_r_j = chal.powers_of_r[j];
+            let powers_of_r_j = chal.powers_of_r.get_row(j);
 
             for d in 0..PARAM_SPLITTING_FACTOR {
-                let alpha_share = alpha_share[d][j];
-                let beta_share = beta_share[d][j];
+                let alpha_share = broadcast_share.alpha.get(d, j);
+                let beta_share = broadcast_share.beta.get(d, j);
 
                 // Challenge values
 
                 // a[d][j] = α[d][j] - ε[d][j] ⊗ Evaluate(Q[d], r[j])
                 let eval_q = MPC::polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
-                a[d][j] = alpha_share.field_sub(chal.eps[d][j].field_mul(eval_q));
+                a.set(
+                    d,
+                    j,
+                    alpha_share.field_sub(chal.eps.get(d, j).field_mul(eval_q)),
+                );
 
                 // b[d][j] = β[d][j] - Evaluate(S[d], r[j])
                 let eval_s = MPC::polynomial_evaluation(&s_poly[d], &powers_of_r_j);
-                b[d][j] = beta_share.field_sub(eval_s);
+                b.set(d, j, beta_share.field_sub(eval_s));
 
                 // c[j] +=  ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
                 let eval_p = MPC::polynomial_evaluation(&p_poly[d], &powers_of_r_j);
                 c[j] = c[j].field_add(
                     chal.f_poly_eval[j]
                         .field_mul(eval_p)
-                        .field_mul(chal.eps[d][j]),
+                        .field_mul(chal.eps.get(d, j)),
                 );
 
                 // c[j] += α'[d][j] ⊗ b[d][j] + β'[d][j] ⊗ a[d][j]
-                c[j] = c[j].field_add(broadcast.alpha[d][j].field_mul(b[d][j]));
-                c[j] = c[j].field_add(broadcast.beta[d][j].field_mul(a[d][j]));
+                c[j] = c[j].field_add(broadcast.alpha.get(d, j).field_mul(b.get(d, j)));
+                c[j] = c[j].field_add(broadcast.beta.get(d, j).field_mul(a.get(d, j)));
 
                 if with_offset {
                     // c[j] += -α[d][j] ⊗ β[d][j]
                     c[j] = c[j].field_add(
-                        broadcast.alpha[d][j]
+                        broadcast
+                            .alpha
+                            .get(d, j)
                             .field_neg()
-                            .field_mul(broadcast.beta[d][j]),
+                            .field_mul(broadcast.beta.get(d, j)),
                     );
                 }
             }
         }
-        return (a, b, c);
+        return Beaver { a, b, c };
     }
 }
 
@@ -392,13 +400,7 @@ mod mpc_tests {
 
     use super::*;
 
-    fn prepare() -> (
-        Input,
-        Broadcast,
-        Challenge,
-        HPrimeMatrix,
-        [u8; PARAM_M_SUB_K],
-    ) {
+    fn prepare() -> (Input, Broadcast, Challenge, HPrimeMatrix, Vec<u8>) {
         let mseed = Seed::from([0; 16]);
         let hseed = Seed::from([0; 16]);
         let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
@@ -406,7 +408,7 @@ mod mpc_tests {
         let (q, s, p, _) = sample_witness(&mut prg);
         let witness = generate_witness(hseed, (q, s, p));
 
-        let beaver_triples = Beaver::generate_beaver_triples(&mut prg);
+        let beaver = Beaver::generate_beaver_triples(&mut prg);
         let chal = Challenge::new(Hash::default());
 
         let solution = Solution {
@@ -417,15 +419,13 @@ mod mpc_tests {
 
         let input = Input {
             solution: solution.clone(),
-            beaver_ab: (beaver_triples.0, beaver_triples.1),
-            beaver_c: beaver_triples.2,
+            beaver: beaver.clone(),
         };
 
-        let broadcast = MPC::compute_broadcast(input.clone(), &chal, witness.h_prime, witness.y);
+        let broadcast = MPC::compute_broadcast(input.clone(), &chal, witness.h_prime, &witness.y);
 
         let h_prime = witness.h_prime;
-        let y = witness.y;
-        return (input, broadcast, chal, h_prime, y);
+        return (input, broadcast, chal, h_prime, witness.y);
     }
 
     #[test]
@@ -473,7 +473,7 @@ mod mpc_tests {
 
         let (q, s, p, _) = sample_witness(&mut prg);
         let witness = generate_witness(hseed, (q, s, p));
-        let beaver_triples = Beaver::generate_beaver_triples(&mut prg);
+        let beaver = Beaver::generate_beaver_triples(&mut prg);
 
         let hash1 = Hash::default();
         let chal = Challenge::new(hash1);
@@ -485,19 +485,18 @@ mod mpc_tests {
                     q_poly: q,
                     p_poly: p,
                 },
-                beaver_ab: (beaver_triples.0, beaver_triples.1),
-                beaver_c: beaver_triples.2,
+                beaver,
             },
             &chal,
             witness.h_prime,
-            witness.y,
+            &witness.y,
         );
 
-        assert_eq!(broadcast.alpha.len(), PARAM_SPLITTING_FACTOR);
-        assert_eq!(broadcast.beta.len(), PARAM_SPLITTING_FACTOR);
+        assert_eq!(broadcast.alpha.row_len(), PARAM_SPLITTING_FACTOR);
+        assert_eq!(broadcast.beta.row_len(), PARAM_SPLITTING_FACTOR);
         for i in 0..PARAM_SPLITTING_FACTOR {
-            assert_eq!(broadcast.alpha[i].len(), PARAM_T);
-            assert_eq!(broadcast.beta[i].len(), PARAM_T);
+            assert_eq!(broadcast.alpha.get_row(i).len(), PARAM_T);
+            assert_eq!(broadcast.beta.get_row(i).len(), PARAM_T);
         }
     }
 
@@ -507,25 +506,21 @@ mod mpc_tests {
         let (input, broadcast, chal, h_prime, y) = prepare();
 
         let party_computation =
-            MPC::party_computation(input.serialise(), &chal, h_prime, y, &broadcast, false);
+            MPC::party_computation(input.serialise(), &chal, h_prime, &y, &broadcast, false);
 
         let inverse_party_computation = MPC::inverse_party_computation(
             Input::truncate_beaver_triples(input.serialise()),
             &party_computation,
             &chal,
             h_prime,
-            y,
+            &y,
             &broadcast,
             false,
         );
 
-        let (a, b, c) = inverse_party_computation;
-
         // Assert that the computed values are the same as the original values
 
-        assert_eq!(a, input.beaver_ab.0);
-        assert_eq!(b, input.beaver_ab.1);
-        assert_eq!(c, input.beaver_c);
+        assert_eq!(inverse_party_computation, input.beaver);
     }
 
     #[test]
@@ -541,7 +536,7 @@ mod mpc_tests {
 
         // compute shares of the randomness
         let mut broadcast_share =
-            MPC::party_computation(random_input_plain, &chal, h_prime, y, &broadcast, false)
+            MPC::party_computation(random_input_plain, &chal, h_prime, &y, &broadcast, false)
                 .serialise();
 
         // recompute shares of the randomness
@@ -555,16 +550,14 @@ mod mpc_tests {
             &broadcast_shares,
             &chal,
             h_prime,
-            y,
+            &y,
             &broadcast,
             true,
         );
 
         let input_share = Input::parse(input_share);
 
-        assert_eq!(recomputed_input_share_triples.0, input_share.beaver_ab.0);
-        assert_eq!(recomputed_input_share_triples.1, input_share.beaver_ab.1);
-        assert_eq!(recomputed_input_share_triples.2, input_share.beaver_c);
+        assert_eq!(recomputed_input_share_triples, input_share.beaver);
     }
 
     /// Test that for some random point r_k we have that S(r_k) * Q'(r_k) = F * P(r_k)
@@ -597,7 +590,7 @@ mod mpc_tests {
 
         // Run MPC::compute_broadcast, but calculate v
         let broadcast_plain_with_v =
-            MPC::_party_computation(input_plain, &chal, h_prime, y, &broadcast, true, true);
+            MPC::_party_computation(input_plain, &chal, h_prime, &y, &broadcast, true, true);
 
         assert_eq!(broadcast_plain_with_v.v, [FPoint::default(); PARAM_T]);
     }

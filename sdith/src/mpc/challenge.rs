@@ -3,6 +3,8 @@ use std::fmt::Formatter;
 
 use crate::{
     arith::gf256::{gf256_ext::FPoint, FieldArith},
+
+        arith::arrays::{Array2D, Array2DTrait, Array3D, Array3DTrait},
     constants::{
         params::{PARAM_CHUNK_M, PARAM_CHUNK_W, PARAM_SPLITTING_FACTOR, PARAM_T},
         precomputed::PRECOMPUTED_F_POLY,
@@ -17,13 +19,13 @@ use super::mpc::MPC;
 #[derive(Clone)]
 pub(crate) struct Challenge {
     /// Challenge value r
-    pub(crate) r: [FPoint; PARAM_T],
+    pub(crate) r: Vec<FPoint>,
     /// Challenge value epsilon
-    pub(crate) eps: [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR],
+    pub(crate) eps: Array2D<FPoint>,
     /// Pre-computed powers of r for each evaluation and splitting.
-    pub(crate) powers_of_r: [[FPoint; PARAM_CHUNK_M + 1]; PARAM_T],
+    pub(crate) powers_of_r: Array2D<FPoint>,
     /// Pre-computed polynomial evaluations of the f polynomial times epsilon at the powers of r for each evaluation and splitting.
-    pub(crate) f_poly_eval: [FPoint; PARAM_T],
+    pub(crate) f_poly_eval: Vec<FPoint>,
 }
 
 impl Challenge {
@@ -31,25 +33,25 @@ impl Challenge {
     /// Uses h1 hash for Fiat-Shamir Transform
     pub(crate) fn new(h1: Hash) -> Self {
         let mut prg = PRG::init_base(&h1);
-        let mut r = [FPoint::default(); PARAM_T];
+        let mut r = vec![FPoint::default(); PARAM_T];
         prg.sample_field_fpoint_elements(&mut r);
 
         // Print r
 
-        let mut eps = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
-        for e_i in eps.iter_mut() {
-            prg.sample_field_fpoint_elements(e_i);
+        let mut eps = Array2D::new(PARAM_T, PARAM_SPLITTING_FACTOR);
+        for i in 0..eps.row_len() {
+            prg.sample_field_fpoint_elements(eps.get_row_mut(i));
         }
 
         // Pre-compute the powers of r as they are used multiple times
-        let mut powers_of_r = [[FPoint::default(); PARAM_CHUNK_M + 1]; PARAM_T];
+        let mut powers_of_r = Array2D::new(PARAM_CHUNK_M + 1, PARAM_T);
         // Pre-compute f(r) for each d and t
-        let mut f_poly_eval = [FPoint::default(); PARAM_T];
+        let mut f_poly_eval = vec![FPoint::default(); PARAM_T];
 
         for t in 0..PARAM_T {
-            powers_of_r[t][1] = r[t];
-            get_powers(r[t], &mut powers_of_r[t]);
-            f_poly_eval[t] = MPC::polynomial_evaluation(&PRECOMPUTED_F_POLY, &powers_of_r[t])
+            powers_of_r.set(t, 1,r[t]);
+            get_powers(r[t], powers_of_r.get_row_mut(t));
+            f_poly_eval[t] = MPC::polynomial_evaluation(&PRECOMPUTED_F_POLY, &powers_of_r.get_row(t))
         }
 
         Self {
@@ -72,7 +74,7 @@ impl std::fmt::Debug for Challenge {
         write!(
             f,
             "Challenge {{ \n\tr: {:?}, \n\teps[0]: {:?} \n\tpowers_of_r[0][..5]: {:?} \n}}",
-            &self.r, &self.eps[0], &self.powers_of_r[0][..5]
+            &self.r, &self.eps.get_row(0), &self.powers_of_r.get_row(0)[..5]
         )
     }
 }
@@ -97,7 +99,7 @@ mod challenge_tests {
         let hash = Hash::default();
         let challenge = Challenge::new(hash);
         assert_eq!(challenge.r.len(), PARAM_T);
-        assert_eq!(challenge.eps.len(), PARAM_SPLITTING_FACTOR);
+        assert_eq!(challenge.eps.row_len(), PARAM_SPLITTING_FACTOR);
         for r in challenge.r.iter() {
             assert_eq!(r.len(), PARAM_ETA);
         }
@@ -107,7 +109,7 @@ mod challenge_tests {
             for t in 0..PARAM_T {
                 for i in 1..PARAM_CHUNK_M + 1 {
                     assert_eq!(
-                        challenge.powers_of_r[t][i],
+                        challenge.powers_of_r.get(t, i),
                         challenge.r[t].field_pow(i as u8)
                     );
                 }
