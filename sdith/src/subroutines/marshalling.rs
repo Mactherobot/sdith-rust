@@ -1,6 +1,6 @@
 // TODO: Implement the Marshalling trait for all the types that need to be serialised and deserialised
 
-pub(crate) trait Marshalling
+pub trait Marshalling
 where
     Self: Sized,
 {

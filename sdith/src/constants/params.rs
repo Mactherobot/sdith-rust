@@ -30,9 +30,9 @@ pub(crate) const PARAM_L: usize = 3;
 pub(crate) const PARAM_TREE_NB_MAX_OPEN_LEAVES: usize = 19;
 
 // Signature Parameters
-pub(crate) const PARAM_SEED_SIZE: usize = 128 / 8;
-pub(crate) const PARAM_SALT_SIZE: usize = 256 / 8;
-pub(crate) const PARAM_DIGEST_SIZE: usize = 256 / 8;
+pub const PARAM_SEED_SIZE: usize = 128 / 8;
+pub const PARAM_SALT_SIZE: usize = 256 / 8;
+pub const PARAM_DIGEST_SIZE: usize = 256 / 8;
 
 /// d-split variable for the splitting variant of the Syndrome Decoding Problem. Currently set to 1. Should ideally be able to set on running the application and running instances in parallel.
 /// Checkout: Splitting syndrome decoding in the specs

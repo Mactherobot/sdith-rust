@@ -21,12 +21,12 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     let message: Vec<u8> = vec![1, 2, 3, 4];
     c.bench_function("signing", |b| {
-        b.iter(|| signing_bench(entropy, sk, message.clone()))
+        b.iter(|| signing_bench(entropy, sk.clone(), message.clone()))
     });
 
-    let signature: Vec<u8> = Signature::sign_message(entropy, sk, &message).unwrap();
+    let signature: Vec<u8> = Signature::sign_message(entropy, sk.clone(), &message).unwrap();
     c.bench_function("verification", |b| {
-        b.iter(|| verification_bench(pk, &signature))
+        b.iter(|| verification_bench(pk.clone(), &signature))
     });
 }
 
