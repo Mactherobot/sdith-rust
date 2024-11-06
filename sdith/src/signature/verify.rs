@@ -59,7 +59,7 @@ impl Signature {
                 // sh_broadcast[e][i] = (broad_plain, 0) + sum^ℓ_(j=1) fi^j · broad_share[e][j]
                 let f_i = i.to_le_bytes()[0];
 
-                sh_broadcast.set_row_slice(
+                sh_broadcast.set_col_slice(
                     e,
                     li,
                     MPC::compute_share(&plain, e, &broadcast_shares, f_i, PARAM_L, *i == 0u16)
@@ -68,9 +68,9 @@ impl Signature {
 
                 // Verify the Merkle path
                 let broadcast_share =
-                    BroadcastShare::parse(sh_broadcast.get_row_slice(e, li).to_vec());
+                    BroadcastShare::parse(sh_broadcast.get_col_slice(e, li).to_vec());
                 let beaver_triples = MPC::inverse_party_computation(
-                    wit_share.get_row_slice(e, li).to_vec(),
+                    wit_share.get_col_slice(e, li).to_vec(),
                     &broadcast_share,
                     &chal,
                     h_prime,
@@ -80,7 +80,7 @@ impl Signature {
                 );
 
                 let input_share = Input::append_beaver_triples(
-                    wit_share.get_row_slice(e, li).to_vec(),
+                    wit_share.get_col_slice(e, li).to_vec(),
                     beaver_triples,
                 );
 

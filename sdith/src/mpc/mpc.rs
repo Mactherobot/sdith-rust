@@ -116,7 +116,7 @@ impl MPC {
         // Horner method
         if !skip_loop {
             for j in (0..(coefs - 1)).rev() {
-                gf256_add_vector_add_scalar(&mut share, rnd_coefs.get_row_slice(depth, j), fi);
+                gf256_add_vector_add_scalar(&mut share, rnd_coefs.get_col_slice(depth, j), fi);
             }
             // Add the plain to the share
             gf256_add_vector_add_scalar(&mut share, plain, fi);
@@ -135,7 +135,7 @@ impl MPC {
         let mut tmp_coef = [0u8; INPUT_SIZE];
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_L {
-                prg.sample_field_fq_elements(&mut input_coefs.get_row_slice_mut(e, i));
+                prg.sample_field_fq_elements(&mut input_coefs.get_col_slice_mut(e, i));
             }
         }
 
