@@ -1,5 +1,5 @@
 use crate::{
-    arith::arrays::{Array3D, Array3DTrait},
+    arith::arrays::{Array2D, Array2DTrait, Array3D, Array3DTrait},
     constants::{
         params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_M_SUB_K, PARAM_SALT_SIZE, PARAM_TAU},
         types::{Hash, Salt, Seed},
@@ -27,7 +27,7 @@ pub struct Signature {
     pub(crate) solution_share: Array3D,
     pub(crate) auth: [Vec<Hash>; PARAM_TAU],
     // Calculated in parsing
-    pub(crate) view_opening_challenges: [[u16; PARAM_L]; PARAM_TAU],
+    pub(crate) view_opening_challenges: Array2D<u16>,
 }
 
 impl Signature {
@@ -182,7 +182,7 @@ impl Marshalling for Signature {
         let mut auth_lengths = [0; PARAM_TAU];
         // Get the auth sizes
         for e in 0..PARAM_TAU {
-            auth_lengths[e] = get_auth_size(&view_opening_challenges[e]);
+            auth_lengths[e] = get_auth_size(&view_opening_challenges.get_col(e));
         }
 
         let mut auth: [Vec<Hash>; PARAM_TAU] = Default::default();

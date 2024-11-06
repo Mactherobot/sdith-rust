@@ -1,4 +1,4 @@
-use crate::arith::arrays::{Array3D, Array3DTrait};
+use crate::arith::arrays::{Array2DTrait, Array3D, Array3DTrait};
 use crate::arith::matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::subroutines::marshalling::Marshalling;
 use crate::witness::SOLUTION_PLAIN_SIZE;
@@ -47,12 +47,8 @@ impl Signature {
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_N {
                 // Commit to the shares
-                commitments_prime[i] = commit_share(
-                    &salt,
-                    e as u16,
-                    i as u16,
-                    &input_shares.get_col_slice(e, i),
-                );
+                commitments_prime[i] =
+                    commit_share(&salt, e as u16, i as u16, &input_shares.get_col_slice(e, i));
             }
 
             let merkle_tree = MerkleTree::new(commitments_prime, None); // TODO: I spec there is a salt here. In implementation there is not.
@@ -99,8 +95,8 @@ impl Signature {
 
         let mut auth: [Vec<Hash>; PARAM_TAU] = Default::default();
         for e in 0..PARAM_TAU {
-            auth[e] = merkle_trees[e].get_merkle_path(&view_opening_challenges[e]);
-            for (li, i) in view_opening_challenges[e].iter().enumerate() {
+            auth[e] = merkle_trees[e].get_merkle_path(&view_opening_challenges.get_col(e));
+            for (li, i) in view_opening_challenges.get_col(e).iter().enumerate() {
                 // Truncate witness share by removing beaver triples from the plain value
                 solution_share.set_col_slice(
                     e,

@@ -116,6 +116,27 @@ where
     }
 }
 
+impl<T> PartialEq<Vec<Vec<T>>> for Array2D<T>
+where
+    Self: Array2DTrait<T>,
+    T: std::cmp::PartialEq,
+{
+    fn eq(&self, other: &Vec<Vec<T>>) -> bool {
+        self.iter_cols()
+            .enumerate()
+            .all(|(i, col)| col == &other[i])
+    }
+}
+
+impl<T> PartialEq<Array2D<T>> for Array2D<T>
+where
+    T: std::cmp::PartialEq,
+{
+    fn eq(&self, other: &Array2D<T>) -> bool {
+        self.data == other.data && self.rows == other.rows && self.columns == other.columns
+    }
+}
+
 /// Trait for 3D arrays
 pub(crate) trait Array3DTrait {
     /// Creates a 3D Array
