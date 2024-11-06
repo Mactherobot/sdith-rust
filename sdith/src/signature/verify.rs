@@ -1,4 +1,4 @@
-use crate::arith::arrays::{Array3D, Array3DTrait};
+use crate::arith::arrays::{Array2DTrait, Array3D, Array3DTrait};
 use crate::arith::matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::keygen::PublicKey;
 use crate::mpc::broadcast::{Broadcast, BroadcastShare, BROADCAST_SHARE_PLAIN_SIZE_AB};
@@ -52,7 +52,7 @@ impl Signature {
         plain[..BROADCAST_SHARE_PLAIN_SIZE_AB].copy_from_slice(&broad_plain);
         for e in 0..PARAM_TAU {
             let mut commitments_prime = [Hash::default(); PARAM_L];
-            for (li, i) in view_opening_challenges[e].iter().enumerate() {
+            for (li, i) in view_opening_challenges.get_col(e).iter().enumerate() {
                 let with_offset = (*i as usize) != 0;
 
                 // We need to compute the following:
@@ -91,7 +91,7 @@ impl Signature {
             let Ok(root) = get_merkle_root_from_auth(
                 &mut auth[e],
                 &commitments_prime,
-                &view_opening_challenges[e],
+                &view_opening_challenges.get_col(e),
                 None,
             ) else {
                 return Err("Merkle root verification failed".to_string());
