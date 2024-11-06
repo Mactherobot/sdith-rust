@@ -243,7 +243,7 @@ mod tests {
 
     #[test]
     fn test_gf256_definitions() {
-        let mut prg = PRG::init(&[2u8; PARAM_SEED_SIZE], None);
+        let mut prg = PRG::init(&vec![2u8; PARAM_SEED_SIZE], None);
         let [a, b, c] = *prg.sample_field_fq_elements_vec(3) else {
             panic!("Failed to sample 3 field elements");
         };
@@ -253,7 +253,7 @@ mod tests {
 
     #[test]
     fn test_gf256_pow() {
-        let mut prg = PRG::init(&[2u8; PARAM_SEED_SIZE], None);
+        let mut prg = PRG::init(&vec![2u8; PARAM_SEED_SIZE], None);
         let [a, b, c] = *prg.sample_field_fq_elements_vec(3) else {
             panic!("Failed to sample 3 field elements");
         };

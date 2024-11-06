@@ -55,7 +55,7 @@ impl Signature {
         seed_h: &Seed,
         y: &Vec<u8>, // Vector of size PARAM_M_SUB_K
         salt: Salt,
-        commitments: [Hash; PARAM_TAU],
+        commitments: Vec<Hash>,
     ) -> Hash {
         let mut h1_data: Vec<&[u8]> = vec![seed_h, y, &salt];
         for e in 0..PARAM_TAU {
@@ -176,7 +176,7 @@ impl Marshalling for Signature {
         // We can do this by computing the second hash
         // and then expanding the view opening challenges
         let h2 = Signature::gen_h2(&message, &salt, &h1, &broadcast_plain, &broadcast_shares);
-        let view_opening_challenges = MPC::expand_view_challenge_hash(h2);
+        let view_opening_challenges = MPC::expand_view_challenge_hash(&h2);
 
         // Expand the view opening challenges
         let mut auth_lengths = [0; PARAM_TAU];
@@ -216,9 +216,9 @@ mod signature_tests {
     #[test]
     fn test_serialise_parse_signature() {
         let message = vec![1u8, 2u8, 3u8, 4u8];
-        let seed_root = [0u8; PARAM_SEED_SIZE];
-        let salt = [1u8; PARAM_SALT_SIZE];
-        let entropy = (seed_root, salt);
+        let seed_root = vec![0u8; PARAM_SEED_SIZE];
+        let salt = vec![1u8; PARAM_SALT_SIZE];
+        let entropy = (seed_root.clone(), salt.clone());
         let (_, sk) = keygen(seed_root);
 
         let signature = Signature::sign_message(entropy, sk, &message).unwrap();

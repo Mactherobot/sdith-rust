@@ -32,8 +32,8 @@ pub(crate) fn mul_hprime_vector(vz: &mut [u8], matrix: &HPrimeMatrix, y: &Vec<u8
 /// Generate H' matrix from a seed.
 /// The matrix is of size `PARAM_K * PARAM_M_SUB_K_CEIL32`.
 /// TODO: revert back to [`PARAM_M_SUB_K`]
-pub(crate) fn gen_hmatrix(seed: Seed) -> HPrimeMatrix {
-    let mut prg = PRG::init(&seed, None);
+pub(crate) fn gen_hmatrix(seed: &Seed) -> HPrimeMatrix {
+    let mut prg = PRG::init(seed, None);
     gen_random(&mut prg, PARAM_K, PARAM_M_SUB_K_CEIL32)
 }
 
@@ -59,7 +59,7 @@ mod tests {
     #[test]
     fn test_random_gen() {
         let matrix: TestMatrix = gen_random(
-            &mut PRG::init(&[0u8; PARAM_SEED_SIZE], None),
+            &mut PRG::init(&vec![0u8; PARAM_SEED_SIZE], None),
             TEST_COLS,
             TEST_ROWS,
         );

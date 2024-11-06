@@ -36,7 +36,7 @@ impl MerkleTree {
             height,
             n_nodes: (1 << (height)) + nb_leaves - 1,
             n_leaves: nb_leaves,
-            nodes: [Hash::default(); PARAM_MERKLE_TREE_NODES],
+            nodes: [&vec![0u8; PARAM_DIGEST_SIZE]; PARAM_MERKLE_TREE_NODES],
         };
 
         let mut first_index = tree.n_nodes - nb_leaves + 1;
@@ -257,7 +257,7 @@ pub(crate) fn get_merkle_root_from_auth(
     let (mut height_index, mut last_index) =
         (1 << PARAM_MERKLE_TREE_HEIGHT, PARAM_MERKLE_TREE_NODES - 1);
 
-    let mut _next_node: Hash = Hash::default();
+    let mut _next_node: Hash = &vec![0u8; PARAM_DIGEST_SIZE];
 
     // While the next element is not the root of the tree
     while q.peek().unwrap().1 != 1 {
@@ -270,7 +270,7 @@ pub(crate) fn get_merkle_root_from_auth(
             last_index >>= 1;
         }
 
-        _next_node = Hash::default();
+        _next_node = &vec![0u8; PARAM_DIGEST_SIZE];
 
         // Check if the current node is the left child of the parent
         let is_left_child = index % 2 == 0; // if the index is even then it is the left child
@@ -376,7 +376,7 @@ mod test {
         assert_eq!(tree.n_leaves, { PARAM_N });
 
         // First node is empty as the tree is not zero indexed
-        assert_eq!(tree.nodes[0], Hash::default());
+        assert_eq!(tree.nodes[0], &vec![0u8; PARAM_DIGEST_SIZE]);
 
         // Get the correct leaves.
         for i in 0..PARAM_N {

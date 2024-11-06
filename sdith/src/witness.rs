@@ -1,5 +1,3 @@
-use queues::Queue;
-
 use crate::{
     arith::{
         arrays::{Array2D, Array2DTrait},
@@ -82,13 +80,15 @@ impl Solution {
         s_a.copy_from_slice(&solution_plain[..PARAM_K]);
         let mut q_poly = Array2D::new(PARAM_CHUNK_W, PARAM_SPLITTING_FACTOR);
         for i in 0..PARAM_SPLITTING_FACTOR {
-            q_poly.set_row_slice(i,
+            q_poly.set_row_slice(
+                i,
                 &solution_plain[PARAM_K + i * PARAM_CHUNK_W..PARAM_K + (i + 1) * PARAM_CHUNK_W],
             );
         }
         let mut p_poly = Array2D::new(PARAM_CHUNK_W, PARAM_SPLITTING_FACTOR);
         for i in 0..PARAM_SPLITTING_FACTOR {
-            p_poly.set_row_slice(i,
+            p_poly.set_row_slice(
+                i,
                 &solution_plain[PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR + i * PARAM_CHUNK_W
                     ..PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR + (i + 1) * PARAM_CHUNK_W],
             );
@@ -127,7 +127,7 @@ pub(crate) fn generate_witness(seed_h: Seed, polynomials: (&QPoly, &SPoly, &PPol
     let s_b: Vec<u8> = s_flat[PARAM_K..].to_vec();
 
     // Generate H
-    let h_prime = gen_hmatrix(seed_h);
+    let h_prime = gen_hmatrix(&seed_h);
 
     // Compute y = s_b + H' s_a
     let y = compute_y(&s_b, &s_a, &h_prime);
@@ -149,19 +149,6 @@ pub(crate) fn compute_y(s_b: &Vec<u8>, s_a: &Vec<u8>, h_prime: &HPrimeMatrix) ->
     y[..PARAM_M_SUB_K].copy_from_slice(s_b);
     mul_hprime_vector(&mut y, &h_prime, s_a);
     y
-}
-
-/// Expand a seed into multiple seeds.
-/// (seed_1, seed_2, ..., seed_n) = ExpandSeed(seed_root, salt := 0, n)
-pub(crate) fn expand_seed<const SEEDS: usize>(seed_root: Seed) -> [Seed; SEEDS] {
-    let mut prg = PRG::init(&seed_root, Some(&[0u8; PARAM_SALT_SIZE]));
-    let mut seeds = Vec::<Seed>::with_capacity(SEEDS);
-    for _ in 0..SEEDS {
-        let mut seed = [0u8; PARAM_SEED_SIZE];
-        prg.sample_field_fq_elements(&mut seed);
-        seeds.push(seed);
-    }
-    seeds.try_into().expect("Failed to convert seeds")
 }
 
 pub(crate) fn generate_instance_with_solution(master_seed: Seed) -> (Instance, Solution) {
@@ -203,26 +190,18 @@ pub(crate) fn generate_instance_with_solution(master_seed: Seed) -> (Instance, S
 ///
 /// A tuple containing the generated polynomials: `(Q', S, P, x)`.
 /// `x` is only used for testing purposes.
-pub(crate) fn sample_witness(
-    prg: &mut PRG,
-) -> (
-    QPoly,
-    SPoly,
-    PPoly,
-    [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR],
-) {
+pub(crate) fn sample_witness(prg: &mut PRG) -> (QPoly, SPoly, PPoly, Array2D<u8>) {
     // Initiate variables
     let mut q_poly: QPoly = Array2D::new(PARAM_CHUNK_W, PARAM_SPLITTING_FACTOR);
     let mut p_poly: PPoly = Array2D::new(PARAM_CHUNK_W, PARAM_SPLITTING_FACTOR);
     let mut s_poly: SPoly = Array2D::new(PARAM_CHUNK_M, PARAM_SPLITTING_FACTOR);
 
-    let mut x_vectors: [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR] =
-        [[0; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
+    let mut x_vectors = Array2D::new(PARAM_CHUNK_M, PARAM_SPLITTING_FACTOR);
 
     for n_poly in 0..PARAM_SPLITTING_FACTOR {
         // Sample x vector
         let (x_vector, positions) = sample_x(prg);
-        x_vectors[n_poly] = x_vector;
+        x_vectors.set_row_slice(n_poly, &x_vector);
 
         // Compute Q
         q_poly.set_row_slice(n_poly, &compute_q_prime_chunk(&positions));
@@ -272,7 +251,7 @@ mod test_witness {
 
     #[test]
     fn test_generate_witness() {
-        let seed_test = [0u8; PARAM_SEED_SIZE];
+        let seed_test = vec![0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed_test, None);
         let (q, s, p, ..) = sample_witness(&mut prg);
         let result = generate_witness(seed_test, (&q, &s, &p));
@@ -292,7 +271,7 @@ mod test_witness {
 
     #[test]
     fn test_compute_polynomials() {
-        let seed = [0u8; PARAM_SEED_SIZE];
+        let seed = vec![0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);
         let (q_poly, s_poly, p_poly, x_vectors) = sample_witness(&mut prg);
 
@@ -301,7 +280,7 @@ mod test_witness {
             let s_poly_d = s_poly.get_row(d);
             let q_poly_d = q_poly.get_row(d);
             let p_poly_d = p_poly.get_row(d);
-            let x_vector_d = &x_vectors[d];
+            let x_vector_d = &x_vectors.get_row(d);
 
             // Check that the polynomials have the correct length
             assert_eq!(q_poly_d.len(), PARAM_CHUNK_W);
@@ -352,7 +331,7 @@ mod test_witness {
 
     #[test]
     fn test_serialise() {
-        let seed = [0u8; PARAM_SEED_SIZE];
+        let seed = vec![0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);
         let (q_poly, s_poly, p_poly, ..) = sample_witness(&mut prg);
         let witness = generate_witness(seed, (&q_poly, &s_poly, &p_poly));
@@ -471,7 +450,7 @@ mod test_helpers {
 
     #[test]
     fn test_positions() {
-        let seed = [0u8; PARAM_SEED_SIZE];
+        let seed = vec![0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);
         let positions = sample_non_zero_x_positions(&mut prg);
 
@@ -490,7 +469,7 @@ mod test_helpers {
     #[test]
     fn test_sample_x() {
         for i in 0..255 {
-            let seed = [i as u8; PARAM_SEED_SIZE];
+            let seed = vec![i as u8; PARAM_SEED_SIZE];
             let mut prg = PRG::init(&seed, None);
             let (x_vector, _positions) = sample_x(&mut prg);
 
@@ -519,7 +498,7 @@ mod test_helpers {
 
     #[test]
     fn test_compute_q_chunk_with_sample() {
-        let positions = sample_x(&mut PRG::init(&[0u8; PARAM_SEED_SIZE], None)).1;
+        let positions = sample_x(&mut PRG::init(&vec![0u8; PARAM_SEED_SIZE], None)).1;
         let q = compute_q_prime_chunk(&positions);
         for pos in positions.iter() {
             assert_eq!(gf256_evaluate_polynomial_horner_monic(&q, *pos), 0);
@@ -528,7 +507,7 @@ mod test_helpers {
 
     #[test]
     fn test_compute_s() {
-        let seed = [0u8; PARAM_SEED_SIZE];
+        let seed = vec![0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);
         let (q, s, p, ..) = sample_witness(&mut prg);
         let witness = generate_witness(seed, (&q, &s, &p));
@@ -541,7 +520,7 @@ mod test_helpers {
 
     #[test]
     fn test_complete_q() {
-        let seed = [0u8; PARAM_SEED_SIZE];
+        let seed = vec![0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);
         let (q_poly, ..) = sample_witness(&mut prg);
         let mut q_complete = q_poly.clone();
@@ -560,7 +539,7 @@ mod test_helpers {
 
     #[test]
     fn test_serialise_parse() {
-        let seed = [0u8; PARAM_SEED_SIZE];
+        let seed = vec![0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);
         let (q_poly, s_poly, p_poly, ..) = sample_witness(&mut prg);
         let witness = generate_witness(seed, (&q_poly, &s_poly, &p_poly));

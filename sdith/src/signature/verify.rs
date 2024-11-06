@@ -18,7 +18,7 @@ use super::{input::Input, signature::Signature};
 impl Signature {
     pub fn verify_signature(public_key: PublicKey, signature: &Vec<u8>) -> Result<bool, String> {
         // Expansion of parity-check matrix
-        let h_prime: HPrimeMatrix = gen_hmatrix(public_key.seed_h);
+        let h_prime: HPrimeMatrix = gen_hmatrix(&public_key.seed_h);
 
         // Signature parsing
         let signature = Signature::parse(signature)?;
@@ -37,13 +37,13 @@ impl Signature {
 
         let broadcast = Broadcast::parse(broad_plain.to_vec()); // TODO fix
         let mut sh_broadcast = Array3D::new(BROADCAST_SHARE_PLAIN_SIZE, PARAM_L, PARAM_TAU);
-        let mut commitments: [Hash; PARAM_TAU] = [Hash::default(); PARAM_TAU];
+        let mut commitments: Vec<Hash> = Vec::with_capacity(PARAM_TAU);
 
         // Party computation and regeneration of Merkle commitments
         let mut plain = vec![0u8; BROADCAST_SHARE_PLAIN_SIZE];
         plain[..BROADCAST_SHARE_PLAIN_SIZE_AB].copy_from_slice(&broad_plain);
         for e in 0..PARAM_TAU {
-            let mut commitments_prime = [Hash::default(); PARAM_L];
+            let mut commitments_prime: Vec<Hash> = Vec::with_capacity(PARAM_L);
             for (li, i) in view_opening_challenges.get_row(e).iter().enumerate() {
                 let with_offset = (*i as usize) != 0;
 
@@ -77,7 +77,7 @@ impl Signature {
                 );
 
                 // Commit to the shares
-                commitments_prime[li] = commit_share(&salt, e as u16, *i, &input_share);
+                commitments_prime.push(commit_share(&salt, e as u16, *i, &input_share));
             }
 
             let Ok(root) = get_merkle_root_from_auth(

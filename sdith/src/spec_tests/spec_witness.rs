@@ -16,7 +16,7 @@ mod tests {
 
     #[test]
     fn test_h_matrix_gen_compare_to_spec() {
-        let h_matrix: HPrimeMatrix = gen_hmatrix(SPEC_SEED_H);
+        let h_matrix: HPrimeMatrix = gen_hmatrix(&SPEC_SEED_H.to_vec());
         assert_eq!(h_matrix.data, SPEC_MAT_H);
     }
 

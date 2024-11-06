@@ -23,7 +23,7 @@ impl Signature {
         // TODO: error handling
 
         // Expansion of the parity matrix H'
-        let h_prime: HPrimeMatrix = gen_hmatrix(secret_key.seed_h);
+        let h_prime: HPrimeMatrix = gen_hmatrix(&secret_key.seed_h);
 
         // Randomness generation for the Beaver triples and the shares
         let (mseed, salt) = entropy;
@@ -40,9 +40,9 @@ impl Signature {
         let (input_shares, input_coefs) = MPC::compute_input_shares(input_plain, &mut prg);
 
         // Commit shares
-        let mut commitments: [Hash; PARAM_TAU] = [Hash::default(); PARAM_TAU];
+        let mut commitments = vec![&vec![0u8; PARAM_DIGEST_SIZE]; PARAM_TAU];
         let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
-        let mut commitments_prime = [Hash::default(); PARAM_N];
+        let mut commitments_prime = vec![&vec![0u8; PARAM_DIGEST_SIZE]; PARAM_N];
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_N {
                 // Commit to the shares

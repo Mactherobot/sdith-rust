@@ -65,7 +65,7 @@ impl Challenge {
 
 impl Default for Challenge {
     fn default() -> Self {
-        Self::new(Hash::default())
+        Self::new(&vec![0u8; PARAM_DIGEST_SIZE])
     }
 }
 
@@ -96,7 +96,7 @@ mod challenge_tests {
 
     #[test]
     fn test_generate() {
-        let hash = Hash::default();
+        let hash = &vec![0u8; PARAM_DIGEST_SIZE];
         let challenge = Challenge::new(hash);
         assert_eq!(challenge.r.len(), PARAM_T);
         assert_eq!(challenge.eps.row_len(), PARAM_SPLITTING_FACTOR);
@@ -119,7 +119,7 @@ mod challenge_tests {
 
     #[test]
     fn test_powers() {
-        let mut prg = PRG::init_base(&Hash::default());
+        let mut prg = PRG::init_base(&&vec![0u8; PARAM_DIGEST_SIZE]);
         let point = FPoint::field_sample(&mut prg);
         let mut out = [FPoint::default(); PARAM_CHUNK_M + 1];
         get_powers(point, &mut out);

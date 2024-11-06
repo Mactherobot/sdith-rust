@@ -4,7 +4,10 @@ use tiny_keccak::{Shake, Xof};
 
 use crate::{
     arith::gf256::gf256_ext::FPoint,
-    constants::{params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE}, types::Seed},
+    constants::{
+        params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
+        types::{Salt, Seed},
+    },
 };
 
 use super::xof::{xof_init, xof_init_base};
@@ -15,7 +18,7 @@ pub(crate) struct PRG {
 
 impl PRG {
     /// Initialize the PRG with a seed and optional salt
-    pub(crate) fn init(seed: &[u8; PARAM_SEED_SIZE], salt: Option<&[u8; PARAM_SALT_SIZE]>) -> Self {
+    pub(crate) fn init(seed: &Seed, salt: Option<&Salt>) -> Self {
         PRG {
             xof: xof_init(seed, salt),
         }
@@ -87,10 +90,9 @@ impl PRG {
     }
 
     pub(crate) fn sample_seed(&mut self) -> Seed {
-        let mut seed = [0u8; PARAM_SEED_SIZE];
+        let mut seed = vec![0u8; PARAM_SEED_SIZE];
         self.xof.squeeze(&mut seed);
         seed
-
     }
 }
 
@@ -100,8 +102,8 @@ mod tests {
 
     #[test]
     fn test_prg() {
-        let seed = &[0u8; PARAM_SEED_SIZE];
-        let mut prg = PRG::init(seed, None);
+        let seed = vec![0u8; PARAM_SEED_SIZE];
+        let mut prg = PRG::init(&seed, None);
 
         let mut output = [0u8; 32];
         prg.sample_field_fq_elements(&mut output);
@@ -110,8 +112,8 @@ mod tests {
 
     #[test]
     fn test_prg_sample_field_elements_gf256_vec() {
-        let seed = &[0u8; PARAM_SEED_SIZE];
-        let mut prg = PRG::init(seed, None);
+        let seed = vec![0u8; PARAM_SEED_SIZE];
+        let mut prg = PRG::init(&seed, None);
 
         let f = prg.sample_field_fq_elements_vec(32);
         assert_ne!(f, vec![0u8; 32]);
@@ -119,8 +121,8 @@ mod tests {
 
     #[test]
     fn test_prg_sample_non_zero() {
-        let seed = &[0u8; PARAM_SEED_SIZE];
-        let mut prg = PRG::init(seed, None);
+        let seed = vec![0u8; PARAM_SEED_SIZE];
+        let mut prg = PRG::init(&seed, None);
 
         let mut f = [0u8; 256];
         prg.sample_field_fq_non_zero(&mut f);
@@ -133,8 +135,8 @@ mod tests {
 
     #[test]
     fn test_prg_sample_non_zero_set() {
-        let seed = &[0u8; PARAM_SEED_SIZE];
-        let mut prg = PRG::init(seed, None);
+        let seed = vec![0u8; PARAM_SEED_SIZE];
+        let mut prg = PRG::init(&seed, None);
 
         let mut f = [0u8; 100];
         prg.sample_field_fq_non_zero_set(&mut f);

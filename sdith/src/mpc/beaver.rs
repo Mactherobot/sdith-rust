@@ -130,8 +130,8 @@ mod beaver_tests {
 
     #[test]
     fn test_generate() {
-        let mseed = [0u8; PARAM_SEED_SIZE];
-        let salt = [0u8; PARAM_SALT_SIZE];
+        let mseed = vec![0u8; PARAM_SEED_SIZE];
+        let salt = vec![0u8; PARAM_SALT_SIZE];
         let mut prg = PRG::init(&mseed, Some(&salt));
         let mut beaver = Beaver::generate_beaver_triples(&mut prg);
 
@@ -154,7 +154,7 @@ mod beaver_tests {
 
     #[test]
     fn test_serialise() {
-        let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], Some(&[0u8; PARAM_SALT_SIZE]));
+        let mut prg = PRG::init(&vec![0u8; PARAM_SEED_SIZE], Some(&vec![0u8; PARAM_SALT_SIZE]));
         let beaver = Beaver::generate_beaver_triples(&mut prg);
 
         let plain = beaver.serialise();

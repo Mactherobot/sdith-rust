@@ -1,6 +1,4 @@
-use crate::constants::types::Seed;
-
-pub(super) const SPEC_SEED_H: Seed = [
+pub(super) const SPEC_SEED_H: [u8; 16] = [
     6, 168, 14, 105, 170, 134, 79, 217, 168, 237, 36, 80, 142, 124, 210, 149,
 ];
 

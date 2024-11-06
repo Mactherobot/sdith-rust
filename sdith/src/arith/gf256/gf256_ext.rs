@@ -65,7 +65,7 @@ mod ext16_tests {
 
     #[test]
     fn test_f_256_16_mul_32() {
-        let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], None);
+        let mut prg = PRG::init(&vec![0u8; PARAM_SEED_SIZE], None);
         let a: [u8; 2] = prg.sample_field_fq_elements_vec(2).try_into().unwrap();
         let n32 = [0u8, 32u8];
 
@@ -198,7 +198,7 @@ mod ext32_tests {
 
     #[test]
     fn test_field_eval_polynomial() {
-        let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], None);
+        let mut prg = PRG::init(&vec![0u8; PARAM_SEED_SIZE], None);
         let a: FPoint = gf256_ext32_sample(&mut prg);
         let poly = [a, a, a];
 

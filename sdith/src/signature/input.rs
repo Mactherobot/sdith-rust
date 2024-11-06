@@ -14,7 +14,6 @@ pub(crate) struct Input {
 pub(crate) const INPUT_SIZE: usize = SOLUTION_PLAIN_SIZE + BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE;
 
 pub(crate) type InputSharePlain = Vec<u8>;
-pub(crate) type InputSharesPlain = [[InputSharePlain; PARAM_N]; PARAM_TAU];
 
 impl Input {
     // Turn the input into a byte array for mpc of `F_q^(k+2w+t(2d+1)η)`
@@ -68,7 +67,7 @@ mod input_tests {
     #[test]
     fn test_serialise_deserialise_input() {
         let (_pk, sk) = keygen([0u8; PARAM_SEED_SIZE]);
-        let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], Some(&[0u8; PARAM_SALT_SIZE]));
+        let mut prg = PRG::init(&vec![0u8; PARAM_SEED_SIZE], Some(&[0u8; PARAM_SALT_SIZE]));
         let beaver = Beaver::generate_beaver_triples(&mut prg);
 
         let input = Input {
@@ -92,7 +91,7 @@ mod input_tests {
     #[test]
     fn test_append_beaver_triples() {
         let (_pk, sk) = keygen([0u8; PARAM_SEED_SIZE]);
-        let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], Some(&[0u8; PARAM_SALT_SIZE]));
+        let mut prg = PRG::init(&vec![0u8; PARAM_SEED_SIZE], Some(&[0u8; PARAM_SALT_SIZE]));
         let beaver = Beaver::generate_beaver_triples(&mut prg);
 
         let input = Input {
