@@ -91,7 +91,9 @@ impl std::fmt::Debug for Broadcast {
 
 #[derive(Debug)]
 pub(crate) struct BroadcastShare {
-    pub(crate) alpha: Array2D<FPoint>,
+    pub(crate) alpha: Array2D<FPoint>, 
+    // TODO: Is this performant? I'e we have arrays in vec. 
+    // Do we want special array that spreads out the points. Essentially a Array3D with PARAM_ETA as cols
     pub(crate) beta: Array2D<FPoint>,
     pub(crate) v: Vec<FPoint>,
 }

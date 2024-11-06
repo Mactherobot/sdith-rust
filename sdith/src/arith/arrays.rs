@@ -6,7 +6,7 @@ use std::fmt::Debug;
 pub(crate) struct Array2D<T> {
     rows: usize,
     columns: usize,
-    data: Vec<T>,
+    pub(crate) data: Vec<T>,
 }
 
 #[derive(PartialEq)]

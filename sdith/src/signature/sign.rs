@@ -67,7 +67,7 @@ impl Signature {
         let chal = Challenge::new(h1);
 
         // MPC Simulation
-        let broadcast = MPC::compute_broadcast(input, &chal, h_prime, &secret_key.y);
+        let broadcast = MPC::compute_broadcast(input, &chal, &h_prime, &secret_key.y);
         let broadcast_plain = broadcast.serialise();
 
         let mut broadcast_shares = Array3D::new(BROADCAST_SHARE_PLAIN_SIZE, PARAM_L, PARAM_TAU);
@@ -78,7 +78,7 @@ impl Signature {
                 let broadcast_share = MPC::party_computation(
                     input_coefs.get_row_slice(e, j).to_vec(),
                     &chal,
-                    h_prime,
+                    &h_prime,
                     &secret_key.y,
                     &broadcast,
                     false,

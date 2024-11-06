@@ -179,7 +179,7 @@ impl MPC {
     pub(crate) fn compute_broadcast(
         input: Input,
         chal: &Challenge,
-        h_prime: HPrimeMatrix,
+        h_prime: &HPrimeMatrix,
         // Vector of size PARAM_M_SUB_K
         y: &Vec<u8>,
     ) -> Broadcast {
@@ -205,7 +205,7 @@ impl MPC {
     pub(crate) fn party_computation(
         input_share_plain: InputSharePlain,
         chal: &Challenge,
-        h_prime: HPrimeMatrix,
+        h_prime: &HPrimeMatrix,
         y: &Vec<u8>, // Vector of size PARAM_M_SUB_K
         broadcast: &Broadcast,
         with_offset: bool,
@@ -213,7 +213,7 @@ impl MPC {
         return MPC::_party_computation(
             input_share_plain,
             chal,
-            h_prime,
+            &h_prime,
             y,
             broadcast,
             with_offset,
@@ -224,7 +224,7 @@ impl MPC {
     fn _party_computation(
         input_share_plain: InputSharePlain,
         chal: &Challenge,
-        h_prime: HPrimeMatrix,
+        h_prime: &HPrimeMatrix,
         y: &Vec<u8>, // Vector of size PARAM_M_SUB_K
         broadcast: &Broadcast,
         with_offset: bool,
@@ -313,7 +313,7 @@ impl MPC {
         solution_plain: Vec<u8>,
         broadcast_share: &BroadcastShare,
         chal: &Challenge,
-        h_prime: HPrimeMatrix,
+        h_prime: &HPrimeMatrix,
         y: &Vec<u8>, // Vector of size PARAM_M_SUB_K
         broadcast: &Broadcast,
         with_offset: bool,
@@ -422,10 +422,9 @@ mod mpc_tests {
             beaver: beaver.clone(),
         };
 
-        let broadcast = MPC::compute_broadcast(input.clone(), &chal, witness.h_prime, &witness.y);
+        let broadcast = MPC::compute_broadcast(input.clone(), &chal, &witness.h_prime, &witness.y);
 
-        let h_prime = witness.h_prime;
-        return (input, broadcast, chal, h_prime, witness.y);
+        return (input, broadcast, chal, witness.h_prime, witness.y);
     }
 
     #[test]
@@ -488,7 +487,7 @@ mod mpc_tests {
                 beaver,
             },
             &chal,
-            witness.h_prime,
+            &witness.h_prime,
             &witness.y,
         );
 
@@ -506,13 +505,13 @@ mod mpc_tests {
         let (input, broadcast, chal, h_prime, y) = prepare();
 
         let party_computation =
-            MPC::party_computation(input.serialise(), &chal, h_prime, &y, &broadcast, false);
+            MPC::party_computation(input.serialise(), &chal, &h_prime, &y, &broadcast, false);
 
         let inverse_party_computation = MPC::inverse_party_computation(
             Input::truncate_beaver_triples(input.serialise()),
             &party_computation,
             &chal,
-            h_prime,
+            &h_prime,
             &y,
             &broadcast,
             false,
@@ -536,7 +535,7 @@ mod mpc_tests {
 
         // compute shares of the randomness
         let mut broadcast_share =
-            MPC::party_computation(random_input_plain, &chal, h_prime, &y, &broadcast, false)
+            MPC::party_computation(random_input_plain, &chal, &h_prime, &y, &broadcast, false)
                 .serialise();
 
         // recompute shares of the randomness
@@ -549,7 +548,7 @@ mod mpc_tests {
             Input::truncate_beaver_triples(input_share.clone()),
             &broadcast_shares,
             &chal,
-            h_prime,
+            &h_prime,
             &y,
             &broadcast,
             true,
@@ -590,7 +589,7 @@ mod mpc_tests {
 
         // Run MPC::compute_broadcast, but calculate v
         let broadcast_plain_with_v =
-            MPC::_party_computation(input_plain, &chal, h_prime, &y, &broadcast, true, true);
+            MPC::_party_computation(input_plain, &chal, &h_prime, &y, &broadcast, true, true);
 
         assert_eq!(broadcast_plain_with_v.v, [FPoint::default(); PARAM_T]);
     }

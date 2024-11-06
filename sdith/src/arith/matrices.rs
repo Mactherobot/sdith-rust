@@ -7,19 +7,19 @@ use crate::{
     subroutines::prg::prg::PRG,
 };
 
-pub type Matrix<const COLS: usize, const ROWS: usize> = [u8; ROWS * COLS];
+use super::arrays::{Array2D, Array2DTrait};
 
 /// H' matrix with dimensions `k * m_sub_k_length_ceil32`. The ceil value is only do accommodate the way the spec creates the matrix.
-/// TODO: revert back to [`PARAM_M_SUB_K`]
-pub(crate) type HPrimeMatrix = Matrix<{ PARAM_K }, { PARAM_M_SUB_K_CEIL32 }>;
+/// Matrix sizes are `PARAM_K * PARAM_M_SUB_K_CEIL32`.
+pub(crate) type HPrimeMatrix = Array2D<u8>;
 
 /// Multiply H' matrix with a vector `y` of length [`PARAM_K`].
-pub(crate) fn mul_hprime_vector(vz: &mut [u8], matrix: &HPrimeMatrix, y: &[u8; PARAM_K]) {
+pub(crate) fn mul_hprime_vector(vz: &mut [u8], matrix: &HPrimeMatrix, y: &Vec<u8>) {
     let mut unreduced_vz = [0u8; PARAM_M_SUB_K];
     let mut index = 0;
     for j in 0..PARAM_K {
         for i in 0..PARAM_M_SUB_K {
-            unreduced_vz[i] ^= matrix[index].field_mul(y[j]);
+            unreduced_vz[i] ^= matrix.data[index].field_mul(y[j]);
             index += 1;
         }
     }
@@ -30,19 +30,18 @@ pub(crate) fn mul_hprime_vector(vz: &mut [u8], matrix: &HPrimeMatrix, y: &[u8; P
 }
 
 /// Generate H' matrix from a seed.
+/// The matrix is of size `PARAM_K * PARAM_M_SUB_K_CEIL32`.
+/// TODO: revert back to [`PARAM_M_SUB_K`]
 pub(crate) fn gen_hmatrix(seed: Seed) -> HPrimeMatrix {
     let mut prg = PRG::init(&seed, None);
-    gen_random(&mut prg)
+    gen_random(&mut prg, PARAM_K, PARAM_M_SUB_K_CEIL32)
 }
 
 /// Generate a random matrix of size `ROWS * COLS` using the provided PRG.
 /// Same as ExpandH function in the reference implementation.
-fn gen_random<const COLS: usize, const ROWS: usize>(prg: &mut PRG) -> Matrix<COLS, ROWS>
-where
-    [(); ROWS * COLS]:,
-{
-    let mut elements: Matrix<COLS, ROWS> = [0u8; ROWS * COLS];
-    prg.sample_field_fq_elements(&mut elements);
+fn gen_random(prg: &mut PRG, cols: usize, rows: usize) -> Array2D<u8> {
+    let mut elements: Array2D<u8> = Array2D::new(cols, rows);
+    prg.sample_field_fq_elements(&mut elements.data);
     elements
 }
 
@@ -55,11 +54,15 @@ mod tests {
     const TEST_COLS: usize = 3;
     const TEST_ROWS: usize = 4;
 
-    type TestMatrix = Matrix<{ TEST_COLS }, { TEST_ROWS }>;
+    type TestMatrix = Array2D<u8>;
 
     #[test]
     fn test_random_gen() {
-        let matrix: TestMatrix = gen_random(&mut PRG::init(&[0u8; PARAM_SEED_SIZE], None));
-        assert!(matrix.len() == TEST_COLS * TEST_ROWS);
+        let matrix: TestMatrix = gen_random(
+            &mut PRG::init(&[0u8; PARAM_SEED_SIZE], None),
+            TEST_COLS,
+            TEST_ROWS,
+        );
+        assert!(matrix.data.len() == TEST_COLS * TEST_ROWS);
     }
 }

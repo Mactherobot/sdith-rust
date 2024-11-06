@@ -65,7 +65,7 @@ impl Signature {
                     wit_share.get_row_slice(e, li).to_vec(),
                     &broadcast_share,
                     &chal,
-                    h_prime,
+                    &h_prime,
                     &public_key.y,
                     &broadcast,
                     with_offset,

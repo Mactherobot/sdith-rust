@@ -46,9 +46,9 @@ pub(crate) struct Instance {
 /// It is part of the secret key of the signature scheme.
 ///
 /// It corresponds to the extended solution, meaning that it contains all the secret values which can be deterministically built from the solution itself and which are inputs of the underlying MPC protocol.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub(crate) struct Solution {
-    pub(crate) s_a: [u8; PARAM_K],
+    pub(crate) s_a: Vec<u8>,
     pub(crate) q_poly: QPoly,
     pub(crate) p_poly: PPoly,
 }
@@ -74,7 +74,7 @@ impl Solution {
     }
 
     pub(crate) fn parse(solution_plain: Vec<u8>) -> Self {
-        let mut s_a = [0u8; PARAM_K];
+        let mut s_a = vec![0u8; PARAM_K];
         s_a.copy_from_slice(&solution_plain[..PARAM_K]);
         let mut q_poly = [[0u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
         for i in 0..PARAM_SPLITTING_FACTOR {
@@ -98,9 +98,9 @@ impl Solution {
 }
 
 pub(crate) struct Witness {
-    pub(crate) s_a: [u8; PARAM_K],
+    pub(crate) s_a: Vec<u8>,
     /// s_b is only used for testing purposes
-    s_b: [u8; PARAM_M_SUB_K],
+    s_b: Vec<u8>,
     pub(crate) y: Vec<u8>,
     pub(crate) h_prime: HPrimeMatrix,
     pub(crate) seed_h: Seed,
@@ -119,8 +119,8 @@ pub(crate) fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly))
     // s is pre serialized as (s_A | s_B) due to the nature of SPoly
     // Split s as (s_A | s_B)
     let s_flat = s_poly.as_flattened();
-    let s_a: [u8; PARAM_K] = s_flat[..PARAM_K].try_into().expect("Failed to convert s_a");
-    let s_b: [u8; PARAM_M_SUB_K] = s_flat[PARAM_K..].try_into().expect("Failed to convert s_b");
+    let s_a: Vec<u8> = s_flat[..PARAM_K].to_vec();
+    let s_b: Vec<u8> = s_flat[PARAM_K..].to_vec();
 
     // Generate H
     let h_prime = gen_hmatrix(seed_h);
@@ -140,11 +140,7 @@ pub(crate) fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly))
 }
 
 /// Compute y = s_b + H' s_a
-pub(crate) fn compute_y(
-    s_b: &[u8; PARAM_M_SUB_K],
-    s_a: &[u8; PARAM_K],
-    h_prime: &HPrimeMatrix,
-) -> Vec<u8> {
+pub(crate) fn compute_y(s_b: &Vec<u8>, s_a: &Vec<u8>, h_prime: &HPrimeMatrix) -> Vec<u8> {
     let mut y = vec![0u8; PARAM_M_SUB_K];
     y[..PARAM_M_SUB_K].copy_from_slice(s_b);
     mul_hprime_vector(&mut y, &h_prime, s_a);
@@ -440,11 +436,7 @@ pub(crate) fn complete_q(q_poly: QPoly, leading: u8) -> QPolyComplete {
 }
 
 /// Generate `s = (s_a | s_b)` from `s_a`, `H'` and `y`. Optionally add `y` to `H's_a`.
-pub(crate) fn compute_s(
-    s_a: &[u8; PARAM_K],
-    h_prime: &HPrimeMatrix,
-    y: Option<&Vec<u8>>,
-) -> Vec<u8> {
+pub(crate) fn compute_s(s_a: &Vec<u8>, h_prime: &HPrimeMatrix, y: Option<&Vec<u8>>) -> Vec<u8> {
     // (s_a | s_b)
     let mut s = vec![0u8; PARAM_M];
 
@@ -550,10 +542,7 @@ mod test_helpers {
         let mut prg = PRG::init(&seed, None);
         let (q, s, p, ..) = sample_witness(&mut prg);
         let witness = generate_witness(seed, (q, s, p));
-        let y = witness.y;
-        let h_prime = witness.h_prime;
-        let s_a = witness.s_a;
-        let s = compute_s(&s_a, &h_prime, Some(&y));
+        let s = compute_s(&witness.s_a, &witness.h_prime, Some(&witness.y));
 
         assert_eq!(s.len(), PARAM_M);
         assert_eq!(s[..PARAM_K], witness.s_a);
