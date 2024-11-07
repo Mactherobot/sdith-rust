@@ -116,11 +116,17 @@ mod spec_tests {
     use super::*;
 
     use crate::{
-        constants::params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_TAU},
+        constants::{
+            params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_TAU},
+            types::Hash,
+        },
         keygen::keygen,
-        mpc::broadcast::{BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
+        mpc::{
+            broadcast::{BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
+            mpc::MPC,
+        },
         signature::signature::Signature,
-        subroutines::marshalling::Marshalling as _,
+        subroutines::marshalling::Marshalling,
         witness::SOLUTION_PLAIN_SIZE,
     };
 
@@ -291,8 +297,26 @@ mod spec_tests {
         let test_vectors = read_response_test_vectors(100); // TODO: test all 100 vectors
         for tv in test_vectors {
             let verification = Signature::verify_signature(tv.pk, &tv.sm);
-            assert!(verification.is_ok(), "Signature verification failed: {:?}", verification);
             assert!(verification.unwrap(), "Signature verification failed");
         }
+    }
+
+    /// Test that the opened views are unique and within the valid range and are of a correct value
+    #[test]
+    fn test_expand_view_challenges_threshold_correct_value() {
+        let h2: Hash = [
+            253, 110, 109, 150, 126, 122, 237, 98, 46, 235, 26, 232, 204, 57, 25, 230, 165, 176,
+            207, 174, 32, 137, 6, 253, 110, 92, 165, 196, 229, 37, 219, 3,
+        ];
+        let view_challenges = MPC::expand_view_challenge_hash(h2);
+        let correct_views = [
+            [169, 213, 224],
+            [51, 155, 199],
+            [53, 174, 202],
+            [34, 41, 226],
+            [173, 180, 210],
+            [212, 222, 241],
+        ];
+        assert_eq!(view_challenges, correct_views);
     }
 }

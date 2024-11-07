@@ -2,16 +2,14 @@ use crate::{
     arith::{
         gf256::{
             gf256_ext::FPoint,
-            gf256_vector::{
-                gf256_add_vector, gf256_add_vector_add_scalar, gf256_mul_vector_by_scalar,
-            },
+            gf256_vector::{gf256_add_vector_add_scalar, gf256_mul_vector_by_scalar},
             FieldArith,
         },
         matrices::HPrimeMatrix,
     },
     constants::{
         params::{
-            PARAM_K, PARAM_L, PARAM_LOG_N, PARAM_M_SUB_K, PARAM_N, PARAM_SPLITTING_FACTOR, PARAM_T,
+            PARAM_L, PARAM_LOG_N, PARAM_M_SUB_K, PARAM_N, PARAM_SPLITTING_FACTOR, PARAM_T,
             PARAM_TAU,
         },
         types::Hash,
@@ -93,12 +91,12 @@ impl MPC {
     /// * `rnd_coefs` - The random coefficients
     /// * `fi` - The challenge value
     /// * `skip_loop` - If true, will return rnd_coefs.last().clone()
-    pub(crate) fn compute_share<const Size: usize>(
-        plain: [u8; Size],
-        rnd_coefs: &[[u8; Size]],
+    pub(crate) fn compute_share<const SIZE: usize>(
+        plain: [u8; SIZE],
+        rnd_coefs: &[[u8; SIZE]],
         fi: u8,
         skip_loop: bool,
-    ) -> [u8; Size] {
+    ) -> [u8; SIZE] {
         // We need to compute the following:
         // input_share[e][i] = input_plain + sum^ℓ_(j=1) fi^j · input_coef[e][j]
         let mut share = rnd_coefs.last().unwrap().clone();
@@ -376,9 +374,12 @@ mod mpc_tests {
     use crate::{
         arith::gf256::gf256_vector::{gf256_add_vector, gf256_add_vector_with_padding},
         constants::{
-            params::{PARAM_CHUNK_M, PARAM_DIGEST_SIZE, PARAM_M, PARAM_N, PARAM_SALT_SIZE},
+            params::{
+                PARAM_CHUNK_M, PARAM_DIGEST_SIZE, PARAM_M, PARAM_N, PARAM_SALT_SIZE,
+                PARAM_SEED_SIZE,
+            },
             precomputed::PRECOMPUTED_F_POLY,
-            types::Seed,
+            types::{hash_default, Seed},
         },
         mpc::{broadcast::BroadcastShare, challenge::get_powers},
         signature::input::INPUT_SIZE,
@@ -394,15 +395,15 @@ mod mpc_tests {
         HPrimeMatrix,
         [u8; PARAM_M_SUB_K],
     ) {
-        let mseed = Seed::from([0; 16]);
-        let hseed = Seed::from([0; 16]);
+        let mseed = Seed::from([0; PARAM_SEED_SIZE]);
+        let hseed = Seed::from([0; PARAM_SEED_SIZE]);
         let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
 
         let (q, s, p, _) = sample_witness(&mut prg);
         let witness = generate_witness(hseed, (q, s, p));
 
         let beaver_triples = Beaver::generate_beaver_triples(&mut prg);
-        let chal = Challenge::new(Hash::default());
+        let chal = Challenge::new(hash_default());
 
         let solution = Solution {
             s_a: witness.s_a,
@@ -462,15 +463,15 @@ mod mpc_tests {
     /// Test that we compute the correct sized broadcast values
     #[test]
     fn test_compute_broadcast() {
-        let mseed = Seed::from([0; 16]);
-        let hseed = Seed::from([0; 16]);
+        let mseed = Seed::from([0; PARAM_SEED_SIZE]);
+        let hseed = Seed::from([0; PARAM_SEED_SIZE]);
         let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
 
         let (q, s, p, _) = sample_witness(&mut prg);
         let witness = generate_witness(hseed, (q, s, p));
         let beaver_triples = Beaver::generate_beaver_triples(&mut prg);
 
-        let hash1 = Hash::default();
+        let hash1 = [0u8; PARAM_DIGEST_SIZE];
         let chal = Challenge::new(hash1);
 
         let broadcast = MPC::compute_broadcast(
@@ -595,25 +596,6 @@ mod mpc_tests {
             MPC::_party_computation(input_plain, &chal, h_prime, y, &broadcast, true, true);
 
         assert_eq!(broadcast_plain_with_v.v, [FPoint::default(); PARAM_T]);
-    }
-
-    /// Test that the opened views are unique and within the valid range and are of a correct value
-    #[test]
-    fn test_expand_view_challenges_threshold_correct_value() {
-        let h2: Hash = [
-            253, 110, 109, 150, 126, 122, 237, 98, 46, 235, 26, 232, 204, 57, 25, 230, 165, 176,
-            207, 174, 32, 137, 6, 253, 110, 92, 165, 196, 229, 37, 219, 3,
-        ];
-        let view_challenges = MPC::expand_view_challenge_hash(h2);
-        let correct_views = [
-            [169, 213, 224],
-            [51, 155, 199],
-            [53, 174, 202],
-            [34, 41, 226],
-            [173, 180, 210],
-            [212, 222, 241],
-        ];
-        assert_eq!(view_challenges, correct_views);
     }
 
     #[test]

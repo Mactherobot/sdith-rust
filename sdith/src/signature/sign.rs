@@ -3,7 +3,7 @@ use crate::subroutines::marshalling::Marshalling;
 use crate::witness::SOLUTION_PLAIN_SIZE;
 use crate::{
     constants::{
-        params::{PARAM_L, PARAM_N, PARAM_TAU},
+        params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_N, PARAM_TAU},
         types::{Hash, Salt, Seed},
     },
     keygen::SecretKey,
@@ -40,9 +40,9 @@ impl Signature {
         let (input_shares, input_coefs) = MPC::compute_input_shares(input_plain, &mut prg);
 
         // Commit shares
-        let mut commitments: [Hash; PARAM_TAU] = [Hash::default(); PARAM_TAU];
+        let mut commitments: [Hash; PARAM_TAU] = [[0u8; PARAM_DIGEST_SIZE]; PARAM_TAU];
         let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
-        let mut commitments_prime = [Hash::default(); PARAM_N];
+        let mut commitments_prime = [[0u8; PARAM_DIGEST_SIZE]; PARAM_N];
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_N {
                 // Commit to the shares

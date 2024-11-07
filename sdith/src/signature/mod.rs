@@ -8,15 +8,16 @@ mod signing_and_verifying_tests {
 
     use super::signature::Signature;
     use crate::{
-        constants::{params::PARAM_SALT_SIZE, types::Seed},
+        constants::{
+            params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
+            types::Seed,
+        },
         keygen::keygen,
     };
 
     #[test]
     fn test_sign_verify_signature() {
-        let spec_master_seed: Seed = [
-            124u8, 153, 53, 160, 176, 118, 148, 170, 12, 109, 16, 228, 219, 107, 26, 221,
-        ];
+        let spec_master_seed: Seed = [0u8; PARAM_SEED_SIZE];
         let (pk, sk) = keygen(spec_master_seed);
         let message = b"Hello, World!".to_vec();
         let entropy = (spec_master_seed, [0u8; PARAM_SALT_SIZE]);

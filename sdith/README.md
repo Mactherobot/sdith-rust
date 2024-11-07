@@ -10,6 +10,22 @@ To run the tests, execute the following command:
 cargo test
 ```
 
+## Categories
+
+The protocol has three proposed instances which support different security levels. These are separated into three categories:
+
+- **Category 1**: 143-bit security level
+- **Category 3**: 207-bit security level
+- **Category 5**: 272-bit security level
+
+The protocol compiles with the constants for each category according to the environment variable `CATEGORY`. The default category is "ONE".
+
+To compile the code with a different category, set the environment variable `CATEGORY` to the desired category. For example, to compile the code with category 3, execute the following command:
+
+```bash
+CATEGORY=THREE cargo build
+```
+
 ## Benchmarking
 
 To run the benchmarks, execute the following command:

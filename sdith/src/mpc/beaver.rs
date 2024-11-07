@@ -127,12 +127,12 @@ mod beaver_tests {
     use super::*;
     use crate::constants::{
         params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
-        types::Hash,
+        types::hash_default,
     };
 
     #[test]
     fn test_inner_product() {
-        let mut prg = PRG::init_base(&Hash::default());
+        let mut prg = PRG::init_base(&hash_default());
         let mut a: BeaverA = Default::default();
         let mut b: BeaverB = Default::default();
 

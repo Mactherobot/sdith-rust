@@ -4,9 +4,9 @@ use std::fmt::Formatter;
 use crate::{
     arith::gf256::{gf256_ext::FPoint, FieldArith},
     constants::{
-        params::{PARAM_CHUNK_M, PARAM_CHUNK_W, PARAM_SPLITTING_FACTOR, PARAM_T},
+        params::{PARAM_CHUNK_M, PARAM_SPLITTING_FACTOR, PARAM_T},
         precomputed::PRECOMPUTED_F_POLY,
-        types::Hash,
+        types::{hash_default, Hash},
     },
     subroutines::prg::prg::PRG,
 };
@@ -63,7 +63,7 @@ impl Challenge {
 
 impl Default for Challenge {
     fn default() -> Self {
-        Self::new(Hash::default())
+        Self::new(hash_default())
     }
 }
 
@@ -72,7 +72,9 @@ impl std::fmt::Debug for Challenge {
         write!(
             f,
             "Challenge {{ \n\tr: {:?}, \n\teps[0]: {:?} \n\tpowers_of_r[0][..5]: {:?} \n}}",
-            &self.r, &self.eps[0], &self.powers_of_r[0][..5]
+            &self.r,
+            &self.eps[0],
+            &self.powers_of_r[0][..5]
         )
     }
 }
@@ -88,13 +90,13 @@ pub(crate) fn get_powers(point: FPoint, out: &mut [FPoint]) {
 
 #[cfg(test)]
 mod challenge_tests {
-    use crate::constants::params::PARAM_ETA;
+    use crate::constants::params::{PARAM_DIGEST_SIZE, PARAM_ETA};
 
     use super::*;
 
     #[test]
     fn test_generate() {
-        let hash = Hash::default();
+        let hash = [0u8; PARAM_DIGEST_SIZE];
         let challenge = Challenge::new(hash);
         assert_eq!(challenge.r.len(), PARAM_T);
         assert_eq!(challenge.eps.len(), PARAM_SPLITTING_FACTOR);
@@ -103,7 +105,7 @@ mod challenge_tests {
         }
 
         // Test powers of r
-        for d in 0..PARAM_SPLITTING_FACTOR {
+        for _ in 0..PARAM_SPLITTING_FACTOR {
             for t in 0..PARAM_T {
                 for i in 1..PARAM_CHUNK_M + 1 {
                     assert_eq!(
@@ -117,7 +119,7 @@ mod challenge_tests {
 
     #[test]
     fn test_powers() {
-        let mut prg = PRG::init_base(&Hash::default());
+        let mut prg = PRG::init_base(&hash_default());
         let point = FPoint::field_sample(&mut prg);
         let mut out = [FPoint::default(); PARAM_CHUNK_M + 1];
         get_powers(point, &mut out);

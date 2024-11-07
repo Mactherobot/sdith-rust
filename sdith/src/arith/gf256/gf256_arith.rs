@@ -2,7 +2,7 @@
 
 use std::num::Wrapping;
 
-use crate::{constants::params::PARAM_L, subroutines::prg::prg::PRG};
+use crate::subroutines::prg::prg::PRG;
 
 use super::FieldArith;
 

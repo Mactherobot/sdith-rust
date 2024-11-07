@@ -24,16 +24,16 @@ pub(crate) fn commit_share(salt: &Salt, e: u16, i: u16, share: &[u8]) -> Hash {
     hash_finalize(hasher)
 }
 
-
 #[cfg(test)]
 mod commit_share_tests {
+    use crate::constants::params::PARAM_SALT_SIZE;
 
     #[test]
     fn test_that_same_input_gives_same_output() {
-        let salt = [0u8; 32];
+        let salt = [0u8; PARAM_SALT_SIZE];
         let e = 1;
         let i = 2;
-        let share = [3u8; 32];
+        let share = [3u8; PARAM_SALT_SIZE];
 
         let hash1 = super::commit_share(&salt, e, i, &share);
         let hash2 = super::commit_share(&salt, e, i, &share);

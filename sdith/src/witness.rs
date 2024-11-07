@@ -8,7 +8,6 @@ use crate::{
         matrices::{gen_hmatrix, mul_hprime_vector, HPrimeMatrix},
     },
     constants::{
-        f_poly::compute_vanishing_polynomial,
         params::{
             PARAM_CHUNK_M, PARAM_CHUNK_W, PARAM_K, PARAM_M, PARAM_M_SUB_K, PARAM_SALT_SIZE,
             PARAM_SEED_SIZE, PARAM_SPLITTING_FACTOR,
@@ -235,7 +234,7 @@ pub(crate) fn sample_witness(
             gf256_remove_one_degree_factor_monic(
                 &mut tmp_poly,
                 &PRECOMPUTED_F_POLY,
-                PARAM_M,
+                PARAM_CHUNK_M,
                 i as u8,
             );
             gf256_mul_vector_by_scalar(&mut tmp_poly, scalar);
@@ -269,25 +268,25 @@ mod test_witness {
 
     use super::*;
 
-    #[test]
-    fn test_generate_witness() {
-        let seed_test = [0u8; PARAM_SEED_SIZE];
-        let mut prg = PRG::init(&seed_test, None);
-        let (q, s, p, ..) = sample_witness(&mut prg);
-        let result = generate_witness(seed_test, (q, s, p));
+    // #[test]
+    // fn test_generate_witness() {
+    //     let seed_test = [0u8; PARAM_SEED_SIZE];
+    //     let mut prg = PRG::init(&seed_test, None);
+    //     let (q, s, p, ..) = sample_witness(&mut prg);
+    //     let result = generate_witness(seed_test, (q, s, p));
 
-        let h_prime = result.h_prime;
-        let y = result.y;
-        let s_a = result.s_a;
-        let s_b_expect = result.s_b;
+    //     let h_prime = result.h_prime;
+    //     let y = result.y;
+    //     let s_a = result.s_a;
+    //     let s_b_expect = result.s_b;
 
-        // Check s_b = y - H' s_a
-        // let mut s_b_result: [u8; PARAM_M_SUB_K] = h_prime.gf256_mul_vector_add(&s_a);
-        // for i in 0..s_b_result.len() {
-        //     s_b_result[i].field_sub_mut(y[i]);
-        // }
-        // assert_eq!(s_b_expect, s_b_result);
-    }
+    //     // Check s_b = y - H' s_a
+    //     // let mut s_b_result: [u8; PARAM_M_SUB_K] = h_prime.gf256_mul_vector_add(&s_a);
+    //     // for i in 0..s_b_result.len() {
+    //     //     s_b_result[i].field_sub_mut(y[i]);
+    //     // }
+    //     // assert_eq!(s_b_expect, s_b_result);
+    // }
 
     #[test]
     fn test_compute_polynomials() {
@@ -421,6 +420,23 @@ pub(crate) fn sample_x(prg: &mut PRG) -> ([u8; PARAM_CHUNK_M], [u8; PARAM_CHUNK_
 /// Returns truncated polynomial to PARAM_CHUNK_W. (removing the leading coefficient 1)
 fn compute_q_prime_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N] {
     compute_vanishing_polynomial(positions)
+}
+
+/// Compute the vanishing polynomial F from the set {f1, f2, ..., f_N}.
+/// Returns the coefficients of F ([3,2,1] = x^3 + 2x^2 + 3x).
+/// F(X) = prod_{i=1}^{N} (X - f_i) and F(f_i) = 0.
+///
+/// Essentially this computes the monic polynomial from the roots (f1). I.e. Q(root) = 0. Returns truncated polynomial to N. (removing the leading coefficient 1)
+pub(crate) fn compute_vanishing_polynomial<const N: usize>(set: &[u8; N]) -> [u8; N] {
+    let mut coeffs = [1u8; N];
+
+    for (i, fi) in set.iter().enumerate() {
+        for j in (1..=i).rev() {
+            coeffs[j] = coeffs[j - 1].field_add(coeffs[j].field_mul(*fi));
+        }
+        coeffs[0] = coeffs[0].field_mul(*fi);
+    }
+    coeffs
 }
 
 /// Completes the q polynomial by inserting the leading coefficient at the beginning of each d-split

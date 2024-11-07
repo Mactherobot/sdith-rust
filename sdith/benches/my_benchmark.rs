@@ -15,7 +15,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     let (pk, sk): (PublicKey, SecretKey) = keygen(keygen_seed);
 
     let mut sign_seed = [0u8; 16];
-    let mut sign_salt = [0u8; 32];
+    let mut sign_salt = [0u8; PARAM_DIGEST_SIZE];
     rng.fill_bytes(&mut sign_seed);
     rng.fill_bytes(&mut sign_salt);
     let entropy = (sign_seed, sign_salt);
@@ -37,7 +37,7 @@ fn keygen_bench(rng: &mut NistPqcAes256CtrRng) {
     keygen(keygen_seed);
 }
 
-fn signing_bench(entropy: ([u8; 16], [u8; 32]), sk: SecretKey, message: Vec<u8>) {
+fn signing_bench(entropy: ([u8; 16], [u8; PARAM_DIGEST_SIZE]), sk: SecretKey, message: Vec<u8>) {
     let _signature = Signature::sign_message(entropy, sk, &message.to_vec());
 }
 

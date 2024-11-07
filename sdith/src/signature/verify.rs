@@ -1,7 +1,5 @@
-use crate::arith::gf256::gf256_vector::{
-    gf256_add_vector_add_scalar, gf256_add_vector_with_padding,
-};
 use crate::arith::matrices::{gen_hmatrix, HPrimeMatrix};
+use crate::constants::params::PARAM_DIGEST_SIZE;
 use crate::keygen::PublicKey;
 use crate::mpc::broadcast::{Broadcast, BroadcastShare, BROADCAST_SHARE_PLAIN_SIZE_AB};
 use crate::subroutines::marshalling::Marshalling;
@@ -39,13 +37,13 @@ impl Signature {
 
         let broadcast = Broadcast::parse(broad_plain);
         let mut sh_broadcast = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
-        let mut commitments: [Hash; PARAM_TAU] = [Hash::default(); PARAM_TAU];
+        let mut commitments: [Hash; PARAM_TAU] = [[0u8; PARAM_DIGEST_SIZE]; PARAM_TAU];
 
         // Party computation and regeneration of Merkle commitments
         let mut plain = [0u8; BROADCAST_SHARE_PLAIN_SIZE];
         plain[..BROADCAST_SHARE_PLAIN_SIZE_AB].copy_from_slice(&broad_plain);
         for e in 0..PARAM_TAU {
-            let mut commitments_prime = [Hash::default(); PARAM_L];
+            let mut commitments_prime = [[0u8; PARAM_DIGEST_SIZE]; PARAM_L];
             for (li, i) in view_opening_challenges[e].iter().enumerate() {
                 let with_offset = (*i as usize) != 0;
 

@@ -4,7 +4,10 @@ use tiny_keccak::{Shake, Xof};
 
 use crate::{
     arith::gf256::gf256_ext::FPoint,
-    constants::{params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE}, types::Seed},
+    constants::{
+        params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
+        types::Seed,
+    },
 };
 
 use super::xof::{xof_init, xof_init_base};
@@ -90,12 +93,13 @@ impl PRG {
         let mut seed = [0u8; PARAM_SEED_SIZE];
         self.xof.squeeze(&mut seed);
         seed
-
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::constants::params::PARAM_DIGEST_SIZE;
+
     use super::*;
 
     #[test]
@@ -103,9 +107,9 @@ mod tests {
         let seed = &[0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(seed, None);
 
-        let mut output = [0u8; 32];
+        let mut output = [0u8; PARAM_DIGEST_SIZE];
         prg.sample_field_fq_elements(&mut output);
-        assert_ne!(output, [0u8; 32]);
+        assert_ne!(output, [0u8; PARAM_DIGEST_SIZE]);
     }
 
     #[test]
@@ -114,7 +118,7 @@ mod tests {
         let mut prg = PRG::init(seed, None);
 
         let f = prg.sample_field_fq_elements_vec(32);
-        assert_ne!(f, vec![0u8; 32]);
+        assert_ne!(f, vec![0u8; PARAM_DIGEST_SIZE]);
     }
 
     #[test]
