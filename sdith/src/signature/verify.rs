@@ -78,7 +78,7 @@ impl Signature {
                 &mut auth[e],
                 &commitments_prime,
                 &view_opening_challenges[e],
-                Some(salt),
+                None, // TODO: In spec there is a salt here. In implementation there is not.
             ) else {
                 return Err("Merkle root verification failed".to_string());
             };

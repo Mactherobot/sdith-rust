@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use clap::{ArgAction, Error, Parser, Subcommand};
 use rand::{rngs::StdRng, RngCore, SeedableRng};
 
-use crate::{
+use sdith::{
     constants::{
         params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
         types::{Salt, Seed},
