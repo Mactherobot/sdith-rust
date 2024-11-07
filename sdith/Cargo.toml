@@ -18,3 +18,6 @@ base64 = "0.22.1"
 [[bench]]
 name = "my_benchmark"
 harness = false
+
+[build-dependencies]
+const-gen = "1.6.5"

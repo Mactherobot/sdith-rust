@@ -1,3 +1,12 @@
+
+
+
+// Constants
+
+// Include our constants
+include!(concat!(env!("OUT_DIR"), "/const_gen.rs"));
+
+
 // SD Parameters
 /// (q) The Galois field size GL(q) = GL(2^8) = GL(256)
 pub(crate) const PARAM_Q: usize = 256;

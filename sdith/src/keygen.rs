@@ -1,6 +1,6 @@
 use crate::{
     constants::{
-        params::{PARAM_M_SUB_K, PARAM_SEED_SIZE},
+        params::{PARAM_M_SUB_K, PARAM_SEED_SIZE, TEST_U8},
         types::Seed,
     },
     subroutines::marshalling::Marshalling,
@@ -18,6 +18,8 @@ impl Marshalling for PublicKey {
         let mut serialised = Vec::new();
         serialised.extend_from_slice(&self.seed_h);
         serialised.extend_from_slice(&self.y);
+        println!("{:?}", TEST_U8);
+        
         serialised
     }
 
@@ -49,6 +51,7 @@ impl Marshalling for SecretKey {
         serialised.extend_from_slice(&self.seed_h);
         serialised.extend_from_slice(&self.y);
         serialised.extend_from_slice(&self.solution.serialise());
+        TEST_U8;
         serialised
     }
 
