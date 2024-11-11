@@ -4,7 +4,7 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-tiny-keccak = { version = "2.0.2", features = ["k12", "shake", "sha3"] }
+tiny-keccak = { version = "2.0.2", features = ["shake", "sha3"] }
 queues = "1.0.2"
 clap = { version = "4.5.20", features = ["derive"] }
 rand = "0.8.5"
@@ -17,7 +17,7 @@ criterion-cycles-per-byte = "0.6.1"
 nist-pqc-seeded-rng = "0.2.0"
 
 [[bench]]
-name = "my_benchmark"
+name = "benchmark"
 harness = false
 
 [build-dependencies]
@@ -25,7 +25,7 @@ const-gen = "1.6.5"
 dotenv_codegen = "0.15.0"
 
 [profile.dev]
-opt-level = 1
+opt-level = 3
 
-[profile.release]
-debug = 1
+# [profile.release]
+# debug = 1

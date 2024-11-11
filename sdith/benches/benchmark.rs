@@ -8,7 +8,7 @@ use sdith::signature::signature::Signature;
 fn criterion_benchmark(c: &mut Criterion) {
     let mut rng = NistPqcAes256CtrRng::from_seed(Seed::default());
     // First create master seed
-    let mut keygen_seed = [0u8; 16];
+    let mut keygen_seed = [0u8; PARAM_SEED_SIZE];
     rng.fill_bytes(&mut keygen_seed);
     c.bench_function("keygen", |b| b.iter(|| keygen_bench(&mut rng)));
 
@@ -32,12 +32,12 @@ fn criterion_benchmark(c: &mut Criterion) {
 }
 
 fn keygen_bench(rng: &mut NistPqcAes256CtrRng) {
-    let mut keygen_seed = [0u8; 16];
+    let mut keygen_seed = [0u8; PARAM_SEED_SIZE];
     rng.fill_bytes(&mut keygen_seed);
     keygen(keygen_seed);
 }
 
-fn signing_bench(entropy: ([u8; 16], [u8; PARAM_DIGEST_SIZE]), sk: SecretKey, message: Vec<u8>) {
+fn signing_bench(entropy: ([u8; PARAM_SEED_SIZE], [u8; PARAM_DIGEST_SIZE]), sk: SecretKey, message: Vec<u8>) {
     let _signature = Signature::sign_message(entropy, &sk, &message.to_vec());
 }
 
