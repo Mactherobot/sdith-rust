@@ -1,7 +1,7 @@
 [package]
 name = "sdith"
 version = "0.0.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 tiny-keccak = { version = "2.0.2", features = ["k12", "shake", "sha3"] }
@@ -9,6 +9,7 @@ queues = "1.0.2"
 clap = { version = "4.5.20", features = ["derive"] }
 rand = "0.8.5"
 base64 = "0.22.1"
+num-traits = "0.2.19"
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
