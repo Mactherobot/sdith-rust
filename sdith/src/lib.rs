@@ -11,9 +11,6 @@ pub mod signature;
 pub mod subroutines;
 pub mod witness;
 
-#[cfg(feature = "spec-tests")]
-mod spec_tests;
-
 #[cfg(test)]
 mod tests {
     use crate::constants::params::COMPILED_CATEGORY;
