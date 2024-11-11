@@ -214,6 +214,7 @@ impl MPC {
         );
     }
 
+    // TODO: Tried parallelization but it was slower
     fn _party_computation(
         input_share_plain: InputSharePlain,
         chal: &Challenge,
