@@ -1,3 +1,5 @@
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+
 use crate::arith::matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::subroutines::marshalling::Marshalling;
 use crate::witness::SOLUTION_PLAIN_SIZE;
@@ -44,10 +46,12 @@ impl Signature {
         let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
         let mut commitments_prime = [[0u8; PARAM_DIGEST_SIZE]; PARAM_N];
         for e in 0..PARAM_TAU {
-            for i in 0..PARAM_N {
-                // Commit to the shares
-                commitments_prime[i] = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
-            }
+            commitments_prime
+                .par_iter_mut()
+                .enumerate()
+                .for_each(|(i, commitment)| {
+                    *commitment = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
+                });
 
             let merkle_tree = MerkleTree::new(commitments_prime, None); // TODO: I spec there is a salt here. In implementation there is not.
             commitments[e] = merkle_tree.get_root();

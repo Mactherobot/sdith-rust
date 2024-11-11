@@ -1,3 +1,5 @@
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+
 use crate::{
     arith::{
         gf256::{
@@ -135,10 +137,9 @@ impl MPC {
         }
 
         for e in 0..PARAM_TAU {
-            for i in 0..PARAM_N {
-                input_shares[e][i] =
-                    Self::compute_share(&input_plain, &input_coefs[e], i as u8, i == 0);
-            }
+            input_shares[e].par_iter_mut().enumerate().for_each(|(i, share)| {
+                *share = Self::compute_share(&input_plain, &input_coefs[e], i as u8, i == 0);
+            });
         }
 
         (input_shares, input_coefs)
