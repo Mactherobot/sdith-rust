@@ -135,7 +135,7 @@ impl Keygen {
 
         let (pk, sk) = keygen::keygen(seed);
 
-        self.output_keys(pk, sk)?;
+        self.output_keys(*pk, *sk)?;
 
         Ok(())
     }
@@ -194,7 +194,7 @@ impl Signing {
         if is_random_salt {
             eprintln!("Salt: {}", STANDARD.encode(salt));
         }
-        let signature = clap_err_result!(Signature::sign_message((seed, salt), secret_key, &msg))?;
+        let signature = clap_err_result!(Signature::sign_message((seed, salt), &secret_key, &msg))?;
 
         println!("{}", STANDARD.encode(signature));
         Ok(())
@@ -227,7 +227,7 @@ impl Verifying {
         let pk = self.get_public_key()?;
         let signature = get_decoded_string_from_file_or_string(self.signature.clone())?;
 
-        let is_valid = match Signature::verify_signature(pk, &signature) {
+        let is_valid = match Signature::verify_signature(&pk, &signature) {
             Ok(is_valid) => is_valid,
             Err(_) => false,
         };

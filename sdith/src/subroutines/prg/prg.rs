@@ -1,5 +1,3 @@
-use std::fmt::Error;
-
 use tiny_keccak::{Shake, Xof};
 
 use crate::{
@@ -40,9 +38,9 @@ impl PRG {
         }
     }
 
-    pub(crate) fn sample_field_fq_non_zero_set(&mut self, output: &mut [u8]) -> Result<(), Error> {
+    pub(crate) fn sample_field_fq_non_zero_set(&mut self, output: &mut [u8]) -> Result<(), String> {
         if output.len() >= 256 {
-            return Err(Error);
+            return Err("Output length must be less than 256".to_string());
         };
 
         let mut i = 0;
@@ -141,7 +139,7 @@ mod tests {
         let mut prg = PRG::init(seed, None);
 
         let mut f = [0u8; 100];
-        prg.sample_field_fq_non_zero_set(&mut f);
+        let _ = prg.sample_field_fq_non_zero_set(&mut f);
         for (i, fi) in f.iter().enumerate() {
             assert_ne!(*fi, 0);
             let is_redundant = (0..i).any(|j| f[j] == *fi);

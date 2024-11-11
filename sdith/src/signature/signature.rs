@@ -110,7 +110,7 @@ impl Marshalling for Signature {
         serialised
     }
 
-    /// Parse a signature from a byte array of form (signature_len:[u8; 4] | msg | salt | h1 | broadcast_plain | broadcast_shares | auth)
+    /// Parse a signature from a byte array of form `(signature_len:[u8; 4] | msg | salt | h1 | broadcast_plain | broadcast_shares | auth)`
     fn parse(signature_plain: &Vec<u8>) -> Result<Signature, String> {
         // TODO: Check if the signature is valid
 
@@ -217,7 +217,7 @@ mod signature_tests {
         let entropy = (seed_root, salt);
         let (_, sk) = keygen(seed_root);
 
-        let signature = Signature::sign_message(entropy, sk, &message).unwrap();
+        let signature = Signature::sign_message(entropy, &sk, &message).unwrap();
 
         let deserialised = Signature::parse(&signature).unwrap();
 

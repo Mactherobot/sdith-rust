@@ -80,17 +80,17 @@ impl Marshalling for SecretKey {
     }
 }
 
-pub fn keygen(seed_root: Seed) -> (PublicKey, SecretKey) {
+pub fn keygen(seed_root: Seed) -> (Box<PublicKey>, Box<SecretKey>) {
     let (instance, solution) = generate_instance_with_solution(seed_root);
-    let pk = PublicKey {
+    let pk = Box::new(PublicKey {
         seed_h: instance.seed_h,
         y: instance.y,
-    };
-    let sk = SecretKey {
+    });
+    let sk = Box::new(SecretKey {
         seed_h: instance.seed_h,
         y: instance.y,
         solution,
-    };
+    });
 
     (pk, sk)
 }

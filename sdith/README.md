@@ -10,6 +10,12 @@ To run the tests, execute the following command:
 cargo test
 ```
 
+For Category 5, you might have to increase the stack size. To do so, execute the following command:
+
+```bash
+SDITH_CATEGORY=5 RUST_MIN_STACK=8388608 cargo test
+```
+
 ### Specification tests
 
 The folder `src/spec_tests` contains tests that compare inputs and outputs of the implementation to the SDitH c++ implementation. To run these tests, include the feature flag `spec_tests`:

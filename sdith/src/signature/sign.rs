@@ -16,7 +16,7 @@ use super::{input::Input, signature::Signature};
 impl Signature {
     pub fn sign_message(
         entropy: (Seed, Salt),
-        secret_key: SecretKey,
+        secret_key: &SecretKey,
         message: &Vec<u8>,
     ) -> Result<Vec<u8>, String> {
         // TODO: error handling
@@ -37,7 +37,7 @@ impl Signature {
 
         // Compute input shares for the MPC
         let input_plain = input.serialise();
-        let (input_shares, input_coefs) = MPC::compute_input_shares(input_plain, &mut prg);
+        let (input_shares, input_coefs) = MPC::compute_input_shares(&input_plain, &mut prg);
 
         // Commit shares
         let mut commitments: [Hash; PARAM_TAU] = [[0u8; PARAM_DIGEST_SIZE]; PARAM_TAU];
@@ -96,7 +96,7 @@ impl Signature {
             for (li, i) in view_opening_challenges[e].iter().enumerate() {
                 // Truncate witness share by removing beaver triples from the plain value
                 solution_share[e][li] =
-                    Input::truncate_beaver_triples(input_shares[e][(*i) as usize]);
+                    Input::truncate_beaver_triples(&input_shares[e][(*i) as usize]);
             }
         }
 

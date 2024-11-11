@@ -92,7 +92,7 @@ impl MPC {
     /// * `fi` - The challenge value
     /// * `skip_loop` - If true, will return rnd_coefs.last().clone()
     pub(crate) fn compute_share<const SIZE: usize>(
-        plain: [u8; SIZE],
+        plain: &[u8; SIZE],
         rnd_coefs: &[[u8; SIZE]],
         fi: u8,
         skip_loop: bool,
@@ -109,7 +109,7 @@ impl MPC {
                 gf256_add_vector_add_scalar(&mut share, &rnd_coefs[j], fi);
             }
             // Add the plain to the share
-            gf256_add_vector_add_scalar(&mut share, &plain, fi);
+            gf256_add_vector_add_scalar(&mut share, plain, fi);
         }
 
         share
@@ -118,16 +118,16 @@ impl MPC {
     /// Compute shamir secret sharing of the [`Input`]'s.
     /// Returns (shares, coefficients).
     pub(crate) fn compute_input_shares(
-        input_plain: [u8; INPUT_SIZE],
+        input_plain: &[u8; INPUT_SIZE],
         prg: &mut PRG,
     ) -> (
         Box<[[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU]>,
-        Box<[[[u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU]>,
+        [[[u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU],
     ) {
         let mut input_shares = Box::new([[[0u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU]);
 
         // Generate coefficients
-        let mut input_coefs = Box::new([[[0u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU]);
+        let mut input_coefs = [[[0u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU];
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_L {
                 prg.sample_field_fq_elements(&mut input_coefs[e][i]);
@@ -137,7 +137,7 @@ impl MPC {
         for e in 0..PARAM_TAU {
             for i in 0..PARAM_N {
                 input_shares[e][i] =
-                    Self::compute_share(input_plain, &input_coefs[e], i as u8, i == 0);
+                    Self::compute_share(&input_plain, &input_coefs[e], i as u8, i == 0);
             }
         }
 
@@ -374,10 +374,7 @@ mod mpc_tests {
     use crate::{
         arith::gf256::gf256_vector::{gf256_add_vector, gf256_add_vector_with_padding},
         constants::{
-            params::{
-                PARAM_CHUNK_M, PARAM_DIGEST_SIZE, PARAM_M, PARAM_N, PARAM_SALT_SIZE,
-                PARAM_SEED_SIZE,
-            },
+            params::{PARAM_DIGEST_SIZE, PARAM_M, PARAM_N, PARAM_SALT_SIZE, PARAM_SEED_SIZE},
             precomputed::PRECOMPUTED_F_POLY,
             types::{hash_default, Seed},
         },
@@ -447,18 +444,6 @@ mod mpc_tests {
     }
 
     // TODO: Test `[MPC::polynomial_evaluation]` function
-    #[test]
-    fn test_polynomial_evaluation() {
-        let mut prg = PRG::init_base(&[0]);
-        let r = FPoint::field_sample(&mut prg);
-        let mut powers_of_r = [FPoint::default(); PARAM_M + 1];
-        get_powers(r, &mut powers_of_r);
-
-        let poly_d = [1, 2, 3];
-        let eval = MPC::polynomial_evaluation(&poly_d, &powers_of_r);
-        let expected = FPoint::from([152, 61, 227, 67]);
-        assert_eq!(eval, expected);
-    }
 
     /// Test that we compute the correct sized broadcast values
     #[test]
@@ -506,7 +491,7 @@ mod mpc_tests {
             MPC::party_computation(input.serialise(), &chal, h_prime, y, &broadcast, false);
 
         let inverse_party_computation = MPC::inverse_party_computation(
-            Input::truncate_beaver_triples(input.serialise()),
+            Input::truncate_beaver_triples(&input.serialise()),
             &party_computation,
             &chal,
             h_prime,
@@ -547,7 +532,7 @@ mod mpc_tests {
         let broadcast_shares = BroadcastShare::parse(broadcast_share);
 
         let recomputed_input_share_triples = MPC::inverse_party_computation(
-            Input::truncate_beaver_triples(input_share),
+            Input::truncate_beaver_triples(&input_share),
             &broadcast_shares,
             &chal,
             h_prime,

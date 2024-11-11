@@ -16,7 +16,7 @@ use crate::{
 use super::{input::Input, signature::Signature};
 
 impl Signature {
-    pub fn verify_signature(public_key: PublicKey, signature: &Vec<u8>) -> Result<bool, String> {
+    pub fn verify_signature(public_key: &PublicKey, signature: &Vec<u8>) -> Result<bool, String> {
         // Expansion of parity-check matrix
         let h_prime: HPrimeMatrix = gen_hmatrix(public_key.seed_h);
 
@@ -40,7 +40,7 @@ impl Signature {
         let mut commitments: [Hash; PARAM_TAU] = [[0u8; PARAM_DIGEST_SIZE]; PARAM_TAU];
 
         // Party computation and regeneration of Merkle commitments
-        let mut plain = [0u8; BROADCAST_SHARE_PLAIN_SIZE];
+        let mut plain = Box::new([0u8; BROADCAST_SHARE_PLAIN_SIZE]);
         plain[..BROADCAST_SHARE_PLAIN_SIZE_AB].copy_from_slice(&broad_plain);
         for e in 0..PARAM_TAU {
             let mut commitments_prime = [[0u8; PARAM_DIGEST_SIZE]; PARAM_L];
@@ -52,7 +52,7 @@ impl Signature {
                 let f_i = i.to_le_bytes()[0];
 
                 sh_broadcast[e][li] =
-                    MPC::compute_share(plain, &broadcast_shares[e], f_i, *i == 0u16);
+                    MPC::compute_share(&plain, &broadcast_shares[e], f_i, *i == 0u16);
 
                 // Verify the Merkle path
                 let broadcast_share = BroadcastShare::parse(sh_broadcast[e][li]);

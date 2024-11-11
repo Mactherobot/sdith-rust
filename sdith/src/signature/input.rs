@@ -51,7 +51,7 @@ impl Input {
     /// Remove the Beaver triples from the input shares as they can be derived from the Solution shares
     /// {[x_A]_i, [P]_i, [Q]_i}_(i \in I) and broadcast shares {[α]_i, [β]_i, [v]_i}_(i \in I).
     pub(crate) fn truncate_beaver_triples(
-        input_share: [u8; INPUT_SIZE],
+        input_share: &[u8; INPUT_SIZE],
     ) -> [u8; SOLUTION_PLAIN_SIZE] {
         return input_share[..SOLUTION_PLAIN_SIZE].try_into().unwrap();
     }
@@ -97,7 +97,7 @@ mod input_tests {
         let input_plain = input.serialise();
         assert!(input_plain.len() == INPUT_SIZE);
 
-        let solution_plain = Input::truncate_beaver_triples(input_plain);
+        let solution_plain = Input::truncate_beaver_triples(&input_plain);
         assert!(solution_plain.len() == SOLUTION_PLAIN_SIZE);
 
         let deserialised_solution = Input::deserialise_solution(solution_plain);
@@ -120,7 +120,7 @@ mod input_tests {
         };
 
         let input_plain = input.serialise();
-        let solution_plain = Input::truncate_beaver_triples(input_plain);
+        let solution_plain = Input::truncate_beaver_triples(&input_plain);
 
         let beaver_triples = (a, b, c);
         let input_with_beaver_triples =

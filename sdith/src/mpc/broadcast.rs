@@ -51,14 +51,8 @@ impl Broadcast {
 
 fn serialise_broadcast_value(out: &mut [u8], broadcast_value: &BroadcastValue, n_offset: usize) {
     let ab_offset = n_offset * BROADCAST_VALUE_PLAIN_SIZE;
-    for d in 0..PARAM_SPLITTING_FACTOR {
-        for j in 0..PARAM_T {
-            let offset = ab_offset + d * PARAM_T + j * PARAM_ETA;
-
-            let point = broadcast_value[d][j];
-            out[offset..(offset + PARAM_ETA)].copy_from_slice(&point);
-        }
-    }
+    let flattened = broadcast_value.as_flattened().as_flattened();
+    out[ab_offset..ab_offset + flattened.len()].copy_from_slice(flattened);
 }
 
 fn deserialise_broadcast_value(
@@ -68,7 +62,7 @@ fn deserialise_broadcast_value(
 
     for d in 0..PARAM_SPLITTING_FACTOR {
         for j in 0..PARAM_T {
-            let offset = d * PARAM_T + j * PARAM_ETA;
+            let offset = d * PARAM_T * PARAM_ETA + j * PARAM_ETA;
 
             let point: FPoint = broadcast_value_plain[offset..(offset + PARAM_ETA)]
                 .try_into()
@@ -161,13 +155,40 @@ mod broadcast_tests {
 
     #[test]
     fn test_serialise_deserialise_broadcast_value() {
+        let mut prg = PRG::init_base(&[1, 2, 3]);
         let mut alpha = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
+        let mut beta = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         for d in 0..PARAM_SPLITTING_FACTOR {
             prg.sample_field_fpoint_elements(&mut alpha[d]);
+            prg.sample_field_fpoint_elements(&mut beta[d]);
         }
 
-        let mut seria
-        let serialised = serialise_broadcast_value(&alpha);
+        let mut serialised = [0u8; BROADCAST_VALUE_PLAIN_SIZE * 2];
+        serialise_broadcast_value(&mut serialised, &alpha, 0);
+        assert!(serialised[BROADCAST_VALUE_PLAIN_SIZE..]
+            .iter()
+            .all(|&x| x == 0));
+
+        let mut serialised = [0u8; BROADCAST_VALUE_PLAIN_SIZE * 2];
+        serialise_broadcast_value(&mut serialised, &beta, 1);
+
+        assert!(serialised[..BROADCAST_VALUE_PLAIN_SIZE]
+            .iter()
+            .all(|&x| x == 0));
+
+        serialise_broadcast_value(&mut serialised, &alpha, 0);
+
+        let deserialised_alpha = deserialise_broadcast_value(
+            serialised[..BROADCAST_VALUE_PLAIN_SIZE].try_into().unwrap(),
+        );
+
+        assert_eq!(alpha, deserialised_alpha);
+
+        let deserialised_beta = deserialise_broadcast_value(
+            serialised[BROADCAST_VALUE_PLAIN_SIZE..].try_into().unwrap(),
+        );
+
+        assert_eq!(beta, deserialised_beta);
     }
 
     #[test]
