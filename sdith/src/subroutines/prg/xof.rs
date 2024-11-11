@@ -9,17 +9,20 @@
 /// which tolerates input seeds of variable lengths.
 use tiny_keccak::{Hasher, Shake, Xof};
 
-use crate::constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE, XOF_PRIMITIVE};
+use crate::constants::params::{XOFPrimitive, PARAM_SALT_SIZE, PARAM_SEED_SIZE, XOF_PRIMITIVE};
 
-fn get_hasher() -> Shake {
-    Shake::v128()
+fn get_xof() -> Shake {
+    match XOF_PRIMITIVE {
+        XOFPrimitive::SHAKE128 => Shake::v128(),
+        XOFPrimitive::SHAKE256 => Shake::v256(),
+    }
 }
 
 pub(crate) fn xof_init(
     seed: &[u8; PARAM_SEED_SIZE],
     salt: Option<&[u8; PARAM_SALT_SIZE]>,
 ) -> Shake {
-    let mut xof = get_hasher();
+    let mut xof = get_xof();
     if let Some(salt) = salt {
         xof.update(salt);
     }
@@ -30,7 +33,7 @@ pub(crate) fn xof_init(
 }
 
 pub(crate) fn xof_init_base(x: &[u8]) -> Shake {
-    let mut xof = get_hasher();
+    let mut xof = get_xof();
     xof.update(x);
     let mut tmp = [0u8; 0];
     xof.squeeze(&mut tmp);

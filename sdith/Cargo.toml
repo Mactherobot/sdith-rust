@@ -8,8 +8,8 @@ exclude = ["src/spec-tests/**"]
 tiny-keccak = { version = "2.0.2", features = ["k12", "shake", "sha3"] }
 queues = "1.0.2"
 num-traits = "0.2.19"
-hex = "0.4.3"
-nist-pqc-seeded-rng = "0.2.0"
+hex = { version = "0.4.3", optional = true }
+nist-pqc-seeded-rng = { version = "0.2.0", optional = true }
 criterion = { version = "0.5", features = ["html_reports"] }
 criterion-cycles-per-byte = "0.6.1"
 clap = { version = "4.5.20", features = ["derive"] }
@@ -24,3 +24,6 @@ harness = false
 [build-dependencies]
 const-gen = "1.6.5"
 dotenv_codegen = "0.15.0"
+
+[features]
+spec-tests = ["dep:nist-pqc-seeded-rng", "dep:hex"]

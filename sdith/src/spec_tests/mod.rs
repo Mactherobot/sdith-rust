@@ -3,6 +3,7 @@ mod spec_keygen;
 mod spec_utils;
 mod spec_witness;
 mod spec_xof;
+mod spec_mpc;
 
 use nist_pqc_seeded_rng::{NistPqcAes256CtrRng, RngCore, SeedableRng};
 

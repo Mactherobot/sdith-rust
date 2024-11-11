@@ -50,9 +50,9 @@ impl Broadcast {
 }
 
 fn serialise_broadcast_value(out: &mut [u8], broadcast_value: &BroadcastValue, n_offset: usize) {
+    let ab_offset = n_offset * BROADCAST_VALUE_PLAIN_SIZE;
     for d in 0..PARAM_SPLITTING_FACTOR {
         for j in 0..PARAM_T {
-            let ab_offset = n_offset * BROADCAST_VALUE_PLAIN_SIZE;
             let offset = ab_offset + d * PARAM_T + j * PARAM_ETA;
 
             let point = broadcast_value[d][j];
@@ -96,18 +96,19 @@ pub(crate) struct BroadcastShare {
     pub(crate) v: [FPoint; PARAM_T],
 }
 
-pub(crate) const BROADCAST_SHARE_PLAIN_SIZE_AB: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR * 2;
+pub(crate) const BROADCAST_SHARE_PLAIN_SIZE_AB: usize =
+    PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR * 2;
 const BROADCAST_SHARE_PLAIN_SIZE_V: usize = PARAM_ETA * PARAM_T;
-pub(crate) const BROADCAST_SHARE_PLAIN_SIZE: usize = BROADCAST_SHARE_PLAIN_SIZE_AB + BROADCAST_SHARE_PLAIN_SIZE_V;
+pub(crate) const BROADCAST_SHARE_PLAIN_SIZE: usize =
+    BROADCAST_SHARE_PLAIN_SIZE_AB + BROADCAST_SHARE_PLAIN_SIZE_V;
 
 impl BroadcastShare {
     pub(crate) fn serialise(&self) -> [u8; BROADCAST_SHARE_PLAIN_SIZE] {
         let mut result = [0u8; BROADCAST_SHARE_PLAIN_SIZE];
 
         for (n, v) in [self.alpha, self.beta].iter().enumerate() {
-            serialise_broadcast_value(result.as_mut_slice(), v, n);
+            serialise_broadcast_value(&mut result, v, n);
         }
-
 
         let mut offset = BROADCAST_SHARE_PLAIN_SIZE_AB;
         for j in 0..PARAM_T {
@@ -157,6 +158,17 @@ impl BroadcastShare {
 mod broadcast_tests {
     use super::*;
     use crate::subroutines::prg::prg::PRG;
+
+    #[test]
+    fn test_serialise_deserialise_broadcast_value() {
+        let mut alpha = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
+        for d in 0..PARAM_SPLITTING_FACTOR {
+            prg.sample_field_fpoint_elements(&mut alpha[d]);
+        }
+
+        let mut seria
+        let serialised = serialise_broadcast_value(&alpha);
+    }
 
     #[test]
     fn test_serialise_deserialise_broadcast() {

@@ -9,3 +9,6 @@ pub mod mpc;
 pub mod signature;
 pub mod subroutines;
 pub mod witness;
+
+#[cfg(feature = "spec-tests")]
+mod spec_tests;

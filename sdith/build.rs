@@ -20,10 +20,10 @@ fn main() {
     fs::write(&constants_file_path, build_constants(cat)).unwrap();
     fs::write(&precomputed_file_path, cat.precomputed.output()).unwrap();
 
-    println!("cargo::rerun-if-env-changed=CATEGORY");
+    println!("cargo::rerun-if-env-changed=SDITH_CATEGORY");
 }
 fn get_env_category() -> Category {
-    let category = env::var("CATEGORY").unwrap_or_else(|_| "ONE".to_string());
+    let category = env::var("SDITH_CATEGORY").unwrap_or_else(|_| "ONE".to_string());
     match Categories::from(category) {
         Categories::ONE => CATEGORY_ONE,
         Categories::THREE => CATEGORY_THREE,
@@ -33,7 +33,7 @@ fn get_env_category() -> Category {
 
 fn build_constants(category: Category) -> String {
     vec![
-        "#[doc = \"Compiled version category of the protocol\"] pub enum Categories { ONE = 1, THREE = 3, FIVE = 5 }".to_string(),
+        "#[derive(Debug)] #[doc = \"Compiled version category of the protocol\"] pub enum Categories { ONE = 1, THREE = 3, FIVE = 5 }".to_string(),
         const_declaration!(#[doc = "Compiled category for the protocol"] pub(crate) COMPILED_CATEGORY = category.category),
 
         const_definition!(#[derive(Debug)] pub HashPrimitive),

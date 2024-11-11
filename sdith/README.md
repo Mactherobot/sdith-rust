@@ -10,6 +10,16 @@ To run the tests, execute the following command:
 cargo test
 ```
 
+### Specification tests
+
+The folder `src/spec_tests` contains tests that compare inputs and outputs of the implementation to the SDitH c++ implementation. To run these tests, include the feature flag `spec_tests`:
+
+```bash
+SDITH_CATEGORY=1 cargo test --features spec_tests
+```
+
+Note that these tests are only available for category 1.
+
 ## Categories
 
 The protocol has three proposed instances which support different security levels. These are separated into three categories:
@@ -18,12 +28,12 @@ The protocol has three proposed instances which support different security level
 - **Category 3**: 207-bit security level
 - **Category 5**: 272-bit security level
 
-The protocol compiles with the constants for each category according to the environment variable `CATEGORY`. The default category is "ONE".
+The protocol compiles with the constants for each category according to the environment variable `SDITH_CATEGORY`. The default category is "ONE".
 
-To compile the code with a different category, set the environment variable `CATEGORY` to the desired category. For example, to compile the code with category 3, execute the following command:
+To compile the code with a different category, set the environment variable `SDITH_CATEGORY` to the desired category. For example, to compile the code with category 3, execute the following command:
 
 ```bash
-CATEGORY=THREE cargo build
+SDITH_CATEGORY=THREE cargo build
 ```
 
 ## Benchmarking

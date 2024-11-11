@@ -1,19 +1,21 @@
 use tiny_keccak::{Hasher, Sha3};
 
-use crate::constants::params::{HASH_PRIMITIVE, PARAM_DIGEST_SIZE};
+use crate::constants::params::{HashPrimitive, HASH_PRIMITIVE, PARAM_DIGEST_SIZE};
 use crate::constants::types::Hash;
 
 pub(crate) const HASH_PREFIX_CHALLENGE_1: [u8; 1] = [1];
 pub(crate) const HASH_PREFIX_CHALLENGE_2: [u8; 1] = [2];
 
-pub(crate) fn sha3() -> Sha3 {
-    return Sha3::v256();
-
-    // TODO Return different hashers for different security levels use HASH_PRIMITIVE
+pub(crate) fn get_hash() -> Sha3 {
+    match HASH_PRIMITIVE {
+        HashPrimitive::SHA3_256 => return Sha3::v256(),
+        HashPrimitive::SHA3_384 => return Sha3::v384(),
+        HashPrimitive::SHA3_512 => return Sha3::v512(),
+    }
 }
 
 pub(crate) fn get_hasher_with_prefix(prefix: &[u8]) -> Sha3 {
-    let mut hasher = Sha3::v256();
+    let mut hasher = get_hash();
     hasher.update(prefix);
     hasher
 }
@@ -26,7 +28,7 @@ pub(crate) fn hash_finalize(hasher: Sha3) -> Hash {
 }
 
 pub(crate) fn hash(data: &[u8]) -> Hash {
-    let mut hasher = sha3();
+    let mut hasher = get_hash();
     hasher.update(data);
     return hash_finalize(hasher);
 }

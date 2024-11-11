@@ -9,7 +9,7 @@ use crate::constants::{
 
 use queues::*;
 
-use super::prg::hashing::{hash_finalize, sha3};
+use super::prg::hashing::{hash_finalize, get_hash};
 
 pub(crate) const PARAM_MERKLE_TREE_HEIGHT: usize = PARAM_LOG_N;
 pub(crate) const PARAM_MERKLE_TREE_NODES: usize =
@@ -126,7 +126,7 @@ impl MerkleTree {
 }
 
 fn merkle_hash(parent_index: usize, left: Hash, right: Option<Hash>, salt: Option<Salt>) -> Hash {
-    let mut hasher = sha3();
+    let mut hasher = get_hash();
 
     // Hash the prefix
     hasher.update(&[HASH_PREFIX_MERKLE_TREE]);
