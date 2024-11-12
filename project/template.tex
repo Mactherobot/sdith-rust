@@ -80,25 +80,29 @@
 \chapter{Introduction}
 \label{ch:intro}
 
-few pages. INtroduce what we have done and how the paper is structured
+few pages. Introduce what we have done and how the paper is structured
 
 \todo{motivate and explain the problem to be addressed}
 
 \todo{example of a citation: \cite{DBLP:conf/sas/ChristensenMS03}}
 \todo{get your bibtex entries from \url{https://dblp.org/}}
 
+\todo{describe how we progressed through the project in an interesting way. What did we set out to do, what were the hurdles.}
+
+\todo{contributions: rust, issues we found.}
 
 \section{Quantum Security}
-\label{sec:nist}
+\label{sec:quantum}
 
-In 1994, the discovery of Shor's algorithm \cite{shor1997}, provided a polynomial time algorithm for factoring integers and computing discrete logarithms using quantum computing. Back then, quantum computers where theories on paper. However, two decades later, significant developments in quantum technology, has brought us dangerously close to the point where quantum computers can solve foundational problems, which would break the security of modern standards of public-key cryptosystems. For example the Diffie-Hellman key exchange standard X25519, used in TLSv1.3, is not post-quantum secure.
+In 1994, the discovery of Shor's algorithm~\cite{shor1997}, provided a polynomial time algorithm for factoring integers and computing discrete logarithms using quantum computing. Back then, quantum computers where theories on paper. However, two decades later, significant developments in quantum technology, has brought us dangerously close to the point where quantum computers can solve foundational problems, which would break the security of modern standards of public-key cryptosystems. For example the Diffie-Hellman key exchange standard X25519, used in TLSv1.3, is not post-quantum secure.
 
-In 2016, the National Institute of Standards and Technology (NIST), known for standardizing cryptographic primitives like AES and SHA, initiated a call for quantum resistant public-key cryptosystems \cite{nistcall}. This let to the standardization of three signature schemes, namely Dilithium~\cite{ducas2018crystals}, Falcon~\cite{fouque2018falcon} and SPHINCS+~\cite{bernstein2019sphincs+}. All three of the schemes are based on the hardness of structured lattice problems. This has led to the most recent call in 2022 for additional quantum resistant signature schemes based on different assumptions to diversify the standards available for the future.
+In 2016, the National Institute of Standards and Technology (NIST), known for standardizing cryptographic primitives like AES and SHA, initiated a call for quantum resistant public-key cryptosystems~\cite{nistcall}. This let to the standardization of three signature schemes, namely Dilithium~\cite{ducas2018crystals}, Falcon~\cite{fouque2018falcon} and SPHINCS+~\cite{bernstein2019sphincs+}. All three of the schemes are based on the hardness of structured lattice problems. This has led to the most recent call in 2022 for additional quantum resistant signature schemes based on different assumptions to diversify the standards available for the future.
 
 
 \subsection{NIST security evaluation}
+\label{sec:nistsec}
 
-With the rapid development in quantum computing, there remains
+With the development of new quantum algorithms and unknowns in the capacities of the future quantum computers, there remain large uncertaintanties in estimating the security of the algorithms. To combat these uncertaintanties, NIST proposes to define the security of submissions in a range of categories. Each, with an easy-to-analyze primitive providing the lower bound for a variety of metrics deemed relevant to practical security. The SDitH specification provides security parameters to three
 
 AES-128, AES-192, AES-256
 

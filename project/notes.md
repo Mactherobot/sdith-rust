@@ -39,10 +39,12 @@
   - Memory management (Heap vs Stack)
   - Nightly vs stable performance.
 - Benchmarking and profiling
-- What have we done so far?
-- Criterion (cycles and time),
-- Profiling (samply)
-- Heaptrack (memory)
+ - What have we done so far?
+  - Criterion (cycles and time), 
+  - Profiling (samply)
+  - Heaptrack (memory)
+  - Parallelism: test with different number of threads, 2, 4, 8, 16
+  - ulimit -s unlimited
 
 # Things we want to code
 
