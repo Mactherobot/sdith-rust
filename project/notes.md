@@ -53,6 +53,7 @@
 - NIST tests and API \*
 - SIMD optimisations for Points and other vectors. \*
 - Hash functions: Haraka v2, Xoodyak (NIST finalist), K12 (less rounds)
+  - Haraka v2 512 is specifically for merkle tree construction
 - Final version (how to structure a rust package/cli) Maybe do after handing in \*
 - Remove const feature flag to test stable rust.
 - Test performance of stable vs nightly.

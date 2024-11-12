@@ -420,14 +420,14 @@ The parameters for the SD problem are chosen according to the estimated cost for
 \chapter{Implementation}
 \label{ch:impl}
 
-Tooling and language feaures (rust, criterion)
+Tooling and language feaures (rust, criterion, rayon)
 code sections
 code re-usability with traits for categories.
 
 const generics vs inline mutability (benchmarking?, nightly?)
-traits for categories
+compiling constants for categories
 
-can we use other hashes that still provide the same security assumption from \autoref{sec:assumptions}
+can we use other hashes that still provide the same security assumption from \autoref{sec:assumptions} as post-quantum security (Xoodyak, KangarooTwelve, Haraka v2)
 
 \section{Rust}
 \cite{nistsaferlanguages} 
@@ -438,6 +438,15 @@ can we use other hashes that still provide the same security assumption from \au
 \label{ch:bench}
 diaries of benchmarks.
 discussion of results
+
+Test on both mac and linux.
+nightly vs stable rust
+different hashes
+benching at different tags 
+parallelisation, test for amount of cores, 2, 4, 8, 16
+no turbo boost (max 2.6 GHz)
+cycles per bytes
+compare ours to the optimised reference
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
