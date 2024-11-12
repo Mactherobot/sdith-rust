@@ -1,4 +1,6 @@
 use criterion::{criterion_group, criterion_main, Criterion};
+#[cfg(target_os = "linux")]
+use criterion_cycles_per_byte::CyclesPerByte;
 use nist_pqc_seeded_rng::{NistPqcAes256CtrRng, RngCore, Seed, SeedableRng};
 use sdith::constants::params::{PARAM_DIGEST_SIZE, PARAM_SEED_SIZE};
 use sdith::keygen::keygen;
@@ -37,7 +39,11 @@ fn keygen_bench(rng: &mut NistPqcAes256CtrRng) {
     keygen(keygen_seed);
 }
 
-fn signing_bench(entropy: ([u8; PARAM_SEED_SIZE], [u8; PARAM_DIGEST_SIZE]), sk: SecretKey, message: Vec<u8>) {
+fn signing_bench(
+    entropy: ([u8; PARAM_SEED_SIZE], [u8; PARAM_DIGEST_SIZE]),
+    sk: SecretKey,
+    message: Vec<u8>,
+) {
     let _signature = Signature::sign_message(entropy, &sk, &message.to_vec());
 }
 
@@ -45,10 +51,10 @@ fn verification_bench(pk: PublicKey, signature: &Vec<u8>) {
     let _verification = Signature::verify_signature(&pk, signature);
 }
 
-// criterion_group!(
-//     name = my_bench;
-//     config = Criterion::default().with_measurement(CyclesPerByte);
-//     targets = bench
-// );
-criterion_group!(benches, criterion_benchmark);
+criterion_group! {
+    name = benches;
+    config = Criterion::default();
+    // config = Criterion::default().with_measurement(CyclesPerByte);
+    targets = criterion_benchmark
+}
 criterion_main!(benches);
