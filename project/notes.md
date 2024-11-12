@@ -12,6 +12,8 @@
   - How does NIST evaluate the security of the protocol?
   - What are the security assumptions?
   - What are the security proofs?
+  - Parameters for each category, I, III and V.
+  - https://blog.cloudflare.com/nist-post-quantum-surprise/
 - What is SD? (Magnus)
  - Galois field 256 (AES)
 - MPCitH
@@ -56,3 +58,4 @@
 - MPC do vector additions of the evaluations with SIMD
 - Better documentation
 - Clean up and more tests
+- https://github.com/kste/haraka Hashing?

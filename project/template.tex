@@ -20,6 +20,8 @@
 \usepackage{amsthm}
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[section]
+\newcommand{\definitionautorefname}{Definition}
+
 
 \theoremstyle{plain}
 \newtheorem{lemma}{Lemma}[section]
@@ -85,6 +87,21 @@ few pages. INtroduce what we have done and how the paper is structured
 \todo{example of a citation: \cite{DBLP:conf/sas/ChristensenMS03}}
 \todo{get your bibtex entries from \url{https://dblp.org/}}
 
+
+\section{Quantum Security}
+\label{sec:nist}
+
+In 1994, the discovery of Shor's algorithm \cite{shor1997}, provided a polynomial time algorithm for factoring integers and computing discrete logarithms using quantum computing. Back then, quantum computers where theories on paper. However, two decades later, significant developments in quantum technology, has brought us dangerously close to the point where quantum computers can solve foundational problems, which would break the security of modern standards of public-key cryptosystems. For example the Diffie-Hellman key exchange standard X25519, used in TLSv1.3, is not post-quantum secure.
+
+In 2016, the National Institute of Standards and Technology (NIST), known for standardizing cryptographic primitives like AES and SHA, initiated a call for quantum resistant public-key cryptosystems \cite{nistcall}. This let to the standardization of three signature schemes, namely Dilithium~\cite{ducas2018crystals}, Falcon~\cite{fouque2018falcon} and SPHINCS+~\cite{bernstein2019sphincs+}. All three of the schemes are based on the hardness of structured lattice problems. This has led to the most recent call in 2022 for additional quantum resistant signature schemes based on different assumptions to diversify the standards available for the future.
+
+
+\subsection{NIST security evaluation}
+
+With the rapid development in quantum computing, there remains
+
+AES-128, AES-192, AES-256
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \chapter{Description of the algorithm}
@@ -102,6 +119,11 @@ Fiat-Shamir heuristic
 \label{sec:syndrome}
 
 Describe the the syndrome decoding problem introducing why we need ZKAoK, LSSS, Beaver triples and MPC construction from \cite{baum2020concretely} section 3.3.
+
+\begin{definition}
+  \label{def:syndrome}
+  Given $H \in \mathbb{F}^{(m-k)\times m}_q$ and $y \in \mathbb{F}^{m-k}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t. wt$(x) = w$ and $Hx = y$.
+\end{definition}
 
 
 \section{Galois Finite Field}
@@ -332,6 +354,41 @@ Next, the verifier computes the inverse of the broadcast share to recompute $([a
                & = [b]                                                                                     &  & \autoref{eq:mpcpoly} \\
 \end{align*}
 \todo{Want to explain the above in a more detailed manner? Specifically ${Q^*}_0(r) - {[Q]}_1(r) = Q_1(r)$}
+
+\section{Security}
+
+EUF-CMA: unforgability against chosen message attacks
+
+Random $pk$, and ask signature oracle to sign messages $(m_1, ..., m_r)$, then forge $m, \sigma$ s.t. $\sigma$ is a valid signature for $m$ for $pk$
+
+\subsection{Assumptions}
+
+Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search. For this $\kappa$ is defined to be 128 for category 1 (AES-128), 192 for category 3 (AES-192) and 256 for category 5 (AES-256).
+
+
+XOF is secure with 128-bit, 192-bit, 256-bit security levels.
+
+Hash functions behave as random oracles. Security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM).
+
+\subsection{Security of the Syndrome Detection Problem}
+\label{sec:sdsec}
+
+Recall the definition of the syndrome detection problem from \autoref{def:syndrome}. A brute force attack of guessing $x$ would require finding a single correct solution in $\binom{m}{w} q^w$. This would be infeasible for the parameters.
+
+Best known algorithms: Generalized Birthday Algorithms (GBA) and Information Set Decoding (ISD)
+
+\subsection{Security parameters}
+\label{sec:secparam}
+
+\subsubsection{SD Parameters}
+\label{sec:sdparam}
+
+The parameters for the SD problem are chosen according to the estimated cost for the best known algorithms for solving such problems. GBA and ISD described in \autoref{sec:sdsec}.
+
+\subsubsection{MPC Parameters}
+
+\subsubsection{Cryptographic primitives}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
