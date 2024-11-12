@@ -52,6 +52,7 @@
 
 - NIST tests and API \*
 - SIMD optimisations for Points and other vectors. \*
+- Hash functions: Haraka v2, Xoodyak (NIST finalist), K12 (less rounds)
 - Final version (how to structure a rust package/cli) Maybe do after handing in \*
 - Remove const feature flag to test stable rust.
 - Test performance of stable vs nightly.
@@ -61,4 +62,3 @@
 - MPC do vector additions of the evaluations with SIMD
 - Better documentation
 - Clean up and more tests
-- https://github.com/kste/haraka Hashing?
