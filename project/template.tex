@@ -122,7 +122,7 @@ Fiat-Shamir heuristic
 
 Describe the syndrome decoding problem introducing why we need ZKAoK, LSSS, Beaver triples and MPC construction from \cite{baum2020concretely} section 3.3.
 
-The syndrome decoding problem is used in many code based cryptosystems. A syndrome is the result of multiplying a vector $x$ with a parity-check matrix $H$, finding the original $x$ based only on the syndrome is then without the parity-check matrix is NP-complete. 
+The syndrome decoding problem is used in many code based cryptosystems. A syndrome is the result of multiplying a vector $x$ with a parity-check matrix $H$, finding the original $x$ based only on the syndrome is, without the parity-check matrix, NP-complete. 
 \\
 A good description of \textbf{$p \neq Np$} and the "\textit{coset weight}" problem and the reduction of this problem into a NP-complete problem \cite{berlekamp1978inherent}
 
@@ -134,10 +134,30 @@ A good description of \textbf{$p \neq Np$} and the "\textit{coset weight}" probl
 
 \section{Galois Finite Field}
 \label{sec:gf256}
+Galois Fields/ Finite fields: https://encyclopediaofmath.org/index.php?title=Galois_field
+This paper \cite{brownadvanced} describes the mathematical model around the galois field $GF(2^8)$. 
+
+In order to define addition and multiplication within the galois field. The bytes are represented as polynomials of the form:
+\begin{equation}
+  
+  \label{eq:poly}
+  p(x) = p_7x^7 + p_6x^6 + p_5x^5 + p_4x^4 + p_3x^3 + p_2x^2 + p_1x + p_0
+\end{equation}
+This gives a representation of the byte: ${00011101}$ to be:
+\begin{equation}
+  
+  \label{eq:example_poly}
+   00011101 = p_4x^4 + p_3x^3 + p_2x^2 + p_0 
+\end{equation}
+
+
+\section{Addition}
+\section{Multiplication}
 
 A group for bytes
 
 \todo{Describe the arithmetic operations in GF256 and the extension field}
+
 
 \subsection{Extension field}
 $F_q^\eta$
