@@ -98,17 +98,9 @@ In 1994, the discovery of Shor's algorithm~\cite{shor1997}, provided a polynomia
 
 In 2016, the National Institute of Standards and Technology (NIST), known for standardizing cryptographic primitives like AES and SHA, initiated a call for quantum resistant public-key cryptosystems~\cite{nistcall}. This let to the standardization of three signature schemes, namely Dilithium~\cite{ducas2018crystals}, Falcon~\cite{fouque2018falcon} and SPHINCS+~\cite{bernstein2019sphincs+}. All three of the schemes are based on the hardness of structured lattice problems. This has led to the most recent call in 2022 for additional quantum resistant signature schemes based on different assumptions to diversify the standards available for the future.
 
-
-\subsection{NIST security evaluation}
-\label{sec:nistsec}
-
-With the development of new quantum algorithms and unknowns in the capacities of the future quantum computers, there remain large uncertaintanties in estimating the security of the algorithms. To combat these uncertaintanties, NIST proposes to define the security of submissions in a range of categories. Each, with an easy-to-analyze primitive providing the lower bound for a variety of metrics deemed relevant to practical security. The SDitH specification provides security parameters to three
-
-AES-128, AES-192, AES-256
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\chapter{Description of the algorithm}
+\chapter{Mathematical preliminaries}
 \label{ch:desc}
 
 Abstract level description of the algorithm own words
@@ -122,7 +114,7 @@ Fiat-Shamir heuristic
 
 Describe the syndrome decoding problem introducing why we need ZKAoK, LSSS, Beaver triples and MPC construction from \cite{baum2020concretely} section 3.3.
 
-The syndrome decoding problem is used in many code based cryptosystems. A syndrome is the result of multiplying a vector $x$ with a parity-check matrix $H$, finding the original $x$ based only on the syndrome is, without the parity-check matrix, NP-complete. 
+The syndrome decoding problem is used in many code based cryptosystems. A syndrome is the result of multiplying a vector $x$ with a parity-check matrix $H$, finding the original $x$ based only on the syndrome is, without the parity-check matrix, NP-complete.
 \\
 A good description of \textbf{$p \neq Np$} and the "\textit{coset weight}" problem and the reduction of this problem into a NP-complete problem \cite{berlekamp1978inherent}
 
@@ -134,20 +126,17 @@ A good description of \textbf{$p \neq Np$} and the "\textit{coset weight}" probl
 
 \section{Galois Finite Field}
 \label{sec:gf256}
-Galois Fields/ Finite fields: https://encyclopediaofmath.org/index.php?title=Galois_field
-This paper \cite{brownadvanced} describes the mathematical model around the galois field $GF(2^8)$. 
+This paper \cite{brownadvanced} describes the mathematical model around the galois field $GF(2^8)$.
 
 In order to define addition and multiplication within the galois field. The bytes are represented as polynomials of the form:
 \begin{equation}
-  
   \label{eq:poly}
   p(x) = p_7x^7 + p_6x^6 + p_5x^5 + p_4x^4 + p_3x^3 + p_2x^2 + p_1x + p_0
 \end{equation}
 This gives a representation of the byte: ${00011101}$ to be:
 \begin{equation}
-  
   \label{eq:example_poly}
-   00011101 = p_4x^4 + p_3x^3 + p_2x^2 + p_0 
+  00011101 = p_4x^4 + p_3x^3 + p_2x^2 + p_0
 \end{equation}
 
 
@@ -201,9 +190,6 @@ The $(t,n)$ Shamir's polynomial based secret sharing scheme is $(+,+)$-homomorph
 
 \todo{Write about creating shares, addition}
 
-\subsection{Multiplication and Beaver Triples}
-\label{sec:beaver}
-
 \section{Zero-Knowledge Proofs}
 \label{sec:zkp}
 
@@ -223,6 +209,9 @@ The framework benefits from previous efficiency improvements in MPC protocols to
 \subsection{MPC preprocessing}
 
 We first generalize the idea of [KKW18] to work over arithmetic circuits using a variant of the SPDZ MPC protocol [DPSZ12,LN17] and provide a formal proof of security to their "cut-and-choose" preprocessing heuristic. Then, we present a new construction where we replace the "cut-and-choose" mechanism with a "sacrificing"-based approach. While both approaches have similar cost per MPC instance, our "sacrificing"-based approach yields a smaller cheating probability, which means that the number of MPC instances simulated in the proof can be significantly smaller, thus reducing the overall communication footprint. Our scheme is highly flexible in its choice of parameters. In particular, by changing the number of parties in the underlying MPC protocol, one can alternate between achieving low communication and low running time. Our construction only requires efficient standard symmetric primitives, and thus is plausibly post-quantum secure even in the non-interactive case [DFMS19]. The two constructions can be found in \cite{baum2020concretely} \todo{Copied from citation. rewrite this}
+
+\subsubsection{Multiplication and Beaver Triples}
+\label{sec:beaver}
 
 \subsection{Verification of a multiplication triple using another}
 \label{sec:verify}
@@ -387,14 +376,24 @@ EUF-CMA: unforgability against chosen message attacks
 
 Random $pk$, and ask signature oracle to sign messages $(m_1, ..., m_r)$, then forge $m, \sigma$ s.t. $\sigma$ is a valid signature for $m$ for $pk$
 
+
+\subsection{NIST security evaluation}
+\label{sec:nistsec}
+
+With the development of new quantum algorithms and unknowns in the capacities of the future quantum computers, there remain large uncertaintanties in estimating the security of the algorithms. To combat these uncertaintanties, NIST proposed for the 2022 stadardization effort, to define the security of submissions in a range of five categories. Each, with an easy-to-analyze cryptographic primitive providing the lower bound for a variety of metrics deemed relevant to practical security. The SDitH specification provides security parameters adhering to categories one, three and five.
+
+\begin{definition}
+  \label{def:nistsec}
+  Any attack that breaks the relevant security definition must require computational resources comparable to or greater than those required for key search on a block cipher with a 128-bit (e.g. AES-128), 192-bit (e.g. AES-192) and 256-bit (e.g. AES-256) for categories one, three and five respectively.
+\end{definition}
+
+In terms of quantum security, according to the proposal by NIST, the SDitH specification provides security metrics in terms of quantum circuit depth to optimal key recovery for AES-128, AES-192 and AES-256 for categories one, three and five respectively. These are estimated to be $2^{143}$, $2^{207}$ and $2^{272}$ \cite{nistcall}.
+
 \subsection{Assumptions}
+\label{sec:assumptions}
+The SDitH protocol is secure under the following assumptions:
 
-Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search. For this $\kappa$ is defined to be 128 for category 1 (AES-128), 192 for category 3 (AES-192) and 256 for category 5 (AES-256).
-
-
-XOF is secure with 128-bit, 192-bit, 256-bit security levels.
-
-Hash functions behave as random oracles. Security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM).
+Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search (see \autoref{def:nistsec}) in terms of quantum circuit size. For this $\kappa$ is defined $143$, $207$ and $272$ for categories one, three and five respectively \cite{nistcall}. Furthermore, the XOF primitive used is secure with 128-bit, 192-bit, 256-bit security levels for each of the categories respectively. Finally, the Hash function used \textit{behaves as random oracle}. Specifically, security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM).
 
 \subsection{Security of the Syndrome Detection Problem}
 \label{sec:sdsec}
@@ -427,6 +426,8 @@ code re-usability with traits for categories.
 
 const generics vs inline mutability (benchmarking?, nightly?)
 traits for categories
+
+can we use other hashes that still provide the same security assumption from \autoref{sec:assumptions}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

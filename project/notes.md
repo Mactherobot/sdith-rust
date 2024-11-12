@@ -14,7 +14,8 @@
   - Parameters for each category, I, III and V.
   - https://blog.cloudflare.com/nist-post-quantum-surprise/
 - What is SD? (Magnus)
-  - Galois field 256 (AES)
+  - Galois field 256 (AES) https://encyclopediaofmath.org/index.php?title=Galois_field
+  - S, Q, P, F reduction to SD problem
 - MPCitH
 - Shamir's secret sharing
 - Homomorphism (by addition)
@@ -38,6 +39,7 @@
   - Parallelism
   - Memory management (Heap vs Stack)
   - Nightly vs stable performance.
+  - Lookup tables, can we place these in the stack?
 - Benchmarking and profiling
  - What have we done so far?
   - Criterion (cycles and time), 
