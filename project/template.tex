@@ -152,7 +152,21 @@ Let $f_1,\dots, f_q$ denote elements of $\mathbb{F}_q$, then the polynomials are
   \item $F\in \mathbb{F}_q[X]$ is the \textit{vanishing polynomial} of the set ${f_1, \dots, f_m}$ also defined as $F(X) = \prod_{i\in [1:m]}(X - f_i)$ and has degree $deg(F) = m$.
 \end{itemize}
 We can now look at the relation in \autoref{eq:polynomial_representation}. If we look at the left-hand side, which has the following property by design $S\cdot Q(f_i) = 0 \;\forall\; f_i \in [1:m]$. This comes from the fact that the polynomial $S(f_i)$ is zero whenever $x_i = 0$, this follows from the fact that it is the lagrange interpolation of $x$. And that the polynomial $Q(f_i)$ is zero whenever $f_i$ is a non-zero coordinate of $x$. 
-For the right-hand side, the polynomial $F$ is the vanishing polynomial for the set ${f_1, \dots, f_m}$, so $F(f_i) = 0 \;\forall\; f_i \in [1:m]$. The polynomial $P$ is needed to match the degree of $S\cdot Q$. As the degree of $F$ is $m \leq deg(S\cdot Q) \leq m + w - 1$. It is now apparent that if the prover can convince the verifier that they know of polynomials $P,Q$ such that $S\cdot Q = F /cdot P = 0$ at all points $f_i \in [1:m]$. The following must hold, either $S(f_i) = x_i = 0$ or 
+For the right-hand side, the polynomial $F$ is the vanishing polynomial for the set ${f_1, \dots, f_m}$, so $F(f_i) = 0 \;\forall\; f_i \in [1:m]$. The polynomial $P$ is needed to match the degree of $S\cdot Q$. As the degree of $F$ is $m \leq deg(S\cdot Q) \leq m + w - 1$. It is now apparent that if the prover can convince the verifier that they know of polynomials $P,Q$ such that $S\cdot Q = F /cdot P = 0$ at all points $f_i \in [1:m]$. The following must hold, either $S(f_i) = x_i = 0$ or $Q(f_i) = 0$. The polynomial Q can be zero in at most $w$ points based on the degree, this means that S is non-zero in at most $w$ points, based on the construction. This entails that $x$ has weight as most $w$. 
+
+We can now define the soundness of the MPC protocol as follows:
+
+\begin{equation}
+  wt(x) \leq w \Leftrightarrow \exists P,Q \text{  with  }deg(P)\leq w-1\text{  and  }deg(Q) = w\text{  s.t.  }\autoref{eq:polynomial_representation} \text{  holds}
+  \label{eq:soundness}
+\end{equation}
+This comes from the definition of the polynomial $Q$. We can now share a witness $(x_a, Q, P)$. Now based on the \autoref{eq:standard_form_of_the_parity_check_matrix} relation, the $x$ can be locally computed along with the polynomial $S$, this can then be used to run an equality test for the relation $S \cdot Q = P \cdot F$.
+
+\subsection{Equality test}\label{sub:equality_test} 
+\todo{Write about the equality test}
+
+
+% subsection  (end)
 \section{Galois Finite Field}
 \label{sec:gf256}
 The protocol uses po
