@@ -414,7 +414,50 @@ With the development of new quantum algorithms and unknowns in the capacities of
   Any attack that breaks the relevant security definition must require computational resources comparable to or greater than those required for key search on a block cipher with a 128-bit (e.g. AES-128), 192-bit (e.g. AES-192) and 256-bit (e.g. AES-256) for categories one, three and five respectively.
 \end{definition}
 
-In terms of quantum security, according to the proposal by NIST, the SD-in-the-Head specification provides security metrics in terms of quantum circuit depth to optimal key recovery for AES-128, AES-192 and AES-256 for categories one, three and five respectively. These are estimated to be $2^{143}$, $2^{207}$ and $2^{272}$ \cite{nistcall}.
+In terms of quantum security, the complexity and capability of quantum algorithms are measured in terms of quantum circuit size, i.e. the number of quantum gates in the quantum circuit. In order to estimate the quantum security of the signature protocols, circuit size can be compared to the resources required to break the security of \autoref{def:nistsec}. Therefore,
+according to the proposal by NIST, the SD-in-the-Head specification provides security metrics in terms of quantum circuit depth to optimal key recovery for AES-128, AES-192 and AES-256 for categories one, three and five respectively. These are estimated to be $2^{143}$, $2^{207}$ and $2^{272}$ classical gates~\cite{nistcall}.
+
+\subsection{Security Definition}
+
+The SD-in-the-Head signature scheme upholds the \textbf{E}xistential \textbf{U}n\textbf{f}orgeability under \textbf{C}hosen \textbf{M}essage \textbf{A}ttack (EUF-CMA) security property for digital signature schemes as this is the type of attack that NIST will evaluate signature proposals~\cite{nistcall,aguilarsyndrome11}. EUF-CMA works as the following game:
+
+\begin{enumerate}
+  \item The challenger generates a key pair $(pk, sk)$ and sends $pk$ to the adversary.
+  \item The adversary then is allowed to query a signing oracle for sigmatures of chosen messages $(m_1, ..., m_r)$ and receives valid signatures $(\sigma_1, ..., \sigma_r)$. For the NIST evaluation it is assumed that the adversary can query the signing oracle for up to $2^{64}$ chosen messages according to the adversary's running time. However, there is no requirement on the timing of the queries.
+  \item The adversary then outputs a pair $(m^*, \sigma^*)$. The adversary wins and the attack is succesful if the following holds
+        \begin{enumerate}
+          \item $m^*$ has not been queried to the signing oracle.
+          \item The pair $(m^*, \sigma^*)$ is a valid signature for $m^*$ under $pk$.
+        \end{enumerate}
+\end{enumerate}
+
+\begin{table}[h]
+  \label{tab:secparam}
+  \centering
+  \def\arraystretch{1.5}%  1 is the default, change whatever you need
+  \begin{tabular}{cccccccccccccc}
+    \specialrule{.1em}{.05em}{.05em}
+    \multicolumn{2}{c}{\textbf{NIST security}} &      & \multicolumn{5}{c}{\textbf{SD parameters}} &     & \multicolumn{5}{c}{\textbf{MPCitH Parameters}}                                                             \\ \cline{1-2} \cline{4-8} \cline{10-14}
+    Category                                   & Bits &                                            & $q$ & $m$                                            & $k$ & $w$ & $d$ &  & N   & $\ell$ & $\tau$ & $\eta$ & $t$ \\ \hline
+    \textbf{I}                                          & 143  & \textit{}                                  & 256 & 242                                            & 126 & 87  & 1   &  & $q$ & 3      & 17     & 4      & 7   \\
+    \textbf{III}                                        & 207  &                                            & 256 & 376                                            & 220 & 114 & 2   &  & $q$ & 3      & 26     & 4      & 10  \\
+    \textbf{V}                                          & 272  &                                            & 256 & 494                                            & 282 & 156 & 2   &  & $q$ & 3      & 34     & 4      & 13  \\ \specialrule{.1em}{.05em}{.05em}
+  \end{tabular}
+  \caption{Security parameters for the SDitH protocol for categories one, three and five~\cite{aguilarsyndrome11}.}
+\end{table}
+
+\begin{table}[h]
+  \label{tab:hashparam}
+  \centering
+  \def\arraystretch{1.5}%  1 is the default, change whatever you need
+  \begin{tabular}{clll}
+    \specialrule{.1em}{.05em}{.05em}
+         & \multicolumn{1}{c}{\textbf{I}} & \multicolumn{1}{c}{\textbf{III}} & \multicolumn{1}{c}{\textbf{V}} \\ \cline{2-4}
+    Hash & SHA3-256                       & SHA3-384                         & SHA3-512                       \\
+    XOF  & SHAKE-128                      & SHAKE-256                        & SHAKE-256                      \\ \specialrule{.1em}{.05em}{.05em}
+  \end{tabular}
+  \caption{Hash and XOF functions used in the SDitH protocol for categories one, three and five~\cite{aguilarsyndrome11}.}
+\end{table}
 
 \subsection{Assumptions}
 \label{sec:assumptions}
