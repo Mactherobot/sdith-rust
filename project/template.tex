@@ -419,9 +419,9 @@ Next, the verifier computes the inverse of the broadcast share to recompute $([a
 
 \section{Security}
 
-The security analysis of the SD-in-the-Head signature scheme is based on the proposed standardization requirements of the 2022 NIST call for proposals for non-lattice based signature schemes \cite{nistcall}. Therefore, as a preliminary, we will shortly describe the reasoning and requirements of the NIST standardization process.
+The security analysis of the SD-in-the-Head signature scheme is based on the proposed standardization requirements from the 2022 NIST call for proposals of non-lattice based signature schemes \cite{nistcall}. Therefore, as a preliminary, we will describe the reasoning and requirements of the NIST standardization process.
 
-With the development of new quantum algorithms and unknowns in the capacities of the future quantum computers, there remain large uncertaintanties in estimating the security of the algorithms. To combat these uncertaintanties, NIST proposed for the 2022 stadardization effort, to define the security of submissions in a range of five categories. Each, with an easy-to-analyze cryptographic primitive providing the lower bound for a variety of metrics deemed relevant to practical security. The SD-in-the-Head specification provides security parameters adhering to categories one, three and five.
+With the development of new quantum algorithms and unknowns in the capacities of the future quantum computers, there remain large uncertainties in estimating the security of the algorithms. To combat these uncertainties, NIST proposed for the 2022 stadardization effort, to define the security of submissions in a range of five categories. Each, with an easy-to-analyze cryptographic primitive providing the lower bound for a variety of metrics deemed relevant to practical security. The SD-in-the-Head specification provides security parameters adhering to categories one, three and five.
 
 \begin{definition}
   \label{def:nistsec}
@@ -437,8 +437,8 @@ The SD-in-the-Head signature scheme upholds the \textbf{E}xistential \textbf{U}n
 
 \begin{enumerate}
   \item The challenger generates a key pair $(pk, sk)$ and sends $pk$ to the adversary.
-  \item The adversary then is allowed to query a signing oracle for sigmatures of chosen messages $(m_1, ..., m_r)$ and receives valid signatures $(\sigma_1, ..., \sigma_r)$. For the NIST evaluation it is assumed that the adversary can query the signing oracle for up to $2^{64}$ chosen messages according to the adversary's running time. However, there is no requirement on the timing of the queries.
-  \item The adversary then outputs a pair $(m^*, \sigma^*)$. The adversary wins and the attack is succesful if the following holds
+  \item The adversary is then allowed to query a signing oracle for signatures of chosen messages $(m_1, ..., m_r)$ and receives valid signatures $(\sigma_1, ..., \sigma_r)$. For the NIST evaluation it is assumed that the adversary can query the signing oracle for up to $2^{64}$ chosen messages according to the adversary's running time. However, there is no requirement on the timing of the queries.
+  \item The adversary then outputs a pair $(m^*, \sigma^*)$. The adversary wins if the following holds
         \begin{enumerate}
           \item $m^*$ has not been queried to the signing oracle.
           \item The pair $(m^*, \sigma^*)$ is a valid signature for $m^*$ under $pk$.
@@ -477,12 +477,12 @@ The SD-in-the-Head signature scheme upholds the \textbf{E}xistential \textbf{U}n
 \label{sec:assumptions}
 The SD-in-the-Head protocol is secure under the following assumptions:
 
-Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search (see \autoref{def:nistsec}) in terms of quantum circuit size. For this $\kappa$ is defined $143$, $207$ and $272$ for categories one, three and five respectively \cite{nistcall}. Furthermore, the XOF primitive used is secure with 128-bit, 192-bit, 256-bit security levels for each of the categories respectively. Finally, the Hash function used \textit{behaves as random oracle}. Specifically, security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM).
+Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search (see \autoref{def:nistsec}) in terms of quantum circuit size. For this, $\kappa$ is defined as $143$, $207$ and $272$ for the categories \cite{nistcall}. Furthermore, the XOF primitive used is secure with 128-bit, 192-bit, 256-bit security levels for each of the categories respectively. Finally, the Hash function used \textit{behaves as random oracle}. Specifically, security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM).
 
 \subsection{Security of the Syndrome Detection Problem}
 \label{sec:sdsec}
 
-Recall the definition of the syndrome detection problem from \autoref{def:syndrome}. The hardness of the SD problem is well established and the coset variant used in the SD-in-the-Head signature scheme, has been shown to be \textit{NP-complete}~\cite{berlekamp1978inherent,aguilarsyndrome11}. Furthermore, a brute force attack of guessing $x$ would require finding a unique correct solution in $\binom{m}{w} q^w$ which is infeasible for the parameters outlined in the specification. For example, for category one, the number of possible solutions is $\approx 7.7 \times 10^{276}$. There exists more sofisticated algorithms for solving the SD problem, such as the Generalized Birthday Algorithms (GBA) and Information Set Decoding (ISD)~\cite{prange1962use}.
+Recall the definition of the syndrome detection problem from \autoref{def:syndrome}. The hardness of the SD problem is well established and the coset variant used in the SD-in-the-Head signature scheme, has been shown to be \textit{NP-complete}~\cite{berlekamp1978inherent,aguilarsyndrome11}. Furthermore, a brute force attack of guessing $x$ would require finding a unique correct solution in $\binom{m}{w} q^w$ which is infeasible for the parameters outlined in the specification. As an example, for category one, the number of possible solutions are $\approx 7.7 \times 10^{276}$. There exists more sophisticated algorithms for solving the SD problem, such as the Generalized Birthday Algorithms (GBA) and Information Set Decoding (ISD)~\cite{prange1962use}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
