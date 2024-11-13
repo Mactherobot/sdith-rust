@@ -108,24 +108,54 @@ MPCitH
 Syndrome detection problem
 Fiat-Shamir heuristic
 
-
+\todo{Maybe write out the reduction to three dimensional matching problem}
 \section{Syndrome Decoding Problem}
 \label{sec:syndrome}
-
-Describe the syndrome decoding problem introducing why we need ZKAoK, LSSS, Beaver triples and MPC construction from \cite{baum2020concretely} section 3.3.
-
-The syndrome decoding problem is used in many code based cryptosystems. A syndrome is the result of multiplying a vector $x$ with a parity-check matrix $H$, finding the original $x$ based only on the syndrome is, without the parity-check matrix, NP-complete.
-\\
-A good description of \textbf{$p \neq Np$} and the "\textit{coset weight}" problem and the reduction of this problem into a NP-complete problem \cite{berlekamp1978inherent}
-
+The basis for the SD-in-the-Head protocol is to use the Syndrome Decoding (SD) problem in order to proove that the signature is correct.
+It uses the NP-complete \textit{coset weights} problem, which was defined in 1978 by Berlekamp and McEliece \cite{berlekamp1978inherent}. 
+We define it in the following way:
 \begin{definition}
   \label{def:syndrome}
   Given $H \in \mathbb{F}^{(m-k)\times m}_q$ and $y \in \mathbb{F}^{m-k}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t. wt$(x) = w$ and $Hx = y$.
 \end{definition}
 
+To generate such an instance one can simply draw uniformly at random a matrix $H$ and a code word $x$ (with $wt(x) \leq w$), and then calculate the syndrome $y = Hx$.
 
+\subsubsection{Standard form of the parity-check matrix}\label{sec:standard_form_of_the_parity_check_matrix} 
+The protocol utilizes the fact that we can represent the matrix $H$ in standard form. $H = (H'|I_{m-k}) $ Where $H' \in \mathbb{F}^{(m-k)\times k}_q$.
+\\
+This allows for the following representation of the syndrome:
+\begin{equation}
+  y = Hx = H'x_a + x_b
+  \label{eq:standard_form_of_the_parity_check_matrix}
+\end{equation}
+with $x = (x_a | x_b)$.
+Which gives two properties:
+\begin{itemize}
+  \item At the MPC layer, we only need to reveal one share $x_a$. Due to the fact that the other share $x_b$ can simply be recomputed by $x_b = y - H'x_a$.
+  \item By linearity of the above relation one only needs to send $x_a$ in order to recover the SD instance. So from a sharing of $x_a$ one can check the correctness of the SD instance.
+\end{itemize}
+
+\subsubsection{Polynomial representation of SD}\label{sec:polynomial_representation} 
+The SD-in-the-Head protocol is based on three (witness-dependent) polynomials $S, Q$ and $P$, and one public polynomial $F$.
+These are used for checking the correctness of the SD solution by verifying the following relation:
+\begin{equation}
+  S\cdot Q = P\cdot F
+  \label{eq:polynomial_representation}
+\end{equation}
+Let $f_1,\dots, f_q$ denote elements of $\mathbb{F}_q$, then the polynomials are defined as:
+\begin{itemize}
+  \item $S\in \mathbb{F}_q[X]$ is the Lagrange interpolation of the coordinates of $x$, such that it matches $S(f_i) = x_i$ for $i\in [1:m]$ and has degree $deg(S) \leq m-1$ 
+  \item $Q\in \mathbb{F}_q[X]$ is defined by $Q(X) = \prod_{i\in E}(X - f_i)$. $E \subset [1:m]$ with order $|E| = w$, such that $E$ contains the non-zero coordinates of $x$. $Q$ has degree $deg(Q) = w$.
+  \item $P\in \mathbb{F}_q[X]$ is defined as $P = S\cdot Q/F$ and has degree $deg(P) \leq w-1$. By definition the polynomial $F$ divides $S\cdot Q$.
+  \item $F\in \mathbb{F}_q[X]$ is the \textit{vanishing polynomial} of the set ${f_1, \dots, f_m}$ also defined as $F(X) = \prod_{i\in [1:m]}(X - f_i)$ and has degree $deg(F) = m$.
+\end{itemize}
+We can now look at the relation in \autoref{eq:polynomial_representation}. If we look at the left-hand side, which has the following property by design $S\cdot Q(f_i) = 0 \;\forall\; f_i \in [1:m]$. This comes from the fact that the polynomial $S(f_i)$ is zero whenever $x_i = 0$, this follows from the fact that it is the lagrange interpolation of $x$. And that the polynomial $Q(f_i)$ is zero whenever $f_i$ is a non-zero coordinate of $x$. 
+For the right-hand side, the polynomial $F$ is the vanishing polynomial for the set ${f_1, \dots, f_m}$, so $F(f_i) = 0 \;\forall\; f_i \in [1:m]$. The polynomial $P$ is needed to match the degree of $S\cdot Q$. As the degree of $F$ is $m \leq deg(S\cdot Q) \leq m + w - 1$. It is now apparent that if the prover can convince the verifier that they know of polynomials $P,Q$ such that $S\cdot Q = F /cdot P = 0$ at all points $f_i \in [1:m]$. The following must hold, either $S(f_i) = x_i = 0$ or $$
 \section{Galois Finite Field}
 \label{sec:gf256}
+The protocol uses po
+
 This paper \cite{brownadvanced} describes the mathematical model around the galois field $GF(2^8)$.
 
 In order to define addition and multiplication within the galois field. The bytes are represented as polynomials of the form:
@@ -162,7 +192,7 @@ For polynomial evalution in the multiparty computation seen in \autoref{sec:mpc}
 \section{Linear Secret Sharing Scheme (LSSS)}
 \label{sec:sss}
 
-\textit{Secret sharing schemes} (SSS) are a type of cryptographic protocol that allows for the distribution of a secret amongst a group of participants. The secret can only be reconstructed when a sufficient number of shares are combined together. The threshold variant of the SDitH protocol relies on a low-threshold linear secret sharing scheme (\textit{LSSS}). Threshold secret sharing schemes allow for the reconstruction of a secret from a subset of shares of length $\ell$, where $\ell$ is the threshold. The threshold allows for the SDitH protocol to be more communication efficient, as the amount of shares needed to reconstruct the secret is low.
+\textit{Secret sharing schemes} (SSS) are a type of cryptographic protocol that allows for the distribution of a secret amongst a group of participants. The secret can only be reconstructed when a sufficient number of shares are combined together. The threshold variant of the SD-in-the-Head protocol relies on a low-threshold linear secret sharing scheme (\textit{LSSS}). Threshold secret sharing schemes allow for the reconstruction of a secret from a subset of shares of length $\ell$, where $\ell$ is the threshold. The threshold allows for the SD-in-the-Head protocol to be more communication efficient, as the amount of shares needed to reconstruct the secret is low.
 
 \begin{definition}
   \label{def:sss}
@@ -380,18 +410,18 @@ Random $pk$, and ask signature oracle to sign messages $(m_1, ..., m_r)$, then f
 \subsection{NIST security evaluation}
 \label{sec:nistsec}
 
-With the development of new quantum algorithms and unknowns in the capacities of the future quantum computers, there remain large uncertaintanties in estimating the security of the algorithms. To combat these uncertaintanties, NIST proposed for the 2022 stadardization effort, to define the security of submissions in a range of five categories. Each, with an easy-to-analyze cryptographic primitive providing the lower bound for a variety of metrics deemed relevant to practical security. The SDitH specification provides security parameters adhering to categories one, three and five.
+With the development of new quantum algorithms and unknowns in the capacities of the future quantum computers, there remain large uncertaintanties in estimating the security of the algorithms. To combat these uncertaintanties, NIST proposed for the 2022 stadardization effort, to define the security of submissions in a range of five categories. Each, with an easy-to-analyze cryptographic primitive providing the lower bound for a variety of metrics deemed relevant to practical security. The SD-in-the-Head specification provides security parameters adhering to categories one, three and five.
 
 \begin{definition}
   \label{def:nistsec}
   Any attack that breaks the relevant security definition must require computational resources comparable to or greater than those required for key search on a block cipher with a 128-bit (e.g. AES-128), 192-bit (e.g. AES-192) and 256-bit (e.g. AES-256) for categories one, three and five respectively.
 \end{definition}
 
-In terms of quantum security, according to the proposal by NIST, the SDitH specification provides security metrics in terms of quantum circuit depth to optimal key recovery for AES-128, AES-192 and AES-256 for categories one, three and five respectively. These are estimated to be $2^{143}$, $2^{207}$ and $2^{272}$ \cite{nistcall}.
+In terms of quantum security, according to the proposal by NIST, the SD-in-the-Head specification provides security metrics in terms of quantum circuit depth to optimal key recovery for AES-128, AES-192 and AES-256 for categories one, three and five respectively. These are estimated to be $2^{143}$, $2^{207}$ and $2^{272}$ \cite{nistcall}.
 
 \subsection{Assumptions}
 \label{sec:assumptions}
-The SDitH protocol is secure under the following assumptions:
+The SD-in-the-Head protocol is secure under the following assumptions:
 
 Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search (see \autoref{def:nistsec}) in terms of quantum circuit size. For this $\kappa$ is defined $143$, $207$ and $272$ for categories one, three and five respectively \cite{nistcall}. Furthermore, the XOF primitive used is secure with 128-bit, 192-bit, 256-bit security levels for each of the categories respectively. Finally, the Hash function used \textit{behaves as random oracle}. Specifically, security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM).
 
