@@ -16,6 +16,7 @@
 \usepackage[useregional]{datetime2}
 \DTMlangsetup[en-US]{showdayofmonth=false}
 \usepackage{lipsum}
+\usepackage{ctable} % for \specialrule command
 
 \usepackage{amsthm}
 \theoremstyle{definition}
@@ -91,7 +92,7 @@ few pages. Introduce what we have done and how the paper is structured
 
 \todo{contributions: rust, issues we found.}
 
-\section{Quantum Security}
+\section{Post-Quantum Cryptography and the NIST call to action}
 \label{sec:quantum}
 
 In 1994, the discovery of Shor's algorithm~\cite{shor1997}, provided a polynomial time algorithm for factoring integers and computing discrete logarithms using quantum computing. Back then, quantum computers where theories on paper. However, two decades later, significant developments in quantum technology, has brought us dangerously close to the point where quantum computers can solve foundational problems, which would break the security of modern standards of public-key cryptosystems. For example the Diffie-Hellman key exchange standard X25519, used in TLSv1.3, is not post-quantum secure.
@@ -257,6 +258,8 @@ table of spec params (with our code naming and different categories)
 
 \section{Merkle Tree Commitment}
 
+\todo{Can we use Haraka v2}
+
 \section{Hashing and XOF}
 
 \todo{Write about Shake, Keccak} and how we initiate the hash function and XOF
@@ -372,13 +375,7 @@ Next, the verifier computes the inverse of the broadcast share to recompute $([a
 
 \section{Security}
 
-EUF-CMA: unforgability against chosen message attacks
-
-Random $pk$, and ask signature oracle to sign messages $(m_1, ..., m_r)$, then forge $m, \sigma$ s.t. $\sigma$ is a valid signature for $m$ for $pk$
-
-
-\subsection{NIST security evaluation}
-\label{sec:nistsec}
+The security analysis of the SD-in-the-Head signature scheme is based on the proposed standardization requirements of the 2022 NIST call for proposals for non-lattice based signature schemes \cite{nistcall}. Therefore, as a preliminary, we will shortly describe the reasoning and requirements of the NIST standardization process.
 
 With the development of new quantum algorithms and unknowns in the capacities of the future quantum computers, there remain large uncertaintanties in estimating the security of the algorithms. To combat these uncertaintanties, NIST proposed for the 2022 stadardization effort, to define the security of submissions in a range of five categories. Each, with an easy-to-analyze cryptographic primitive providing the lower bound for a variety of metrics deemed relevant to practical security. The SDitH specification provides security parameters adhering to categories one, three and five.
 
@@ -387,7 +384,50 @@ With the development of new quantum algorithms and unknowns in the capacities of
   Any attack that breaks the relevant security definition must require computational resources comparable to or greater than those required for key search on a block cipher with a 128-bit (e.g. AES-128), 192-bit (e.g. AES-192) and 256-bit (e.g. AES-256) for categories one, three and five respectively.
 \end{definition}
 
-In terms of quantum security, according to the proposal by NIST, the SDitH specification provides security metrics in terms of quantum circuit depth to optimal key recovery for AES-128, AES-192 and AES-256 for categories one, three and five respectively. These are estimated to be $2^{143}$, $2^{207}$ and $2^{272}$ \cite{nistcall}.
+In terms of quantum security, the complexity and capability of quantum algorithms are measured in terms of quantum circuit size, i.e. the number of quantum gates in the quantum circuit. In order to estimate the quantum security of the signature protocols, circuit size can be compared to the resources required to break the security of \autoref{def:nistsec}. Therefore,
+according to the proposal by NIST, the SD-in-the-Head specification provides security metrics in terms of quantum circuit depth to optimal key recovery for AES-128, AES-192 and AES-256 for categories one, three and five respectively. These are estimated to be $2^{143}$, $2^{207}$ and $2^{272}$ classical gates~\cite{nistcall}.
+
+\subsection{Security Definition}
+
+The SD-in-the-Head signature scheme upholds the \textbf{E}xistential \textbf{U}n\textbf{f}orgeability under \textbf{C}hosen \textbf{M}essage \textbf{A}ttack (EUF-CMA) security property for digital signature schemes as this is the type of attack that NIST will evaluate signature proposals~\cite{nistcall,aguilarsyndrome11}. EUF-CMA works as the following game:
+
+\begin{enumerate}
+  \item The challenger generates a key pair $(pk, sk)$ and sends $pk$ to the adversary.
+  \item The adversary then is allowed to query a signing oracle for sigmatures of chosen messages $(m_1, ..., m_r)$ and receives valid signatures $(\sigma_1, ..., \sigma_r)$. For the NIST evaluation it is assumed that the adversary can query the signing oracle for up to $2^{64}$ chosen messages according to the adversary's running time. However, there is no requirement on the timing of the queries.
+  \item The adversary then outputs a pair $(m^*, \sigma^*)$. The adversary wins and the attack is succesful if the following holds
+        \begin{enumerate}
+          \item $m^*$ has not been queried to the signing oracle.
+          \item The pair $(m^*, \sigma^*)$ is a valid signature for $m^*$ under $pk$.
+        \end{enumerate}
+\end{enumerate}
+
+\begin{table}[h]
+  \label{tab:secparam}
+  \centering
+  \def\arraystretch{1.5}%  1 is the default, change whatever you need
+  \begin{tabular}{cccccccccccccc}
+    \specialrule{.1em}{.05em}{.05em}
+    \multicolumn{2}{c}{\textbf{NIST security}} &      & \multicolumn{5}{c}{\textbf{SD parameters}} &     & \multicolumn{5}{c}{\textbf{MPCitH Parameters}}                                                             \\ \cline{1-2} \cline{4-8} \cline{10-14}
+    Category                                   & Bits &                                            & $q$ & $m$                                            & $k$ & $w$ & $d$ &  & N   & $\ell$ & $\tau$ & $\eta$ & $t$ \\ \hline
+    \textbf{I}                                          & 143  & \textit{}                                  & 256 & 242                                            & 126 & 87  & 1   &  & $q$ & 3      & 17     & 4      & 7   \\
+    \textbf{III}                                        & 207  &                                            & 256 & 376                                            & 220 & 114 & 2   &  & $q$ & 3      & 26     & 4      & 10  \\
+    \textbf{V}                                          & 272  &                                            & 256 & 494                                            & 282 & 156 & 2   &  & $q$ & 3      & 34     & 4      & 13  \\ \specialrule{.1em}{.05em}{.05em}
+  \end{tabular}
+  \caption{Security parameters for the SDitH protocol for categories one, three and five~\cite{aguilarsyndrome11}.}
+\end{table}
+
+\begin{table}[h]
+  \label{tab:hashparam}
+  \centering
+  \def\arraystretch{1.5}%  1 is the default, change whatever you need
+  \begin{tabular}{clll}
+    \specialrule{.1em}{.05em}{.05em}
+         & \multicolumn{1}{c}{\textbf{I}} & \multicolumn{1}{c}{\textbf{III}} & \multicolumn{1}{c}{\textbf{V}} \\ \cline{2-4}
+    Hash & SHA3-256                       & SHA3-384                         & SHA3-512                       \\
+    XOF  & SHAKE-128                      & SHAKE-256                        & SHAKE-256                      \\ \specialrule{.1em}{.05em}{.05em}
+  \end{tabular}
+  \caption{Hash and XOF functions used in the SDitH protocol for categories one, three and five~\cite{aguilarsyndrome11}.}
+\end{table}
 
 \subsection{Assumptions}
 \label{sec:assumptions}
@@ -398,21 +438,7 @@ Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$
 \subsection{Security of the Syndrome Detection Problem}
 \label{sec:sdsec}
 
-Recall the definition of the syndrome detection problem from \autoref{def:syndrome}. A brute force attack of guessing $x$ would require finding a single correct solution in $\binom{m}{w} q^w$. This would be infeasible for the parameters.
-
-Best known algorithms: Generalized Birthday Algorithms (GBA) and Information Set Decoding (ISD)
-
-\subsection{Security parameters}
-\label{sec:secparam}
-
-\subsubsection{SD Parameters}
-\label{sec:sdparam}
-
-The parameters for the SD problem are chosen according to the estimated cost for the best known algorithms for solving such problems. GBA and ISD described in \autoref{sec:sdsec}.
-
-\subsubsection{MPC Parameters}
-
-\subsubsection{Cryptographic primitives}
+Recall the definition of the syndrome detection problem from \autoref{def:syndrome}. The hardness of the SD problem is well established and the coset variant used in the SD-in-the-Head signature scheme, has been shown to be \textit{NP-complete}~\cite{berlekamp1978inherent,aguilarsyndrome11}. Furthermore, a brute force attack of guessing $x$ would require finding a unique correct solution in $\binom{m}{w} q^w$ which is infeasible for the parameters outlined in the specification. For example, for category one, the number of possible solutions is $\approx 7.7 \times 10^{276}$. There exists more sofisticated algorithms for solving the SD problem, such as the Generalized Birthday Algorithms (GBA) and Information Set Decoding (ISD)~\cite{prange1962use}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -430,7 +456,7 @@ compiling constants for categories
 can we use other hashes that still provide the same security assumption from \autoref{sec:assumptions} as post-quantum security (Xoodyak, KangarooTwelve, Haraka v2)
 
 \section{Rust}
-\cite{nistsaferlanguages} 
+\cite{nistsaferlanguages}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -442,7 +468,7 @@ discussion of results
 Test on both mac and linux.
 nightly vs stable rust
 different hashes
-benching at different tags 
+benching at different tags
 parallelisation, test for amount of cores, 2, 4, 8, 16
 no turbo boost (max 2.6 GHz)
 cycles per bytes
