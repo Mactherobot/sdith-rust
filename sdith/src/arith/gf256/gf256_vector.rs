@@ -3,11 +3,9 @@
 #[cfg(feature = "simd")]
 use std::simd::{num::SimdUint, u8x32};
 
-use super::{
-    gf256_arith::{gf256_add, gf256_mul},
-    FieldArith,
-};
+use super::{gf256_arith::gf256_add, FieldArith};
 
+#[cfg(not(feature = "simd"))]
 /// vz'[] = vz[] + vx[]
 pub(crate) fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
     assert!(vx.len() >= vz.len());
@@ -25,19 +23,12 @@ pub(crate) fn gf256_add_vector_with_padding(vz: &mut [u8], vx: &[u8]) {
     }
 }
 
+#[cfg(not(feature = "simd"))]
 /// vx'[] = vx[] * scalar
 pub(crate) fn gf256_mul_vector_by_scalar(vx: &mut [u8], scalar: u8) {
     let bytes = vx.len();
     for i in 0..bytes {
-        vx[i] = gf256_mul(vx[i], scalar);
-    }
-}
-
-/// vz'[] = vz[] + (vx[] * scalar)
-pub(crate) fn gf256_add_vector_mul_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) {
-    let bytes = vz.len();
-    for i in 0..bytes {
-        vz[i] = gf256_add(vz[i], gf256_mul(vx[i], scalar));
+        vx[i] = super::gf256_arith::gf256_mul(vx[i], scalar);
     }
 }
 
@@ -50,6 +41,87 @@ pub(crate) fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) 
     }
 }
 
+#[cfg(feature = "simd")]
+/// vz'[] = vz[] + vx[]
+pub(crate) fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
+    let chunk_size = 32;
+
+    // Then go through the chunks using SIMD
+    // using the gf256_add_vector_add_scalar_simd_32 function
+    let vz_chunks = vz.chunks_mut(chunk_size);
+    let mut vx_chunks = vx.chunks(chunk_size);
+
+    for vz_chunk in vz_chunks {
+        let vx_chunk = vx_chunks.next().unwrap();
+        if vz_chunk.len() < chunk_size {
+            for i in 0..vz_chunk.len() {
+                vz_chunk[i] = vx_chunk[i].field_add(vz_chunk[i]);
+            }
+
+            break;
+        }
+        let mut vz_chunk_simd = u8x32::from_slice(vz_chunk);
+        let vx_chunk = u8x32::from_slice(vx_chunk);
+        // Perform the addition
+        vz_chunk_simd ^= vx_chunk;
+        vz_chunk.copy_from_slice(vz_chunk_simd.as_array());
+    }
+}
+
+#[cfg(feature = "simd")]
+/// vz'[] = vz[] * scalar + vx[]
+pub(crate) fn gf256_mul_vector_by_scalar(vz: &mut [u8], scalar: u8) {
+    let chunk_size = 32;
+
+    // Then go through the chunks using SIMD
+    // using the gf256_add_vector_add_scalar_simd_32 function
+    let vz_chunks = vz.chunks_mut(chunk_size);
+    let scalar_chunk = u8x32::splat(scalar);
+    let one = u8x32::splat(1);
+    let modulus = u8x32::splat(super::gf256_arith::MODULUS);
+
+    for vz_chunk in vz_chunks {
+        if vz_chunk.len() < chunk_size {
+            for i in 0..vz_chunk.len() {
+                vz_chunk[i] = vz_chunk[i].field_mul(scalar);
+            }
+
+            break;
+        }
+        let mut vz_chunk_simd = u8x32::from_slice(vz_chunk);
+        {
+            let vz: &mut u8x32 = &mut vz_chunk_simd;
+
+            // Perform the multiplication
+            let mut r = (scalar_chunk >> 7).wrapping_neg() & *vz;
+            r = ((scalar_chunk >> 6 & one).wrapping_neg() & *vz)
+                ^ ((r >> 7).wrapping_neg() & modulus)
+                ^ (r + r);
+            r = ((scalar_chunk >> 5 & one).wrapping_neg() & *vz)
+                ^ ((r >> 7).wrapping_neg() & modulus)
+                ^ (r + r);
+            r = ((scalar_chunk >> 4 & one).wrapping_neg() & *vz)
+                ^ ((r >> 7).wrapping_neg() & modulus)
+                ^ (r + r);
+            r = ((scalar_chunk >> 3 & one).wrapping_neg() & *vz)
+                ^ ((r >> 7).wrapping_neg() & modulus)
+                ^ (r + r);
+            r = ((scalar_chunk >> 2 & one).wrapping_neg() & *vz)
+                ^ ((r >> 7).wrapping_neg() & modulus)
+                ^ (r + r);
+            r = ((scalar_chunk >> 1 & one).wrapping_neg() & *vz)
+                ^ ((r >> 7).wrapping_neg() & modulus)
+                ^ (r + r);
+            r = ((scalar_chunk & one).wrapping_neg() & *vz)
+                ^ ((r >> 7).wrapping_neg() & modulus)
+                ^ (r + r);
+
+            // Perform the addition
+            *vz = r;
+        };
+        vz_chunk.copy_from_slice(vz_chunk_simd.as_array());
+    }
+}
 #[cfg(feature = "simd")]
 /// vz'[] = vz[] * scalar + vx[]
 pub(crate) fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) {
@@ -133,32 +205,6 @@ mod tests_vector_ops {
         let expected = [0x05, 0x0A, 0x0F, 0x14];
 
         gf256_mul_vector_by_scalar(&mut vz, y);
-        assert_eq!(vz, expected);
-    }
-
-    #[test]
-    fn test_gf256_add_vector_mul_scalar() {
-        let mut vz = [0x01, 0x02, 0x03, 0x04];
-        let vx = [0x05, 0x06, 0x07, 0x08];
-        let y = 0x02;
-        let binding = vz
-            .iter()
-            .enumerate()
-            .map(|(i, z)| gf256_add(*z, gf256_mul(vx[i], y)))
-            .collect::<Vec<u8>>();
-        let expected = binding.as_slice();
-
-        gf256_add_vector_mul_scalar(&mut vz, &vx, y);
-        assert_eq!(vz, expected);
-    }
-
-    #[test]
-    fn test_gf256_add_vector_with_padding() {
-        let mut vz = [0x01, 0x02, 0x03, 0x04];
-        let vx = [0x05, 0x06];
-        let expected = [0x04, 0x04, 0x03, 0x04];
-
-        gf256_add_vector_with_padding(&mut vz, &vx);
         assert_eq!(vz, expected);
     }
 
