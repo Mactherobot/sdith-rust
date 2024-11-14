@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux", feature = "cycles_per_byte"))]
 use criterion_cycles_per_byte::CyclesPerByte;
 use nist_pqc_seeded_rng::{NistPqcAes256CtrRng, RngCore, Seed, SeedableRng};
 use sdith::constants::params::{PARAM_DIGEST_SIZE, PARAM_SEED_SIZE};
@@ -51,10 +51,17 @@ fn verification_bench(pk: PublicKey, signature: &Vec<u8>) {
     let _verification = Signature::verify_signature(&pk, signature);
 }
 
+#[cfg(all(target_os = "linux", feature = "cycles_per_byte"))]
+criterion_group! {
+    name = benches;
+    config = Criterion::default().with_measurement(CyclesPerByte);
+    targets = criterion_benchmark
+}
+
+#[cfg(not(all(target_os = "linux", feature = "cycles_per_byte")))]
 criterion_group! {
     name = benches;
     config = Criterion::default();
-    // config = Criterion::default().with_measurement(CyclesPerByte);
     targets = criterion_benchmark
 }
 criterion_main!(benches);

@@ -1,60 +1,111 @@
+#[cfg(not(feature = "hash_blake3"))]
 use tiny_keccak::{Hasher, Sha3};
 
-use crate::constants::params::{HashPrimitive, HASH_PRIMITIVE, PARAM_DIGEST_SIZE};
+#[cfg(not(feature = "hash_blake3"))]
+use crate::constants::params::{HashPrimitive, HASH_PRIMITIVE};
 use crate::constants::types::Hash;
 
 pub(crate) const HASH_PREFIX_CHALLENGE_1: [u8; 1] = [1];
 pub(crate) const HASH_PREFIX_CHALLENGE_2: [u8; 1] = [2];
 
-pub(crate) fn get_hash() -> Sha3 {
-    match HASH_PRIMITIVE {
-        HashPrimitive::SHA3_256 => return Sha3::v256(),
-        HashPrimitive::SHA3_384 => return Sha3::v384(),
-        HashPrimitive::SHA3_512 => return Sha3::v512(),
+pub(crate) trait SDitHHashTrait<T> {
+    fn get_hasher() -> T;
+    fn init() -> Self;
+    fn init_with_prefix(prefix: &[u8]) -> Self;
+    fn finalize(self) -> Hash;
+    fn update(&mut self, data: &[u8]);
+}
+
+pub(crate) struct SDitHHash<T> {
+    hasher: T,
+}
+
+#[cfg(not(feature = "hash_blake3"))]
+impl SDitHHashTrait<Sha3> for SDitHHash<Sha3> {
+    fn get_hasher() -> Sha3 {
+        match HASH_PRIMITIVE {
+            HashPrimitive::SHA3_256 => Sha3::v256(),
+            HashPrimitive::SHA3_384 => Sha3::v384(),
+            HashPrimitive::SHA3_512 => Sha3::v512(),
+        }
+    }
+
+    fn init() -> Self {
+        SDitHHash {
+            hasher: Self::get_hasher(),
+        }
+    }
+
+    fn init_with_prefix(prefix: &[u8]) -> Self {
+        let mut hasher = Self::get_hasher();
+        hasher.update(prefix);
+        SDitHHash { hasher }
+    }
+
+    fn finalize(self) -> Hash {
+        let mut output = [0u8; crate::constants::params::PARAM_DIGEST_SIZE];
+        self.hasher.finalize(&mut output);
+        output
+    }
+
+    fn update(&mut self, data: &[u8]) {
+        self.hasher.update(data);
     }
 }
 
-pub(crate) fn get_hasher_with_prefix(prefix: &[u8]) -> Sha3 {
-    let mut hasher = get_hash();
-    hasher.update(prefix);
-    hasher
+#[cfg(feature = "hash_blake3")]
+impl SDitHHashTrait<blake3::Hasher> for SDitHHash<blake3::Hasher> {
+    fn get_hasher() -> blake3::Hasher {
+        blake3::Hasher::new()
+    }
+
+    fn init() -> Self {
+        SDitHHash {
+            hasher: Self::get_hasher(),
+        }
+    }
+
+    fn init_with_prefix(prefix: &[u8]) -> Self {
+        let mut hasher = Self::get_hasher();
+        hasher.update(prefix);
+        SDitHHash { hasher }
+    }
+
+    fn finalize(self) -> Hash {
+        self.hasher.finalize().into()
+    }
+
+    fn update(&mut self, data: &[u8]) {
+        self.hasher.update(data);
+    }
 }
 
-pub(crate) fn hash_finalize(hasher: Sha3) -> Hash {
-    let result: &mut Hash = &mut [0_u8; PARAM_DIGEST_SIZE];
-    hasher.finalize(result);
-
-    *result
-}
-
-pub(crate) fn hash(data: &[u8]) -> Hash {
-    let mut hasher = get_hash();
+fn hash(data: &[u8]) -> Hash {
+    let mut hasher = SDitHHash::init();
     hasher.update(data);
-    return hash_finalize(hasher);
+    SDitHHash::finalize(hasher)
 }
 
-// Fiat-Shamir Hashes p26 of the spec
-
-/// Hash_1 (data) = Hash(1 ∥ data)
 pub(crate) fn hash_1(data: Vec<&[u8]>) -> Hash {
-    let mut hasher = get_hasher_with_prefix(&HASH_PREFIX_CHALLENGE_1.clone());
+    let mut hasher = SDitHHash::init_with_prefix(&HASH_PREFIX_CHALLENGE_1);
     for d in data {
         hasher.update(d);
     }
-    return hash_finalize(hasher);
+    SDitHHash::finalize(hasher)
 }
 
-/// Hash_2 (data) = Hash(2 ∥ data)
 pub(crate) fn hash_2(data: Vec<&[u8]>) -> Hash {
-    let mut hasher = get_hasher_with_prefix(&HASH_PREFIX_CHALLENGE_2.clone());
+    let mut hasher = SDitHHash::init_with_prefix(&HASH_PREFIX_CHALLENGE_2);
     for d in data {
         hasher.update(d);
     }
-    return hash_finalize(hasher);
+    SDitHHash::finalize(hasher)
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::constants::params::PARAM_DIGEST_SIZE;
+
     use super::*;
 
     #[test]

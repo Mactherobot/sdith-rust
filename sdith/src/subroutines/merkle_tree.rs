@@ -1,6 +1,5 @@
 use num_traits::ToPrimitive;
 use queues::Queue;
-use tiny_keccak::Hasher;
 
 use crate::constants::{
     params::{PARAM_DIGEST_SIZE, PARAM_LOG_N, PARAM_N},
@@ -9,7 +8,7 @@ use crate::constants::{
 
 use queues::*;
 
-use super::prg::hashing::{hash_finalize, get_hash};
+use super::prg::hashing::{SDitHHash, SDitHHashTrait as _};
 
 pub(crate) const PARAM_MERKLE_TREE_HEIGHT: usize = PARAM_LOG_N;
 pub(crate) const PARAM_MERKLE_TREE_NODES: usize =
@@ -126,10 +125,7 @@ impl MerkleTree {
 }
 
 fn merkle_hash(parent_index: usize, left: Hash, right: Option<Hash>, salt: Option<Salt>) -> Hash {
-    let mut hasher = get_hash();
-
-    // Hash the prefix
-    hasher.update(&[HASH_PREFIX_MERKLE_TREE]);
+    let mut hasher = SDitHHash::init_with_prefix(&[HASH_PREFIX_MERKLE_TREE]);
 
     if let Some(salt) = salt {
         hasher.update(&salt);
@@ -144,7 +140,7 @@ fn merkle_hash(parent_index: usize, left: Hash, right: Option<Hash>, salt: Optio
         hasher.update(&right);
     }
 
-    hash_finalize(hasher)
+    hasher.finalize()
 }
 
 pub(crate) fn get_auth_size(selected_leaves: &[u16]) -> usize {

@@ -3,7 +3,7 @@ use std::{env, fs, path::Path};
 
 fn main() {
     // Load the environment variables from the .env file
-    let cat = get_env_category();
+    let cat = get_category();
 
     // Use the OUT_DIR environment variable to get an
     // appropriate path.
@@ -16,13 +16,42 @@ fn main() {
         cat.category
     );
 
+    // Check if feature flag is blake3 as it is not supported for categories above 1
+    if (cfg!(feature = "xof_blake3") || cfg!(feature = "hash_blake3"))
+        && cat.category != Categories::ONE
+    {
+        panic!("Blake3 only supports 128 bit security. 256 is required for categories above 1.")
+    }
+
     // Lastly, output to the destination file.
     fs::write(&constants_file_path, build_constants(cat)).unwrap();
     fs::write(&precomputed_file_path, cat.precomputed.output()).unwrap();
 
     println!("cargo::rerun-if-env-changed=SDITH_CATEGORY");
 }
-fn get_env_category() -> Category {
+
+fn get_feature_flag_category() -> Result<Category, String> {
+    if cfg!(feature = "category_one") {
+        Ok(CATEGORY_ONE)
+    } else if cfg!(feature = "category_three") {
+        Ok(CATEGORY_THREE)
+    } else if cfg!(feature = "category_five") {
+        Ok(CATEGORY_FIVE)
+    } else {
+        Err("No category feature flag set".to_string())
+    }
+}
+
+
+fn get_category() -> Category {
+
+    // Check feature flags
+    match get_feature_flag_category() {
+        Ok(cat) => return cat,
+        Err(_) => (),
+    }
+
+    // Check environment variable
     let category = env::var("SDITH_CATEGORY").unwrap_or_else(|_| "ONE".to_string());
     match Categories::from(category) {
         Categories::ONE => CATEGORY_ONE,
@@ -225,7 +254,7 @@ static CATEGORY_FIVE: Category = Category {
     },
 };
 
-#[derive(CompileConst, Clone, Copy, Debug)]
+#[derive(CompileConst, Clone, Copy, Debug, PartialEq)]
 #[inherit_docs]
 /// Compiled version category of the protocol
 enum Categories {

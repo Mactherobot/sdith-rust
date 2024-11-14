@@ -34,12 +34,27 @@ The protocol has three proposed instances which support different security level
 - **Category 3**: 207-bit security level
 - **Category 5**: 272-bit security level
 
-The protocol compiles with the constants for each category according to the environment variable `SDITH_CATEGORY`. The default category is "ONE".
+Rust compiles the protocol with the constants needed for each category. The default category is "ONE".
 
-To compile the code with a different category, set the environment variable `SDITH_CATEGORY` to the desired category. For example, to compile the code with category 3, execute the following command:
+You can set the category by setting the environment variable `SDITH_CATEGORY` or through the feature flag `category_#`.
 
 ```bash
+# Set the category through the environment variable
 SDITH_CATEGORY=THREE cargo build
+# Set the category through the feature flag
+cargo build --features category_three
+```
+
+## Feature flags
+
+### Blake3
+
+You can use the `xof_blake3` or `hash_blake3` feature flag to use the Blake3 hash `blake3` crate for hashing and XOF respectively. By default, the implementation uses the SHA3 and Shake implementations from the `tiny-keccak` crate as specified in the protocol.
+
+Note that Blake3 increases performance, but only supports category 1 due to the bit security level of 128.
+
+```bash
+cargo build --features xof_blake3,hash_blake3
 ```
 
 ## Benchmarking

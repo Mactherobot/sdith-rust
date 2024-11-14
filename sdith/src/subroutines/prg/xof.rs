@@ -7,35 +7,87 @@
 /// associated to x. The concrete instance of the XOF we use in the SD-in-the-Head scheme is given
 /// in Section 4.5. In our context, we use the XOF as a secure pseudorandom generator (PRG)
 /// which tolerates input seeds of variable lengths.
+
+#[cfg(not(feature = "xof_blake3"))]
+use crate::constants::params::{XOFPrimitive, XOF_PRIMITIVE};
+#[cfg(not(feature = "xof_blake3"))]
 use tiny_keccak::{Hasher, Shake, Xof};
 
-use crate::constants::params::{XOFPrimitive, PARAM_SALT_SIZE, PARAM_SEED_SIZE, XOF_PRIMITIVE};
+use crate::constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
 
-fn get_xof() -> Shake {
-    match XOF_PRIMITIVE {
-        XOFPrimitive::SHAKE128 => Shake::v128(),
-        XOFPrimitive::SHAKE256 => Shake::v256(),
+pub(crate) trait SDitHXOFTrait<T> {
+    fn get_xof() -> T;
+    fn init_base(x: &[u8]) -> Self;
+    fn init(seed: &[u8; PARAM_SEED_SIZE], salt: Option<&[u8; PARAM_SALT_SIZE]>) -> Self;
+    fn squeeze(&mut self, output: &mut [u8]);
+}
+
+pub(crate) struct SDitHXOF<T> {
+    xof: T,
+}
+
+#[cfg(not(feature = "xof_blake3"))]
+impl SDitHXOFTrait<Shake> for SDitHXOF<Shake> {
+    fn get_xof() -> Shake {
+        match XOF_PRIMITIVE {
+            XOFPrimitive::SHAKE128 => Shake::v128(),
+            XOFPrimitive::SHAKE256 => Shake::v256(),
+        }
+    }
+
+    fn init_base(x: &[u8]) -> Self {
+        let mut xof = Self::get_xof();
+        xof.update(x);
+        let mut tmp = [0u8; 0];
+        xof.squeeze(&mut tmp);
+        SDitHXOF { xof }
+    }
+
+    fn init(seed: &[u8; PARAM_SEED_SIZE], salt: Option<&[u8; PARAM_SALT_SIZE]>) -> Self {
+        let mut xof = match XOF_PRIMITIVE {
+            XOFPrimitive::SHAKE128 => Shake::v128(),
+            XOFPrimitive::SHAKE256 => Shake::v256(),
+        };
+        if let Some(salt) = salt {
+            xof.update(salt);
+        }
+        xof.update(seed);
+        let mut tmp = [0u8; 0];
+        xof.squeeze(&mut tmp);
+        SDitHXOF { xof }
+    }
+
+    fn squeeze(&mut self, output: &mut [u8]) {
+        self.xof.squeeze(output);
     }
 }
 
-pub(crate) fn xof_init(
-    seed: &[u8; PARAM_SEED_SIZE],
-    salt: Option<&[u8; PARAM_SALT_SIZE]>,
-) -> Shake {
-    let mut xof = get_xof();
-    if let Some(salt) = salt {
-        xof.update(salt);
+#[cfg(feature = "xof_blake3")]
+impl SDitHXOFTrait<blake3::OutputReader> for SDitHXOF<blake3::OutputReader> {
+    fn get_xof() -> blake3::OutputReader {
+        blake3::Hasher::new().finalize_xof()
     }
-    xof.update(seed);
-    let mut tmp = [0u8; 0];
-    xof.squeeze(&mut tmp);
-    xof
-}
 
-pub(crate) fn xof_init_base(x: &[u8]) -> Shake {
-    let mut xof = get_xof();
-    xof.update(x);
-    let mut tmp = [0u8; 0];
-    xof.squeeze(&mut tmp);
-    xof
+    fn init_base(x: &[u8]) -> Self {
+        let mut xof = blake3::Hasher::new();
+        xof.update(x);
+        SDitHXOF {
+            xof: xof.finalize_xof(),
+        }
+    }
+
+    fn init(seed: &[u8; PARAM_SEED_SIZE], salt: Option<&[u8; PARAM_SALT_SIZE]>) -> Self {
+        let mut xof = blake3::Hasher::new();
+        if let Some(salt) = salt {
+            xof.update(salt);
+        }
+        xof.update(seed);
+        SDitHXOF {
+            xof: xof.finalize_xof(),
+        }
+    }
+
+    fn squeeze(&mut self, output: &mut [u8]) {
+        self.xof.fill(output);
+    }
 }

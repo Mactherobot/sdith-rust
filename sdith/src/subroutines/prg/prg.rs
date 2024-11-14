@@ -1,5 +1,3 @@
-use tiny_keccak::{Shake, Xof};
-
 use crate::{
     arith::gf256::gf256_ext::FPoint,
     constants::{
@@ -8,24 +6,27 @@ use crate::{
     },
 };
 
-use super::xof::{xof_init, xof_init_base};
+use super::xof::{SDitHXOF, SDitHXOFTrait};
 
 pub(crate) struct PRG {
-    xof: Shake,
+    #[cfg(not(feature = "xof_blake3"))]
+    xof: SDitHXOF<tiny_keccak::Shake>,
+    #[cfg(feature = "xof_blake3")]
+    xof: SDitHXOF<blake3::OutputReader>,
 }
 
 impl PRG {
     /// Initialize the PRG with a seed and optional salt
     pub(crate) fn init(seed: &[u8; PARAM_SEED_SIZE], salt: Option<&[u8; PARAM_SALT_SIZE]>) -> Self {
         PRG {
-            xof: xof_init(seed, salt),
+            xof: SDitHXOF::init(seed, salt),
         }
     }
 
     /// Initialize the PRG with a base value e.g for h1 in the spec `PRG::init_base(HASH_PREFIX_CHALLENGE_1)`
     pub(crate) fn init_base(x: &[u8]) -> Self {
         PRG {
-            xof: xof_init_base(x),
+            xof: SDitHXOF::init_base(x),
         }
     }
 
