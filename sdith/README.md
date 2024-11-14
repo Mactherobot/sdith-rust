@@ -47,6 +47,14 @@ cargo build --features category_three
 
 ## Feature flags
 
+### Parallel
+
+You can use the `parallel` feature flag to enable parallelism in the protocol. By default, the implementation uses a single thread.
+
+```bash
+cargo build --features parallel
+```
+
 ### Blake3
 
 You can use the `xof_blake3` or `hash_blake3` feature flag to use the Blake3 hash `blake3` crate for hashing and XOF respectively. By default, the implementation uses the SHA3 and Shake implementations from the `tiny-keccak` crate as specified in the protocol.

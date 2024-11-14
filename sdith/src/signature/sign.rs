@@ -1,7 +1,6 @@
-use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
-
 use crate::arith::matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::subroutines::marshalling::Marshalling;
+use crate::utils::iterator::*;
 use crate::witness::SOLUTION_PLAIN_SIZE;
 use crate::{
     constants::{
@@ -46,8 +45,7 @@ impl Signature {
         let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
         let mut commitments_prime = [[0u8; PARAM_DIGEST_SIZE]; PARAM_N];
         for e in 0..PARAM_TAU {
-            commitments_prime
-                .par_iter_mut()
+            get_iterator(&mut commitments_prime)
                 .enumerate()
                 .for_each(|(i, commitment)| {
                     *commitment = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);

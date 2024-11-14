@@ -10,6 +10,7 @@ pub mod mpc;
 pub mod signature;
 pub mod subroutines;
 pub mod witness;
+pub(crate) mod utils;
 
 #[cfg(test)]
 mod tests {

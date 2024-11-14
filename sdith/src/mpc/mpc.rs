@@ -1,5 +1,3 @@
-use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
-
 use crate::{
     arith::{
         gf256::{
@@ -18,6 +16,7 @@ use crate::{
     },
     signature::input::{Input, InputSharePlain, INPUT_SIZE},
     subroutines::prg::prg::PRG,
+    utils::iterator::*,
     witness::{complete_q, compute_s, compute_s_poly, Solution, SOLUTION_PLAIN_SIZE},
 };
 
@@ -137,9 +136,11 @@ impl MPC {
         }
 
         for e in 0..PARAM_TAU {
-            input_shares[e].par_iter_mut().enumerate().for_each(|(i, share)| {
-                *share = Self::compute_share(&input_plain, &input_coefs[e], i as u8, i == 0);
-            });
+            get_iterator(&mut input_shares[e])
+                .enumerate()
+                .for_each(|(i, share)| {
+                    *share = Self::compute_share(&input_plain, &input_coefs[e], i as u8, i == 0);
+                });
         }
 
         (input_shares, input_coefs)
