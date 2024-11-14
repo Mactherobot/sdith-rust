@@ -1,5 +1,7 @@
 // ----------------------- Vector operations -----------------------
 
+use std::simd::u8x32;
+
 use super::{
     gf256_arith::{gf256_add, gf256_mul},
     FieldArith,
@@ -44,6 +46,42 @@ pub(crate) fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) 
     for i in 0..bytes {
         vz[i] = vx[i].field_add(vz[i].field_mul(scalar));
     }
+}
+
+/// vz'[] = vz[] * scalar + vx[]
+pub(crate) fn gf256_add_vector_add_scalar_chunked_simd(vz: &mut [u8], vx: &[u8], scalar: u8) {
+    assert!(
+        vz.len() == vx.len(),
+        "Length of the two vectors must be the same"
+    );
+    let chunk_size = 32;
+
+    // Then go through the chunks using SIMD
+    // using the gf256_add_vector_add_scalar_simd_32 function
+    let vz_chunks = vz.chunks_mut(chunk_size);
+    let mut vx_chunks = vx.chunks(chunk_size);
+    let scalar_chunk = u8x32::splat(scalar);
+
+    for vz_chunk in vz_chunks {
+        let vx_chunk = vx_chunks.next().unwrap();
+        if vz_chunk.len() < chunk_size {
+            for i in 0..vz_chunk.len() {
+                vz_chunk[i] = vx_chunk[i].field_add(vz_chunk[i].field_mul(scalar));
+            }
+
+            break;
+        }
+        let mut vz_chunk_simd = u8x32::from_slice(vz_chunk);
+        let vx_chunk = u8x32::from_slice(vx_chunk);
+        println!("{:?}", vz_chunk_simd);
+        gf256_add_vector_add_scalar_simd_32(&mut vz_chunk_simd, vx_chunk, scalar_chunk);
+        vz_chunk.copy_from_slice(vz_chunk_simd.as_array());
+    }
+}
+
+/// vz'[] = vz[] * scalar + vx[]
+pub(crate) fn gf256_add_vector_add_scalar_simd_32(vz: &mut u8x32, vx: u8x32, scalar: u8x32) {
+    *vz = (*vz * scalar) ^ vx;
 }
 
 #[cfg(test)]
@@ -93,6 +131,40 @@ mod tests_vector_ops {
         let expected = [0x04, 0x04, 0x03, 0x04];
 
         gf256_add_vector_with_padding(&mut vz, &vx);
+        assert_eq!(vz, expected);
+    }
+
+    #[test]
+    fn test_gf256_add_vector_add_scalar() {
+        let mut vz = [0x03; 195];
+        let mut vz_expected = [0x03; 195];
+        for i in 0..195 {
+            let value = 0x03 + i as u8;
+            vz[i] = value;
+            vz_expected[i] = value;
+        }
+        let vx = [0x05; 195];
+        let y = 0x02;
+        gf256_add_vector_add_scalar(&mut vz_expected, &vx, y);
+        gf256_add_vector_add_scalar_chunked_simd(&mut vz, &vx, y);
+        assert_eq!(vz, vz_expected);
+        let mut vz = [0x03; 128];
+        let mut vz_expected = [0x03; 128];
+        let vx = [0x05; 128];
+        let y = 0x02;
+        gf256_add_vector_add_scalar(&mut vz_expected, &vx, y);
+        gf256_add_vector_add_scalar_chunked_simd(&mut vz, &vx, y);
+        assert_eq!(vz, vz_expected);
+    }
+
+    #[test]
+    fn test_gf256_add_vector_add_scalar_simd_32() {
+        let mut vz = u8x32::splat(0x03);
+        let vx = u8x32::splat(0x05);
+        let y = u8x32::splat(0x02);
+        let expected = u8x32::splat(0x03);
+
+        gf256_add_vector_add_scalar_simd_32(&mut vz, vx, y);
         assert_eq!(vz, expected);
     }
 }

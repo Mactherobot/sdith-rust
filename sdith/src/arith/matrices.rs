@@ -1,3 +1,5 @@
+use std::simd::u8x32;
+
 use crate::{
     arith::gf256::FieldArith,
     constants::{

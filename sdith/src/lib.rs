@@ -1,4 +1,5 @@
 #![feature(generic_const_exprs)]
+#![feature(portable_simd)]
 #![allow(incomplete_features)] // TODO: remove when we create final version
 #![allow(dead_code)] // TODO: remove when we create final version
 
@@ -21,3 +22,4 @@ mod tests {
         println!("Running tests for the category: {:?}", COMPILED_CATEGORY);
     }
 }
+
