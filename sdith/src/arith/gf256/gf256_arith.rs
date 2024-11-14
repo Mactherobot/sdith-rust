@@ -6,7 +6,7 @@ use crate::subroutines::prg::prg::PRG;
 
 use super::FieldArith;
 
-const MODULUS: u8 = 0x1B; // The primitive polynomial x^4 + x^3 + x + 1 (0b0001_1011)
+pub(super) const MODULUS: u8 = 0x1B; // The primitive polynomial x^4 + x^3 + x + 1 (0b0001_1011)
 const _GENERATOR: u8 = 0x03; // The generator polynomial x + 1 ({03}) of the multiplicative group of GF(2^8)
 const ORDER: u16 = 0xff; // The order of the multiplicative group of GF(2^8)
 
@@ -125,7 +125,7 @@ pub(super) fn gf256_mul(a: u8, b: u8) -> u8 {
 }
 
 /// Multiplication from the spec implementation
-fn _mul_spec(a: u8, b: u8) -> u8 {
+pub(super) fn _mul_spec(a: u8, b: u8) -> u8 {
     let a = Wrapping(a);
     let b = Wrapping(b);
     let one = Wrapping(1_u8);

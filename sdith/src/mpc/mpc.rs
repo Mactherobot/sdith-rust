@@ -2,10 +2,7 @@ use crate::{
     arith::{
         gf256::{
             gf256_ext::FPoint,
-            gf256_vector::{
-                gf256_add_vector_add_scalar, gf256_add_vector_add_scalar_chunked_simd,
-                gf256_mul_vector_by_scalar,
-            },
+            gf256_vector::{gf256_add_vector_add_scalar, gf256_mul_vector_by_scalar},
             FieldArith,
         },
         matrices::HPrimeMatrix,
@@ -104,7 +101,6 @@ impl MPC {
         // We need to compute the following:
         // input_share[e][i] = input_plain + sum^ℓ_(j=1) fi^j · input_coef[e][j]
         let mut share = *rnd_coefs.last().unwrap();
-        let mut share_chunk = *rnd_coefs.last().unwrap();
 
         // Compute the inner sum
         // sum^ℓ_(j=1) fi · coef[j]
@@ -112,8 +108,8 @@ impl MPC {
         if !skip_loop {
             for j in (0..(rnd_coefs.len() - 1)).rev() {
                 gf256_add_vector_add_scalar(&mut share, &rnd_coefs[j], fi);
-                gf256_add_vector_add_scalar_chunked_simd(&mut share_chunk, &rnd_coefs[j], fi);
             }
+
             // Add the plain to the share
             gf256_add_vector_add_scalar(&mut share, plain, fi);
         }
