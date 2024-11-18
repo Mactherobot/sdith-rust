@@ -177,8 +177,8 @@ impl MPC {
         chal: &Challenge,
         h_prime: HPrimeMatrix,
         y: [u8; PARAM_M_SUB_K],
-    ) -> Broadcast {
-        let broadcast = MPC::_party_computation(
+    ) -> Result<Broadcast, String> {
+        let broadcast_result = MPC::_party_computation(
             input.serialise(),
             chal,
             h_prime,
@@ -187,11 +187,15 @@ impl MPC {
             true,
             false,
         );
+        if broadcast_result.is_err() {
+            return Err("Failed to compute broadcast".to_string());
+        }
+        let broadcast = broadcast_result.unwrap();
 
-        Broadcast {
+        Ok(Broadcast {
             alpha: broadcast.alpha,
             beta: broadcast.beta,
-        }
+        })
     }
 
     /// Compute the shares broadcast by a party. It takes the input shares of the party `(sA, Q', P )_i` and `(a, b, c)_i`,
@@ -204,7 +208,7 @@ impl MPC {
         y: [u8; PARAM_M_SUB_K],
         broadcast: &Broadcast,
         with_offset: bool,
-    ) -> BroadcastShare {
+    ) -> Result<BroadcastShare, String> {
         return MPC::_party_computation(
             input_share_plain,
             chal,
@@ -225,7 +229,7 @@ impl MPC {
         broadcast: &Broadcast,
         with_offset: bool,
         compute_v: bool,
-    ) -> BroadcastShare {
+    ) -> Result<BroadcastShare, String> {
         let input_share = Input::parse(input_share_plain);
         let (a, b) = input_share.beaver_ab;
         let c = input_share.beaver_c;
@@ -237,7 +241,10 @@ impl MPC {
 
         // Compute S
         let s = compute_s(&s_a, &h_prime, if with_offset { Some(&y) } else { None });
-        let s_poly = compute_s_poly(s);
+        if s.is_err() {
+            return Err("Failed to compute S".to_string());
+        }
+        let s_poly = compute_s_poly(s.unwrap());
 
         // Complete Q
         let q_poly_complete = complete_q(q_poly, if with_offset { 1u8 } else { 0u8 });
@@ -289,11 +296,11 @@ impl MPC {
                 }
             }
         }
-        return BroadcastShare {
+        return Ok(BroadcastShare {
             alpha: alpha_share,
             beta: beta_share,
             v,
-        };
+        });
     }
 
     /// computes the shares of the Beaver triples from the shares of the witness and the broadcast
@@ -319,7 +326,10 @@ impl MPC {
 
         // Compute S
         let s = compute_s(&s_a, &h_prime, if with_offset { Some(&y) } else { None });
-        let s_poly = compute_s_poly(s);
+        if s.is_err() {
+            panic!("Failed to compute S");
+        }
+        let s_poly = compute_s_poly(s.unwrap());
 
         // Complete Q
         let q_poly_complete = complete_q(q_poly, if with_offset { 1u8 } else { 0u8 });
@@ -419,10 +429,12 @@ mod mpc_tests {
         };
 
         let broadcast = MPC::compute_broadcast(input.clone(), &chal, witness.h_prime, witness.y);
-
-        let h_prime = witness.h_prime;
-        let y = witness.y;
-        return (input, broadcast, chal, h_prime, y);
+        if broadcast.is_err() {
+            panic!("Failed to compute broadcast");
+        } else {
+            let broadcast = broadcast.unwrap();
+            return (input, broadcast, chal, witness.h_prime, witness.y);
+        }
     }
 
     #[test]
@@ -476,7 +488,8 @@ mod mpc_tests {
             &chal,
             witness.h_prime,
             witness.y,
-        );
+        )
+        .unwrap();
 
         assert_eq!(broadcast.alpha.len(), PARAM_SPLITTING_FACTOR);
         assert_eq!(broadcast.beta.len(), PARAM_SPLITTING_FACTOR);
@@ -492,7 +505,8 @@ mod mpc_tests {
         let (input, broadcast, chal, h_prime, y) = prepare();
 
         let party_computation =
-            MPC::party_computation(input.serialise(), &chal, h_prime, y, &broadcast, false);
+            MPC::party_computation(input.serialise(), &chal, h_prime, y, &broadcast, false)
+                .unwrap();
 
         let inverse_party_computation = MPC::inverse_party_computation(
             Input::truncate_beaver_triples(&input.serialise()),
@@ -527,6 +541,7 @@ mod mpc_tests {
         // compute shares of the randomness
         let mut broadcast_share =
             MPC::party_computation(random_input_plain, &chal, h_prime, y, &broadcast, false)
+                .unwrap()
                 .serialise();
 
         // recompute shares of the randomness
@@ -562,7 +577,7 @@ mod mpc_tests {
         get_powers(r, &mut powers_of_r);
 
         let q_poly = complete_q(input.solution.q_poly, 1);
-        let s_poly = compute_s_poly(compute_s(&input.solution.s_a, &h_prime, Some(&y)));
+        let s_poly = compute_s_poly(compute_s(&input.solution.s_a, &h_prime, Some(&y)).unwrap());
 
         let q_eval = MPC::polynomial_evaluation(&q_poly[0], &powers_of_r);
         let s_eval = MPC::polynomial_evaluation(&s_poly[0], &powers_of_r);
@@ -582,7 +597,8 @@ mod mpc_tests {
 
         // Run MPC::compute_broadcast, but calculate v
         let broadcast_plain_with_v =
-            MPC::_party_computation(input_plain, &chal, h_prime, y, &broadcast, true, true);
+            MPC::_party_computation(input_plain, &chal, h_prime, y, &broadcast, true, true)
+                .unwrap();
 
         assert_eq!(broadcast_plain_with_v.v, [FPoint::default(); PARAM_T]);
     }

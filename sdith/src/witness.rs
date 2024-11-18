@@ -458,7 +458,7 @@ pub(crate) fn compute_s(
     s_a: &[u8; PARAM_K],
     h_prime: &HPrimeMatrix,
     y: Option<&[u8; PARAM_M_SUB_K]>,
-) -> [u8; PARAM_M] {
+) -> Result<[u8; PARAM_M], String> {
     // (s_a | s_b)
     let mut s = [0u8; PARAM_M];
 
@@ -472,7 +472,16 @@ pub(crate) fn compute_s(
 
     // Add H's_a to the s_b side
     mul_hprime_vector(&mut s[PARAM_K..], h_prime, s_a);
-    s
+    // Check that the h_prime * s_a is not equal to y (if provided)
+    // This can happen if the h_prime is the zero matrix or if the s_a is the zero vector
+    // And if we want a correct SD instance we need to ensure that the s_b is not equal to y
+    if let Some(y) = y {
+        if s[PARAM_K..] == *y {
+            return Err("s_b is equal to y".to_string());
+        }
+    }
+
+    Ok(s)
 }
 
 /// Compute SPoly from s = Parse((s, F_q^(m/d), F_q^(m/d),...)
@@ -567,7 +576,7 @@ mod test_helpers {
         let y = witness.y;
         let h_prime = witness.h_prime;
         let s_a = witness.s_a;
-        let s = compute_s(&s_a, &h_prime, Some(&y));
+        let s = compute_s(&s_a, &h_prime, Some(&y)).unwrap();
 
         assert_eq!(s.len(), PARAM_M);
         assert_eq!(s[..PARAM_K], witness.s_a);

@@ -1,4 +1,5 @@
 use crate::arith::matrices::{gen_hmatrix, HPrimeMatrix};
+use crate::mpc::broadcast;
 use crate::subroutines::marshalling::Marshalling;
 use crate::utils::iterator::*;
 use crate::witness::SOLUTION_PLAIN_SIZE;
@@ -63,7 +64,13 @@ impl Signature {
         let chal = Challenge::new(h1);
 
         // MPC Simulation
-        let broadcast = MPC::compute_broadcast(input, &chal, h_prime, secret_key.y);
+        let broadcast_result = MPC::compute_broadcast(input, &chal, h_prime, secret_key.y);
+        if broadcast_result.is_err() {
+            return Err("MPC Simulation failed".to_string());
+        }
+
+        let broadcast = broadcast_result.unwrap();
+
         let broadcast_plain = broadcast.serialise();
 
         let mut broadcast_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
@@ -78,7 +85,8 @@ impl Signature {
                     secret_key.y,
                     &broadcast,
                     false,
-                );
+                )
+                .unwrap();
 
                 broadcast_shares[e][j] = broadcast_share.serialise();
             }
