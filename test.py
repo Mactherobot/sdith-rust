@@ -44,29 +44,21 @@ def from_roots2(roots, field):
     return coefs
 
 
-# field = gf256
-# q = from_roots_rev([1, 2, 3, 4], field)
-# q.reverse()
-# print(q)
+field = gf256
 
-# poly = galois.Poly(q, field)
-# print(poly)
-# print(poly(1))
-# print(poly(2))
-# print(poly(3))
-# print(poly(4))
-# print(poly(5))
+import numpy as np
 
-a = gf256(57)
-b = 139
-c = 203
+# fmt: off
+mat = [40, 203, 210, 253, 50, 23, ] # 192, 187, 103, 8, 200, 163, 86, 118, 177, 244, 181, 224, 27, 79, 167, 251, 133, 10, 217, 92, 190, 105, 242, 174, 3, 63, 37, 32, 246, 182, 80, 82, 14, 99, 144, 24, 2, 165, 238, 215, 150, 62, 194, 115, 75, 34, 201, 159, 202, 219, 49, 216, 241, 101, 209, 77, 29, 85, 96, 91, 58, 56, 11, 71, 69, 16, 47, 93, 36, 126, 38, 248, 118, 70, 1, 13, 4, 57, 45, 107, 98, 5, 84, 76, 68, 78, 19, 9, 21, 112]
+# fmt: on
 
-print("a^b: ", a**b)
-print("a^c: ", a**c)
+# convert to field values
+mat = [field(a) for a in mat]
+mat = np.array(mat)
 
-print("a^b: ", a**b)
-print("a^b * a^c: ", a**b * a**c)
-print("a^(b+c): ", a ** (b + c))
-print("b+c: ", b + c)
+mat = mat.reshape(2, 3)
 
-print(gf256._positive_power)
+vec = np.array([field(2), field(3), field(4)])
+
+for v in mat @ vec:
+    print(v, ",", end="")

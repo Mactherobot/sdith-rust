@@ -34,6 +34,7 @@ pub(crate) fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) 
 }
 
 #[cfg(feature = "simd")]
+#[inline(always)]
 /// vz'[] = vz[] + vx[]
 pub(crate) fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
     let chunk_size = 32;
@@ -61,6 +62,7 @@ pub(crate) fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
 }
 
 #[cfg(feature = "simd")]
+#[inline(always)]
 /// vz'[] = vz[] * scalar + vx[]
 pub(crate) fn gf256_mul_vector_by_scalar(vz: &mut [u8], scalar: u8) {
     let chunk_size = 32;

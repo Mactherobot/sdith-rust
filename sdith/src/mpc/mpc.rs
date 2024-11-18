@@ -1,11 +1,9 @@
 use crate::{
-    arith::{
-        gf256::{
-            gf256_ext::FPoint,
-            gf256_vector::{gf256_add_vector_add_scalar, gf256_mul_vector_by_scalar},
-            FieldArith,
-        },
-        matrices::HPrimeMatrix,
+    arith::gf256::{
+        gf256_ext::FPoint,
+        gf256_matrices::HPrimeMatrix,
+        gf256_vector::{gf256_add_vector_add_scalar, gf256_mul_vector_by_scalar},
+        FieldArith,
     },
     constants::{
         params::{

@@ -4,6 +4,8 @@
 - Using salt in Merkle tree construction
 - Missing final in spec (we removed our spec-tests)
 
+# Spec issues
+
 # Things we want to know
 
 - What is the security of the protocol (Benjamin)

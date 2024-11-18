@@ -1,4 +1,4 @@
-use crate::arith::matrices::{gen_hmatrix, HPrimeMatrix};
+use crate::arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::constants::params::PARAM_DIGEST_SIZE;
 use crate::keygen::PublicKey;
 use crate::mpc::broadcast::{Broadcast, BroadcastShare, BROADCAST_SHARE_PLAIN_SIZE_AB};
@@ -40,7 +40,7 @@ impl Signature {
         let mut commitments: [Hash; PARAM_TAU] = [[0u8; PARAM_DIGEST_SIZE]; PARAM_TAU];
 
         // Party computation and regeneration of Merkle commitments
-        let mut plain = Box::new([0u8; BROADCAST_SHARE_PLAIN_SIZE]);
+        let mut plain = [0u8; BROADCAST_SHARE_PLAIN_SIZE];
         plain[..BROADCAST_SHARE_PLAIN_SIZE_AB].copy_from_slice(&broad_plain);
         for e in 0..PARAM_TAU {
             let mut commitments_prime = [[0u8; PARAM_DIGEST_SIZE]; PARAM_L];

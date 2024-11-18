@@ -1,11 +1,9 @@
 use crate::{
-    arith::{
-        gf256::{
-            gf256_poly::gf256_remove_one_degree_factor_monic,
-            gf256_vector::{gf256_add_vector, gf256_mul_vector_by_scalar},
-            FieldArith,
-        },
-        matrices::{gen_hmatrix, mul_hprime_vector, HPrimeMatrix},
+    arith::gf256::{
+        gf256_matrices::{gen_hmatrix, mul_hmatrix_vector, HPrimeMatrix},
+        gf256_poly::gf256_remove_one_degree_factor_monic,
+        gf256_vector::{gf256_add_vector, gf256_mul_vector_by_scalar},
+        FieldArith,
     },
     constants::{
         params::{
@@ -113,7 +111,7 @@ pub(crate) struct Witness {
 /// - seed_h: Seed used to generate the H matrix.
 /// - polynomials: Tuple containing the polynomials Q', S, and P.
 pub(crate) fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly)) -> Witness {
-    let (_q_poly, s_poly, _p_poly) = polynomials;
+    let (q_poly, s_poly, p_poly) = polynomials;
 
     // s is pre serialized as (s_A | s_B) due to the nature of SPoly
     // Split s as (s_A | s_B)
@@ -133,8 +131,8 @@ pub(crate) fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly))
         y,
         seed_h,
         h_prime,
-        q_poly: _q_poly,
-        p_poly: _p_poly,
+        q_poly,
+        p_poly,
     }
 }
 
@@ -145,7 +143,7 @@ pub(crate) fn compute_y(
     h_prime: &HPrimeMatrix,
 ) -> [u8; PARAM_M_SUB_K] {
     let mut y = s_b.clone();
-    mul_hprime_vector(&mut y, &h_prime, s_a);
+    mul_hmatrix_vector(&mut y, &h_prime, s_a);
     y
 }
 
@@ -471,7 +469,7 @@ pub(crate) fn compute_s(
     }
 
     // Add H's_a to the s_b side
-    mul_hprime_vector(&mut s[PARAM_K..], h_prime, s_a);
+    mul_hmatrix_vector(&mut s[PARAM_K..], h_prime, s_a);
     // Check that the h_prime * s_a is not equal to y (if provided)
     // This can happen if the h_prime is the zero matrix or if the s_a is the zero vector
     // And if we want a correct SD instance we need to ensure that the s_b is not equal to y

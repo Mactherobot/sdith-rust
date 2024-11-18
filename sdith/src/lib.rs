@@ -1,6 +1,4 @@
-#![feature(generic_const_exprs)]
-#![feature(portable_simd)]
-#![allow(incomplete_features)] // TODO: remove when we create final version
+#![cfg_attr(feature = "simd", feature(portable_simd))]
 #![allow(dead_code)] // TODO: remove when we create final version
 
 pub mod api;
@@ -10,8 +8,8 @@ pub mod keygen;
 pub mod mpc;
 pub mod signature;
 pub mod subroutines;
-pub mod witness;
 pub(crate) mod utils;
+pub mod witness;
 
 #[cfg(test)]
 mod tests {
@@ -22,4 +20,3 @@ mod tests {
         println!("Running tests for the category: {:?}", COMPILED_CATEGORY);
     }
 }
-
