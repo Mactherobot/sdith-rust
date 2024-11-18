@@ -9,7 +9,7 @@ mod signing_and_verifying_tests {
     use super::signature::Signature;
     use crate::{
         constants::{
-            params::{PARAM_M_SUB_K, PARAM_SALT_SIZE, PARAM_SEED_SIZE},
+            params::{PARAM_K, PARAM_M_SUB_K, PARAM_SALT_SIZE, PARAM_SEED_SIZE},
             types::Seed,
         },
         keygen::keygen,
@@ -38,7 +38,8 @@ mod signing_and_verifying_tests {
         let message = b"Hello, World!".to_vec();
         let entropy = (spec_master_seed, [0u8; PARAM_SALT_SIZE]);
 
-        sk.solution.s_a = [0u8; 126];
+        let var_name = [0u8; PARAM_K];
+        sk.solution.s_a = var_name;
         let signature = Signature::sign_message(entropy, &sk, &message);
         assert!(signature.is_err());
     }
