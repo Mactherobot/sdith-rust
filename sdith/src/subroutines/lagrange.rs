@@ -10,7 +10,7 @@ use std::iter;
 /// Given a set of points, this function returns the Lagrange basis polynomials on `x_value`
 ///
 /// Returns the result of the interpolation at the given x value.
-pub(crate) fn lagrange_interpolation(
+pub fn lagrange_interpolation(
     // The points (x,y) to interpolate.
     points: &Vec<(f64, f64)>,
     x_value: &f64,

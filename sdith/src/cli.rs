@@ -45,14 +45,14 @@ macro_rules! clap_err_result_msg {
 
 #[derive(Parser)]
 #[command(version, about("SDitH signature protocol"), long_about = None)]
-pub(crate) struct Cli {
+pub struct Cli {
     // TODO: Implement Category of the protocol. Either 1, 2 or 3.
     #[command(subcommand)]
-    pub(crate) command: Option<Commands>,
+    pub command: Option<Commands>,
 }
 
 #[derive(Subcommand)]
-pub(crate) enum Commands {
+pub enum Commands {
     Keygen(Keygen),
     Sign(Signing),
     Verify(Verifying),
@@ -60,7 +60,7 @@ pub(crate) enum Commands {
 
 #[derive(Parser)]
 #[command(version, about("SDitH signature protocol key generation"), long_about = None)]
-pub(crate) struct Keygen {
+pub struct Keygen {
     /// Master seed. Must be 32 bytes long.
     #[arg(short, long)]
     seed: Option<String>,
@@ -126,7 +126,7 @@ impl Keygen {
         return Ok(true);
     }
 
-    pub(crate) fn generate_keys(&self) -> Result<(), Error> {
+    pub fn generate_keys(&self) -> Result<(), Error> {
         eprintln!("Generating SDitH key pair.");
         let (is_random_seed, seed) = get_seed(self.seed.as_ref())?;
         if is_random_seed {
@@ -143,22 +143,22 @@ impl Keygen {
 
 #[derive(Parser)]
 #[command(version, about("SDitH signature protocol signing"), long_about = None)]
-pub(crate) struct Signing {
+pub struct Signing {
     /// Message file or string
     #[arg(short, long)]
-    pub(crate) msg: String,
+    pub msg: String,
 
     /// Secret key file or string
     #[arg(long("sk"))]
-    pub(crate) secret_key: String,
+    pub secret_key: String,
 
     /// Signing seed
     #[arg(long)]
-    pub(crate) seed: Option<String>,
+    pub seed: Option<String>,
 
     /// Signing salt
     #[arg(long)]
-    pub(crate) salt: Option<String>,
+    pub salt: Option<String>,
 }
 
 impl Signing {
@@ -182,7 +182,7 @@ impl Signing {
         }
     }
 
-    pub(crate) fn sign_message(&self) -> Result<(), Error> {
+    pub fn sign_message(&self) -> Result<(), Error> {
         eprintln!("Signing message.");
         let secret_key = self.get_secret_key()?;
         let msg = self.get_msg()?;
@@ -203,14 +203,14 @@ impl Signing {
 
 #[derive(Parser)]
 #[command(version, about("SDitH signature protocol verification"), long_about = None)]
-pub(crate) struct Verifying {
+pub struct Verifying {
     /// Public key file or string
     #[arg(long("pk"))]
-    pub(crate) pub_key: String,
+    pub pub_key: String,
 
     /// Signature file or string
     #[arg(short, long)]
-    pub(crate) signature: String,
+    pub signature: String,
 }
 
 impl Verifying {
@@ -222,7 +222,7 @@ impl Verifying {
         )
     }
 
-    pub(crate) fn verify_signature(&self) -> Result<(), Error> {
+    pub fn verify_signature(&self) -> Result<(), Error> {
         eprintln!("Verifying message.");
         let pk = self.get_public_key()?;
         let signature = get_decoded_string_from_file_or_string(self.signature.clone())?;

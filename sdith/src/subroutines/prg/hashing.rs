@@ -5,10 +5,10 @@ use tiny_keccak::{Hasher, Sha3};
 use crate::constants::params::{HashPrimitive, HASH_PRIMITIVE};
 use crate::constants::types::Hash;
 
-pub(crate) const HASH_PREFIX_CHALLENGE_1: [u8; 1] = [1];
-pub(crate) const HASH_PREFIX_CHALLENGE_2: [u8; 1] = [2];
+pub const HASH_PREFIX_CHALLENGE_1: [u8; 1] = [1];
+pub const HASH_PREFIX_CHALLENGE_2: [u8; 1] = [2];
 
-pub(crate) trait SDitHHashTrait<T> {
+pub trait SDitHHashTrait<T> {
     fn get_hasher() -> T;
     fn init() -> Self;
     fn init_with_prefix(prefix: &[u8]) -> Self;
@@ -16,7 +16,7 @@ pub(crate) trait SDitHHashTrait<T> {
     fn update(&mut self, data: &[u8]);
 }
 
-pub(crate) struct SDitHHash<T> {
+pub struct SDitHHash<T> {
     hasher: T,
 }
 
@@ -86,7 +86,7 @@ fn hash(data: &[u8]) -> Hash {
     SDitHHash::finalize(hasher)
 }
 
-pub(crate) fn hash_1(data: Vec<&[u8]>) -> Hash {
+pub fn hash_1(data: Vec<&[u8]>) -> Hash {
     let mut hasher = SDitHHash::init_with_prefix(&HASH_PREFIX_CHALLENGE_1);
     for d in data {
         hasher.update(d);
@@ -94,7 +94,7 @@ pub(crate) fn hash_1(data: Vec<&[u8]>) -> Hash {
     SDitHHash::finalize(hasher)
 }
 
-pub(crate) fn hash_2(data: Vec<&[u8]>) -> Hash {
+pub fn hash_2(data: Vec<&[u8]>) -> Hash {
     let mut hasher = SDitHHash::init_with_prefix(&HASH_PREFIX_CHALLENGE_2);
     for d in data {
         hasher.update(d);

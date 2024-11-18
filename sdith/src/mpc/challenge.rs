@@ -15,21 +15,21 @@ use super::mpc::MPC;
 
 /// Challenge pair `(r, e) ∈ F_point^t, (F_point^t)^d`
 #[derive(Clone)]
-pub(crate) struct Challenge {
+pub struct Challenge {
     /// Challenge value r
-    pub(crate) r: [FPoint; PARAM_T],
+    pub r: [FPoint; PARAM_T],
     /// Challenge value epsilon
-    pub(crate) eps: [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR],
+    pub eps: [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR],
     /// Pre-computed powers of r for each evaluation and splitting.
-    pub(crate) powers_of_r: [[FPoint; PARAM_CHUNK_M + 1]; PARAM_T],
+    pub powers_of_r: [[FPoint; PARAM_CHUNK_M + 1]; PARAM_T],
     /// Pre-computed polynomial evaluations of the f polynomial times epsilon at the powers of r for each evaluation and splitting.
-    pub(crate) f_poly_eval: [FPoint; PARAM_T],
+    pub f_poly_eval: [FPoint; PARAM_T],
 }
 
 impl Challenge {
     /// Generate `number_of_pairs` of challenges (r, e) ∈ F_point^t, (F_point^t)^d
     /// Uses h1 hash for Fiat-Shamir Transform
-    pub(crate) fn new(h1: Hash) -> Self {
+    pub fn new(h1: Hash) -> Self {
         let mut prg = PRG::init_base(&h1);
         let mut r = [FPoint::default(); PARAM_T];
         prg.sample_field_fpoint_elements(&mut r);
@@ -80,7 +80,7 @@ impl std::fmt::Debug for Challenge {
 }
 
 /// Compute the powers of a point for fixed length. Used for precomputing the powers of r.
-pub(crate) fn get_powers(point: FPoint, out: &mut [FPoint]) {
+pub fn get_powers(point: FPoint, out: &mut [FPoint]) {
     out[0] = FPoint::field_one();
     out[1] = point.clone();
     for i in 2..out.len() {

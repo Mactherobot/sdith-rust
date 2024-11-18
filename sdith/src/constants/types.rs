@@ -1,6 +1,6 @@
 use super::params::{PARAM_DIGEST_SIZE, PARAM_N, PARAM_SALT_SIZE, PARAM_SEED_SIZE};
 
-pub(crate) fn hash_default() -> Hash {
+pub fn hash_default() -> Hash {
     [0u8; PARAM_DIGEST_SIZE]
 }
 

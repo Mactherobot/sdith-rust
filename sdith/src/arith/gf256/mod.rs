@@ -1,13 +1,13 @@
 use crate::subroutines::prg::prg::PRG;
 
-pub(crate) mod gf256_arith;
-pub(crate) mod gf256_ext;
-pub(crate) mod gf256_poly;
-pub(crate) mod gf256_vector;
-pub(crate) mod gf256_matrices;
+pub mod gf256_arith;
+pub mod gf256_ext;
+pub mod gf256_poly;
+pub mod gf256_vector;
+pub mod gf256_matrices;
 
 /// TODO: Replace calls to gf256_* methods to use the FieldArith trait.
-pub(crate) trait FieldArith
+pub trait FieldArith
 where
     Self: Sized + Clone + Copy + PartialEq,
 {

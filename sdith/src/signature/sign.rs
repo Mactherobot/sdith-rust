@@ -12,9 +12,30 @@ use crate::{
     subroutines::{commitments::commit_share, merkle_tree::MerkleTree, prg::prg::PRG},
 };
 
+use super::input::INPUT_SIZE;
 use super::{input::Input, signature::Signature};
 
 impl Signature {
+    #[inline(always)]
+    pub fn commit_shares(input_shares: &Box<[[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU]>, salt: Salt) -> ([[u8; 32]; 6], Vec<MerkleTree>) {
+        let mut commitments: [Hash; PARAM_TAU] = [[0u8; PARAM_DIGEST_SIZE]; PARAM_TAU];
+        let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
+        let mut commitments_prime = [[0u8; PARAM_DIGEST_SIZE]; PARAM_N];
+        for e in 0..PARAM_TAU {
+            get_iterator(&mut commitments_prime)
+                .enumerate()
+                .for_each(|(i, commitment)| {
+                    *commitment = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
+                });
+
+            let merkle_tree = MerkleTree::new(commitments_prime, None); // TODO: I spec there is a salt here. In implementation there is not.
+            commitments[e] = merkle_tree.get_root();
+            merkle_trees.push(merkle_tree);
+        }
+
+        (commitments, merkle_trees)
+    }
+
     pub fn sign_message(
         entropy: (Seed, Salt),
         secret_key: &SecretKey,
@@ -41,20 +62,7 @@ impl Signature {
         let (input_shares, input_coefs) = MPC::compute_input_shares(&input_plain, &mut prg);
 
         // Commit shares
-        let mut commitments: [Hash; PARAM_TAU] = [[0u8; PARAM_DIGEST_SIZE]; PARAM_TAU];
-        let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
-        let mut commitments_prime = [[0u8; PARAM_DIGEST_SIZE]; PARAM_N];
-        for e in 0..PARAM_TAU {
-            get_iterator(&mut commitments_prime)
-                .enumerate()
-                .for_each(|(i, commitment)| {
-                    *commitment = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
-                });
-
-            let merkle_tree = MerkleTree::new(commitments_prime, None); // TODO: I spec there is a salt here. In implementation there is not.
-            commitments[e] = merkle_tree.get_root();
-            merkle_trees.push(merkle_tree);
-        }
+        let (commitments, merkle_trees) = Signature::commit_shares(&input_shares, salt);
 
         // First challenge (MPC challenge)
 

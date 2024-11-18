@@ -3,7 +3,7 @@ use crate::witness::{Instance, Solution};
 type PublicKey = Instance;
 type SecretKey = Solution;
 
-pub(crate)trait SDitH {
+pub trait SDitH {
     /// Generates public and private key.
     /// Returns true if the key pair was generated successfully.
     ///

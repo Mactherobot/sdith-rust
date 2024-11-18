@@ -7,10 +7,10 @@ use crate::{
 };
 
 /// H' matrix with dimensions `m-k * k`. The ceil value is only do accommodate the way the spec creates the matrix.
-pub(crate) type HPrimeMatrix = [u8; PARAM_M_SUB_K * PARAM_K];
+pub type HPrimeMatrix = [u8; PARAM_M_SUB_K * PARAM_K];
 
 /// Multiply a matrix with a vector `y`. Outputs the result in `vz`.
-pub(crate) fn mul_hmatrix_vector(vz: &mut [u8], hp: &HPrimeMatrix, v: &[u8; PARAM_K]) {
+pub fn mul_hmatrix_vector(vz: &mut [u8], hp: &HPrimeMatrix, v: &[u8; PARAM_K]) {
     field_mul_matrix_vector::<PARAM_M_SUB_K, PARAM_K>(vz, hp, PARAM_M_SUB_K, PARAM_K, v);
 }
 
@@ -19,14 +19,14 @@ pub(crate) fn mul_hmatrix_vector(vz: &mut [u8], hp: &HPrimeMatrix, v: &[u8; PARA
 /// The matrix is represented as a slice of bytes with `m` rows and `n` columns.
 /// Due to the way we want to iterate over the matrix, columns are stored contiguously. I.e. the first `m` bytes are the first column.
 /// Or visually for a 2x3 matrix:
-/// 
+///
 /// ```text
 /// | 1 2 3 |
 /// | 4 5 6 | = [1, 4, 2, 5, 3, 6]
 /// ```
-/// 
+///
 /// This is done to allow for SIMD operations with the feature `simd` enabled.
-pub(crate) fn field_mul_matrix_vector<const M: usize, const N: usize>(
+pub fn field_mul_matrix_vector<const M: usize, const N: usize>(
     out: &mut [u8],
     h: &[u8],
     m: usize,
@@ -45,7 +45,7 @@ pub(crate) fn field_mul_matrix_vector<const M: usize, const N: usize>(
 }
 
 /// Generate H' matrix from a seed.
-pub(crate) fn gen_hmatrix(seed: Seed) -> HPrimeMatrix {
+pub fn gen_hmatrix(seed: Seed) -> HPrimeMatrix {
     let mut prg = PRG::init(&seed, None);
     let mut h_prime: HPrimeMatrix = [0u8; PARAM_K * PARAM_M_SUB_K];
     prg.sample_field_fq_elements(&mut h_prime);

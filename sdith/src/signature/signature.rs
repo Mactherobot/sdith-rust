@@ -17,20 +17,20 @@ use crate::{
 
 #[derive(Debug, PartialEq)]
 pub struct Signature {
-    pub(crate) message: Vec<u8>,
-    pub(crate) salt: Salt,
-    pub(crate) h1: Hash,
-    pub(crate) broadcast_plain: [u8; BROADCAST_PLAIN_SIZE],
-    pub(crate) broadcast_shares: [[[u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
+    pub message: Vec<u8>,
+    pub salt: Salt,
+    pub h1: Hash,
+    pub broadcast_plain: [u8; BROADCAST_PLAIN_SIZE],
+    pub broadcast_shares: [[[u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
     // wit_share from spec
-    pub(crate) solution_share: [[[u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
-    pub(crate) auth: [Vec<Hash>; PARAM_TAU],
+    pub solution_share: [[[u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
+    pub auth: [Vec<Hash>; PARAM_TAU],
     // Calculated in parsing
-    pub(crate) view_opening_challenges: [[u16; PARAM_L]; PARAM_TAU],
+    pub view_opening_challenges: [[u16; PARAM_L]; PARAM_TAU],
 }
 
 impl Signature {
-    pub(crate) fn get_length(&self) -> [u8; 4] {
+    pub fn get_length(&self) -> [u8; 4] {
         let mut length = self.salt.len();
         length += self.h1.len();
         length += self.broadcast_plain.len();

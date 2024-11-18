@@ -1,3 +1,3 @@
-pub(crate) mod hashing;
-pub(crate) mod prg;
-pub(crate) mod xof;
+pub mod hashing;
+pub mod prg;
+pub mod xof;

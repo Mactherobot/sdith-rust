@@ -1,13 +1,13 @@
-pub(crate) mod gf256;
+pub mod gf256;
 
 /// Calculate hamming weight of the given vector, which is the number of non-zero elements.
-pub(crate) fn hamming_weight_vector(x: &[u8]) -> u64 {
+pub fn hamming_weight_vector(x: &[u8]) -> u64 {
     x.iter().fold(0, |a, b| a + (*b != 0) as u64)
 }
 
 /// Concatenate two arrays. Should be stable without experimental features.
 /// https://users.rust-lang.org/t/concatenating-arrays/89538/3
-pub(crate) fn concat_arrays_stable<T, const A: usize, const B: usize, const C: usize>(
+pub fn concat_arrays_stable<T, const A: usize, const B: usize, const C: usize>(
     a: [T; A],
     b: [T; B],
 ) -> [T; C]
@@ -22,7 +22,7 @@ where
     ary
 }
 
-pub(crate) fn split_array_stable<const A: usize, const B: usize, const C: usize>(
+pub fn split_array_stable<const A: usize, const B: usize, const C: usize>(
     a: [u8; A],
 ) -> [[u8; B]; C] {
     assert_eq!(A % B, 0);

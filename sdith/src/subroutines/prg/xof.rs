@@ -15,14 +15,14 @@ use tiny_keccak::{Hasher, Shake, Xof};
 
 use crate::constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
 
-pub(crate) trait SDitHXOFTrait<T> {
+pub trait SDitHXOFTrait<T> {
     fn get_xof() -> T;
     fn init_base(x: &[u8]) -> Self;
     fn init(seed: &[u8; PARAM_SEED_SIZE], salt: Option<&[u8; PARAM_SALT_SIZE]>) -> Self;
     fn squeeze(&mut self, output: &mut [u8]);
 }
 
-pub(crate) struct SDitHXOF<T> {
+pub struct SDitHXOF<T> {
     xof: T,
 }
 

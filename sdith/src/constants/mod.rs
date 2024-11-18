@@ -1,3 +1,3 @@
 pub mod params;
-pub(crate) mod precomputed;
+pub mod precomputed;
 pub mod types;

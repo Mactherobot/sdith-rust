@@ -7,7 +7,7 @@ use super::{gf256_arith::gf256_add, FieldArith};
 
 #[cfg(not(feature = "simd"))]
 /// vz'[] = vz[] + vx[]
-pub(crate) fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
+pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
     assert!(vx.len() >= vz.len());
     let bytes = vz.len();
     for i in 0..bytes {
@@ -17,7 +17,7 @@ pub(crate) fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
 
 #[cfg(not(feature = "simd"))]
 /// vx'[] = vx[] * scalar
-pub(crate) fn gf256_mul_vector_by_scalar(vx: &mut [u8], scalar: u8) {
+pub fn gf256_mul_vector_by_scalar(vx: &mut [u8], scalar: u8) {
     let bytes = vx.len();
     for i in 0..bytes {
         vx[i] = super::gf256_arith::gf256_mul(vx[i], scalar);
@@ -26,7 +26,7 @@ pub(crate) fn gf256_mul_vector_by_scalar(vx: &mut [u8], scalar: u8) {
 
 #[cfg(not(feature = "simd"))]
 /// vz'[] = vz[] * scalar + vx[]
-pub(crate) fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) {
+pub fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) {
     let bytes = vz.len();
     for i in 0..bytes {
         vz[i] = vx[i].field_add(vz[i].field_mul(scalar));
@@ -36,7 +36,7 @@ pub(crate) fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) 
 #[cfg(feature = "simd")]
 #[inline(always)]
 /// vz'[] = vz[] + vx[]
-pub(crate) fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
+pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
     let chunk_size = 32;
 
     // Then go through the chunks using SIMD
@@ -64,7 +64,7 @@ pub(crate) fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
 #[cfg(feature = "simd")]
 #[inline(always)]
 /// vz'[] = vz[] * scalar + vx[]
-pub(crate) fn gf256_mul_vector_by_scalar(vz: &mut [u8], scalar: u8) {
+pub fn gf256_mul_vector_by_scalar(vz: &mut [u8], scalar: u8) {
     let chunk_size = 32;
 
     // Then go through the chunks using SIMD
@@ -118,7 +118,7 @@ pub(crate) fn gf256_mul_vector_by_scalar(vz: &mut [u8], scalar: u8) {
 }
 #[cfg(feature = "simd")]
 /// vz'[] = vz[] * scalar + vx[]
-pub(crate) fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) {
+pub fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) {
     assert!(
         vz.len() == vx.len(),
         "Length of the two vectors must be the same"
@@ -179,7 +179,7 @@ pub(crate) fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) 
 }
 
 /// vz'[] = vz[] + (vx[], 00000...)
-pub(crate) fn gf256_add_vector_with_padding(vz: &mut [u8], vx: &[u8]) {
+pub fn gf256_add_vector_with_padding(vz: &mut [u8], vx: &[u8]) {
     assert!(vz.len() >= vx.len());
     let bytes = vx.len();
     for i in 0..bytes {

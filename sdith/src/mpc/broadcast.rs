@@ -6,24 +6,24 @@ use crate::{
 type BroadcastValue = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];
 
 #[derive(Clone)]
-pub(crate) struct Broadcast {
-    pub(crate) alpha: BroadcastValue,
-    pub(crate) beta: BroadcastValue,
+pub struct Broadcast {
+    pub alpha: BroadcastValue,
+    pub beta: BroadcastValue,
 }
 
 const BROADCAST_VALUE_PLAIN_SIZE: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR;
 
-pub(crate) const BROADCAST_PLAIN_SIZE: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR * 2;
+pub const BROADCAST_PLAIN_SIZE: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR * 2;
 const BROADCAST_V_PLAIN_SIZE: usize = PARAM_ETA * PARAM_T;
 
 impl Broadcast {
-    pub(crate) fn default() -> Self {
+    pub fn default() -> Self {
         let alpha = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         let beta = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         Self { alpha, beta }
     }
 
-    pub(crate) fn serialise(&self) -> [u8; BROADCAST_PLAIN_SIZE] {
+    pub fn serialise(&self) -> [u8; BROADCAST_PLAIN_SIZE] {
         let mut result = [0u8; BROADCAST_PLAIN_SIZE];
 
         for (n, v) in [self.alpha, self.beta].iter().enumerate() {
@@ -33,7 +33,7 @@ impl Broadcast {
         result
     }
 
-    pub(crate) fn parse(broadcast_plain: [u8; BROADCAST_PLAIN_SIZE]) -> Self {
+    pub fn parse(broadcast_plain: [u8; BROADCAST_PLAIN_SIZE]) -> Self {
         let alpha: BroadcastValue = deserialise_broadcast_value(
             broadcast_plain[..BROADCAST_VALUE_PLAIN_SIZE]
                 .try_into()
@@ -84,20 +84,20 @@ impl std::fmt::Debug for Broadcast {
 }
 
 #[derive(Debug)]
-pub(crate) struct BroadcastShare {
-    pub(crate) alpha: BroadcastValue,
-    pub(crate) beta: BroadcastValue,
-    pub(crate) v: [FPoint; PARAM_T],
+pub struct BroadcastShare {
+    pub alpha: BroadcastValue,
+    pub beta: BroadcastValue,
+    pub v: [FPoint; PARAM_T],
 }
 
-pub(crate) const BROADCAST_SHARE_PLAIN_SIZE_AB: usize =
+pub const BROADCAST_SHARE_PLAIN_SIZE_AB: usize =
     PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR * 2;
 const BROADCAST_SHARE_PLAIN_SIZE_V: usize = PARAM_ETA * PARAM_T;
-pub(crate) const BROADCAST_SHARE_PLAIN_SIZE: usize =
+pub const BROADCAST_SHARE_PLAIN_SIZE: usize =
     BROADCAST_SHARE_PLAIN_SIZE_AB + BROADCAST_SHARE_PLAIN_SIZE_V;
 
 impl BroadcastShare {
-    pub(crate) fn serialise(&self) -> [u8; BROADCAST_SHARE_PLAIN_SIZE] {
+    pub fn serialise(&self) -> [u8; BROADCAST_SHARE_PLAIN_SIZE] {
         let mut result = [0u8; BROADCAST_SHARE_PLAIN_SIZE];
 
         for (n, v) in [self.alpha, self.beta].iter().enumerate() {
@@ -114,7 +114,7 @@ impl BroadcastShare {
         result
     }
 
-    pub(crate) fn parse(broadcast_share_plain: [u8; BROADCAST_SHARE_PLAIN_SIZE]) -> Self {
+    pub fn parse(broadcast_share_plain: [u8; BROADCAST_SHARE_PLAIN_SIZE]) -> Self {
         let alpha: BroadcastValue = deserialise_broadcast_value(
             broadcast_share_plain[..BROADCAST_VALUE_PLAIN_SIZE]
                 .try_into()
@@ -138,7 +138,7 @@ impl BroadcastShare {
         Self { alpha, beta, v }
     }
 
-    pub(crate) fn default() -> BroadcastShare {
+    pub fn default() -> BroadcastShare {
         return BroadcastShare {
             alpha: [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR],
 

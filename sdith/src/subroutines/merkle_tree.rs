@@ -10,21 +10,21 @@ use queues::*;
 
 use super::prg::hashing::{SDitHHash, SDitHHashTrait as _};
 
-pub(crate) const PARAM_MERKLE_TREE_HEIGHT: usize = PARAM_LOG_N;
-pub(crate) const PARAM_MERKLE_TREE_NODES: usize =
+pub const PARAM_MERKLE_TREE_HEIGHT: usize = PARAM_LOG_N;
+pub const PARAM_MERKLE_TREE_NODES: usize =
     2_usize.pow(PARAM_MERKLE_TREE_HEIGHT as u32) + (PARAM_N);
 
-pub(crate) const HASH_PREFIX_MERKLE_TREE: u8 = 3;
+pub const HASH_PREFIX_MERKLE_TREE: u8 = 3;
 
-pub(crate) struct MerkleTree {
-    pub(crate) height: i32,
-    pub(crate) n_nodes: usize,
-    pub(crate) n_leaves: usize,
-    pub(crate) nodes: [Hash; PARAM_MERKLE_TREE_NODES as usize],
+pub struct MerkleTree {
+    pub height: i32,
+    pub n_nodes: usize,
+    pub n_leaves: usize,
+    pub nodes: [Hash; PARAM_MERKLE_TREE_NODES as usize],
 }
 
 impl MerkleTree {
-    pub(crate) fn new(commitments: CommitmentsArray, salt: Option<Hash>) -> Self {
+    pub fn new(commitments: CommitmentsArray, salt: Option<Hash>) -> Self {
         let nb_leaves = commitments.len();
         let height: i32 = nb_leaves
             .to_f32()
@@ -78,11 +78,11 @@ impl MerkleTree {
     }
 
     /// Returns the root of the merkle tree
-    pub(crate) fn get_root(&self) -> Hash {
+    pub fn get_root(&self) -> Hash {
         self.nodes[1]
     }
 
-    pub(crate) fn get_leaf(&self, n: usize) -> Hash {
+    pub fn get_leaf(&self, n: usize) -> Hash {
         assert!(n <= self.n_leaves, "Invalid leaf index: {}", n);
         self.nodes[(self.n_leaves + (n as usize)).to_usize().unwrap()]
     }
@@ -106,7 +106,7 @@ impl MerkleTree {
     /// A vector of node hash values that are required to calculate the merkle root from the selected leaves.
     ///
     /// If you supply all leaves or none, the auth path will be empty.
-    pub(crate) fn get_merkle_path(&self, selected_leaves: &[u16]) -> Vec<Hash> {
+    pub fn get_merkle_path(&self, selected_leaves: &[u16]) -> Vec<Hash> {
         let revealed_nodes = get_revealed_nodes(selected_leaves);
 
         let mut auth = vec![];
@@ -143,14 +143,14 @@ fn merkle_hash(parent_index: usize, left: Hash, right: Option<Hash>, salt: Optio
     hasher.finalize()
 }
 
-pub(crate) fn get_auth_size(selected_leaves: &[u16]) -> usize {
+pub fn get_auth_size(selected_leaves: &[u16]) -> usize {
     let get_revealed_nodes = get_revealed_nodes(selected_leaves);
     get_revealed_nodes.len() * PARAM_DIGEST_SIZE
 }
 
 /// Gets the revealed nodes from the selected leaves in the tree. This is a bottom up approach to
 /// figuring out which nodes are needed to calculate the merkle root from the selected leaves.
-pub(crate) fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
+pub fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
     if selected_leaves.is_empty() {
         return vec![];
     }
@@ -219,7 +219,7 @@ pub(crate) fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
 }
 
 /// Recalculates the merkle root from the commitments and the auth
-pub(crate) fn get_merkle_root_from_auth(
+pub fn get_merkle_root_from_auth(
     auth: &mut Vec<Hash>,
     commitments: &[Hash],
     selected_leaves: &[u16],

@@ -1,4 +1,4 @@
-pub(crate) mod commitments;
-pub(crate) mod merkle_tree;
-pub(crate) mod prg;
+pub mod commitments;
+pub mod merkle_tree;
+pub mod prg;
 pub mod marshalling;

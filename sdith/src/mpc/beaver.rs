@@ -4,21 +4,21 @@ use crate::{
     subroutines::prg::prg::PRG,
 };
 
-pub(crate) type BeaverA = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];
-pub(crate) type BeaverB = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];
-pub(crate) type BeaverC = [FPoint; PARAM_T];
+pub type BeaverA = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];
+pub type BeaverB = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];
+pub type BeaverC = [FPoint; PARAM_T];
 
 /// (t * 2d)η
-pub(crate) const BEAVER_ABPLAIN_SIZE: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR * 2;
+pub const BEAVER_ABPLAIN_SIZE: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR * 2;
 /// tη
-pub(crate) const BEAVER_CPLAIN_SIZE: usize = PARAM_ETA * PARAM_T;
+pub const BEAVER_CPLAIN_SIZE: usize = PARAM_ETA * PARAM_T;
 
 /// Beaver triples implementation
-pub(crate) struct Beaver {}
+pub struct Beaver {}
 
 impl Beaver {
     /// Generate serialised beaver a and b values
-    pub(crate) fn generate_beaver_triples(prg: &mut PRG) -> (BeaverA, BeaverB, BeaverC) {
+    pub fn generate_beaver_triples(prg: &mut PRG) -> (BeaverA, BeaverB, BeaverC) {
         let mut a: BeaverA = Default::default();
         let mut b: BeaverA = Default::default();
 
@@ -30,7 +30,7 @@ impl Beaver {
         (a, b, Beaver::inner_product(a, b))
     }
 
-    pub(crate) fn inner_product(a: BeaverA, b: BeaverB) -> BeaverC {
+    pub fn inner_product(a: BeaverA, b: BeaverB) -> BeaverC {
         let mut c: BeaverC = [FPoint::default(); PARAM_T];
 
         for d in 0..PARAM_SPLITTING_FACTOR {
@@ -43,7 +43,7 @@ impl Beaver {
     }
 
     /// Serialise beaver a and b values
-    pub(crate) fn serialise(
+    pub fn serialise(
         a: BeaverA,
         b: BeaverB,
         c: BeaverC,
@@ -82,7 +82,7 @@ impl Beaver {
         plain
     }
 
-    pub(crate) fn parse(
+    pub fn parse(
         beaver_abc_plain: [u8; BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE],
     ) -> (BeaverA, BeaverB, BeaverC) {
         let mut offset = 0;

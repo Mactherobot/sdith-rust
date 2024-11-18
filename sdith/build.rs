@@ -63,24 +63,24 @@ fn get_category() -> Category {
 fn build_constants(category: Category) -> String {
     vec![
         "#[derive(Debug)] #[doc = \"Compiled version category of the protocol\"] pub enum Categories { ONE = 1, THREE = 3, FIVE = 5 }".to_string(),
-        const_declaration!(#[doc = "Compiled category for the protocol"] pub(crate) COMPILED_CATEGORY = category.category),
+        const_declaration!(#[doc = "Compiled category for the protocol"] pub COMPILED_CATEGORY = category.category),
 
         const_definition!(#[derive(Debug)] pub HashPrimitive),
         const_definition!(#[derive(Debug)] pub XOFPrimitive),
 
         "// SD Parameters".to_string(),
-        const_declaration!(#[doc = "(q) The Galois field size GL(q) = GL(2^8) = GL(256)"] pub(crate) PARAM_Q = category.sd_param_q),
-        const_declaration!(#[doc = "Code length PARAM_CODE_LENGTH"] pub(crate) PARAM_M = category.sd_param_m),
-        const_declaration!(#[doc = "Vector dimension PARAM_CODE_DIMENSION"] pub(crate) PARAM_K = category.sd_param_k),
-        const_declaration!(#[doc = "The Hamming weight bound PARAM_CODE_WEIGHT"] pub(crate) PARAM_W = category.sd_param_w),
-        const_declaration!(#[doc = "Splitting factor for the syndrome variant"] pub(crate) PARAM_SPLITTING_FACTOR = category.sd_param_splitting_factor),
+        const_declaration!(#[doc = "(q) The Galois field size GL(q) = GL(2^8) = GL(256)"] pub PARAM_Q = category.sd_param_q),
+        const_declaration!(#[doc = "Code length PARAM_CODE_LENGTH"] pub PARAM_M = category.sd_param_m),
+        const_declaration!(#[doc = "Vector dimension PARAM_CODE_DIMENSION"] pub PARAM_K = category.sd_param_k),
+        const_declaration!(#[doc = "The Hamming weight bound PARAM_CODE_WEIGHT"] pub PARAM_W = category.sd_param_w),
+        const_declaration!(#[doc = "Splitting factor for the syndrome variant"] pub PARAM_SPLITTING_FACTOR = category.sd_param_splitting_factor),
         
         "// MPCitH Parameters".to_string(),
-        const_declaration!(#[doc = "(t) Number of random evaluation points"] pub(crate) PARAM_T = category.mpc_param_t),
-        const_declaration!(#[doc = "(η) F_point size for F_point = F_(q^η)"] pub(crate) PARAM_ETA = category.mpc_param_eta),
-        const_declaration!(#[doc = "(N) Number of secret parties = q"] pub(crate) PARAM_N = category.mpc_param_n),
-        const_declaration!(#[doc = "(τ) Number of repetitions of the protocol"] pub(crate) PARAM_TAU = category.mpc_param_tau),
-        const_declaration!(#[doc = "(ℓ) Privacy threshold (number of open parties)"] pub(crate) PARAM_L = category.mpc_param_l),
+        const_declaration!(#[doc = "(t) Number of random evaluation points"] pub PARAM_T = category.mpc_param_t),
+        const_declaration!(#[doc = "(η) F_point size for F_point = F_(q^η)"] pub PARAM_ETA = category.mpc_param_eta),
+        const_declaration!(#[doc = "(N) Number of secret parties = q"] pub PARAM_N = category.mpc_param_n),
+        const_declaration!(#[doc = "(τ) Number of repetitions of the protocol"] pub PARAM_TAU = category.mpc_param_tau),
+        const_declaration!(#[doc = "(ℓ) Privacy threshold (number of open parties)"] pub PARAM_L = category.mpc_param_l),
         
         "// Signature Parameters".to_string(),
         const_declaration!(#[doc = "Seed size in bytes"] pub PARAM_SEED_SIZE = (category.param_seed_size / 8)),
@@ -88,15 +88,15 @@ fn build_constants(category: Category) -> String {
         const_declaration!(#[doc = "Digest (Hash) size in bytes"] pub PARAM_DIGEST_SIZE = (category.param_digest_size / 8)),
         
         "// Computed Parameters".to_string(),
-        const_declaration!(#[doc = "(log_2(N)) Number of log2(nb_parties) for the number of parties"] pub(crate) PARAM_LOG_N = (category.mpc_param_n.ilog2() as usize)),
-        const_declaration!(#[doc = "(λ) Security parameter. E.g. used for the 2λ bit salt for commitments"] pub(crate) PARAM_LAMBDA = (category.sd_param_q / 2)),
-        const_declaration!(#[doc = "m - k"] pub(crate) PARAM_M_SUB_K = (category.sd_param_m - category.sd_param_k)),
-        const_declaration!(#[doc = "Chunk size for the splitting variant of the Syndrome Decoding Problem for Code Length m"] pub(crate) PARAM_CHUNK_M = (category.sd_param_m / category.sd_param_splitting_factor)),
-        const_declaration!(#[doc = "Chunk size for the splitting variant of the Syndrome Decoding Problem for Hamming weight w"] pub(crate) PARAM_CHUNK_W = (category.sd_param_w / category.sd_param_splitting_factor)),
+        const_declaration!(#[doc = "(log_2(N)) Number of log2(nb_parties) for the number of parties"] pub PARAM_LOG_N = (category.mpc_param_n.ilog2() as usize)),
+        const_declaration!(#[doc = "(λ) Security parameter. E.g. used for the 2λ bit salt for commitments"] pub PARAM_LAMBDA = (category.sd_param_q / 2)),
+        const_declaration!(#[doc = "m - k"] pub PARAM_M_SUB_K = (category.sd_param_m - category.sd_param_k)),
+        const_declaration!(#[doc = "Chunk size for the splitting variant of the Syndrome Decoding Problem for Code Length m"] pub PARAM_CHUNK_M = (category.sd_param_m / category.sd_param_splitting_factor)),
+        const_declaration!(#[doc = "Chunk size for the splitting variant of the Syndrome Decoding Problem for Hamming weight w"] pub PARAM_CHUNK_W = (category.sd_param_w / category.sd_param_splitting_factor)),
 
         "// Weird params from spec, TODO remove?".to_string(),
-        const_declaration!(#[doc = "m-k rounded up to 32 for performance"] pub(crate) PARAM_M_SUB_K_CEIL32 = (((category.sd_param_m - category.sd_param_k + 31) >> 5) << 5)),
-        const_declaration!(#[doc = "m rounded up to 32 for performance"] pub(crate) PARAM_M_CEIL32 = (((category.sd_param_m + 31) >> 5) << 5)),
+        const_declaration!(#[doc = "m-k rounded up to 32 for performance"] pub PARAM_M_SUB_K_CEIL32 = (((category.sd_param_m - category.sd_param_k + 31) >> 5) << 5)),
+        const_declaration!(#[doc = "m rounded up to 32 for performance"] pub PARAM_M_CEIL32 = (((category.sd_param_m + 31) >> 5) << 5)),
 
         "// Primitives".to_string(),
         const_declaration!(#[doc = "Hash primitive used in the signature scheme"] pub HASH_PRIMITIVE = category.primitive_hash),
@@ -334,8 +334,8 @@ struct Precomputed<'a> {
 impl Precomputed<'_> {
     fn output(&self) -> String {
         vec![
-            format!("#[doc = \"Precomputed public polynomial F\"] pub(crate) const PRECOMPUTED_F_POLY: [u8; {}] = {:?};", self.precomputed_f_poly.len(), self.precomputed_f_poly),
-            format!("#[doc = \"Lagrange coefficients for computing S\"] pub(crate) const PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S: [u8; {}] = {:?};", self.precomputed_leading_coefficients_of_lj_for_s.len(), self.precomputed_leading_coefficients_of_lj_for_s),
+            format!("#[doc = \"Precomputed public polynomial F\"] pub const PRECOMPUTED_F_POLY: [u8; {}] = {:?};", self.precomputed_f_poly.len(), self.precomputed_f_poly),
+            format!("#[doc = \"Lagrange coefficients for computing S\"] pub const PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S: [u8; {}] = {:?};", self.precomputed_leading_coefficients_of_lj_for_s.len(), self.precomputed_leading_coefficients_of_lj_for_s),
         ].join("\n")
     }
 }

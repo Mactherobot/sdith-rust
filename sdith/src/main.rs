@@ -1,5 +1,3 @@
-// TODO: Can we remove const generics. Currently used by `matrices.rs`
-
 use clap::{Error, Parser};
 use cli::Commands;
 

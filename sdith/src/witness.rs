@@ -18,10 +18,10 @@ use crate::{
 
 // Polynomial types
 /// QPoly is a polynomial of degree PARAM_CHUNK_WEIGHT * PARAM_SPLITTING_FACTOR. Split into a matrix of PARAM_SPLITTING_FACTOR rows and PARAM_CHUNK_WEIGHT columns.
-pub(crate) type QPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
-pub(crate) type QPolyComplete = [[u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR];
-pub(crate) type PPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
-pub(crate) type SPoly = [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
+pub type QPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
+pub type QPolyComplete = [[u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR];
+pub type PPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
+pub type SPoly = [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
 
 /// Instance Definition:
 ///
@@ -30,10 +30,10 @@ pub(crate) type SPoly = [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
 /// It corresponds to the public key.
 ///
 /// Some member can be pointers when they are generated at each signing and verification from the others members.
-pub(crate) struct Instance {
-    pub(crate) seed_h: Seed,
-    pub(crate) y: [u8; PARAM_M_SUB_K],
-    pub(crate) h_prime: HPrimeMatrix,
+pub struct Instance {
+    pub seed_h: Seed,
+    pub y: [u8; PARAM_M_SUB_K],
+    pub h_prime: HPrimeMatrix,
 }
 
 /// Solution Definition: (s_a, Q', P)
@@ -44,18 +44,18 @@ pub(crate) struct Instance {
 ///
 /// It corresponds to the extended solution, meaning that it contains all the secret values which can be deterministically built from the solution itself and which are inputs of the underlying MPC protocol.
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Solution {
-    pub(crate) s_a: [u8; PARAM_K],
-    pub(crate) q_poly: QPoly,
-    pub(crate) p_poly: PPoly,
+pub struct Solution {
+    pub s_a: [u8; PARAM_K],
+    pub q_poly: QPoly,
+    pub p_poly: PPoly,
 }
 
 /// k + 2w
-pub(crate) const SOLUTION_PLAIN_SIZE: usize =
+pub const SOLUTION_PLAIN_SIZE: usize =
     PARAM_K + (PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2);
 
 impl Solution {
-    pub(crate) fn serialise(&self) -> [u8; SOLUTION_PLAIN_SIZE] {
+    pub fn serialise(&self) -> [u8; SOLUTION_PLAIN_SIZE] {
         let mut serialised = [0u8; PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2];
         serialised[..PARAM_K].copy_from_slice(&self.s_a);
         for i in 0..PARAM_SPLITTING_FACTOR {
@@ -70,7 +70,7 @@ impl Solution {
         serialised
     }
 
-    pub(crate) fn parse(solution_plain: [u8; SOLUTION_PLAIN_SIZE]) -> Self {
+    pub fn parse(solution_plain: [u8; SOLUTION_PLAIN_SIZE]) -> Self {
         let mut s_a = [0u8; PARAM_K];
         s_a.copy_from_slice(&solution_plain[..PARAM_K]);
         let mut q_poly = [[0u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
@@ -94,15 +94,15 @@ impl Solution {
     }
 }
 
-pub(crate) struct Witness {
-    pub(crate) s_a: [u8; PARAM_K],
+pub struct Witness {
+    pub s_a: [u8; PARAM_K],
     /// s_b is only used for testing purposes
     s_b: [u8; PARAM_M_SUB_K],
-    pub(crate) y: [u8; PARAM_M_SUB_K],
-    pub(crate) h_prime: HPrimeMatrix,
-    pub(crate) seed_h: Seed,
-    pub(crate) q_poly: QPoly,
-    pub(crate) p_poly: PPoly,
+    pub y: [u8; PARAM_M_SUB_K],
+    pub h_prime: HPrimeMatrix,
+    pub seed_h: Seed,
+    pub q_poly: QPoly,
+    pub p_poly: PPoly,
 }
 
 /// Generate a witness for the instance.
@@ -110,7 +110,7 @@ pub(crate) struct Witness {
 /// Inputs:
 /// - seed_h: Seed used to generate the H matrix.
 /// - polynomials: Tuple containing the polynomials Q', S, and P.
-pub(crate) fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly)) -> Witness {
+pub fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly)) -> Witness {
     let (q_poly, s_poly, p_poly) = polynomials;
 
     // s is pre serialized as (s_A | s_B) due to the nature of SPoly
@@ -137,7 +137,7 @@ pub(crate) fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly))
 }
 
 /// Compute y = s_b + H' s_a
-pub(crate) fn compute_y(
+pub fn compute_y(
     s_b: &[u8; PARAM_M_SUB_K],
     s_a: &[u8; PARAM_K],
     h_prime: &HPrimeMatrix,
@@ -149,7 +149,7 @@ pub(crate) fn compute_y(
 
 /// Expand a seed into multiple seeds.
 /// (seed_1, seed_2, ..., seed_n) = ExpandSeed(seed_root, salt := 0, n)
-pub(crate) fn expand_seed<const SEEDS: usize>(seed_root: Seed) -> [Seed; SEEDS] {
+pub fn expand_seed<const SEEDS: usize>(seed_root: Seed) -> [Seed; SEEDS] {
     let mut prg = PRG::init(&seed_root, Some(&[0u8; PARAM_SALT_SIZE]));
     let mut seeds = Vec::<Seed>::with_capacity(SEEDS);
     for _ in 0..SEEDS {
@@ -160,7 +160,7 @@ pub(crate) fn expand_seed<const SEEDS: usize>(seed_root: Seed) -> [Seed; SEEDS] 
     seeds.try_into().expect("Failed to convert seeds")
 }
 
-pub(crate) fn generate_instance_with_solution(master_seed: Seed) -> (Instance, Solution) {
+pub fn generate_instance_with_solution(master_seed: Seed) -> (Instance, Solution) {
     let mut prg = PRG::init(&master_seed, None);
 
     let (q, s, p, _x) = sample_witness(&mut prg);
@@ -199,7 +199,7 @@ pub(crate) fn generate_instance_with_solution(master_seed: Seed) -> (Instance, S
 ///
 /// A tuple containing the generated polynomials: `(Q', S, P, x)`.
 /// `x` is only used for testing purposes.
-pub(crate) fn sample_witness(
+pub fn sample_witness(
     prg: &mut PRG,
 ) -> (
     QPoly,
@@ -398,7 +398,7 @@ fn sample_non_zero_x_positions(prg: &mut PRG) -> [u8; PARAM_CHUNK_W] {
 
 /// Create a vector x with hamming weight PARAM_CHUNK_WEIGHT.
 /// Returns x_vector and the non-zero positions.
-pub(crate) fn sample_x(prg: &mut PRG) -> ([u8; PARAM_CHUNK_M], [u8; PARAM_CHUNK_W]) {
+pub fn sample_x(prg: &mut PRG) -> ([u8; PARAM_CHUNK_M], [u8; PARAM_CHUNK_W]) {
     let positions = sample_non_zero_x_positions(prg);
     let mut x_vector = [0_u8; PARAM_CHUNK_M];
     let mut non_zero_coordinates = [1u8; PARAM_CHUNK_W];
@@ -425,7 +425,7 @@ fn compute_q_prime_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N] {
 /// F(X) = prod_{i=1}^{N} (X - f_i) and F(f_i) = 0.
 ///
 /// Essentially this computes the monic polynomial from the roots (f1). I.e. Q(root) = 0. Returns truncated polynomial to N. (removing the leading coefficient 1)
-pub(crate) fn compute_vanishing_polynomial<const N: usize>(set: &[u8; N]) -> [u8; N] {
+pub fn compute_vanishing_polynomial<const N: usize>(set: &[u8; N]) -> [u8; N] {
     let mut coeffs = [1u8; N];
 
     for (i, fi) in set.iter().enumerate() {
@@ -438,7 +438,7 @@ pub(crate) fn compute_vanishing_polynomial<const N: usize>(set: &[u8; N]) -> [u8
 }
 
 /// Completes the q polynomial by inserting the leading coefficient at the beginning of each d-split
-pub(crate) fn complete_q(q_poly: QPoly, leading: u8) -> QPolyComplete {
+pub fn complete_q(q_poly: QPoly, leading: u8) -> QPolyComplete {
     let mut q_poly_out = [[0_u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR];
 
     for d in 0..PARAM_SPLITTING_FACTOR {
@@ -452,7 +452,7 @@ pub(crate) fn complete_q(q_poly: QPoly, leading: u8) -> QPolyComplete {
 }
 
 /// Generate `s = (s_a | s_b)` from `s_a`, `H'` and `y`. Optionally add `y` to `H's_a`.b = H's_a
-pub(crate) fn compute_s(
+pub fn compute_s(
     s_a: &[u8; PARAM_K],
     h_prime: &HPrimeMatrix,
     y: Option<&[u8; PARAM_M_SUB_K]>,
@@ -483,7 +483,7 @@ pub(crate) fn compute_s(
 }
 
 /// Compute SPoly from s = Parse((s, F_q^(m/d), F_q^(m/d),...)
-pub(crate) fn compute_s_poly(s: [u8; PARAM_M]) -> SPoly {
+pub fn compute_s_poly(s: [u8; PARAM_M]) -> SPoly {
     let mut s_poly: SPoly = [[0u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
     for (i, s_poly_d) in s.chunks(PARAM_CHUNK_M).enumerate() {
         s_poly[i] = s_poly_d.try_into().expect("Invalid chunk size");

@@ -5,21 +5,21 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub(crate) struct Input {
-    pub(crate) solution: Solution,
-    pub(crate) beaver_ab: (BeaverA, BeaverB),
-    pub(crate) beaver_c: BeaverC,
+pub struct Input {
+    pub solution: Solution,
+    pub beaver_ab: (BeaverA, BeaverB),
+    pub beaver_c: BeaverC,
 }
 
 /// k+2w+t(2d+1)η
-pub(crate) const INPUT_SIZE: usize = SOLUTION_PLAIN_SIZE + BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE;
+pub const INPUT_SIZE: usize = SOLUTION_PLAIN_SIZE + BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE;
 
-pub(crate) type InputSharePlain = [u8; INPUT_SIZE];
-pub(crate) type InputSharesPlain = [[InputSharePlain; PARAM_N]; PARAM_TAU];
+pub type InputSharePlain = [u8; INPUT_SIZE];
+pub type InputSharesPlain = [[InputSharePlain; PARAM_N]; PARAM_TAU];
 
 impl Input {
     // Turn the input into a byte array for mpc of `F_q^(k+2w+t(2d+1)η)`
-    pub(crate) fn serialise(&self) -> [u8; INPUT_SIZE] {
+    pub fn serialise(&self) -> [u8; INPUT_SIZE] {
         let mut serialised = [0u8; INPUT_SIZE];
         serialised[..SOLUTION_PLAIN_SIZE].copy_from_slice(&self.solution.serialise());
         serialised[SOLUTION_PLAIN_SIZE..].copy_from_slice(&Beaver::serialise(
@@ -30,14 +30,14 @@ impl Input {
         serialised
     }
 
-    pub(crate) fn deserialise_solution(
+    pub fn deserialise_solution(
         truncated_input_plain: [u8; SOLUTION_PLAIN_SIZE],
     ) -> Solution {
         let solution = Solution::parse(truncated_input_plain);
         solution
     }
 
-    pub(crate) fn parse(input_plain: InputSharePlain) -> Input {
+    pub fn parse(input_plain: InputSharePlain) -> Input {
         let solution = Solution::parse(input_plain[..SOLUTION_PLAIN_SIZE].try_into().unwrap());
         let (a, b, c) = Beaver::parse(input_plain[SOLUTION_PLAIN_SIZE..].try_into().unwrap());
 
@@ -50,14 +50,14 @@ impl Input {
 
     /// Remove the Beaver triples from the input shares as they can be derived from the Solution shares
     /// {[x_A]_i, [P]_i, [Q]_i}_(i \in I) and broadcast shares {[α]_i, [β]_i, [v]_i}_(i \in I).
-    pub(crate) fn truncate_beaver_triples(
+    pub fn truncate_beaver_triples(
         input_share: &[u8; INPUT_SIZE],
     ) -> [u8; SOLUTION_PLAIN_SIZE] {
         return input_share[..SOLUTION_PLAIN_SIZE].try_into().unwrap();
     }
 
     /// Append the Beaver triples from the input shares as they can be derived from the Solution shares
-    pub(crate) fn append_beaver_triples(
+    pub fn append_beaver_triples(
         solution_share: [u8; SOLUTION_PLAIN_SIZE],
         beaver_triples: (BeaverA, BeaverB, BeaverC),
     ) -> [u8; INPUT_SIZE] {

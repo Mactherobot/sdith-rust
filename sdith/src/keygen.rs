@@ -9,8 +9,8 @@ use crate::{
 
 #[derive(Debug, Clone, Copy)]
 pub struct PublicKey {
-    pub(crate) seed_h: Seed,
-    pub(crate) y: [u8; PARAM_M_SUB_K],
+    pub seed_h: Seed,
+    pub y: [u8; PARAM_M_SUB_K],
 }
 
 impl Marshalling for PublicKey {
@@ -38,10 +38,10 @@ impl Marshalling for PublicKey {
 
 #[derive(Debug, Clone, Copy)]
 pub struct SecretKey {
-    pub(crate) seed_h: Seed,
-    pub(crate) y: [u8; PARAM_M_SUB_K],
+    pub seed_h: Seed,
+    pub y: [u8; PARAM_M_SUB_K],
     /// Solution to the instance (s_a, Q', )
-    pub(crate) solution: Solution,
+    pub solution: Solution,
 }
 
 impl Marshalling for SecretKey {
