@@ -38,8 +38,6 @@ impl SDitHXOFTrait<Shake> for SDitHXOF<Shake> {
     fn init_base(x: &[u8]) -> Self {
         let mut xof = Self::get_xof();
         xof.update(x);
-        let mut tmp = [0u8; 0];
-        xof.squeeze(&mut tmp);
         SDitHXOF { xof }
     }
 
@@ -52,8 +50,6 @@ impl SDitHXOFTrait<Shake> for SDitHXOF<Shake> {
             xof.update(salt);
         }
         xof.update(seed);
-        let mut tmp = [0u8; 0];
-        xof.squeeze(&mut tmp);
         SDitHXOF { xof }
     }
 

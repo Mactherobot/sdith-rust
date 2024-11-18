@@ -12,7 +12,7 @@ pub(crate) fn gf256_evaluate_polynomial_horner(coeffs: &[u8], x: u8) -> u8 {
         acc = gf256_mul(acc, x);
         acc = gf256_add(acc, coeffs[i]);
     }
-    return acc;
+    acc
 }
 
 /// Evaluate a polynomial at a point using Horner's method. Adds leading coefficient 1 to the polynomial for monic.
@@ -24,7 +24,7 @@ pub(crate) fn gf256_evaluate_polynomial_horner_monic(coeffs: &[u8], x: u8) -> u8
         acc = gf256_mul(acc, x);
         acc = gf256_add(acc, coeffs[i]);
     }
-    return acc;
+    acc
 }
 
 /// The function divides the input polynomial P_in(X) by the binomial (X−α), assuming P_in(X) is a monic polynomial (a polynomial whose leading coefficient is 1). It outputs the resulting quotient polynomial Q(X).

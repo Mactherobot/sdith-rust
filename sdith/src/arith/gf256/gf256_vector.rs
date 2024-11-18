@@ -14,14 +14,6 @@ pub(crate) fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
         vz[i] = gf256_add(vz[i], vx[i]);
     }
 }
-/// vz'[] = vz[] + (vx[], 00000...)
-pub(crate) fn gf256_add_vector_with_padding(vz: &mut [u8], vx: &[u8]) {
-    assert!(vz.len() >= vx.len());
-    let bytes = vx.len();
-    for i in 0..bytes {
-        vz[i] = gf256_add(vz[i], vx[i]);
-    }
-}
 
 #[cfg(not(feature = "simd"))]
 /// vx'[] = vx[] * scalar
@@ -181,6 +173,15 @@ pub(crate) fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) 
             *vz = r ^ vx_chunk;
         };
         vz_chunk.copy_from_slice(vz_chunk_simd.as_array());
+    }
+}
+
+/// vz'[] = vz[] + (vx[], 00000...)
+pub(crate) fn gf256_add_vector_with_padding(vz: &mut [u8], vx: &[u8]) {
+    assert!(vz.len() >= vx.len());
+    let bytes = vx.len();
+    for i in 0..bytes {
+        vz[i] = gf256_add(vz[i], vx[i]);
     }
 }
 

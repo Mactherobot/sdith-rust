@@ -13,6 +13,7 @@ pub type Matrix<const COLS: usize, const ROWS: usize> = [u8; ROWS * COLS];
 /// TODO: revert back to [`PARAM_M_SUB_K`]
 pub(crate) type HPrimeMatrix = Matrix<{ PARAM_K }, { PARAM_M_SUB_K_CEIL32 }>;
 
+#[cfg(not(feature = "simd"))]
 /// Multiply H' matrix with a vector `y` of length [`PARAM_K`].
 pub(crate) fn mul_hprime_vector(vz: &mut [u8], matrix: &HPrimeMatrix, y: &[u8; PARAM_K]) {
     let mut unreduced_vz = [0u8; PARAM_M_SUB_K];
@@ -22,6 +23,25 @@ pub(crate) fn mul_hprime_vector(vz: &mut [u8], matrix: &HPrimeMatrix, y: &[u8; P
             unreduced_vz[i] ^= matrix[index].field_mul(y[j]);
             index += 1;
         }
+    }
+
+    for i in 0..PARAM_M_SUB_K {
+        vz[i] ^= unreduced_vz[i];
+    }
+}
+
+/// Multiply H' matrix with a vector `y` of length [`PARAM_K`].
+#[cfg(feature = "simd")]
+pub(crate) fn mul_hprime_vector(vz: &mut [u8], matrix: &HPrimeMatrix, y: &[u8; PARAM_K]) {
+    use crate::arith::gf256::gf256_vector::{self, gf256_add_vector, gf256_mul_vector_by_scalar};
+
+    let mut unreduced_vz = [0u8; PARAM_M_SUB_K];
+    let mut offset = 0;
+    for y in y.iter() {
+        let mut matrix_part: [u8; PARAM_M_SUB_K] =
+            matrix[offset..offset + PARAM_M_SUB_K].try_into().unwrap();
+        gf256_mul_vector_by_scalar(&mut matrix_part, *y);
+        gf256_add_vector(&mut unreduced_vz, &matrix_part);
     }
 
     for i in 0..PARAM_M_SUB_K {
