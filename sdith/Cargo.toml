@@ -13,10 +13,11 @@ num-traits = "0.2.19"
 rayon = { version = "1.10.0", optional = true }
 blake3 = { version = "1.5.4", optional = true }
 criterion-cycles-per-byte = { version = "0.6.1", optional = true }
+hex = { version = "0.4.3", optional = true }
+nist-pqc-seeded-rng = { version = "0.2.0", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
-nist-pqc-seeded-rng = "0.2.0"
 
 [[bench]]
 name = "benchmark"
@@ -33,11 +34,21 @@ opt-level = 3
 debug = 1 # TODO: remove this
 
 [features]
-xof_blake3 = ["dep:blake3"]
-hash_blake3 = ["dep:blake3"]
+default = ["category_one", "optimized"]
+
+# Categories
 category_one = []
 category_three = []
 category_five = []
+# Optimization features
+optimized = ["simd", "parallel"]
 parallel = ["dep:rayon"]
 simd = []
+
+# Testing and Benchmarking features
+kat = ["dep:hex", "dep:nist-pqc-seeded-rng"]        # Include Known Answer Tests
 cycles_per_byte = ["dep:criterion-cycles-per-byte"] # Benchmarking feature
+
+# Experimental features
+xof_blake3 = ["dep:blake3"]
+hash_blake3 = ["dep:blake3"]

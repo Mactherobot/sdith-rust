@@ -43,25 +43,36 @@
   - Nightly vs stable performance.
   - Lookup tables, can we place these in the stack?
 - Benchmarking and profiling
- - What have we done so far?
-  - Criterion (cycles and time), 
-  - Profiling (samply)
-  - Heaptrack (memory)
-  - Parallelism: test with different number of threads, 2, 4, 8, 16
-  - ulimit -s unlimited
+- What have we done so far?
+- Criterion (cycles and time),
+- Profiling (samply)
+- Heaptrack (memory)
+- Parallelism: test with different number of threads, 2, 4, 8, 16
+- ulimit -s unlimited
 
 # Things we want to code
 
-- NIST tests and API \*
-- SIMD optimisations for Points and other vectors. \*
-- Hash functions: Haraka v2, Xoodyak (NIST finalist), K12 (less rounds)
-  - Haraka v2 512 is specifically for merkle tree construction
-- Final version (how to structure a rust package/cli) Maybe do after handing in \*
-- Remove const feature flag to test stable rust.
-- Test performance of stable vs nightly.
-- TODOs...
-- More parallelism?
-- Batching for merkle tree
-- MPC do vector additions of the evaluations with SIMD
-- Better documentation
-- Clean up and more tests
+- [] NIST tests and API \*
+  - [] Tests: currently we cannot compare to their results (probably due to hashing)
+  - [] API: we need to implement the API for the NIST tests
+- [x] SIMD optimisations for Points and other vectors. \*
+  - [x] MPC do vector additions of the evaluations with SIMD
+  - [x] Matrix multiplication
+- [] Hash functions: Haraka v2, Xoodyak (NIST finalist), K12 (less rounds)
+  - [] Haraka v2 512 is specifically for merkle tree construction
+  - [x] Blake3
+  - [] Xoodyak
+  - [] K12
+- [] Final version (how to structure a rust package/cli) Maybe do after handing in \*
+- [x] Remove const feature flag to test stable rust.
+- [] Test performance of stable vs nightly.
+- [] TODOs...
+- [] More parallelism?
+- [] Batching for merkle tree
+- [] Better documentation
+- [] Clean up and more tests
+- [] Benchmarking and profiling
+  - [x] Benching api functions (keygen, sign, verify)
+  - [] More granular benchmarking
+    - [x] SIMD
+    - [x] Parallelism

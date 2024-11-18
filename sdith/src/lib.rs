@@ -10,6 +10,8 @@ pub mod signature;
 pub mod subroutines;
 pub mod utils;
 pub mod witness;
+#[cfg(feature = "kat")]
+mod kat;
 
 #[cfg(test)]
 mod tests {
