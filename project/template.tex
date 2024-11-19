@@ -97,14 +97,14 @@ few pages. Introduce what we have done and how the paper is structured
 
 In 1994, the discovery of Shor's algorithm~\cite{shor1997}, provided a polynomial time algorithm for factoring integers and computing discrete logarithms using quantum computing. Back then, quantum computers where theories on paper. However, two decades later, significant developments in quantum technology, has brought us dangerously close to the point where quantum computers can solve foundational problems, which would break the security of modern standards of public-key cryptosystems. For example the Diffie-Hellman key exchange standard X25519, used in TLSv1.3, is not post-quantum secure.
 
-In 2016, the National Institute of Standards and Technology (NIST), known for standardizing cryptographic primitives like AES and SHA, initiated a call for quantum resistant public-key cryptosystems~\cite{nistcall}. This let to the standardization of three signature schemes, namely Dilithium~\cite{ducas2018crystals}, Falcon~\cite{fouque2018falcon} and SPHINCS+~\cite{bernstein2019sphincs+}. All three of the schemes are based on the hardness of structured lattice problems. This has led to the most recent call in 2022 for additional quantum resistant signature schemes based on different assumptions to diversify the standards available for the future.
+In 2016, the National Institute of Standards and Technology (NIST), known for standardizing cryptographic primitives like AES and SHA, initiated a call for quantum resistant public-key cryptosystems~\cite{nistcall}. This led to the standardization of three signature schemes, namely Dilithium~\cite{ducas2018crystals}, Falcon~\cite{fouque2018falcon} and SPHINCS+~\cite{bernstein2019sphincs+}. All three of the schemes are based on the hardness of structured lattice problems. This has led to the most recent call in 2022 for additional quantum resistant signature schemes based on different assumptions to diversify the standards available for the future.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \chapter{Mathematical preliminaries}
 \label{ch:mathprelim}
 
-With the introduction of public-key cryptosystems by Diffie and Hellman in 1976, we saw the introduction schemes like the RSA based on factoring of large integers and the ElGamal scheme based on the discrete logarithm problem. While these are the protocols that have seen wide adoption, there exists schemes based on error correction and coding theory. These are their own disciplin of information theory which predates the introduction of public-key cryptography. Although the scheme is less prominent, McEliece introduced a PK scheme based on coding theory already in 1978 \cite{mceliece1978public}. The McEliece PK scheme is based on the hardness of decoding random linear codes \cite{berlekamp1978inherent}. While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based cryptoschemes have seen a resurgance as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent movements in code-based cryptosystems have shown that the performance needed code based cryptographic schemes practical is within reach. Introductions of linear based codes on finite fields and MPC threshold schemes \cite{baum2020concretely} show promising results and with the SD-in-the-Head scheme, such techniques are combined to create a post-quantum secure signature scheme.
+With the introduction of public-key cryptosystems by Diffie and Hellman in 1976, we saw the introduction schemes like the RSA based on factoring of large integers and the ElGamal scheme based on the discrete logarithm problem. While these are the protocols that have seen wide adoption, there exists schemes based on coding theory. These are their own discipline of information theory which predates the introduction of public-key cryptography. Although the scheme is less prominent, McEliece introduced a PK scheme based on coding theory already in 1978 \cite{mceliece1978public}. The McEliece PK scheme is based on the hardness of decoding random linear codes \cite{berlekamp1978inherent}. While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based crypto-schemes have seen a resurgence as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent movements in code-based cryptosystems have shown that the performance needed for code based cryptographic schemes practically is within reach. Introductions of linear based codes on finite fields and MPC (Multi Party Computation) threshold schemes \cite{baum2020concretely} show promising results and with the SD-in-the-Head scheme, such techniques are combined to create a post-quantum secure signature scheme.
 
 In this section we will go through the mathematical background needed to understand the basis and individual parts of the SD-in-the-Head scheme. First,  we will describe the Galois finite field $\mathbb{F}_q$ used in the scheme \cite{martinez2023syndromes, reed1960polynomial}. Next, we will describe the Syndrome Decoding problem instance \cite{aguilarsyndrome11,mceliece1978public,berlekamp1978inherent, baldi2013optimization}. Next, we describe the \textit{Multi-Party-Computation-in-the-Head} paradigm and the polynomial reduction of the SD instance that makes it possible to use the paradigm \cite{baum2020concretely} in the schemes. Additionally, we will describe the linear secret sharing scheme that enables the performant \textit{threshold variant}~\cite{feneuil2023threshold}. Finally, we will describe the Fiat-Shamir heuristic that is used to turn the scheme into a signature scheme \cite{fiat1986prove}.
 
@@ -257,8 +257,46 @@ Observe that if both triples are correct multiplication triples (i.e., $z = xy$ 
 
 \section{Fiat-Shamir Heuristic}
 \label{sec:fiatshamir}
+In order to turn any zero-knowledge protocol into a signature scheme. One can use the idea outlined in \cite{fiat1986prove}. We will outline the general idea here.
 
-\todo{Turning the ZKAoK into a signature scheme}
+A zero-knowledge protocol usually relies on the verifier to send a challenge to the prover which is in terms used as the randomness that the prover is not supposed to control. For the Fiat-Shamir paper the underlying protocol is based on factoring which is now known to be broken by quantum computing, specifically Shor's algorithm. But the ideas on how to turn a zero-knowledge protocol remains the same.
+
+Now in order to turn it into a signature scheme the prover instead of relying on the verifier sending some randomness, computes it based on a pseudo random function. The function takes as input the message and some random values that the prover generates and is now working as the challenge. The prover can now create compute the necessary values needed to proove that the message comes from the prover. For the SD-in-the-Head protocol this is going to be the witness values computed in the MPC protocol. So instead of the verifier needing to participate in the MPC protocol, the prover can do it locally and just compute the shares in his head. 
+
+% \subsection{This is just notes from the fiat shamir paper}
+% The first part is about the identification protocol used for creating smart cards or other ID cards. The protocol uses the fact the factorising is hard for a moduli $n = q \cdot p$, where $p$ and $q$ are large primes. For the identification protocol a trusted center is needed which they suggest to be a government or another type of trusted entity. The protocol is as follows:
+% The trusted center will do the following before issuing any IDs:
+% \begin{itemize}
+%   \item Pick a modulo $n = p \cdot q$
+%   \item Pkck a pseudo random function $f$. Mapping from arbitrary strings to $\[0,n)$
+% \end{itemize}
+% when provided some identification string $I$ on a new user a ID card can be created by the trusted center in the following way:
+% \begin{itemize}
+%   \item Compute values $v_j = f(I,j)$ for small values of $j$.
+%   \item Pick $k$ distinct values of $j$ for which $v_j$ is a quadratic residue modulo $n$. Then compute the smallest square root $s_j$ of $v_j^{-1}\pmod{n}$
+%   \item Issue the ID card containing $I$, the $k$ $s_j$ values and their indexes.
+% \end{itemize}
+%
+% Now for verification, a standalone processing unit needs to only contain the moduli $n$, and the function $f$. It can then by doing a simple flow of sending a challenge verify the identity of A. By some simple mathematical properties. They then go through several proofs that ensures that the verifier only accepts the identity of A if the math holds. And that the security is $2^{-kt}$ where $k$ is the number of distinct values, and $t$ is the challenge rounds in the verifying protocol.
+%
+% Furthermore, it defines a lemma that this protocol is, for a fixed length $k$ and arbitrary  $t$, a zero-knowledge proof. Where A can show to B that A is actually A without revealing any information about A to B.
+%
+%
+%
+% \todo{Turning the ZKAoK into a signature scheme}
+%
+% Such a zero-knowledge protocol can then be turned into a signature scheme by relying on the pseudo random function $f$ instead of having B send a challenge. 
+% So in order to sign a message $m$, the prover A will do the following:
+% \begin{itemize}
+%   \item Pick random values
+%   \item Compute the challenge locally by using the pseudo random function $f$ with the message. 
+%   \item Now use the challenge to prepare a value which prooves that A is actually A, and send the identification information, message, challenge and the prepared value that prooves the identity of A to B
+% \end{itemize}
+% Now for verifying A's signature on $m$ B does the following:
+% \begin{itemize}
+%   \item Compute the corresponding values based on the function and the identification information. Now verify that B can compute the same challenge values and only accept if they match.
+% \end{itemize}
+% The security relies on the fact that the moduli $n$ is sufficiently large and the pseudo random function is truly random.
 
 
 
