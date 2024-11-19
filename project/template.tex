@@ -104,7 +104,7 @@ In 2016, the National Institute of Standards and Technology (NIST), known for st
 \chapter{Mathematical preliminaries}
 \label{ch:mathprelim}
 
-In this section we will go through the mathematical background needed to understand the basis and individual parts of the SD-in-the-Head scheme. First, we will describe the specific problem instance used from coding theory in the Syndrome Decoding problem \cite{aguilarsyndrome11,mceliece1978public,berlekamp1978inherent, baldi2013optimization}. This includes the polynomial reduction that makes it possible to use the \textit{Multi-Party-Computation-in-the-Head} paradigm \cite{baum2020concretely}. Next we will describe the finite field $\mathbb{F}_q$ that is underlying to the codes \cite{martinez2023syndromes, reed1960polynomial}. Next we will describe the linear secret sharing scheme that enables the implemented \textit{threshold variant} \cite{feneuil2023threshold}
+In this section we will go through the mathematical background needed to understand the basis and individual parts of the SD-in-the-Head scheme. First, we will describe the specific problem instance used from coding theory in the Syndrome Decoding problem \cite{aguilarsyndrome11,mceliece1978public,berlekamp1978inherent, baldi2013optimization}. This includes the polynomial reduction that makes it possible to use the \textit{Multi-Party-Computation-in-the-Head} paradigm \cite{baum2020concretely}. Next we will describe the finite field $\mathbb{F}_q$ that is underlying to the codes \cite{martinez2023syndromes, reed1960polynomial}. Next we will describe the linear secret sharing scheme that enables the implemented \textit{threshold variant}~\cite{feneuil2023threshold}
 
 \todo{Maybe write out the reduction to three dimensional matching problem}
 
@@ -234,21 +234,22 @@ The $(t,n)$ Shamir's polynomial based secret sharing scheme is $(+,+)$-homomorph
 
 \todo{Write about creating shares, addition}
 
-\section{Zero-Knowledge Proofs}
-\label{sec:zkp}
-
-Zero-Knowledge Arguments of Knowledge (ZKAoK) allow a prover to convince a verifier that they knows a certain witness for a statement without revealing any additional information about the witness. \todo{What are they used for..}
-
-ZKAoK protocols have been introduced in multiple variants that each solve specific relational problems with varying levels of communication complexity and prover running times. While many of these perform well for these specific problems, there has long been a need for a well performing generic ZKAoK protocol.
-
-\subsection{MPC-in-the-Head}
-\label{sec:mpcith}
+\section{MPC-in-the-Head}
+\label{sec:mpcinth}
 
 Secure Multiparty Computation or MPC describes a cryptographic protocol that allows multiple parties to run a circuit $C$, while no information on inputs is leaked outside of the intended output of $C$. These algorithms can be augmented to ensure correctness, even in the presence of malicious parties. \todo{skriv mere her. Check threshold paper måske?}
 
 The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, uses MPC protocols to construct generic ZKAoK protocols. First, the statement is turned into a circuit $C$. On input $x$, $C$ outputs $y$ iff. $x = w$ for some witness $w$ which is a correct witness for the statement to be proven. The prover simulates the MPC protocol of all the parties \textit{in the head}. The parties each evalutate $C$ on a secret sharing of $w$
 
 The framework benefits from previous efficiency improvements in MPC protocols to improve the efficiency of ZKAoK protocols. Particularly, its possible to achieve \textit{constant-rate} zero knowledge. For an arbitrary circuit $C$ of size $s$ and a bounded fan-in, it is possible to construct a ZKAoK protocol with communication complexity $O(s) + \text{poly}(k)$, for a security parameter $k$. This is an improvement over previous ZKAoK protocols, which had communication complexity $O(ks)$. \todo{write about this in the previous section}.
+
+\subsection{Zero-Knowledge proofs from MPC}
+\label{sec:zkmpc}
+
+Zero-Knowledge Arguments of Knowledge (ZKAoK) allow a prover to convince a verifier that they knows a certain witness for a statement without revealing any additional information about the witness. \todo{What are they used for..}
+
+ZKAoK protocols have been introduced in multiple variants that each solve specific relational problems with varying levels of communication complexity and prover running times. While many of these perform well for these specific problems, there has long been a need for a well performing generic ZKAoK protocol.
+
 
 \subsection{MPC preprocessing}
 
