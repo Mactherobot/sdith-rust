@@ -106,37 +106,57 @@ In 2016, the National Institute of Standards and Technology (NIST), known for st
 
 With the introduction of public-key cryptosystems by Diffie and Hellman in 1976, we saw the introduction schemes like the RSA based on factoring of large integers and the ElGamal scheme based on the discrete logarithm problem. While these are the protocols that have seen wide adoption, there exists schemes based on coding theory. These are their own discipline of information theory which predates the introduction of public-key cryptography. Although the scheme is less prominent, McEliece introduced a PK scheme based on coding theory already in 1978 \cite{mceliece1978public}. The McEliece PK scheme is based on the hardness of decoding random linear codes \cite{berlekamp1978inherent}. While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based crypto-schemes have seen a resurgence as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent movements in code-based cryptosystems have shown that the performance needed for code based cryptographic schemes practically is within reach. Introductions of linear based codes on finite fields and MPC (Multi Party Computation) threshold schemes \cite{baum2020concretely} show promising results and with the SD-in-the-Head scheme, such techniques are combined to create a post-quantum secure signature scheme.
 
-In this section we will go through the mathematical background needed to understand the basis and individual parts of the SD-in-the-Head scheme. First,  we will describe the Galois finite field $\mathbb{F}_q$ used in the scheme \cite{martinez2023syndromes, reed1960polynomial}. Next, we will describe the Syndrome Decoding problem instance \cite{aguilarsyndrome11,mceliece1978public,berlekamp1978inherent, baldi2013optimization}. Next, we describe the \textit{Multi-Party-Computation-in-the-Head} paradigm and the polynomial reduction of the SD instance that makes it possible to use the paradigm \cite{baum2020concretely} in the schemes. Additionally, we will describe the linear secret sharing scheme that enables the performant \textit{threshold variant}~\cite{feneuil2023threshold}. Finally, we will describe the Fiat-Shamir heuristic that is used to turn the scheme into a signature scheme \cite{fiat1986prove}.
+In this section, we will outline the mathematical foundations required to understand the SD-in-the-Head scheme and its components. First, we will introduce the Galois finite field $\mathbb{F}_q$ used in the scheme \cite{martinez2023syndromes, reed1960polynomial, brownadvanced}. Next, we will discuss the Syndrome Decoding problem \cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}. Following this, we will explain the \textit{Multi-Party-Computation-in-the-Head} paradigm and the polynomial reduction of the SD problem, which enables its use in this framework \cite{baum2020concretely}. Additionally, we will detail the linear secret-sharing scheme that facilitates the efficient \textit{threshold variant}~\cite{feneuil2023threshold}. Finally, we will describe the Fiat-Shamir heuristic, which transforms the scheme into a signature mechanism~\cite{fiat1986prove}. 
 
 % subsection  (end)
 \section{Galois Finite Field}
 \label{sec:gf256}
-The protocol uses po
+Finite fields lays the basis for many cryptographic protocols and primitives. In essence, finite field theory describes the research into the relation and properties between numbers, while disregarding the numbers themselves. In order to define finite fields, we first need to define a \textit{group} and a \textit{finite field} (\autoref{def:group} and \autoref{def:field}, respectively).
 
-This paper \cite{brownadvanced} describes the mathematical model around the galois field $GF(2^8)$.
+\begin{definition}
+  \label{def:group}
+  A group $\mathbb{G}$ is a tuple $(\mathbb{G}, \times, 1)$ where, $\mathbb{G}$ is the set of elements in the group, $\times$ is a binary operator, and $1$ is the multiplicative identity. The group $\mathbb{G}$ must satisfy the following properties:
+  \begin{enumerate}
+    \item $\mathbb{G}$ is \textbf{closed} under $\times$. For all $a,b \in \mathbb{G}$, $a \times b \in \mathbb{G}$.
+    \item $\mathbb{G}$ is \textbf{associative} under $\times$. For all $a,b,c \in \mathbb{G}$, $(a \times b) \times c = a \times (b \times c)$.
+    \item $\mathbb{G}$ has an \textbf{identity} element $1$ under $\times$. For all $a \in \mathbb{G}$, $a \times 1 = a$.
+    \item $\mathbb{G}$ has an \textbf{inverse} element for each element under $\times$. For all $a \in \mathbb{G}$, there exists an element $a^{-1}$ such that $a \times a^{-1} = 1$.
+  \end{enumerate}
+\end{definition}
 
-In order to define addition and multiplication within the galois field. The bytes are represented as polynomials of the form:
-\begin{equation}
-  \label{eq:poly}
-  p(x) = p_7x^7 + p_6x^6 + p_5x^5 + p_4x^4 + p_3x^3 + p_2x^2 + p_1x + p_0
-\end{equation}
-This gives a representation of the byte: ${00011101}$ to be:
+\begin{definition}
+  \label{def:field}
+  A finite field $\mathbb{F}$ is a tuple $(\mathbb{F}, +, \times, 0, 1)$ where, $\mathbb{F}$ is the set of elements in the field, $+$ and $\times$ are the addition and multiplication operators, and $0$ and $1$ are the additive and multiplicative identities. The field $\mathbb{F}$ must satisfy the following properties:
+  \begin{enumerate}
+    \item  $+$ and $\times$ are \textbf{commutative}, \textbf{associative} and $\times$ is \textbf{distributive} over $+$.
+          \begin{enumerate}
+            \item $\forall a,b \in \mathbb{F}: a + b = b + a$ and $a \times b = b \times a$ (commutative)
+            \item $\forall a,b,c \in \mathbb{F}: (a + b) + c = a + (b + c)$ and $(a \times b) \times c = a \times (b \times c)$ (associative)
+            \item $\forall a,b,c \in \mathbb{F}: a \times (b + c) = a \times b + a \times c$ (distributive)
+          \end{enumerate}
+    \item $(\mathbb{F}, +, 0)$ forms an additive group
+    \item $(\mathbb{F} \setminus \{0\}, \times, 1)$ forms a multiplicative group
+  \end{enumerate}
+\end{definition}
+
+\noindent
+The most commonly known finite fields are the prime fields $\mathbb{F}p$, widely used in protocols like RSA. These fields can be extended into $\mathbb{F}{p^n}$, containing $p^n$ elements. However, prime fields are not efficient for iterating over large numbers of digits, a common requirement in protocols such as SD-in-the-Head. For better efficiency, we require a field that can be represented using bits or bytes. One method to achieve this is by constructing fields commonly known as Galois fields. Consider the simplest prime field $\mathbb{F}_2 = ({0,1}, \texttt{XOR}, \texttt{AND}, 0, 1)$. It is straightforward to verify that this field satisfies the properties outlined in \autoref{def
+}.
+
+The Galois field $\mathbb{F}{2^n}$ is an extension field of $\mathbb{F}2$, defined as $\mathbb{F}{2^n}$. This field is constructed by selecting an irreducible polynomial $p(x)$ of degree $n$ with coefficients in $\mathbb{F}2$. The elements of $\mathbb{F}{2^n}$ are represented as polynomials of degree at most $n-1$ with coefficients in $\mathbb{F}2$. Consequently, $\mathbb{F}{2^n}$ contains exactly $2^n$ elements. Addition and multiplication within $\mathbb{F}{2^n}$ are defined as follows: 
+
+\begin{itemize}
+  \item \textbf{Addition}: The addition of two elements $a,b \in \mathbb{F}_{2^n}$ is defined as the bitwise XOR of the two elements.
+  \item \textbf{Multiplication}: The multiplication of two elements $a,b \in \mathbb{F}_{2^n}$ is defined as the multiplication of the two polynomials modulo the irreducible polynomial $p(x)$.
+\end{itemize}
+
+In order to give a mental model of the field, consider elements in their polynomial form. For example the byte: ${00011101}$ to be:
 \begin{equation}
   \label{eq:example_poly}
   00011101 = p_4x^4 + p_3x^3 + p_2x^2 + p_0
 \end{equation}
 
-
-\subsection{Addition}
-\subsection{Multiplication}
-
-A group for bytes
-
-\todo{Describe the arithmetic operations in GF256 and the extension field}
-
-
-\subsection{Extension field}
-$F_q^\eta$
+A common choice for the irreducible polynomial is the Rijndael polynomial $p(x) = x^8 + x^4 + x^3 + x + 1$ used in the AES protocol \cite{brownadvanced}. This field is commonly known as $\mathbb{F}_{256}$, as it contains $2^8 = 256$ elements. The size of the field allows us to represent elements as bytes, which is efficient for iterating over large numbers of digits.
 
 \subsubsection{Polynomial evaluation}
 For polynomial evalution in the multiparty computation seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. The polynomial $P(x)$ is defined as
@@ -298,8 +318,6 @@ Now in order to turn it into a signature scheme the prover instead of relying on
 % \end{itemize}
 % The security relies on the fact that the moduli $n$ is sufficiently large and the pseudo random function is truly random.
 
-
-
 \section{Threshold variant}
 
 \subsection{Linear Secret Sharing Schemes}
@@ -344,6 +362,10 @@ table of spec params (with our code naming and different categories)
 \section{Field implementation}
 
 \subsection{Field extension}
+
+First extend $F_q$ to $F_{q^4} = F_q[Z] / (Z^2 + Z + 32(X))$. This is done by representing elements in the field as polynomials of degree at most 1 with coefficients in $F_q$. \todo{Define addition and multiplication}
+
+\todo{See gf256\_ext.rs}
 
 \section{Merkle Tree Commitment}
 
@@ -534,6 +556,8 @@ Recall the definition of the syndrome detection problem from \autoref{def:syndro
 
 \chapter{Implementation}
 \label{ch:impl}
+
+We set out to manually develop as many of the subroutines and primitives ourselves, including GF256 and merkle trees. However, hashing and XOF where made using pre-existing Rust libraries.
 
 Tooling and language feaures (rust, criterion, rayon)
 code sections
