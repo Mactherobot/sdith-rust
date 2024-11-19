@@ -102,19 +102,17 @@ In 2016, the National Institute of Standards and Technology (NIST), known for st
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \chapter{Mathematical preliminaries}
-\label{ch:desc}
+\label{ch:mathprelim}
 
-Abstract level description of the algorithm own words
-MPCitH
-Syndrome detection problem
-Fiat-Shamir heuristic
+In this section we will go through the mathematical background needed to understand the basis and individual parts of the SD-in-the-Head scheme. First, we will describe the specific problem instance used from coding theory in the Syndrome Decoding problem \cite{aguilarsyndrome11,mceliece1978public,berlekamp1978inherent, baldi2013optimization}. This includes the polynomial reduction that makes it possible to use the \textit{Multi-Party-Computation-in-the-Head} paradigm \cite{baum2020concretely}. Next we will describe the finite field $\mathbb{F}_q$ that is underlying to the codes \cite{martinez2023syndromes, reed1960polynomial}. Next we will describe the linear secret sharing scheme that enables the implemented \textit{threshold variant} \cite{feneuil2023threshold}
 
 \todo{Maybe write out the reduction to three dimensional matching problem}
+
 \section{Syndrome Decoding Problem}
 \label{sec:syndrome}
-The basis for the SD-in-the-Head protocol is to use the Syndrome Decoding (SD) problem in order to prove that the signature is correct.
-It uses a variant of the SD problem, in the \textit{coset weights} problem, as was defined in 1978 by Berlekamp and McEliece \cite{berlekamp1978inherent}.
-It is defined in the following way
+With the introduction of public-key cryptosystems by Diffie and Hellman in 1976, we saw the introduction schemes like the RSA based on factoring of large integers and the ElGamal scheme based on the discrete logarithm problem, a scheme that has seen dramatic improvements in recent years due to its versatility in choosing a group, specifically elliptic curves. Error correction and coding theory as its own disciplin of information theory predates the introduction of public-key cryptography and although it is less known, McEliece introduced PK schemes based on coding theory already in 1978 \cite{mceliece1978public}. The McEliece PK scheme is based on the hardness of decoding random linear codes \cite{berlekamp1978inherent}. While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based cryptoschemes have seen a resurgance as it is not vulnerable to known quantum attacks like Shor's algorithm.
+
+The basis for the SD-in-the-Head protocol is the hardness of Syndrome Decoding (SD) problem for random linear codes on a finite field (see \autoref{sec:gf256}). The scheme uses a variant of the SD problem; the \textit{coset weights} problem, as was defined in 1978 by Berlekamp and McEliece \cite{berlekamp1978inherent}. It is defined in the following way
 \begin{definition}
   \label{def:syndrome}
   Given $H \in \mathbb{F}^{(m-k)\times m}_q$ and $y \in \mathbb{F}^{m-k}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t. wt$(x) \leq w$ and $Hx = y$.
@@ -152,7 +150,7 @@ Let $f_1,\dots, f_q$ denote elements of $\mathbb{F}_q$, then the polynomials are
 We can now look at the relation in \autoref{eq:polynomial_representation}. If we look at the left-hand side, which has the following property by design $S\cdot Q(f_i) = 0 \;\forall\; f_i \in [1:m]$. This comes from the fact that the polynomial $S(f_i) = 0$ whenever $x_i = 0$, as it is the lagrange interpolation of $x$. Furthermore, the polynomial $Q(f_i)$ is zero whenever $f_i$ is a non-zero coordinate of $x$, which follows from the definition of $Q$.
 
 
-For the right-hand side, the polynomial $F$ is the vanishing polynomial for the set ${f_1, \dots, f_m}$, so $F(f_i) = 0 \;\forall\; f_i \in [1:m]$. The polynomial $P$ is needed to match the degree of $S \cdot Q$. As the degree of $F$ is $m \leq \text{deg}(S\cdot Q) \leq m + w - 1$. 
+For the right-hand side, the polynomial $F$ is the vanishing polynomial for the set ${f_1, \dots, f_m}$, so $F(f_i) = 0 \;\forall\; f_i \in [1:m]$. The polynomial $P$ is needed to match the degree of $S \cdot Q$. As the degree of $F$ is $m \leq \text{deg}(S\cdot Q) \leq m + w - 1$.
 
 It is now apparent that if the prover can convince the verifier that they know of polynomials $P,Q$ such that $S\cdot Q = F \cdot P = 0$ at all points $f_i \in [1:m]$. The following must hold, either $S(f_i) = x_i = 0$ or $Q(f_i) = 0$. However, the polynomial $Q$ can be zero in at most $w$ points based on the degree, this means that S is non-zero in at most $w$ points, based on the construction, which in turn implies that $x$ has weight as most $w$.
 
@@ -166,7 +164,6 @@ We can now share a witness $(x_a, Q, P)$. Now based on the relation \autoref{eq:
 
 \subsection{False positive probability}\label{sub:equality_test}
 The equality test from \autoref{eq:polynomial_representation} has a small probability of false positives, denoted $p$. To reduce this probability, the relation is evaluated at random points $\{r_k \in \mathbb{F}_q\}_{k\in[t]}$. By the Schwartz-Zippel lemma, the probability of a false positive is bounded by $p \leq \frac{t}{q}$, where $q$ is the size of the finite field $\mathbb{F}_q$. In short, this makes it unlikely that the relation will hold for all points $r_k$ if the relation is not sound according to \autoref{eq:soundness}. Furthermore, we can tweak the parameters $t$ and $q$ to reduce $p$. We will explain the choice of field size $q$ in \autoref{sec:gf256}.
-
 
 % subsection  (end)
 \section{Galois Finite Field}
