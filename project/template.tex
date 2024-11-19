@@ -263,8 +263,10 @@ Observe that if both triples are correct multiplication triples (i.e., $z = xy$ 
 
 
 
-\section{Linear Secret Sharing Scheme (LSSS)}
-\label{sec:sss}
+\section{Threshold variant}
+
+\subsection{Linear Secret Sharing Schemes}
+\label{sec:lsss}
 
 \textit{Secret sharing schemes} (SSS) are a type of cryptographic protocol that allows for the distribution of a secret amongst a group of participants. The secret can only be reconstructed when a sufficient number of shares are combined together. The threshold variant of the SD-in-the-Head protocol relies on a low-threshold linear secret sharing scheme (\textit{LSSS}). Threshold secret sharing schemes allow for the reconstruction of a secret from a subset of shares of length $\ell$, where $\ell$ is the threshold. The threshold allows for the SD-in-the-Head protocol to be more communication efficient, as the amount of shares needed to reconstruct the secret is low.
 
