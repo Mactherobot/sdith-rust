@@ -143,22 +143,40 @@ Finite fields lays the basis for many cryptographic protocols and primitives. In
 The most commonly known finite fields are the prime fields $\mathbb{F}p$, widely used in protocols like RSA. These fields can be extended into $\mathbb{F}{p^n}$, containing $p^n$ elements. However, prime fields are not efficient for iterating over large numbers of digits, a common requirement in protocols such as SD-in-the-Head. For better efficiency, we require a field that can be represented using bits or bytes. One method to achieve this is by constructing fields commonly known as Galois fields. Consider the simplest prime field $\mathbb{F}_2 = ({0,1}, \texttt{XOR}, \texttt{AND}, 0, 1)$. It is straightforward to verify that this field satisfies the properties outlined in \autoref{def
 }.
 
-The Galois field $\mathbb{F}{2^n}$ is an extension field of $\mathbb{F}2$, defined as $\mathbb{F}{2^n}$. This field is constructed by selecting an irreducible polynomial $p(x)$ of degree $n$ with coefficients in $\mathbb{F}2$. The elements of $\mathbb{F}{2^n}$ are represented as polynomials of degree at most $n-1$ with coefficients in $\mathbb{F}2$. Consequently, $\mathbb{F}{2^n}$ contains exactly $2^n$ elements. Addition and multiplication within $\mathbb{F}{2^n}$ are defined as follows:
+The Galois field $\mathbb{F}{2^n}$ is an extension field of $\mathbb{F}2$, defined as $\mathbb{F}{2^n}$. This field is constructed by selecting an irreducible polynomial $p(x)$ of degree $n$ with coefficients in $\mathbb{F}2$. The elements of $\mathbb{F}{2^n}$ are represented as polynomials of degree at most $n-1$ with coefficients in $\mathbb{F}2$. Consequently, $\mathbb{F}{2^n}$ contains exactly $2^n$ elements. The polynomial $p(x)$ ensures that $\mathbb{F}_{2^n}$ forms a valid field as it defines the modular reduction in multiplication.
+
+Each element in $\mathbb{F}_{2^n}$ is represented as a polynomial of degree at most $n-1$ with coefficients in $\mathbb{F}_2$.
+
+\begin{align*}
+  a(x) = a_{n-1}x^{n-1} + a_{n-2}x^{n-2} + \dots + a_1x + a_0
+\end{align*}
+
+where $a_i \in \mathbb{F}_2$ This corresponds directly into the 8-bit binary representation $a_{n-1}a_{n-2}\dots a_1a_0$. The addition and multiplication operations within $\mathbb{F}{2^n}$ are defined as follows:
 
 \begin{itemize}
   \item \textbf{Addition}: The addition of two elements $a,b \in \mathbb{F}_{2^n}$ is defined as the bitwise XOR of the two elements.
   \item \textbf{Multiplication}: The multiplication of two elements $a,b \in \mathbb{F}_{2^n}$ is defined as the multiplication of the two polynomials modulo the irreducible polynomial $p(x)$.
 \end{itemize}
 
-In order to give a mental model of the field, consider elements in their polynomial form. For example the byte: ${00011101}$ to be:
-\begin{equation}
-  \label{eq:example_poly}
-  00011101 = p_4x^4 + p_3x^3 + p_2x^2 + p_0
-\end{equation}
+A common choice for the irreducible polynomial is the Rijndael polynomial $p(x) = x^8 + x^4 + x^3 + x + 1$ used in the AES protocol \cite{brownadvanced}. This field is commonly known as $\mathbb{F}_{2^8}$. The size of the field allows us to represent elements as bytes, which is efficient for iterating over large numbers of digits and it contains all the elements of a byte.
 
-A common choice for the irreducible polynomial is the Rijndael polynomial $p(x) = x^8 + x^4 + x^3 + x + 1$ used in the AES protocol \cite{brownadvanced}. This field is commonly known as $\mathbb{F}_{256}$, as it contains $2^8 = 256$ elements. The size of the field allows us to represent elements as bytes, which is efficient for iterating over large numbers of digits.
+\subsection{Field extension}
 
-\subsubsection{Polynomial evaluation}
+A advantageous property of Galois fields is that they can easily be extended, like it was done from $\mathbb{F}_{2}$ to $\mathbb{F}_{2^8}$. To ensure security in the SD-in-the-Head protocol, the field $\mathbb{F}_{2^8}$ is extended to encompass the field 32-bit unsigned integers. This can be done as a \textit{tower extension} by first building a degree-2 extension to $\mathbb{F}_{2^{16}}$ using the irreducible polynomial $q(x) = x^2 x + 32$ and finally extending this field to $\mathbb{F}_{2^{32}}$ using the irreducible polynomial $r(x) = x^2 + x + 32(x)$. While you could create the final field independently, the tower extension allows us to reuse the construction of the intermediate field. Addition and multiplication in the extension fields are represented as the following
+
+\begin{align*}
+  a     & = a_0 + a_1x                                               &  & a \in \mathbb{F}_{q^\eta}, a_0, a_1 \in \mathbb{F}_q \\
+  b     & = b_0 + b_1x                                               &  & b \in \mathbb{F}_{q^\eta}, b_0, b_1 \in \mathbb{F}_q \\\\
+  a + b & = (a_0 + a_1x) + (b_0 + b_1x) = (a_0 + b_0) + (a_1 + b_1)x                                                           \\
+  a * b & = (a_0 + a_1x) * (b_0 + b_1x)                                                                                        \\
+        & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1x^2                                                                            \\
+        & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1(x + 32)                                                                       \\
+        & = a_0b_0 + 32a_1b_1 + (a_0b_1 + a_1b_0 + a_1b_1)x
+\end{align*}
+
+
+\subsection{Polynomial evaluation}
+\todo{Should this be moved to the specification section?}
 For polynomial evalution in the multiparty computation seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. The polynomial $P(x)$ is defined as
 \begin{align}
   \textstyle\bigcup_{|Q|}(F_q)^{|Q|} \times F_q^\eta & \rightarrow F_q^\eta                 \nonumber                                  \\
@@ -169,19 +187,22 @@ For polynomial evalution in the multiparty computation seen in \autoref{sec:mpc}
 \section{Syndrome Decoding Problem}
 \label{sec:syndrome}
 
-The basis for the SD-in-the-Head protocol is the hardness of Syndrome Decoding (SD) problem for random linear codes on a finite field (see \autoref{sec:gf256}). The scheme uses a variant of the SD problem; the \textit{coset weights} problem, as was defined in 1978 by Berlekamp and McEliece \cite{berlekamp1978inherent}. It is defined in the following way
+The SD-in-the-Head protocol is built on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field (see \autoref{sec:gf256}). This protocol uses a variant of the SD problem, referred to as the \textit{coset weights} problem, first introduced by Berlekamp and McEliece in 1978~\cite{berlekamp1978inherent}. The problem is defined as follows:
 \begin{definition}
   \label{def:syndrome}
-  Given $H \in \mathbb{F}^{(m-k)\times m}_q$ and $y \in \mathbb{F}^{m-k}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t. wt$(x) \leq w$ and $Hx = y$.
+  Given $H \in \mathbb{F}^{(m-k)\times m}_q$ and $y \in \mathbb{F}^{m-k}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t.\ wt$(x) \leq w$ and $Hx = y$.
 \end{definition}
-It is simple to generate such an instance, as one can simply create a uniformly random parity check matrix $H$ and a code word $x$ (with $wt(x) \leq w$), and then calculate the syndrome $y = Hx$. In the SD-in-the-Head protocol, the values of the matrix $H$ and the syndrome $y$ are part of the finite field $\mathbb{F}_q$ which we will explain further in \autoref{sec:gf256}. For random instances of the SD problem, also called general decoding problems, it has been shown that the problem is NP-complete \cite{berlekamp1978inherent}. To bring this into perspective, brute forcing such a problem would require $O(\binom{m}{w} q^w)$ operations, which is infeasible for large $m$ and $k$.
+Generating such an instance is straightforward: one can construct a uniformly random parity-check matrix $H$ and a codeword $x$ (with $wt(x) \leq w$), and then compute the syndrome $y = Hx$. In the SD-in-the-Head protocol, the values of the matrix $H$ and the syndrome $y$ are elements of the finite field $\mathbb{F}_q$ which we will explain further in \autoref{sec:gf256}. The SD problem is well-known to be NP-complete for random instances \cite{berlekamp1978inherent} also referred to as the general decoding problem.To illustrate the computational difficulty, solving the problem using brute force would require $O(\binom{m}{w} q^w)$ operations, which is computationally infeasible for large $m$ and $k$.
 
 \section{MPC-in-the-Head}
 \label{sec:mpcinth}
 
-Secure Multiparty Computation or MPC describes a cryptographic protocol that allows multiple parties to run a circuit $C$, while no information on inputs is leaked outside of the intended output of $C$. These algorithms can be augmented to ensure correctness, even in the presence of malicious parties. \todo{skriv mere her. Check threshold paper måske?}
+Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. These protocols can be further enhanced to guarantee correctness, even in scenarios involving malicious adversaries.The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as it relies on assumptions that are still believed to be quantum safe. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold}.
 
-The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, uses MPC protocols to construct generic ZKAoK protocols. First, the statement is turned into a circuit $C$. On input $x$, $C$ outputs $y$ iff. $x = w$ for some witness $w$ which is a correct witness for the statement to be proven. The prover simulates the MPC protocol of all the parties \textit{in the head}. The parties each evalutate $C$ on a secret sharing of $w$
+The paradigm functions by letting the \textit{prover} emulate an $\ell$-private MPC protocol\footnote{i.e $\ell + 1$ shares are needed to reconstruct the input of the circuit} "in the head", while the \textit{verifier} challenges the prover to reveal $\ell$ random shares. By the definition of the MPC protocol, the input remains hidden, ensuring zero-knowledge.
+
+
+the statement is turned into a circuit $C$. On input $x$, $C$ outputs $y$ iff. $x = w$ for some witness $w$ which is a correct witness for the statement to be proven. The prover simulates the MPC protocol of all the parties \textit{in the head}. The parties each evalutate $C$ on a secret sharing of $w$
 
 The framework benefits from previous efficiency improvements in MPC protocols to improve the efficiency of ZKAoK protocols. Particularly, its possible to achieve \textit{constant-rate} zero knowledge. For an arbitrary circuit $C$ of size $s$ and a bounded fan-in, it is possible to construct a ZKAoK protocol with communication complexity $O(s) + \text{poly}(k)$, for a security parameter $k$. This is an improvement over previous ZKAoK protocols, which had communication complexity $O(ks)$. \todo{write about this in the previous section}.
 
@@ -290,7 +311,7 @@ In the context of the SD-in-the-Head protocol, the prover uses the pseudo-random
 \subsection{Linear Secret Sharing Schemes}
 \label{sec:lsss}
 
-\textit{Secret sharing schemes} (SSS) are a type of cryptographic protocol that allows for the distribution of a secret amongst a group of participants. The secret can only be reconstructed when a sufficient number of shares are combined together. The threshold variant of the SD-in-the-Head protocol relies on a low-threshold linear secret sharing scheme (\textit{LSSS}). Threshold secret sharing schemes allow for the reconstruction of a secret from a subset of shares of length $\ell$, where $\ell$ is the threshold. The threshold allows for the SD-in-the-Head protocol to be more communication efficient, as the amount of shares needed to reconstruct the secret is low. 
+\textit{Secret sharing schemes} (SSS) are a type of cryptographic protocol that allows for the distribution of a secret amongst a group of participants. The secret can only be reconstructed when a sufficient number of shares are combined together. The threshold variant of the SD-in-the-Head protocol relies on a low-threshold linear secret sharing scheme (\textit{LSSS}). Threshold secret sharing schemes allow for the reconstruction of a secret from a subset of shares of length $\ell$, where $\ell$ is the threshold. The threshold allows for the SD-in-the-Head protocol to be more communication efficient, as the amount of shares needed to reconstruct the secret is low.
 
 \begin{definition}
   \label{def:sss}
