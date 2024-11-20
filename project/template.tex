@@ -188,7 +188,7 @@ A advantageous property of Galois fields is that they can easily be extended, li
 
 \subsubsection{Polynomial evaluation}
 \todo{Should this be moved to the specification section?}
-For polynomial evalution in the multiparty computation seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. The polynomial $P(x)$ is defined as
+For polynomial evaluation in the multiparty computation seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. The polynomial $P(x)$ is defined as
 \begin{align}
   \textstyle\bigcup_{|Q|}(F_q)^{|Q|} \times F_q^\eta & \rightarrow F_q^\eta                 \nonumber                                  \\
   Q(r)                                               & = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1} &  & Q_i \in F_q, r \in F_q^\eta
@@ -199,6 +199,19 @@ For polynomial evalution in the multiparty computation seen in \autoref{sec:mpc}
 In the following section we will introduce the cryptographic protocols that provide the building blocks used to build the SD-in-the-Head scheme.
 
 \subsection{Commitment Scheme (Merkle Tree)}
+A commitment scheme is a way for a prover to commit to a value, and then later prove that it's still the same value as was initially committed to. Such that the following 2 properties are upheld:
+\begin{itemize}
+  \item \textbf{Binding}: The prover cannot change the value after it has been committed to.
+a  \item \textbf{Hiding}: The value is hidden from the verifier until the prover reveals it.
+\end{itemize}
+One such variant which allows for partial opening, is the merkle tree. 
+Let $v_1, \dots, v_n$ be the values being committed to. And let $h$ be a cryptographic PQC secure hash function.
+The leafs $a_{0,1},\dots, a_{0,n}$ of the tree is the initial hash values $h(v_1), \dots, h(v_n)$. Every parent $a_{1,0},\dots a_{h,j}$, here $h$ is the height of the tree and $j$ is the number of parents per layer in the tree, is the hash of its children $h(h(v_1)|h(v_2)),\dots, h(h(v_{n-1})|h(v_n))$. The root of the tree $a_{h,0}$ is the commitment value, which is sent to the verifier. Now to open a value $v$, the prover computes the authentication path for $v_p$, where $p$ is the index of the chosen value. The authentication path $A$ for any leaf $a_{0,i}$ is the accumulated neighboring nodes from the leaf up to the root. So the first node $A_0$ is going to be the neighboring node $a_{0,p-1}$ if $p$ is odd or $a_{0,p+1}$ if $p$ is even. This node is going to be the $auth_0$. For the rest of the path $$A_i = h(A_{i-1} | auth_{i-1})$$ where $auth_i$ is the neighboring node of $A_{i-1}$ at the same level. 
+The prover sends this to the verifier whenever he wants to open a value. The verifier can check that the commitment is correct by recomputing the root using the authentication path and the leaf value.
+
+Due to the use of a PQC secure and collision-resistant hash function the commitment ensures the \textbf{Hiding} property. This comes from the fact that only the root of the tree is shared and if the adversary wants any information on the initial values, she would have to find collisions for the hash function. The same argument holds for the \textbf{Binding} property, as the adversary would have to find a collision for the hash function to change the commitment value.
+
+A nice property of the merkle tree is that you can open a partial set of the committed values by only supplying the authentication path that is needed for the subset of values to be opened. And only sharing a global root values. This is very useful in the SD-in-the-Head threshold protocol, where we only want to open a subset of the committed values.
 
 \subsection{Secure Multi-Party Computation}\label{sec:mpc}
 
