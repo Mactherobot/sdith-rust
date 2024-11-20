@@ -51,8 +51,7 @@ pub struct Solution {
 }
 
 /// k + 2w
-pub const SOLUTION_PLAIN_SIZE: usize =
-    PARAM_K + (PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2);
+pub const SOLUTION_PLAIN_SIZE: usize = PARAM_K + (PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2);
 
 impl Solution {
     pub fn serialise(&self) -> [u8; SOLUTION_PLAIN_SIZE] {
@@ -468,11 +467,12 @@ pub fn compute_s(
         gf256_add_vector(&mut s[PARAM_K..], y);
     }
 
-    // Add H's_a to the s_b side
+    // Add y = s_b - H's_a to the s_b side
     mul_hmatrix_vector(&mut s[PARAM_K..], h_prime, s_a);
     // Check that the h_prime * s_a is not equal to y (if provided)
     // This can happen if the h_prime is the zero matrix or if the s_a is the zero vector
     // And if we want a correct SD instance we need to ensure that the s_b is not equal to y
+    // TODO: Check if other schemes check for tivial public keys
     if let Some(y) = y {
         if s[PARAM_K..] == *y {
             return Err("s_b is equal to y".to_string());
