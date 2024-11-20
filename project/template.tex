@@ -83,13 +83,11 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\chapter{Introduction}
-\label{ch:intro}
+\chapter{Introduction}\label{ch:intro}
 
 few pages. Introduce what we have done and how the paper is structured
 
-\section{Post-Quantum Cryptography and the NIST call to action}
-\label{sec:quantum}
+\section{Post-Quantum Cryptography and the NIST call to action}\label{sec:quantum}
 
 \todo{motivate and explain the problem to be addressed}
 
@@ -107,8 +105,7 @@ In 2016, the National Institute of Standards and Technology (NIST), known for st
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\chapter{Mathematical preliminaries}
-\label{ch:mathprelim}
+\chapter{Mathematical preliminaries}\label{ch:mathprelim}
 
 With the introduction of public-key cryptosystems by Diffie and Hellman in 1976, we saw the introduction schemes like the RSA based on factoring of large integers and the ElGamal scheme based on the discrete logarithm problem. While these are the protocols that have seen wide adoption, there exists schemes based on coding theory. These are their own discipline of information theory which predates the introduction of public-key cryptography. Although the scheme is less prominent, McEliece introduced a PK scheme based on coding theory already in 1978 \cite{mceliece1978public}. The McEliece PK scheme is based on the hardness of decoding random linear codes \cite{berlekamp1978inherent}. While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based crypto-schemes have seen a resurgence as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent movements in code-based cryptosystems have shown that the performance needed for code based cryptographic schemes practically is within reach. Introductions of linear based codes on finite fields and MPC (Multi Party Computation) threshold schemes \cite{baum2020concretely} show promising results and with the SD-in-the-Head scheme, such techniques are combined to create a post-quantum secure signature scheme.
 
@@ -125,8 +122,7 @@ Building upon these foundations, we lay the groundwork for the construction of t
 \subsection{Collision Resistant Hash Functions}
 
 % subsection  (end)
-\subsection{Galois Finite Field}
-\label{sec:gf256}
+\subsection{Galois Finite Field}\label{sec:gf256}
 Finite fields lays the basis for many cryptographic protocols and primitives. In essence, finite field theory describes the research into the relation and properties between numbers, while disregarding the numbers themselves. In order to define finite fields, we first need to define a \textit{group} and a \textit{finite field} (\autoref{def:group} and \autoref{def:field}, respectively).
 
 \begin{definition}
@@ -204,8 +200,7 @@ In the following section we will introduce the cryptographic protocols that prov
 
 \subsection{Commitment Scheme (Merkle Tree)}
 
-\subsection{Secure Multi-Party Computation}
-\label{sec:mpc}
+\subsection{Secure Multi-Party Computation}\label{sec:mpc}
 
 Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following, sections we will denote a MPC protocol by $\pi_f$ for an $n$-party functionality $f(x, w_1, \dots, w_n)$, a public input $x$ and secret inputs $w_i$ of the party $P_i$. The goal is to compute the function $f$ on the inputs of the $n$ parties while upholding the following properties~\cite{cramer2015secure}
 
@@ -223,13 +218,10 @@ In terms of security needed for the SD-in-the-Head protocol, we define the follo
 
 We denote the view $V_i$ of a party $P_i$ in the protocol as $(i, x, r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share, and $(m_1, \dots, m_j)$ is the messages received by $P_i$ in the first $j+1$ rounds of the protocol. We say that two views $V_i, V_j$ are \textit{consistent} according to the public input $x$ if the views are identical given the public input $x$.
 
-\subsection{Zero-Knowledge Proofs}
-\label{sec:zk}
+\subsection{Zero-Knowledge Proofs}\label{sec:zk}
+This section will only give a brief introduction to \textit{two-party interactive} Zero-Knowledge (ZK) schemes for a \textit{prover} and a \textit{verifier}. We denote a ZK $\pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$. Let $x$ be a public statement in \textbf{NP} and $w$ be a witness such that $(x, w) \in \mathcal{R}$~\cite{feneuil2023threshold}.
 
-This section will only give a brief introduction to \textit{two-party interactive} Zero-Knowledge (ZK) schemes for a \textit{prover} and a \textit{verifier}. We denote a ZK $\pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$. Let $x$ be a public statement in \textbf{NP} and $w$ be a witness such that $(x, w) \in \mathcal{R}$ \cite{feneuil2023threshold}.
-
-\subsection{Fiat-Shamir Heuristic}
-\label{sec:fiatshamir}
+\subsection{Fiat-Shamir Heuristic}\label{sec:fiatshamir}
 To transform any zero-knowledge protocol into a signature scheme, one can use the approach described in \cite{fiat1986prove}. Here, we outline the general concept.
 
 Zero-knowledge protocols typically rely on the verifier to issue a challenge to the prover. This challenge serves as a source of randomness that the prover is not supposed to control. In the Fiat-Shamir framework, the original protocol is based on the problem of factoring integers -- a problem that is now vulnerable to quantum attacks, specifically Shor's algorithm. However, the fundamental method of converting a zero-knowledge protocol into a signature scheme remains unaffected.
@@ -238,18 +230,15 @@ To adapt a zero-knowledge protocol into a signature scheme, the prover eliminate
 
 In the context of the SD-in-the-Head protocol, the prover uses the pseudo-randomly generated challenge to locally compute the witness values required for the proof. These witness values are derived through the MPC protocol, where the prover simulates the necessary computations internally, generating and processing the shares "in their head." This eliminates the need for the verifier's active participation in the MPC protocol, streamlining the signature generation process.
 
-\section{Syndrome Decoding Problem}
-\label{sec:syndrome}
+\section{Syndrome Decoding Problem}\label{sec:syndrome}
 
 The SD-in-the-Head protocol is built on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field (see \autoref{sec:gf256}). This protocol uses a variant of the SD problem, referred to as the \textit{coset weights} problem, first introduced by Berlekamp and McEliece in 1978~\cite{berlekamp1978inherent}. The problem is defined as follows:
-\begin{definition}
-  \label{def:syndrome}
+\begin{definition}\label{def:syndrome}
   Given $H \in \mathbb{F}^{(m-k)\times m}_q$ and $y \in \mathbb{F}^{m-k}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t.\ wt$(x) \leq w$ and $Hx = y$.
 \end{definition}
 Generating such an instance is straightforward: one can construct a uniformly random parity-check matrix $H$ and a codeword $x$ (with $wt(x) \leq w$), and then compute the syndrome $y = Hx$. In the SD-in-the-Head protocol, the values of the matrix $H$ and the syndrome $y$ are elements of the finite field $\mathbb{F}_q$ which we will explain further in \autoref{sec:gf256}. The SD problem is well-known to be NP-complete for random instances \cite{berlekamp1978inherent} also referred to as the general decoding problem.To illustrate the computational difficulty, solving the problem using brute force would require $O(\binom{m}{w} q^w)$ operations, which is computationally infeasible for large $m$ and $k$.
 
-\subsubsection{Standard form of the parity-check matrix}
-\label{sec:standard_form_of_the_parity_check_matrix}
+\subsubsection{Standard form of the parity-check matrix}\label{sec:standard_form_of_the_parity_check_matrix}
 To improve the performance and reduce the key size of the protocol, its possible to utilize the fact that the matrix $H$ can be in standard form. $H = (H'|I_{m-k}) $ Where $H' \in \mathbb{F}^{(m-k)\times k}_q$. This allows for the following representation of the syndrome:
 \begin{equation}
   y = Hx = H'x_a + x_b
@@ -262,7 +251,7 @@ with $x = (x_a | x_b)$. This improves the performance of the algorithms used in 
 \end{itemize}
 
 \subsubsection{Polynomial representation of SD}\label{sec:polynomial_representation}
-In order to convert the SD problem into a form that allows for \textit{Multi Party Computation in the Head} (MPCitH, which we will exlpain further in \autoref{sec:mpcith}) the SD-in-the-Head protocol is based on three (witness-dependent) polynomials $S, Q$ and $P$, and one public polynomial $F$.
+In order to convert the SD problem into a form that allows for \textit{Multi Party Computation in the Head} (MPCitH, which we will exlpain further in \autoref{sec:mpcinth}) the SD-in-the-Head protocol is based on three (witness-dependent) polynomials $S, Q$ and $P$, and one public polynomial $F$.
 These are used for checking the correctness of the SD solution by verifying the following relation:
 \begin{equation}
   \centering
@@ -293,38 +282,53 @@ We can now share a witness $(x_a, Q, P)$. Now based on the relation \autoref{eq:
 \subsubsection{False positive probability}\label{sub:equality_test}
 The equality test from \autoref{eq:polynomial_representation} has a small probability of false positives, denoted $p$. To reduce this probability, the relation is evaluated at random points $\{r_k \in \mathbb{F}_q\}_{k\in[t]}$. By the Schwartz-Zippel lemma, the probability of a false positive is bounded by $p \leq \frac{t}{q}$, where $q$ is the size of the finite field $\mathbb{F}_q$. In short, this makes it unlikely that the relation will hold for all points $r_k$ if the relation is not sound according to \autoref{eq:soundness}. Furthermore, we can tweak the parameters $t$ and $q$ to reduce $p$. We will explain the choice of field size $q$ in \autoref{sec:gf256}.
 
-\section{MPC-in-the-Head}
-\label{sec:mpcinth}
+\section{MPC-in-the-Head}\label{sec:mpcinth}
 
 The SD-in-the-Head protocol construction is based on the \textit{Multi-Party Computation in the Head} (MPCitH) framework. In this section we will give an introduction to the framework and how it can be used to construct ZK proofs, which in turn can be combined with the Fiat-Shamir heuristic to create a signature scheme.
 
 The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as its security relies on assumptions that are still believed to be quantum secure. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold} which has no known quantum algorithms that break their security.
 
-Given a semi-honest $\ell$-private MPC protocol $\pi_f$, a relation $\mathcal{R}$ for some public statement $x$, a witness $w$ and a\footnote{See \autoref{sec:mpc} and \autoref{sec:zk}}. Let $w_i$ be an additive secret share of $w$ for the party $P_i$ (this is further addressed in \autoref{sec:lsss}). Let $f$ be a $n$-party functionality $f(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, s.t. $f(x,w)$ accepts if $(x,w) \in \mathcal{R}$. The ZK protocol proceeds as follows~\cite{ishai2007zero}:
+Given a semi-honest $\ell$-private MPC protocol $\pi_f$, a relation $\mathcal{R}$ for some public statement $x$, a witness $w$ and a\footnote{See \autoref{sec:mpc} and \autoref{sec:zk}}. Let $w_i$ be an additive secret share of $w$ for the party $P_i$ so that $w = w_1 \oplus \cdots \oplus w_n$ (this is further addressed in \autoref{sec:lsss}). Let $f$ be a $n$-party functionality $f(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, s.t. $f(x,w)$ accepts if $(x,w) \in \mathcal{R}$. The ZK protocol proceeds as follows~\cite{ishai2007zero}:
 
 \begin{enumerate}
-  \item
+  \item The prover picks random $w_1, \dots, w_n$ s.t. $w = w_1 \oplus \cdots \oplus w_n$. The prover then:
+        \begin{itemize}
+          \item Computes the outputs of $\pi_f$ on the inputs $x, w_1, \dots, w_n$ and the randomness $r_1, \dots, r_n$.
+          \item Prepares views $V_1, \dots, V_n$ of the parties in the protocol $\pi_f$.
+          \item Commits to each view $V_i$ using a secure commitment scheme, and sends ($\text{Commit}(V_1), \dots, \text{Commit}(V_n)$) to the verifier.
+        \end{itemize}
+  \item The verifier picks two random distinct indices $i, j \in [n]$ and sends them to the prover.
+  \item The prover opens the commitments to $V_i, V_j$ and sends the openings to the verifier.
+  \item The verifier accepts if and only if:
+        \begin{enumerate}
+          \item\label{prop:mpcinth_commit} The views are valid according to the commitment scheme.
+          \item\label{prop:mpcinth_consistent} The two views are consistent according to the public input $x$.
+          \item\label{prop:mpcinth_knowledge} Both views output $1$ according to $\mathcal{R}$ meaning that $\mathcal{R}(x,w) = 1$.
+        \end{enumerate}views are valid according to the commitment scheme and the two views are consistent according to the public input $x$.
 \end{enumerate}
+
+The framework provides the following properties:
+
+\begin{itemize}
+  \item \textbf{Completeness}: Given an honest prover, $\mathcal{R}(x,w) = 1$, the correctness of $\pi_f$, \ref{prop:mpcinth_consistent} and \ref{prop:mpcinth_commit} 
+  \item \textbf{Soundness}: If $(x,w) \notin \mathcal{R}$, the verifier rejects with overwhelming probability.
+  \item \textbf{Zero-Knowledge}: The verifier learns nothing about the inputs of the other parties beyond what can be inferred from the output of the function.
+\end{itemize}
 
 The framework benefits from previous efficiency improvements in MPC protocols to improve the efficiency of ZKAoK protocols. Particularly, its possible to achieve \textit{constant-rate} zero knowledge. For an arbitrary circuit $C$ of size $s$ and a bounded fan-in, it is possible to construct a ZKAoK protocol with communication complexity $O(s) + \text{poly}(k)$, for a security parameter $k$. This is an improvement over previous ZKAoK protocols, which had communication complexity $O(ks)$. \todo{write about this in the previous section}.
 
-\subsection{Zero-Knowledge proofs from MPC}
-\label{sec:zkmpc}
+\subsection{Zero-Knowledge proofs from MPC}\label{sec:zkmpc}
 
 Zero-Knowledge Arguments of Knowledge (ZKAoK) allow a prover to convince a verifier that they knows a certain witness for a statement without revealing any additional information about the witness. \todo{What are they used for..}
 
 ZKAoK protocols have been introduced in multiple variants that each solve specific relational problems with varying levels of communication complexity and prover running times. While many of these perform well for these specific problems, there has long been a need for a well performing generic ZKAoK protocol.
 
 
-
-
-
 \subsection{MPC preprocessing}
 
 We first generalize the idea of [KKW18] to work over arithmetic circuits using a variant of the SPDZ MPC protocol [DPSZ12,LN17] and provide a formal proof of security to their "cut-and-choose" preprocessing heuristic. Then, we present a new construction where we replace the "cut-and-choose" mechanism with a "sacrificing"-based approach. While both approaches have similar cost per MPC instance, our "sacrificing"-based approach yields a smaller cheating probability, which means that the number of MPC instances simulated in the proof can be significantly smaller, thus reducing the overall communication footprint. Our scheme is highly flexible in its choice of parameters. In particular, by changing the number of parties in the underlying MPC protocol, one can alternate between achieving low communication and low running time. Our construction only requires efficient standard symmetric primitives, and thus is plausibly post-quantum secure even in the non-interactive case [DFMS19]. The two constructions can be found in \cite{baum2020concretely} \todo{Copied from citation. rewrite this}
 
-\section{Secret Sharing Schemes}
-\label{sec:lsss}
+\section{Secret Sharing Schemes}\label{sec:lsss}
 
 \textit{Secret sharing schemes} (SSS) are a type of cryptographic protocol that allows for the distribution of a secret amongst a group of participants. The secret can only be reconstructed when a sufficient number of shares are combined together. The threshold variant of the SD-in-the-Head protocol relies on a low-threshold linear secret sharing scheme (\textit{LSSS}). Threshold secret sharing schemes allow for the reconstruction of a secret from a subset of shares of length $\ell$, where $\ell$ is the threshold. The threshold allows for the SD-in-the-Head protocol to be more communication efficient, as the amount of shares needed to reconstruct the secret is low.
 
@@ -344,8 +348,7 @@ We first generalize the idea of [KKW18] to work over arithmetic circuits using a
   A $(\ell,n)$ threshold SSS is $(+,+)$-homomorphic if for any two secrets $s_1$ and $s_2$ and their shares $[[s_1]]$ and $[[s_2]]$, the sum of the shares $[[s_1]] + [[s_2]] = [[s_{11} + s_{21}, s_{12} + s_{22}, \dots, s_{1n} + s_{2n}]]$ is equal to the share of the sum of the secrets $[[s_1 + s_2]]$ for the same subset of shares.
 \end{definition}
 
-\subsection{Shamir's Secret Sharing}
-\label{sec:shamir}
+\subsection{Shamir's Secret Sharing}\label{sec:shamir}
 
 Shamir's Secret Sharing scheme \cite{shamir1979share}. Shamir's Secret Sharing is a method for distributing a secret amongst a group of participants, each of which is given a share of the secret. The secret can only be reconstructed when a sufficient number of shares are combined together.
 
@@ -355,11 +358,9 @@ The $(t,n)$ Shamir's polynomial based secret sharing scheme is $(+,+)$-homomorph
 
 \todo{Write about creating shares, addition}
 
-\subsubsection{Multiplication and Beaver Triples}
-\label{sec:beaver}
+\subsubsection{Multiplication and Beaver Triples}\label{sec:beaver}
 
-\subsection{Verification of a multiplication triple using another}
-\label{sec:verify}
+\subsection{Verification of a multiplication triple using another}\label{sec:verify}
 Given a random triple $([[a]], [[b]], [[c]])$, it is possible to verify the correctness of a triple $([[x]], [[y]], [[z]])$, i.e., that $z = x \cdot y$, without revealing any information on either of the triples, in the following way \cite{baum2020concretely}.
 
 \begin{enumerate}
@@ -389,8 +390,7 @@ Observe that if both triples are correct multiplication triples (i.e., $z = xy$ 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\chapter{Specification}
-\label{ch:spec}
+\chapter{Specification}\label{ch:spec}
 more detailed description of the algorithm
 e.g. how we sampled I[e] witness challenge
 table of spec params (with our code naming and different categories)
@@ -576,22 +576,19 @@ The SD-in-the-Head signature scheme upholds the \textbf{E}xistential \textbf{U}n
   \caption{Hash and XOF functions used in the SDitH protocol for categories one, three and five~\cite{aguilarsyndrome11}.}
 \end{table}
 
-\subsection{Assumptions}
-\label{sec:assumptions}
+\subsection{Assumptions}\label{sec:assumptions}
 The SD-in-the-Head protocol is secure under the following assumptions:
 
 Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search (see \autoref{def:nistsec}) in terms of quantum circuit size. For this, $\kappa$ is defined as $143$, $207$ and $272$ for the categories \cite{nistcall}. Furthermore, the XOF primitive used is secure with 128-bit, 192-bit, 256-bit security levels for each of the categories respectively. Finally, the Hash function used \textit{behaves as random oracle}. Specifically, security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM).
 
-\subsection{Security of the Syndrome Detection Problem}
-\label{sec:sdsec}
+\subsection{Security of the Syndrome Detection Problem}\label{sec:sdsec}
 
 Recall the definition of the syndrome detection problem from \autoref{def:syndrome}. The hardness of the SD problem is well established and the coset variant used in the SD-in-the-Head signature scheme, has been shown to be \textit{NP-complete}~\cite{berlekamp1978inherent,aguilarsyndrome11}. Furthermore, a brute force attack of guessing $x$ would require finding a unique correct solution in $\binom{m}{w} q^w$ which is infeasible for the parameters outlined in the specification. As an example, for category one, the number of possible solutions are $\approx 7.7 \times 10^{276}$. There exists more sophisticated algorithms for solving the SD problem, such as the Generalized Birthday Algorithms (GBA) and Information Set Decoding (ISD)~\cite{prange1962use}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\chapter{Implementation}
-\label{ch:impl}
+\chapter{Implementation}\label{ch:impl}
 
 We set out to manually develop as many of the subroutines and primitives ourselves, including GF256 and merkle trees. However, hashing and XOF where made using pre-existing Rust libraries.
 
@@ -609,8 +606,7 @@ can we use other hashes that still provide the same security assumption from \au
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\chapter{Benchmarks}
-\label{ch:bench}
+\chapter{Benchmarks}\label{ch:bench}
 diaries of benchmarks.
 discussion of results
 
@@ -625,8 +621,7 @@ compare ours to the optimised reference
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\chapter{Conclusion}
-\label{ch:conclusion}
+\chapter{Conclusion}\label{ch:conclusion}
 
 wrap up and pose future work
 what should people continue with
