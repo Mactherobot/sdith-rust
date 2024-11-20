@@ -8,7 +8,6 @@
 \usepackage[]{amsmath}
 \usepackage{epsfig}
 \usepackage[T1]{fontenc}
-\usepackage{mathptmx}
 \usepackage{color}
 \usepackage{epstopdf}
 \usepackage{microtype}
@@ -67,7 +66,7 @@
 
 \vspace{2ex}
 \begin{flushright}
-  \emph{Magnus Jensen,}\\
+  \emph{Hugh Benjamin Zachariae and Magnus Jensen}\\
   \emph{Aarhus, \today.}
 \end{flushright}
 
@@ -83,21 +82,22 @@
 
 few pages. Introduce what we have done and how the paper is structured
 
-\todo{motivate and explain the problem to be addressed}
-
-\todo{example of a citation: \cite{DBLP:conf/sas/ChristensenMS03}}
-\todo{get your bibtex entries from \url{https://dblp.org/}}
-
-\todo{describe how we progressed through the project in an interesting way. What did we set out to do, what were the hurdles.}
-
-\todo{contributions: rust, issues we found.}
-
 \section{Post-Quantum Cryptography and the NIST call to action}
 \label{sec:quantum}
+
+\todo{motivate and explain the problem to be addressed}
 
 In 1994, the discovery of Shor's algorithm~\cite{shor1997}, provided a polynomial time algorithm for factoring integers and computing discrete logarithms using quantum computing. Back then, quantum computers where theories on paper. However, two decades later, significant developments in quantum technology, has brought us dangerously close to the point where quantum computers can solve foundational problems, which would break the security of modern standards of public-key cryptosystems. For example the Diffie-Hellman key exchange standard X25519, used in TLSv1.3, is not post-quantum secure.
 
 In 2016, the National Institute of Standards and Technology (NIST), known for standardizing cryptographic primitives like AES and SHA, initiated a call for quantum resistant public-key cryptosystems~\cite{nistcall}. This led to the standardization of three signature schemes, namely Dilithium~\cite{ducas2018crystals}, Falcon~\cite{fouque2018falcon} and SPHINCS+~\cite{bernstein2019sphincs+}. All three of the schemes are based on the hardness of structured lattice problems. This has led to the most recent call in 2022 for additional quantum resistant signature schemes based on different assumptions to diversify the standards available for the future.
+
+\todo{Why does it need to be implemented? and why in Rust?}
+
+\section{Our contributions}
+
+\todo{describe how we progressed through the project in an interesting way. What did we set out to do, what were the hurdles.}
+
+\todo{contributions: rust, issues we found.}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -106,10 +106,16 @@ In 2016, the National Institute of Standards and Technology (NIST), known for st
 
 With the introduction of public-key cryptosystems by Diffie and Hellman in 1976, we saw the introduction schemes like the RSA based on factoring of large integers and the ElGamal scheme based on the discrete logarithm problem. While these are the protocols that have seen wide adoption, there exists schemes based on coding theory. These are their own discipline of information theory which predates the introduction of public-key cryptography. Although the scheme is less prominent, McEliece introduced a PK scheme based on coding theory already in 1978 \cite{mceliece1978public}. The McEliece PK scheme is based on the hardness of decoding random linear codes \cite{berlekamp1978inherent}. While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based crypto-schemes have seen a resurgence as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent movements in code-based cryptosystems have shown that the performance needed for code based cryptographic schemes practically is within reach. Introductions of linear based codes on finite fields and MPC (Multi Party Computation) threshold schemes \cite{baum2020concretely} show promising results and with the SD-in-the-Head scheme, such techniques are combined to create a post-quantum secure signature scheme.
 
-In this section, we will outline the mathematical foundations required to understand the SD-in-the-Head scheme and its components. First, we will introduce the Galois finite field $\mathbb{F}_q$ used in the scheme \cite{martinez2023syndromes, reed1960polynomial, brownadvanced}. Next, we will discuss the Syndrome Decoding problem \cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}. Following this, we will explain the \textit{Multi-Party-Computation-in-the-Head} paradigm and the polynomial reduction of the SD problem, which enables its use in this framework \cite{baum2020concretely}. Additionally, we will detail the linear secret-sharing scheme that facilitates the efficient \textit{threshold variant}~\cite{feneuil2023threshold}. Finally, we will describe the Fiat-Shamir heuristic, which transforms the scheme into a signature mechanism~\cite{fiat1986prove}.
+In this section, we will outline the mathematical foundations required to understand the SD-in-the-Head scheme and its components. First, we will introduce cryptographic primitives like collision resistant hash functions, Merkle tree commitment scheme \todo{add citation} and Galois finite field $\mathbb{F}_q$ used in the scheme \cite{martinez2023syndromes, reed1960polynomial, brownadvanced}. Next, we will discuss the Syndrome Decoding problem \cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}. Following this, we will explain the \textit{Multi-Party-Computation-in-the-Head} paradigm and the polynomial reduction of the SD problem, which enables its use in this framework \cite{baum2020concretely}. Additionally, we will detail the linear secret-sharing scheme that facilitates the efficient \textit{threshold variant}~\cite{feneuil2023threshold}. Finally, we will describe the Fiat-Shamir heuristic, which transforms the scheme into a signature mechanism~\cite{fiat1986prove}.
+
+\section{Cryptographic Primitives}
+
+\subsection{Collision Resistant Hash Functions}
+
+\subsection{Merkle Tree Commitment Scheme}
 
 % subsection  (end)
-\section{Galois Finite Field}
+\subsection{Galois Finite Field}
 \label{sec:gf256}
 Finite fields lays the basis for many cryptographic protocols and primitives. In essence, finite field theory describes the research into the relation and properties between numbers, while disregarding the numbers themselves. In order to define finite fields, we first need to define a \textit{group} and a \textit{finite field} (\autoref{def:group} and \autoref{def:field}, respectively).
 
@@ -196,9 +202,13 @@ Generating such an instance is straightforward: one can construct a uniformly ra
 \section{MPC-in-the-Head}
 \label{sec:mpcinth}
 
-Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. These protocols can be further enhanced to guarantee correctness, even in scenarios involving malicious adversaries.The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as it relies on assumptions that are still believed to be quantum safe. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold}.
+Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as its security relies on assumptions that are still believed to be quantum secure. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold} which has no known quantum algorithms that break their security.
 
-The paradigm functions by letting the \textit{prover} emulate an $\ell$-private MPC protocol\footnote{i.e $\ell + 1$ shares are needed to reconstruct the input of the circuit} "in the head", while the \textit{verifier} challenges the prover to reveal $\ell$ random shares. By the definition of the MPC protocol, the input remains hidden, ensuring zero-knowledge.
+
+The paradigm functions by letting prover emulate an $\ell$-private MPC protocol $\pi_f$ for a ``in the head'', commit to the views of the parties of the MPC protocol followed by the verifier having the prover reveal a random subset of size $\ell$. 
+
+We use standard definitions of MPC and ZK schemes~\cite{cramer2015secure,ishai2007zero}. We define an a ZK scheme $\pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$ and a semi-honest $\ell$-private MPC protocol $\pi_f$ for some public statement $x$, a witness $w$ and a. Let $w_i$ be a secret share of $w$ for the party $P_i$ (see \autoref{sec:lsss}). Let $f$ be a $n$-party functionality $f(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, s.t. $f(x,w)$ accepts if $(x,w) \in \mathcal{R}$. We denote the view of a party $P_i$ to be $(r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share of the witness, and $(m_1, \dots, m_j)$ is the messages received by $P_i$. 
+
 
 
 the statement is turned into a circuit $C$. On input $x$, $C$ outputs $y$ iff. $x = w$ for some witness $w$ which is a correct witness for the statement to be proven. The prover simulates the MPC protocol of all the parties \textit{in the head}. The parties each evalutate $C$ on a secret sharing of $w$
@@ -263,6 +273,38 @@ The equality test from \autoref{eq:polynomial_representation} has a small probab
 
 We first generalize the idea of [KKW18] to work over arithmetic circuits using a variant of the SPDZ MPC protocol [DPSZ12,LN17] and provide a formal proof of security to their "cut-and-choose" preprocessing heuristic. Then, we present a new construction where we replace the "cut-and-choose" mechanism with a "sacrificing"-based approach. While both approaches have similar cost per MPC instance, our "sacrificing"-based approach yields a smaller cheating probability, which means that the number of MPC instances simulated in the proof can be significantly smaller, thus reducing the overall communication footprint. Our scheme is highly flexible in its choice of parameters. In particular, by changing the number of parties in the underlying MPC protocol, one can alternate between achieving low communication and low running time. Our construction only requires efficient standard symmetric primitives, and thus is plausibly post-quantum secure even in the non-interactive case [DFMS19]. The two constructions can be found in \cite{baum2020concretely} \todo{Copied from citation. rewrite this}
 
+\section{Secret Sharing Schemes}
+\label{sec:lsss}
+
+\textit{Secret sharing schemes} (SSS) are a type of cryptographic protocol that allows for the distribution of a secret amongst a group of participants. The secret can only be reconstructed when a sufficient number of shares are combined together. The threshold variant of the SD-in-the-Head protocol relies on a low-threshold linear secret sharing scheme (\textit{LSSS}). Threshold secret sharing schemes allow for the reconstruction of a secret from a subset of shares of length $\ell$, where $\ell$ is the threshold. The threshold allows for the SD-in-the-Head protocol to be more communication efficient, as the amount of shares needed to reconstruct the secret is low.
+
+\begin{definition}
+  \label{def:sss}
+  \textit{$S$ is a $(\ell,n)$ threshold SSS if it satisfies the following properties}:
+
+  \begin{itemize}
+    \item \textbf{Share generation}: Given a secret $s$, the scheme generates $n$ shares $\texttt{share}(s) = [[s]] = [[s_1, s_2, \dots, s_n]]$.
+    \item \textbf{Reconstruction}: Given a subset of shares $[[s']]$ of size $\ell$, the scheme can reconstruct the secret $s = \texttt{open}([[s']])$.
+  \end{itemize}
+
+\end{definition}
+
+\textit{Linear secret charing schemes}, or $(+,+)$-homomorphic schemes, refers to secret sharing schemes that are linearly homomorphic over some field $\mathbb{F}$ (say the galois field \texttt{GF256} described in \autoref{sec:gf256}). This means that given shares $[[a]]$ and $[[b]]$ we have that
+\begin{definition}
+  A $(\ell,n)$ threshold SSS is $(+,+)$-homomorphic if for any two secrets $s_1$ and $s_2$ and their shares $[[s_1]]$ and $[[s_2]]$, the sum of the shares $[[s_1]] + [[s_2]] = [[s_{11} + s_{21}, s_{12} + s_{22}, \dots, s_{1n} + s_{2n}]]$ is equal to the share of the sum of the secrets $[[s_1 + s_2]]$ for the same subset of shares.
+\end{definition}
+
+\subsection{Shamir's Secret Sharing}
+\label{sec:shamir}
+
+Shamir's Secret Sharing scheme \cite{shamir1979share}. Shamir's Secret Sharing is a method for distributing a secret amongst a group of participants, each of which is given a share of the secret. The secret can only be reconstructed when a sufficient number of shares are combined together.
+
+For a secret $s$ and a given security threshold $\ell$, the share $[[s]]$ is generated by sampling a random polynomial of degree $t-1$ with $s$ as the free coefficient. Each participant is given a share of the polynomial evaluated at a point. The secret can be reconstructed by interpolating the polynomial from a sufficient number of shares.
+
+The $(t,n)$ Shamir's polynomial based secret sharing scheme is $(+,+)$-homomorphic in which the addition of two polynomials secrets equals the Lagrange's interpolation of the sum-of-shares for the same subset of shares.
+
+\todo{Write about creating shares, addition}
+
 \subsubsection{Multiplication and Beaver Triples}
 \label{sec:beaver}
 
@@ -304,39 +346,6 @@ Zero-knowledge protocols typically rely on the verifier to issue a challenge to 
 To adapt a zero-knowledge protocol into a signature scheme, the prover eliminates the need for a verifier to provide randomness. Instead, the prover generates the randomness using a pseudo-random function. This function takes as input the message to be signed along with some random values generated by the prover. The output of this function serves as the challenge. With this, the prover can compute the required values to prove authenticity without external interaction.
 
 In the context of the SD-in-the-Head protocol, the prover uses the pseudo-randomly generated challenge to locally compute the witness values required for the proof. These witness values are derived through the MPC protocol, where the prover simulates the necessary computations internally, generating and processing the shares "in their head." This eliminates the need for the verifier's active participation in the MPC protocol, streamlining the signature generation process.
-
-\section{Threshold variant}
-
-\subsection{Linear Secret Sharing Schemes}
-\label{sec:lsss}
-
-\textit{Secret sharing schemes} (SSS) are a type of cryptographic protocol that allows for the distribution of a secret amongst a group of participants. The secret can only be reconstructed when a sufficient number of shares are combined together. The threshold variant of the SD-in-the-Head protocol relies on a low-threshold linear secret sharing scheme (\textit{LSSS}). Threshold secret sharing schemes allow for the reconstruction of a secret from a subset of shares of length $\ell$, where $\ell$ is the threshold. The threshold allows for the SD-in-the-Head protocol to be more communication efficient, as the amount of shares needed to reconstruct the secret is low.
-
-\begin{definition}
-  \label{def:sss}
-  \textit{$S$ is a $(\ell,n)$ threshold SSS if it satisfies the following properties}:
-
-  \begin{itemize}
-    \item \textbf{Share generation}: Given a secret $s$, the scheme generates $n$ shares $\texttt{share}(s) = [[s]] = [[s_1, s_2, \dots, s_n]]$.
-    \item \textbf{Reconstruction}: Given a subset of shares $[[s']]$ of size $\ell$, the scheme can reconstruct the secret $s = \texttt{open}([[s']])$.
-  \end{itemize}
-
-\end{definition}
-
-\textit{Linear secret charing schemes}, or $(+,+)$-homomorphic schemes, refers to secret sharing schemes that are linearly homomorphic over some field $\mathbb{F}$ (say the galois field \texttt{GF256} described in \autoref{sec:gf256}). This means that given shares $[[a]]$ and $[[b]]$ we have that
-\begin{definition}
-  A $(\ell,n)$ threshold SSS is $(+,+)$-homomorphic if for any two secrets $s_1$ and $s_2$ and their shares $[[s_1]]$ and $[[s_2]]$, the sum of the shares $[[s_1]] + [[s_2]] = [[s_{11} + s_{21}, s_{12} + s_{22}, \dots, s_{1n} + s_{2n}]]$ is equal to the share of the sum of the secrets $[[s_1 + s_2]]$ for the same subset of shares.
-\end{definition}
-\subsection{Shamir's Secret Sharing}
-\label{sec:shamir}
-
-Shamir's Secret Sharing scheme \cite{shamir1979share}. Shamir's Secret Sharing is a method for distributing a secret amongst a group of participants, each of which is given a share of the secret. The secret can only be reconstructed when a sufficient number of shares are combined together.
-
-For a secret $s$ and a given security threshold $\ell$, the share $[[s]]$ is generated by sampling a random polynomial of degree $t-1$ with $s$ as the free coefficient. Each participant is given a share of the polynomial evaluated at a point. The secret can be reconstructed by interpolating the polynomial from a sufficient number of shares.
-
-The $(t,n)$ Shamir's polynomial based secret sharing scheme is $(+,+)$-homomorphic in which the addition of two polynomials secrets equals the Lagrange's interpolation of the sum-of-shares for the same subset of shares.
-
-\todo{Write about creating shares, addition}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
