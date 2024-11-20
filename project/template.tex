@@ -106,9 +106,15 @@ In 2016, the National Institute of Standards and Technology (NIST), known for st
 
 With the introduction of public-key cryptosystems by Diffie and Hellman in 1976, we saw the introduction schemes like the RSA based on factoring of large integers and the ElGamal scheme based on the discrete logarithm problem. While these are the protocols that have seen wide adoption, there exists schemes based on coding theory. These are their own discipline of information theory which predates the introduction of public-key cryptography. Although the scheme is less prominent, McEliece introduced a PK scheme based on coding theory already in 1978 \cite{mceliece1978public}. The McEliece PK scheme is based on the hardness of decoding random linear codes \cite{berlekamp1978inherent}. While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based crypto-schemes have seen a resurgence as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent movements in code-based cryptosystems have shown that the performance needed for code based cryptographic schemes practically is within reach. Introductions of linear based codes on finite fields and MPC (Multi Party Computation) threshold schemes \cite{baum2020concretely} show promising results and with the SD-in-the-Head scheme, such techniques are combined to create a post-quantum secure signature scheme.
 
-In this section, we will outline the mathematical foundations required to understand the SD-in-the-Head scheme and its components. First, we will introduce cryptographic primitives like collision resistant hash functions, Merkle tree commitment scheme \todo{add citation} and Galois finite field $\mathbb{F}_q$ used in the scheme \cite{martinez2023syndromes, reed1960polynomial, brownadvanced}. Next, we will discuss the Syndrome Decoding problem \cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}. Following this, we will explain the \textit{Multi-Party-Computation-in-the-Head} paradigm and the polynomial reduction of the SD problem, which enables its use in this framework \cite{baum2020concretely}. Additionally, we will detail the linear secret-sharing scheme that facilitates the efficient \textit{threshold variant}~\cite{feneuil2023threshold}. Finally, we will describe the Fiat-Shamir heuristic, which transforms the scheme into a signature mechanism~\cite{fiat1986prove}.
+In this section, we outline the mathematical and cryptographic foundations necessary to understand the SD-in-the-Head scheme and its components, providing a step-by-step progression from the basics to the construction of the protocol.
 
-\section{Cryptographic Primitives}
+We begin by introducing the essential cryptographic primitives that underpin the protocol. These include \textbf{collision-resistant hash functions}, the \textbf{Merkle tree commitment scheme} \todo{add citation}, and \textbf{Galois Finite Fields} $\mathbb{F}_q$ \cite{martinez2023syndromes, reed1960polynomial, brownadvanced}. In addition, we provide short introductions to the foundational protocols of \textbf{Secure Multi-Party Computation} (MPC) and \textbf{Zero-Knowledge} (ZK) proofs, which serve as the underlying cryptographic protocols.
+
+Next, we delve into the Syndrome Decoding (SD) problem, which forms the backbone of the SD-in-the-Head protocol. This includes an overview of the problem definition \cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}, and its polynomial representation. This will support and understanding of how the protocol operates on hard instances of the SD problem.
+
+Building upon these foundations, we lay the groundwork for the construction of the SD-in-the-Head protocol. First, we introduce the \textbf{Fiat-Shamir heuristic}, a powerful tool that transforms an interactive ZK protocol into a non-interactive signature scheme \cite{fiat1986prove}. Next, we discuss the \textbf{Multi-Party-Computation-in-the-Head} (MPCitH) paradigm, explaining how it is leveraged to construct efficient ZK proofs \cite{baum2020concretely, ishai2007zero}. Additionally we detail the role of the linear secret-sharing scheme, which enables the efficient implementation of a threshold variant of MPCitH \cite{feneuil2023threshold} which significantly enhances the performance of the SD-in-the-Head scheme by reducing the computational overhead, making it a practical solution for modern cryptographic applications.
+
+\section{Cryptographic Primitives and Protocols}
 
 \subsection{Collision Resistant Hash Functions}
 
@@ -165,7 +171,7 @@ where $a_i \in \mathbb{F}_2$ This corresponds directly into the 8-bit binary rep
 
 A common choice for the irreducible polynomial is the Rijndael polynomial $p(x) = x^8 + x^4 + x^3 + x + 1$ used in the AES protocol \cite{brownadvanced}. This field is commonly known as $\mathbb{F}_{2^8}$. The size of the field allows us to represent elements as bytes, which is efficient for iterating over large numbers of digits and it contains all the elements of a byte.
 
-\subsection{Field extension}
+\subsubsection{Field extension}
 
 A advantageous property of Galois fields is that they can easily be extended, like it was done from $\mathbb{F}_{2}$ to $\mathbb{F}_{2^8}$. To ensure security in the SD-in-the-Head protocol, the field $\mathbb{F}_{2^8}$ is extended to encompass the field 32-bit unsigned integers. This can be done as a \textit{tower extension} by first building a degree-2 extension to $\mathbb{F}_{2^{16}}$ using the irreducible polynomial $q(x) = x^2 x + 32$ and finally extending this field to $\mathbb{F}_{2^{32}}$ using the irreducible polynomial $r(x) = x^2 + x + 32(x)$. While you could create the final field independently, the tower extension allows us to reuse the construction of the intermediate field. Addition and multiplication in the extension fields are represented as the following
 
@@ -180,7 +186,7 @@ A advantageous property of Galois fields is that they can easily be extended, li
 \end{align*}
 
 
-\subsection{Polynomial evaluation}
+\subsubsection{Polynomial evaluation}
 \todo{Should this be moved to the specification section?}
 For polynomial evalution in the multiparty computation seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. The polynomial $P(x)$ is defined as
 \begin{align}
@@ -188,6 +194,20 @@ For polynomial evalution in the multiparty computation seen in \autoref{sec:mpc}
   Q(r)                                               & = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1} &  & Q_i \in F_q, r \in F_q^\eta
   \label{eq:mpcpoly}
 \end{align}
+
+\subsection{Secure Multi-Party Computation}
+
+\subsection{Zero-Knowledge Proofs}
+
+\section{Fiat-Shamir Heuristic}
+\label{sec:fiatshamir}
+To transform any zero-knowledge protocol into a signature scheme, one can use the approach described in \cite{fiat1986prove}. Here, we outline the general concept.
+
+Zero-knowledge protocols typically rely on the verifier to issue a challenge to the prover. This challenge serves as a source of randomness that the prover is not supposed to control. In the Fiat-Shamir framework, the original protocol is based on the problem of factoring integers -- a problem that is now vulnerable to quantum attacks, specifically Shor's algorithm. However, the fundamental method of converting a zero-knowledge protocol into a signature scheme remains unaffected.
+
+To adapt a zero-knowledge protocol into a signature scheme, the prover eliminates the need for a verifier to provide randomness. Instead, the prover generates the randomness using a pseudo-random function. This function takes as input the message to be signed along with some random values generated by the prover. The output of this function serves as the challenge. With this, the prover can compute the required values to prove authenticity without external interaction.
+
+In the context of the SD-in-the-Head protocol, the prover uses the pseudo-randomly generated challenge to locally compute the witness values required for the proof. These witness values are derived through the MPC protocol, where the prover simulates the necessary computations internally, generating and processing the shares "in their head." This eliminates the need for the verifier's active participation in the MPC protocol, streamlining the signature generation process.
 
 \section{Syndrome Decoding Problem}
 \label{sec:syndrome}
@@ -199,43 +219,20 @@ The SD-in-the-Head protocol is built on the computational hardness of the Syndro
 \end{definition}
 Generating such an instance is straightforward: one can construct a uniformly random parity-check matrix $H$ and a codeword $x$ (with $wt(x) \leq w$), and then compute the syndrome $y = Hx$. In the SD-in-the-Head protocol, the values of the matrix $H$ and the syndrome $y$ are elements of the finite field $\mathbb{F}_q$ which we will explain further in \autoref{sec:gf256}. The SD problem is well-known to be NP-complete for random instances \cite{berlekamp1978inherent} also referred to as the general decoding problem.To illustrate the computational difficulty, solving the problem using brute force would require $O(\binom{m}{w} q^w)$ operations, which is computationally infeasible for large $m$ and $k$.
 
-\section{MPC-in-the-Head}
-\label{sec:mpcinth}
-
-Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as its security relies on assumptions that are still believed to be quantum secure. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold} which has no known quantum algorithms that break their security.
-
-
-The paradigm functions by letting prover emulate an $\ell$-private MPC protocol $\pi_f$ for a ``in the head'', commit to the views of the parties of the MPC protocol followed by the verifier having the prover reveal a random subset of size $\ell$. 
-
-We use standard definitions of MPC and ZK schemes~\cite{cramer2015secure,ishai2007zero}. We define an a ZK scheme $\pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$ and a semi-honest $\ell$-private MPC protocol $\pi_f$ for some public statement $x$, a witness $w$ and a. Let $w_i$ be a secret share of $w$ for the party $P_i$ (see \autoref{sec:lsss}). Let $f$ be a $n$-party functionality $f(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, s.t. $f(x,w)$ accepts if $(x,w) \in \mathcal{R}$. We denote the view of a party $P_i$ to be $(r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share of the witness, and $(m_1, \dots, m_j)$ is the messages received by $P_i$. 
-
-
-
-the statement is turned into a circuit $C$. On input $x$, $C$ outputs $y$ iff. $x = w$ for some witness $w$ which is a correct witness for the statement to be proven. The prover simulates the MPC protocol of all the parties \textit{in the head}. The parties each evalutate $C$ on a secret sharing of $w$
-
-The framework benefits from previous efficiency improvements in MPC protocols to improve the efficiency of ZKAoK protocols. Particularly, its possible to achieve \textit{constant-rate} zero knowledge. For an arbitrary circuit $C$ of size $s$ and a bounded fan-in, it is possible to construct a ZKAoK protocol with communication complexity $O(s) + \text{poly}(k)$, for a security parameter $k$. This is an improvement over previous ZKAoK protocols, which had communication complexity $O(ks)$. \todo{write about this in the previous section}.
-
-\subsection{Zero-Knowledge proofs from MPC}
-\label{sec:zkmpc}
-
-Zero-Knowledge Arguments of Knowledge (ZKAoK) allow a prover to convince a verifier that they knows a certain witness for a statement without revealing any additional information about the witness. \todo{What are they used for..}
-
-ZKAoK protocols have been introduced in multiple variants that each solve specific relational problems with varying levels of communication complexity and prover running times. While many of these perform well for these specific problems, there has long been a need for a well performing generic ZKAoK protocol.
-
 \subsubsection{Standard form of the parity-check matrix}
 \label{sec:standard_form_of_the_parity_check_matrix}
-To improve the performance and reduce the key size of the protocol utilizes the fact that the matrix $H$ can be in standard form. $H = (H'|I_{m-k}) $ Where $H' \in \mathbb{F}^{(m-k)\times k}_q$. This allows for the following representation of the syndrome:
+To improve the performance and reduce the key size of the protocol, its possible to utilize the fact that the matrix $H$ can be in standard form. $H = (H'|I_{m-k}) $ Where $H' \in \mathbb{F}^{(m-k)\times k}_q$. This allows for the following representation of the syndrome:
 \begin{equation}
   y = Hx = H'x_a + x_b
   \label{eq:standard_form_of_the_parity_check_matrix}
 \end{equation}
-with $x = (x_a | x_b)$. This improves the performance of the algorithms through two properties
+with $x = (x_a | x_b)$. This improves the performance of the algorithms used in the SD-in-the-Head protocol in the following ways
 \begin{itemize}
   \item At the MPC layer, we only need to reveal one share $x_a$. Due to the fact that the other share $x_b$ can simply be recomputed by $x_b = y - H'x_a$.
   \item By linearity of the above relation one only needs to send $x_a$ in order to recover the SD instance. So from a sharing of $x_a$ one can check the correctness of the SD instance.
 \end{itemize}
 
-\subsubsection{MPCitH from the Polynomial representation of SD}\label{sec:polynomial_representation}
+\subsubsection{Polynomial representation of SD}\label{sec:polynomial_representation}
 In order to convert the SD problem into a form that allows for \textit{Multi Party Computation in the Head} (MPCitH, which we will exlpain further in \autoref{sec:mpcith}) the SD-in-the-Head protocol is based on three (witness-dependent) polynomials $S, Q$ and $P$, and one public polynomial $F$.
 These are used for checking the correctness of the SD solution by verifying the following relation:
 \begin{equation}
@@ -251,6 +248,28 @@ Let $f_1,\dots, f_q$ denote elements of $\mathbb{F}_q$, then the polynomials are
   \item $F\in \mathbb{F}_q[X]$ is the \textit{vanishing polynomial} of the set ${f_1, \dots, f_m}$ also defined as $F(X) = \prod_{i\in [1:m]}(X - f_i)$ and has degree $\text{deg}(F) = m$.
 \end{itemize}
 We can now look at the relation in \autoref{eq:polynomial_representation}. If we look at the left-hand side, which has the following property by design $S\cdot Q(f_i) = 0 \;\forall\; f_i \in [1:m]$. This comes from the fact that the polynomial $S(f_i) = 0$ whenever $x_i = 0$, as it is the lagrange interpolation of $x$. Furthermore, the polynomial $Q(f_i)$ is zero whenever $f_i$ is a non-zero coordinate of $x$, which follows from the definition of $Q$.
+
+\section{MPC-in-the-Head}
+\label{sec:mpcinth}
+
+The SD-in-the-Head protocol construction is based on the \textit{Multi-Party Computation in the Head} (MPCitH) framework. In this section we will give an introduction to the framework and how it can be used to construct zero-knowledge proofs, which in turn can be combined with the Fiat-Shamir heuristic to create a signature scheme.
+
+Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as its security relies on assumptions that are still believed to be quantum secure. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold} which has no known quantum algorithms that break their security.
+
+We use standard definitions of MPC and ZK schemes~\cite{cramer2015secure,ishai2007zero}. We define an a ZK scheme $\pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$ and a semi-honest $\ell$-private MPC protocol $\pi_f$ for some public statement $x$, a witness $w$ and a. Let $w_i$ be a secret share of $w$ for the party $P_i$ (see \autoref{sec:lsss}). The privacy property of $\pi_f$ ensures that you can only reconstruct $w$ from $\ell + 1$ shares. Let $f$ be a $n$-party functionality $f(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, s.t. $f(x,w)$ accepts if $(x,w) \in \mathcal{R}$. We denote the view of a party $P_i$ to be $(r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share of the witness, and $(m_1, \dots, m_j)$ is the messages received by $P_i$.
+
+
+
+the statement is turned into a circuit $C$. On input $x$, $C$ outputs $y$ iff. $x = w$ for some witness $w$ which is a correct witness for the statement to be proven. The prover simulates the MPC protocol of all the parties \textit{in the head}. The parties each evalutate $C$ on a secret sharing of $w$
+
+The framework benefits from previous efficiency improvements in MPC protocols to improve the efficiency of ZKAoK protocols. Particularly, its possible to achieve \textit{constant-rate} zero knowledge. For an arbitrary circuit $C$ of size $s$ and a bounded fan-in, it is possible to construct a ZKAoK protocol with communication complexity $O(s) + \text{poly}(k)$, for a security parameter $k$. This is an improvement over previous ZKAoK protocols, which had communication complexity $O(ks)$. \todo{write about this in the previous section}.
+
+\subsection{Zero-Knowledge proofs from MPC}
+\label{sec:zkmpc}
+
+Zero-Knowledge Arguments of Knowledge (ZKAoK) allow a prover to convince a verifier that they knows a certain witness for a statement without revealing any additional information about the witness. \todo{What are they used for..}
+
+ZKAoK protocols have been introduced in multiple variants that each solve specific relational problems with varying levels of communication complexity and prover running times. While many of these perform well for these specific problems, there has long been a need for a well performing generic ZKAoK protocol.
 
 
 For the right-hand side, the polynomial $F$ is the vanishing polynomial for the set ${f_1, \dots, f_m}$, so $F(f_i) = 0 \;\forall\; f_i \in [1:m]$. The polynomial $P$ is needed to match the degree of $S \cdot Q$. As the degree of $F$ is $m \leq \text{deg}(S\cdot Q) \leq m + w - 1$.
@@ -336,16 +355,6 @@ Observe that if both triples are correct multiplication triples (i.e., $z = xy$ 
 \end{lemma}
 
 \todo{Proof of lemma and solution}
-
-\section{Fiat-Shamir Heuristic}
-\label{sec:fiatshamir}
-To transform any zero-knowledge protocol into a signature scheme, one can use the approach described in \cite{fiat1986prove}. Here, we outline the general concept.
-
-Zero-knowledge protocols typically rely on the verifier to issue a challenge to the prover. This challenge serves as a source of randomness that the prover is not supposed to control. In the Fiat-Shamir framework, the original protocol is based on the problem of factoring integers -- a problem that is now vulnerable to quantum attacks, specifically Shor's algorithm. However, the fundamental method of converting a zero-knowledge protocol into a signature scheme remains unaffected.
-
-To adapt a zero-knowledge protocol into a signature scheme, the prover eliminates the need for a verifier to provide randomness. Instead, the prover generates the randomness using a pseudo-random function. This function takes as input the message to be signed along with some random values generated by the prover. The output of this function serves as the challenge. With this, the prover can compute the required values to prove authenticity without external interaction.
-
-In the context of the SD-in-the-Head protocol, the prover uses the pseudo-randomly generated challenge to locally compute the witness values required for the proof. These witness values are derived through the MPC protocol, where the prover simulates the necessary computations internally, generating and processing the shares "in their head." This eliminates the need for the verifier's active participation in the MPC protocol, streamlining the signature generation process.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
