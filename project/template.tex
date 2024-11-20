@@ -114,11 +114,9 @@ Next, we delve into the Syndrome Decoding (SD) problem, which forms the backbone
 
 Building upon these foundations, we lay the groundwork for the construction of the SD-in-the-Head protocol. First, we introduce the \textbf{Fiat-Shamir heuristic}, a powerful tool that transforms an interactive ZK protocol into a non-interactive signature scheme \cite{fiat1986prove}. Next, we discuss the \textbf{Multi-Party-Computation-in-the-Head} (MPCitH) paradigm, explaining how it is leveraged to construct efficient ZK proofs \cite{baum2020concretely, ishai2007zero}. Additionally we detail the role of the linear secret-sharing scheme, which enables the efficient implementation of a threshold variant of MPCitH \cite{feneuil2023threshold} which significantly enhances the performance of the SD-in-the-Head scheme by reducing the computational overhead, making it a practical solution for modern cryptographic applications.
 
-\section{Cryptographic Primitives and Protocols}
+\section{Cryptographic Primitives}
 
 \subsection{Collision Resistant Hash Functions}
-
-\subsection{Merkle Tree Commitment Scheme}
 
 % subsection  (end)
 \subsection{Galois Finite Field}
@@ -195,9 +193,27 @@ For polynomial evalution in the multiparty computation seen in \autoref{sec:mpc}
   \label{eq:mpcpoly}
 \end{align}
 
-\subsection{Secure Multi-Party Computation}
+\subsection{Sub protocols}
+In the following section we will introduce the cryptographic protocols that provide the building blocks used to build the SD-in-the-Head scheme.
 
-\subsection{Zero-Knowledge Proofs}
+\subsubsection{Commitment Scheme (Merkle Tree)}
+
+\subsubsection{Secure Multi-Party Computation}
+
+Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following, sections we will denote a MPC protocol by $\pi_f$ for an $n$-party functionality $f(x_1, \dots, x_n)$. The goal is to compute the function $f$ on the inputs of the $n$ parties while upholding the following properties~\cite{cramer2015secure}:
+\begin{itemize}
+  \item \textbf{Correctness}: The output of the protocol is the correct evaluation of the function $f$ on the inputs of the parties.
+  \item \textbf{Privacy}: The protocol ensures that no party learns anything about the inputs of the other parties beyond what can be inferred from the output of the function.
+\end{itemize}
+In terms of security needed for the SD-in-the-Head protocol, we define the following security requirements for the MPC protocol $\pi_f$:
+\begin{itemize}
+  \item \textbf{Semi-honest security}: The protocol is secure against semi-honest adversaries, where parties follow the protocol but may attempt to learn information from the messages they receive.
+  \item \textbf{Low-threshold security}: The protocol is secure against a coalition of up to $\ell$ parties, where $\ell$ is the threshold. This is also known as a $\ell$-private MPC protocol.
+\end{itemize}
+
+\subsubsection{Zero-Knowledge Proofs}
+
+
 
 \section{Fiat-Shamir Heuristic}
 \label{sec:fiatshamir}
@@ -254,7 +270,7 @@ We can now look at the relation in \autoref{eq:polynomial_representation}. If we
 
 The SD-in-the-Head protocol construction is based on the \textit{Multi-Party Computation in the Head} (MPCitH) framework. In this section we will give an introduction to the framework and how it can be used to construct zero-knowledge proofs, which in turn can be combined with the Fiat-Shamir heuristic to create a signature scheme.
 
-Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as its security relies on assumptions that are still believed to be quantum secure. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold} which has no known quantum algorithms that break their security.
+The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as its security relies on assumptions that are still believed to be quantum secure. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold} which has no known quantum algorithms that break their security.
 
 We use standard definitions of MPC and ZK schemes~\cite{cramer2015secure,ishai2007zero}. We define an a ZK scheme $\pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$ and a semi-honest $\ell$-private MPC protocol $\pi_f$ for some public statement $x$, a witness $w$ and a. Let $w_i$ be a secret share of $w$ for the party $P_i$ (see \autoref{sec:lsss}). The privacy property of $\pi_f$ ensures that you can only reconstruct $w$ from $\ell + 1$ shares. Let $f$ be a $n$-party functionality $f(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, s.t. $f(x,w)$ accepts if $(x,w) \in \mathcal{R}$. We denote the view of a party $P_i$ to be $(r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share of the witness, and $(m_1, \dots, m_j)$ is the messages received by $P_i$.
 
