@@ -22,6 +22,12 @@
 \newtheorem{definition}{Definition}[section]
 \newcommand{\definitionautorefname}{Definition}
 
+\addto\extrasamerican{%
+  \def\chapterautorefname{Chapter}%
+  \def\sectionautorefname{Section}%
+  \def\subsectionautorefname{Section}%
+}
+
 
 \theoremstyle{plain}
 \newtheorem{lemma}{Lemma}[section]
@@ -112,7 +118,7 @@ We begin by introducing the essential cryptographic primitives that underpin the
 
 Next, we delve into the Syndrome Decoding (SD) problem, which forms the backbone of the SD-in-the-Head protocol. This includes an overview of the problem definition \cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}, and its polynomial representation. This will support and understanding of how the protocol operates on hard instances of the SD problem.
 
-Building upon these foundations, we lay the groundwork for the construction of the SD-in-the-Head protocol. First, we introduce the \textbf{Fiat-Shamir heuristic}, a powerful tool that transforms an interactive ZK protocol into a non-interactive signature scheme \cite{fiat1986prove}. Next, we discuss the \textbf{Multi-Party-Computation-in-the-Head} (MPCitH) paradigm, explaining how it is leveraged to construct efficient ZK proofs \cite{baum2020concretely, ishai2007zero}. Additionally we detail the role of the linear secret-sharing scheme, which enables the efficient implementation of a threshold variant of MPCitH \cite{feneuil2023threshold} which significantly enhances the performance of the SD-in-the-Head scheme by reducing the computational overhead, making it a practical solution for modern cryptographic applications.
+Building upon these foundations, we lay the groundwork for the construction of the SD-in-the-Head protocol. First, we introduce the \textbf{Fiat-Shamir heuristic}, a powerful tool that transforms an interactive ZK protocol into a non-interactive signature scheme \cite{fiat1986prove}. Next, we discuss the \textbf{Multi-Party-Computation-in-the-Head} (MPCitH) paradigm, explaining how it is leveraged to construct efficient ZK proofs \cite{ishai2007zero}. Additionally we detail the role of the MPC preprocessing \cite{baum2020concretely} and linear secret-sharing scheme \cite{feneuil2023threshold}, which dramatically improves the efficiency of the MPCitH construction.
 
 \section{Cryptographic Primitives}
 
@@ -193,29 +199,36 @@ For polynomial evalution in the multiparty computation seen in \autoref{sec:mpc}
   \label{eq:mpcpoly}
 \end{align}
 
-\subsection{Sub protocols}
+\section{Sub protocols}
 In the following section we will introduce the cryptographic protocols that provide the building blocks used to build the SD-in-the-Head scheme.
 
-\subsubsection{Commitment Scheme (Merkle Tree)}
+\subsection{Commitment Scheme (Merkle Tree)}
 
-\subsubsection{Secure Multi-Party Computation}
+\subsection{Secure Multi-Party Computation}
+\label{sec:mpc}
 
-Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following, sections we will denote a MPC protocol by $\pi_f$ for an $n$-party functionality $f(x_1, \dots, x_n)$. The goal is to compute the function $f$ on the inputs of the $n$ parties while upholding the following properties~\cite{cramer2015secure}:
+Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following, sections we will denote a MPC protocol by $\pi_f$ for an $n$-party functionality $f(x, w_1, \dots, w_n)$, a public input $x$ and secret inputs $w_i$ of the party $P_i$. The goal is to compute the function $f$ on the inputs of the $n$ parties while upholding the following properties~\cite{cramer2015secure}
+
 \begin{itemize}
-  \item \textbf{Correctness}: The output of the protocol is the correct evaluation of the function $f$ on the inputs of the parties.
-  \item \textbf{Privacy}: The protocol ensures that no party learns anything about the inputs of the other parties beyond what can be inferred from the output of the function.
+  \item \textbf{Correctness}: The output of the protocol is the correct evaluation of the function $f$ on the inputs of the parties $w_i$ and the public input $x$
+  \item \textbf{Privacy}: The protocol ensures that no partylearns anything about the inputs of the other parties beyond what can be inferred from the output of the function.
 \end{itemize}
-In terms of security needed for the SD-in-the-Head protocol, we define the following security requirements for the MPC protocol $\pi_f$:
+
+In terms of security needed for the SD-in-the-Head protocol, we define the following security requirements for the MPC protocol $\pi_f$
+
 \begin{itemize}
   \item \textbf{Semi-honest security}: The protocol is secure against semi-honest adversaries, where parties follow the protocol but may attempt to learn information from the messages they receive.
   \item \textbf{Low-threshold security}: The protocol is secure against a coalition of up to $\ell$ parties, where $\ell$ is the threshold. This is also known as a $\ell$-private MPC protocol.
 \end{itemize}
 
-\subsubsection{Zero-Knowledge Proofs}
+We denote the view $V_i$ of a party $P_i$ in the protocol as $(i, x, r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share, and $(m_1, \dots, m_j)$ is the messages received by $P_i$ in the first $j+1$ rounds of the protocol. We say that two views $V_i, V_j$ are \textit{consistent} according to the public input $x$ if the views are identical given the public input $x$.
 
+\subsection{Zero-Knowledge Proofs}
+\label{sec:zk}
 
+This section will only give a brief introduction to \textit{two-party interactive} Zero-Knowledge (ZK) schemes for a \textit{prover} and a \textit{verifier}. We denote a ZK $\pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$. Let $x$ be a public statement in \textbf{NP} and $w$ be a witness such that $(x, w) \in \mathcal{R}$ \cite{feneuil2023threshold}.
 
-\section{Fiat-Shamir Heuristic}
+\subsection{Fiat-Shamir Heuristic}
 \label{sec:fiatshamir}
 To transform any zero-knowledge protocol into a signature scheme, one can use the approach described in \cite{fiat1986prove}. Here, we outline the general concept.
 
@@ -265,29 +278,6 @@ Let $f_1,\dots, f_q$ denote elements of $\mathbb{F}_q$, then the polynomials are
 \end{itemize}
 We can now look at the relation in \autoref{eq:polynomial_representation}. If we look at the left-hand side, which has the following property by design $S\cdot Q(f_i) = 0 \;\forall\; f_i \in [1:m]$. This comes from the fact that the polynomial $S(f_i) = 0$ whenever $x_i = 0$, as it is the lagrange interpolation of $x$. Furthermore, the polynomial $Q(f_i)$ is zero whenever $f_i$ is a non-zero coordinate of $x$, which follows from the definition of $Q$.
 
-\section{MPC-in-the-Head}
-\label{sec:mpcinth}
-
-The SD-in-the-Head protocol construction is based on the \textit{Multi-Party Computation in the Head} (MPCitH) framework. In this section we will give an introduction to the framework and how it can be used to construct zero-knowledge proofs, which in turn can be combined with the Fiat-Shamir heuristic to create a signature scheme.
-
-The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as its security relies on assumptions that are still believed to be quantum secure. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold} which has no known quantum algorithms that break their security.
-
-We use standard definitions of MPC and ZK schemes~\cite{cramer2015secure,ishai2007zero}. We define an a ZK scheme $\pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$ and a semi-honest $\ell$-private MPC protocol $\pi_f$ for some public statement $x$, a witness $w$ and a. Let $w_i$ be a secret share of $w$ for the party $P_i$ (see \autoref{sec:lsss}). The privacy property of $\pi_f$ ensures that you can only reconstruct $w$ from $\ell + 1$ shares. Let $f$ be a $n$-party functionality $f(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, s.t. $f(x,w)$ accepts if $(x,w) \in \mathcal{R}$. We denote the view of a party $P_i$ to be $(r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share of the witness, and $(m_1, \dots, m_j)$ is the messages received by $P_i$.
-
-
-
-the statement is turned into a circuit $C$. On input $x$, $C$ outputs $y$ iff. $x = w$ for some witness $w$ which is a correct witness for the statement to be proven. The prover simulates the MPC protocol of all the parties \textit{in the head}. The parties each evalutate $C$ on a secret sharing of $w$
-
-The framework benefits from previous efficiency improvements in MPC protocols to improve the efficiency of ZKAoK protocols. Particularly, its possible to achieve \textit{constant-rate} zero knowledge. For an arbitrary circuit $C$ of size $s$ and a bounded fan-in, it is possible to construct a ZKAoK protocol with communication complexity $O(s) + \text{poly}(k)$, for a security parameter $k$. This is an improvement over previous ZKAoK protocols, which had communication complexity $O(ks)$. \todo{write about this in the previous section}.
-
-\subsection{Zero-Knowledge proofs from MPC}
-\label{sec:zkmpc}
-
-Zero-Knowledge Arguments of Knowledge (ZKAoK) allow a prover to convince a verifier that they knows a certain witness for a statement without revealing any additional information about the witness. \todo{What are they used for..}
-
-ZKAoK protocols have been introduced in multiple variants that each solve specific relational problems with varying levels of communication complexity and prover running times. While many of these perform well for these specific problems, there has long been a need for a well performing generic ZKAoK protocol.
-
-
 For the right-hand side, the polynomial $F$ is the vanishing polynomial for the set ${f_1, \dots, f_m}$, so $F(f_i) = 0 \;\forall\; f_i \in [1:m]$. The polynomial $P$ is needed to match the degree of $S \cdot Q$. As the degree of $F$ is $m \leq \text{deg}(S\cdot Q) \leq m + w - 1$.
 
 It is now apparent that if the prover can convince the verifier that they know of polynomials $P,Q$ such that $S\cdot Q = F \cdot P = 0$ at all points $f_i \in [1:m]$. The following must hold, either $S(f_i) = x_i = 0$ or $Q(f_i) = 0$. However, the polynomial $Q$ can be zero in at most $w$ points based on the degree, this means that S is non-zero in at most $w$ points, based on the construction, which in turn implies that $x$ has weight as most $w$.
@@ -300,8 +290,33 @@ With this, we can define the soundness of the MPC protocol as follows:
 
 We can now share a witness $(x_a, Q, P)$. Now based on the relation \autoref{eq:standard_form_of_the_parity_check_matrix}, $x$ can be locally computed along with the polynomial $S$, this can then be used to run an equality test for the relation $S \cdot Q = P \cdot F$.
 
-\subsection{False positive probability}\label{sub:equality_test}
+\subsubsection{False positive probability}\label{sub:equality_test}
 The equality test from \autoref{eq:polynomial_representation} has a small probability of false positives, denoted $p$. To reduce this probability, the relation is evaluated at random points $\{r_k \in \mathbb{F}_q\}_{k\in[t]}$. By the Schwartz-Zippel lemma, the probability of a false positive is bounded by $p \leq \frac{t}{q}$, where $q$ is the size of the finite field $\mathbb{F}_q$. In short, this makes it unlikely that the relation will hold for all points $r_k$ if the relation is not sound according to \autoref{eq:soundness}. Furthermore, we can tweak the parameters $t$ and $q$ to reduce $p$. We will explain the choice of field size $q$ in \autoref{sec:gf256}.
+
+\section{MPC-in-the-Head}
+\label{sec:mpcinth}
+
+The SD-in-the-Head protocol construction is based on the \textit{Multi-Party Computation in the Head} (MPCitH) framework. In this section we will give an introduction to the framework and how it can be used to construct ZK proofs, which in turn can be combined with the Fiat-Shamir heuristic to create a signature scheme.
+
+The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as its security relies on assumptions that are still believed to be quantum secure. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold} which has no known quantum algorithms that break their security.
+
+Given a semi-honest $\ell$-private MPC protocol $\pi_f$, a relation $\mathcal{R}$ for some public statement $x$, a witness $w$ and a\footnote{See \autoref{sec:mpc} and \autoref{sec:zk}}. Let $w_i$ be an additive secret share of $w$ for the party $P_i$ (this is further addressed in \autoref{sec:lsss}). Let $f$ be a $n$-party functionality $f(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, s.t. $f(x,w)$ accepts if $(x,w) \in \mathcal{R}$. The ZK protocol proceeds as follows~\cite{ishai2007zero}:
+
+\begin{enumerate}
+  \item
+\end{enumerate}
+
+The framework benefits from previous efficiency improvements in MPC protocols to improve the efficiency of ZKAoK protocols. Particularly, its possible to achieve \textit{constant-rate} zero knowledge. For an arbitrary circuit $C$ of size $s$ and a bounded fan-in, it is possible to construct a ZKAoK protocol with communication complexity $O(s) + \text{poly}(k)$, for a security parameter $k$. This is an improvement over previous ZKAoK protocols, which had communication complexity $O(ks)$. \todo{write about this in the previous section}.
+
+\subsection{Zero-Knowledge proofs from MPC}
+\label{sec:zkmpc}
+
+Zero-Knowledge Arguments of Knowledge (ZKAoK) allow a prover to convince a verifier that they knows a certain witness for a statement without revealing any additional information about the witness. \todo{What are they used for..}
+
+ZKAoK protocols have been introduced in multiple variants that each solve specific relational problems with varying levels of communication complexity and prover running times. While many of these perform well for these specific problems, there has long been a need for a well performing generic ZKAoK protocol.
+
+
+
 
 
 \subsection{MPC preprocessing}
