@@ -202,11 +202,11 @@ In the following section we will introduce the cryptographic protocols that prov
 A commitment scheme is a way for a prover to commit to a value, and then later prove that it's still the same value as was initially committed to. Such that the following 2 properties are upheld:
 \begin{itemize}
   \item \textbf{Binding}: The prover cannot change the value after it has been committed to.
-a  \item \textbf{Hiding}: The value is hidden from the verifier until the prover reveals it.
+        a  \item \textbf{Hiding}: The value is hidden from the verifier until the prover reveals it.
 \end{itemize}
-One such variant which allows for partial opening, is the merkle tree. 
+One such variant which allows for partial opening, is the merkle tree.
 Let $v_1, \dots, v_n$ be the values being committed to. And let $h$ be a cryptographic PQC secure hash function.
-The leafs $a_{0,1},\dots, a_{0,n}$ of the tree is the initial hash values $h(v_1), \dots, h(v_n)$. Every parent $a_{1,0},\dots a_{h,j}$, here $h$ is the height of the tree and $j$ is the number of parents per layer in the tree, is the hash of its children $h(h(v_1)|h(v_2)),\dots, h(h(v_{n-1})|h(v_n))$. The root of the tree $a_{h,0}$ is the commitment value, which is sent to the verifier. Now to open a value $v$, the prover computes the authentication path for $v_p$, where $p$ is the index of the chosen value. The authentication path $A$ for any leaf $a_{0,i}$ is the accumulated neighboring nodes from the leaf up to the root. So the first node $A_0$ is going to be the neighboring node $a_{0,p-1}$ if $p$ is odd or $a_{0,p+1}$ if $p$ is even. This node is going to be the $auth_0$. For the rest of the path $A_i = h(A_{i-1} | auth_{i-1})$ where $auth_i$ is the neighboring node of $A_{i-1}$ at the same level. 
+The leafs $a_{0,1},\dots, a_{0,n}$ of the tree is the initial hash values $h(v_1), \dots, h(v_n)$. Every parent $a_{1,0},\dots a_{h,j}$, here $h$ is the height of the tree and $j$ is the number of parents per layer in the tree, is the hash of its children $h(h(v_1)|h(v_2)),\dots, h(h(v_{n-1})|h(v_n))$. The root of the tree $a_{h,0}$ is the commitment value, which is sent to the verifier. Now to open a value $v$, the prover computes the authentication path for $v_p$, where $p$ is the index of the chosen value. The authentication path $A$ for any leaf $a_{0,i}$ is the accumulated neighboring nodes from the leaf up to the root. So the first node $A_0$ is going to be the neighboring node $a_{0,p-1}$ if $p$ is odd or $a_{0,p+1}$ if $p$ is even. This node is going to be the $auth_0$. For the rest of the path $A_i = h(A_{i-1} | auth_{i-1})$ where $auth_i$ is the neighboring node of $A_{i-1}$ at the same level.
 The prover sends $A$ and the index $p$ for the chosen value to the verifier whenever he wants to open a value. The verifier can check that the commitment is correct by recomputing the root using the authentication path and the leaf value.
 
 Due to the use of a PQC secure and collision-resistant hash function the commitment ensures the \textbf{Hiding} property. This comes from the fact that only the root of the tree is shared and if the adversary wants any information on the initial values, she would have to find collisions for the hash function. The same argument holds for the \textbf{Binding} property, as the adversary would have to find a collision for the hash function to change the commitment value.
@@ -215,14 +215,14 @@ A nice property of the merkle tree is that you can open a partial set of the com
 
 \subsection{Secure Multi-Party Computation}\label{sec:mpc}
 
-Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following, sections we will denote a MPC protocol by $\pi_f$ for an $n$-party functionality $f(x, w_1, \dots, w_n)$, a public input $x$ and secret inputs $w_i$ of the party $P_i$. The goal is to compute the function $f$ on the inputs of the $n$ parties while upholding the following properties~\cite{cramer2015secure}
+Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following, sections we will denote a MPC protocol by $\Pi_f$ for an $n$-party functionality $f(x, w_1, \dots, w_n)$, a public input $x$ and secret inputs $w_i$ of the party $P_i$. The goal is to compute the function $f$ on the inputs of the $n$ parties while upholding the following properties~\cite{cramer2015secure}
 
 \begin{itemize}
   \item \textbf{Correctness}: The output of the protocol is the correct evaluation of the function $f$ on the inputs of the parties $w_i$ and the public input $x$
   \item \textbf{Privacy}: The protocol ensures that no partylearns anything about the inputs of the other parties beyond what can be inferred from the output of the function.
 \end{itemize}
 
-In terms of security needed for the SD-in-the-Head protocol, we define the following security requirements for the MPC protocol $\pi_f$
+In terms of security needed for the SD-in-the-Head protocol, we define the following security requirements for the MPC protocol $\Pi_f$
 
 \begin{itemize}
   \item \textbf{Semi-honest security}: The protocol is secure against semi-honest adversaries, where parties follow the protocol but may attempt to learn information from the messages they receive.
@@ -232,7 +232,14 @@ In terms of security needed for the SD-in-the-Head protocol, we define the follo
 We denote the view $V_i$ of a party $P_i$ in the protocol as $(i, x, r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share, and $(m_1, \dots, m_j)$ is the messages received by $P_i$ in the first $j+1$ rounds of the protocol. We say that two views $V_i, V_j$ are \textit{consistent} according to the public input $x$ if the views are identical given the public input $x$.
 
 \subsection{Zero-Knowledge Proofs}\label{sec:zk}
-This section will only give a brief introduction to \textit{two-party interactive} Zero-Knowledge (ZK) schemes for a \textit{prover} and a \textit{verifier}. We denote a ZK $\pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$. Let $x$ be a public statement in \textbf{NP} and $w$ be a witness such that $(x, w) \in \mathcal{R}$~\cite{feneuil2023threshold}.
+This section will only give a brief introduction to \textit{two-party interactive} Zero-Knowledge (ZK) schemes for a \textit{prover} and a \textit{verifier}. We denote a ZK $\Pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$. Let $x$ be a public statement in \textbf{NP} and $w$ be a witness such that $(x, w) \in \mathcal{R}$~\cite{feneuil2023threshold}.
+
+\begin{definition}
+  Let $x$ be a statement of language $L$ in \textbf{NP}, and $W(x)$ the set of witnesses for $x$ such that the following relation holds:
+  \begin{align*}
+    \mathcal{R} = \{(x, w)\; x \in L, w \in W(x)\}
+  \end{align*}
+\end{definition}
 
 \subsection{Fiat-Shamir Heuristic}\label{sec:fiatshamir}
 To transform any zero-knowledge protocol into a signature scheme, one can use the approach described in \cite{fiat1986prove}. Here, we outline the general concept.
@@ -301,40 +308,68 @@ The SD-in-the-Head protocol construction is based on the \textit{Multi-Party Com
 
 The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as its security relies on assumptions that are still believed to be quantum secure. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold} which has no known quantum algorithms that break their security.
 
-Given a semi-honest $\ell$-private MPC protocol $\pi_f$, a relation $\mathcal{R}$ for some public statement $x$, a witness $w$ and a\footnote{See \autoref{sec:mpc} and \autoref{sec:zk}}. Let $w_i$ be an additive secret share of $w$ for the party $P_i$ so that $w = w_1 \oplus \cdots \oplus w_n$ (this is further addressed in \autoref{sec:lsss}). Let $f$ be a $n$-party functionality $f(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, s.t. $f(x,w)$ accepts if $(x,w) \in \mathcal{R}$. The ZK protocol proceeds as follows~\cite{ishai2007zero}:
+We will give insight into the basic construction suggested by Ishai et al \cite{ishai2007zero}.
+
+\begin{definition}
+  \label{def:mpcinth_basic}
+  Given a semi-honest $\ell$-private MPC protocol $\Pi_f$ with perfect correctness, a relation $\mathcal{R}$ for some public statement $x$, a witness $w$. Let $w_i$ be an additive secret share of $[[w]]$ for the party $P_i$. Let $f$ be a $n$-party functionality $f(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, i.e. $f(x,w)$ accepts if $(x,w) \in \mathcal{R}$.
+  \begin{enumerate}
+    \item The prover builds a random sharing of $[[w]] = w_1, \dots, w_n$. Then
+          \begin{itemize}
+            \item Simulates the outputs of the MPC protocol $\Pi_f$ on the inputs $(x, w_1, \dots, w_n)$ and the randomness $r_1, \dots, r_n$.
+            \item Prepares views $V_1, \dots, V_n$ of the parties in the protocol $\Pi_f$.\footnote{Remember that the views include the inputs, randomness and messages received by the parties.}
+            \item Commits to each view $V_i$ using a secure commitment scheme, and sends ($\text{Commit}(V_1), \dots, \text{Commit}(V_n)$) to the verifier.
+          \end{itemize}
+    \item The verifier picks $\ell$ random distinct indices $i \in [n]$ and sends them to the prover.
+    \item The prover opens the commitments into the views $V_i$ and sends the openings to the verifier.
+    \item The verifier accepts if and only if:
+          \begin{enumerate}
+            \item\label{prop:mpcinth_commit} The views are valid according to the commitment scheme.
+            \item\label{prop:mpcinth_consistent} The views are consistent according to the public input $x$.
+            \item\label{prop:mpcinth_knowledge} The views output $1$ according to $\mathcal{R}$ meaning that $\mathcal{R}(x,w) = 1$.
+          \end{enumerate}
+  \end{enumerate}
+\end{definition}
+
+\begin{definition}
+  \label{def:mpcinth_properties}
+  The basic MPC-in-the-Head protocol has the following properties:
+  \begin{itemize}
+    \item \textbf{Completeness}: A boolean function is said to be complete if it depends on all inputs of the function. Given an honest prover, $\mathcal{R}(x,w) = 1$ and the correctness of $\Pi_f$, all outputs of $P_i$ are one and all views are consistent.
+    \item \textbf{Soundness}: If the statement $x$ is false, i.e. $x \notin L$, then $\mathcal{R}(x,w) = 0$ for all $w$. By the correctness of $\Pi_f$, the output of all parties must be $0$. If the verifier accepts, then the prover must have created $\ell$ inconsistent views. This happens with probability at most $p = 1 / \binom{n}{\ell}$. The error probability can be reduced to $2^{-k}$ by repeating the protocol $O(kn^2)$ times.
+    \item \textbf{Zero-Knowledge}: The verifier only sees $\ell$ views, and therefore from the definition of $\Pi_f$ learns nothing of the secret witness $w$.
+  \end{itemize}
+\end{definition}
+
+The basic MPC-in-the-Head protocol can be used to construct a ZK proof for any NP relatio and has been shown to produce fairly efficient ZK protocols. Feneuil
+
+\subsection{Verification of a multiplication triple using another}\label{sec:verify}
+Given a random triple $([[a]], [[b]], [[c]])$, it is possible to verify the correctness of a triple $([[x]], [[y]], [[z]])$, i.e., that $z = x \cdot y$, without revealing any information on either of the triples, in the following way \cite{baum2020concretely}.
 
 \begin{enumerate}
-  \item The prover picks random $w_1, \dots, w_n$ s.t. $w = w_1 \oplus \cdots \oplus w_n$. The prover then:
-        \begin{itemize}
-          \item Computes the outputs of $\pi_f$ on the inputs $x, w_1, \dots, w_n$ and the randomness $r_1, \dots, r_n$.
-          \item Prepares views $V_1, \dots, V_n$ of the parties in the protocol $\pi_f$.
-          \item Commits to each view $V_i$ using a secure commitment scheme, and sends ($\text{Commit}(V_1), \dots, \text{Commit}(V_n)$) to the verifier.
-        \end{itemize}
-  \item The verifier picks two random distinct indices $i, j \in [n]$ and sends them to the prover.
-  \item The prover opens the commitments to $V_i, V_j$ and sends the openings to the verifier.
-  \item The verifier accepts if and only if:
-        \begin{enumerate}
-          \item\label{prop:mpcinth_commit} The views are valid according to the commitment scheme.
-          \item\label{prop:mpcinth_consistent} The two views are consistent according to the public input $x$.
-          \item\label{prop:mpcinth_knowledge} Both views output $1$ according to $\mathcal{R}$ meaning that $\mathcal{R}(x,w) = 1$.
-        \end{enumerate}views are valid according to the commitment scheme and the two views are consistent according to the public input $x$.
+  \item The parties generate a random $\epsilon \in \mathbb{F}$, for a finite field $\mathbb{F}$.
+  \item The parties locally set $[[\alpha]] = \epsilon[[x]] + [[a]], [[\beta]] = [[y]] + [[b]]$.
+  \item The parties run \texttt{open}$([[\alpha]])$ and \texttt{open}$([[\beta]])$ to obtain $\alpha$ and $\beta$.
+  \item The parties locally set $[[v]] = \epsilon[[z]] - [[c]] + \alpha  \cdot [[b]] + \beta  \cdot [[a]] - \alpha  \cdot \beta$.
+  \item The parties run \texttt{open}$([[v]])$ to obtain $v$ and accept iff $v = 0$.
+
 \end{enumerate}
+Observe that if both triples are correct multiplication triples (i.e., $z = xy$ and $c = ab$) then the parties will always accept since
+\begin{align}
+  v & = \epsilon \cdot z - c + \alpha \cdot b + \beta \cdot a - \alpha \cdot \beta                                            \\
+    & = \epsilon \cdot xy - ab + (\epsilon \cdot x + a)b + (y + b)a - (\epsilon \cdot x + a)(y + b)                           \\
+    & = \epsilon \cdot xy - ab + \epsilon \cdot xb + ab + ya + ba - \epsilon \cdot xy - \epsilon \cdot xb - ay - ab           \\
+    & = (\epsilon \cdot xy - \epsilon \cdot xy) + (ab - ab) + (\epsilon \cdot xb - \epsilon \cdot xb) + (ya - ay) + (ba - ab) \\
+    & = 0
+\end{align}
 
-The framework provides the following properties:
+\subsection{Error probability}
 
-\begin{itemize}
-  \item \textbf{Completeness}: Given an honest prover, $\mathcal{R}(x,w) = 1$, the correctness of $\pi_f$, \ref{prop:mpcinth_consistent} and \ref{prop:mpcinth_commit} 
-  \item \textbf{Soundness}: If $(x,w) \notin \mathcal{R}$, the verifier rejects with overwhelming probability.
-  \item \textbf{Zero-Knowledge}: The verifier learns nothing about the inputs of the other parties beyond what can be inferred from the output of the function.
-\end{itemize}
+\begin{lemma}
+  If $([[a]], [[b]], [[c]])$ or $([[x]], [[y]], [[z]])$ is an incorrect multiplication triple then the parties output \texttt{accept} in the sub-protocol above with probability $\frac{1}{|\mathbb{F}|}$.
+\end{lemma}
 
 The framework benefits from previous efficiency improvements in MPC protocols to improve the efficiency of ZKAoK protocols. Particularly, its possible to achieve \textit{constant-rate} zero knowledge. For an arbitrary circuit $C$ of size $s$ and a bounded fan-in, it is possible to construct a ZKAoK protocol with communication complexity $O(s) + \text{poly}(k)$, for a security parameter $k$. This is an improvement over previous ZKAoK protocols, which had communication complexity $O(ks)$. \todo{write about this in the previous section}.
-
-\subsection{Zero-Knowledge proofs from MPC}\label{sec:zkmpc}
-
-Zero-Knowledge Arguments of Knowledge (ZKAoK) allow a prover to convince a verifier that they knows a certain witness for a statement without revealing any additional information about the witness. \todo{What are they used for..}
-
-ZKAoK protocols have been introduced in multiple variants that each solve specific relational problems with varying levels of communication complexity and prover running times. While many of these perform well for these specific problems, there has long been a need for a well performing generic ZKAoK protocol.
 
 
 \subsection{MPC preprocessing}
@@ -369,35 +404,7 @@ For a secret $s$ and a given security threshold $\ell$, the share $[[s]]$ is gen
 
 The $(t,n)$ Shamir's polynomial based secret sharing scheme is $(+,+)$-homomorphic in which the addition of two polynomials secrets equals the Lagrange's interpolation of the sum-of-shares for the same subset of shares.
 
-\todo{Write about creating shares, addition}
 
-\subsubsection{Multiplication and Beaver Triples}\label{sec:beaver}
-
-\subsection{Verification of a multiplication triple using another}\label{sec:verify}
-Given a random triple $([[a]], [[b]], [[c]])$, it is possible to verify the correctness of a triple $([[x]], [[y]], [[z]])$, i.e., that $z = x \cdot y$, without revealing any information on either of the triples, in the following way \cite{baum2020concretely}.
-
-\begin{enumerate}
-  \item The parties generate a random $\epsilon \in \mathbb{F}$.
-  \item The parties locally set $[[\alpha]] = \epsilon[[x]] + [[a]], [[\beta]] = [[y]] + [[b]]$.
-  \item The parties run \texttt{open}$([[\alpha]])$ and \texttt{open}$([[\beta]])$ to obtain $\alpha$ and $\beta$.
-  \item The parties locally set $[[v]] = \epsilon[[z]] - [[c]] + \alpha  \cdot [[b]] + \beta  \cdot [[a]] - \alpha  \cdot \beta$.
-  \item The parties run \texttt{open}$([[v]])$ to obtain $v$ and accept iff $v = 0$.
-
-\end{enumerate}
-Observe that if both triples are correct multiplication triples (i.e., $z = xy$ and $c = ab$) then the parties will always accept since
-\begin{align}
-  v & = \epsilon \cdot z - c + \alpha \cdot b + \beta \cdot a - \alpha \cdot \beta                                            \\
-    & = \epsilon \cdot xy - ab + (\epsilon \cdot x + a)b + (y + b)a - (\epsilon \cdot x + a)(y + b)                           \\
-    & = \epsilon \cdot xy - ab + \epsilon \cdot xb + ab + ya + ba - \epsilon \cdot xy - \epsilon \cdot xb - ay - ab           \\
-    & = (\epsilon \cdot xy - \epsilon \cdot xy) + (ab - ab) + (\epsilon \cdot xb - \epsilon \cdot xb) + (ya - ay) + (ba - ab) \\
-    & = 0
-\end{align}
-
-\subsection{Error probability}
-
-\begin{lemma}
-  If $([[a]], [[b]], [[c]])$ or $([[x]], [[y]], [[z]])$ is an incorrect multiplication triple then the parties output \texttt{accept} in the sub-protocol above with probability $\frac{1}{|\mathbb{F}|}$.
-\end{lemma}
 
 \todo{Proof of lemma and solution}
 
@@ -614,40 +621,52 @@ compiling constants for categories
 
 can we use other hashes that still provide the same security assumption from \autoref{sec:assumptions} as post-quantum security (Xoodyak, KangarooTwelve, Haraka v2)
 
-\subsection{Subroutines}
+
+\section{Rust}
+\cite{nistsaferlanguages}
+
+\section{Subroutines}
 \label{sub:subroutines}
 Here we implemented hashing as the first part, along with commitment. (cd1acdb0b6e9)
 
-\subsubsection{Addition of parameters}
+\subsection{Addition of parameters}
 Then we introduced the parameters from the spec. f4739166d684
 
-\subsubsection{Galois field arithmetic}
+\subsection{Hashing, XOF, and Commitments}
+
+\subsection{Galois field arithmetic}
 \label{}
 Implemented the galois field. 94c3d9889709
 
-\subsection{MPC}\label{sub:mpc_algo} 
+\section{Key generation}
+
+\section{MPC}\label{sub:mpc_algo}
 We started on implementing the mpc computation algo along with the inverse
 
-\subsection{Comparison with spec impl}\label{sub:comparison_with_spec_impl}
-In order to verify and debug our own code we tried to setup our implementation to fit with the specification implementation in C, meaning we had to run their code in order to get the intermediate data in order to compare the internal states. 
-Here we found a bug in the way the view-opening challenges was calculated, they had forgotten to finalize the Shake before squeezing, which was a problem because in the tiny keccak rust library this was always done when initializing a hash or xof. 
-Furthermore we found that in order to generate the same output from the xof we needed to first rotate the permutation once by supplying an empty vector before actually using the function. 
-We also found that the merkle tree was not using the salt. 
+\section{Comparison with spec impl}\label{sub:comparison_with_spec_impl}
+In order to verify and debug our own code we tried to setup our implementation to fit with the specification implementation in C, meaning we had to run their code in order to get the intermediate data in order to compare the internal states.
+Here we found a bug in the way the view-opening challenges was calculated, they had forgotten to finalize the Shake before squeezing, which was a problem because in the tiny keccak rust library this was always done when initializing a hash or xof.
+Furthermore we found that in order to generate the same output from the xof we needed to first rotate the permutation once by supplying an empty vector before actually using the function.
+We also found that the merkle tree was not using the salt.
 
-\subsection{Benchmarking}\label{sub:benchmarking} % (fold)
+\section{Benchmarking}\label{sub:benchmarking} % (fold)
 We setup Criterion in order to do initial benchmarking
 
 % subsection Benchmarking (end)
 
-\subsection{Array structure}\label{sub:array_structure} % (fold)
+\section{Categories}\label{sub:categories} % (fold)
+
+We tried reworking to use dynamically sized vectors instead of compile time sized arrays. Big rework and refactor. Benching showed slower running times. Instead we went with compile time script to set constants.
 
 % subsection Array structure (end)
+
+\section{Optimizations}
 
 \subsection{Feature flags}\label{sub:feature_flags} % (fold)
 
 % subsection Feature flags (end)
 
-\subsection{Rayon}\label{sub:rayon} % (fold)
+\subsection{Parallelisation}\label{sub:rayon} % (fold)
 
 % subsection Rayon (end)
 
@@ -655,13 +674,12 @@ We setup Criterion in order to do initial benchmarking
 
 % subsection SIMD (end)
 
-\subsection{Kat for NIST}\label{sub:kat_for_nist} % (fold)
+\subsection{Hash functions}
+Blake3, Haraka v2, KangarooTwelve, Xoodyak
+
+\section{Kat for NIST}\label{sub:kat_for_nist} % (fold)
 
 % subsection Kat for NIST (end)
-
-
-\section{Rust}
-\cite{nistsaferlanguages}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
