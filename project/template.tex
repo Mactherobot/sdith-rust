@@ -26,6 +26,7 @@
   \def\chapterautorefname{Chapter}%
   \def\sectionautorefname{Section}%
   \def\subsectionautorefname{Section}%
+  \def\lemmaautorefname{Lemma}%
 }
 
 
@@ -106,6 +107,7 @@ In 1994, the discovery of Shor's algorithm~\cite{shor1997}, provided a polynomia
 In 2016, the National Institute of Standards and Technology (NIST), known for standardizing cryptographic primitives like AES and SHA, initiated a call for quantum resistant public-key cryptosystems~\cite{nistcall}. This led to the standardization of three signature schemes, namely Dilithium~\cite{ducas2018crystals}, Falcon~\cite{fouque2018falcon} and SPHINCS+~\cite{bernstein2019sphincs+}. All three of the schemes are based on the hardness of structured lattice problems. This has led to the most recent call in 2022 for additional quantum resistant signature schemes based on different assumptions to diversify the standards available for the future.
 
 With the introduction of public-key cryptosystems by Diffie and Hellman in 1976, we saw the introduction to schemes like RSA, that is based on factoring of large primes and ElGamal which is based on the discrete logarithm problem. While these protocols have seen wide adoption, there exists schemes based on coding theory. These are their own discipline of information theory which predates the introduction of public-key cryptography. Although the scheme is less prominent, McEliece introduced a PK scheme based on coding theory already in 1978 \cite{mceliece1978public}. The McEliece PK scheme is based on the hardness of decoding random linear codes \cite{berlekamp1978inherent}. While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based crypto-schemes have seen a resurgence as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent movements in code-based cryptosystems have shown that the performance needed for code based cryptographic schemes practically is within reach. Introductions of linear based codes on finite fields and MPC (Multi Party Computation) threshold schemes \cite{baum2020concretely} show promising results and with the SD-in-the-Head scheme, such techniques are combined to create a post-quantum secure signature scheme.
+
 \todo{Why does it need to be implemented? and why in Rust?}
 
 \section{Our contributions}
@@ -116,27 +118,18 @@ With the introduction of public-key cryptosystems by Diffie and Hellman in 1976,
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\chapter{Mathematical preliminaries}\label{ch:mathprelim}
+\chapter{Preliminaries}\label{ch:prelim}
 
-%TODO: Move the first maybe to the introduction
 In this section, we outline the mathematical and cryptographic foundations necessary to understand the SD-in-the-Head scheme and its components, providing a step-by-step progression from the basics to the construction of the protocol.
 
 %TODO: Rewrite this when the order is set in stone
-We begin by introducing the essential cryptographic primitives that underpin the protocol. These include \textbf{collision-resistant hash functions}, the \textbf{Merkle tree commitment scheme} \cite{becker2008merkle}, and \textbf{Galois Finite Fields} $\mathbb{F}_q$ \cite{martinez2023syndromes, reed1960polynomial, brownadvanced}. In addition, we provide short introductions to the foundational protocols of \textbf{Secure Multi-Party Computation} (MPC) and \textbf{Zero-Knowledge} (ZK) proofs, which serve as the underlying cryptographic protocols.
+We begin by introducing the essential subroutines that underpin the SD-in-the-Head protocol. This includes \textbf{Galois Finite Fields} $\mathbb{F}_q$ \cite{martinez2023syndromes, reed1960polynomial, brownadvanced} along with cryptographic primitives; \textbf{collision-resistant hash functions} and \textbf{Merkle tree commitment scheme} \cite{becker2008merkle}. In addition, we provide short introductions to the foundational protocols of \textbf{Secure Multi-Party Computation} (MPC) and \textbf{Zero-Knowledge} (ZK) proofs, which serve as the underlying cryptographic protocols.
 
 Next, we delve into the Syndrome Decoding (SD) problem, which forms the backbone of the SD-in-the-Head protocol. This includes an overview of the problem definition \cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}, and its polynomial representation. This will support an understanding of how the protocol operates on hard instances of the SD problem.
 
-Building upon these foundations, we lay the groundwork for the construction of the SD-in-the-Head protocol. First, we discuss the \textbf{Multi-Party-Computation-in-the-Head} (MPCitH) paradigm, explaining how it is leveraged to construct efficient ZK proofs \cite{ishai2007zero}. Next, we introduce the \textbf{Fiat-Shamir heuristic}, a powerful tool that transforms an interactive ZK protocol into a non-interactive signature scheme \cite{fiat1986prove}. Additionally we detail the role of the MPC preprocessing \cite{baum2020concretely} and linear secret-sharing scheme \cite{feneuil2023threshold}, which dramatically improves the efficiency of the MPCitH construction, and verification.
+Building upon these foundations, we lay the groundwork for the construction of the SD-in-the-Head protocol. First, we discuss the \textbf{Multi-Party-Computation-in-the-Head} (MPCitH) paradigm, explaining how it is leveraged to construct efficient ZK proofs \cite{ishai2007zero}. Additionally we detail the role of the MPC preprocessing \cite{baum2020concretely} and linear secret-sharing scheme \cite{feneuil2023threshold}, which dramatically improves the efficiency of the MPCitH construction, and verification. Next, we introduce the \textbf{Fiat-Shamir heuristic}, a powerful tool that transforms an interactive ZK protocol into a non-interactive signature scheme \cite{fiat1986prove}.
 
-\section{Cryptographic Primitives}
-%TODO: maybe move some of the information from the section above to here.
-% and maybe rename 
-
-\subsection{Collision Resistant Hash Functions}
-%TODO: is missing
-
-% subsection  (end)
-\subsection{Galois Finite Field}\label{sec:gf256}
+\section{Galois Finite Field}\label{sec:gf256}
 Finite fields lays the basis for many cryptographic protocols and primitives. In essence, finite field theory describes the research into the relation and properties between numbers, while disregarding the numbers themselves. In order to define finite fields, we first need to define a \textit{group} and a \textit{finite field} (\autoref{def:group} and \autoref{def:field}, respectively).
 
 \begin{definition}
@@ -208,23 +201,83 @@ For polynomial evaluation in the multiparty computation algorithm, seen in \auto
   \label{eq:mpcpoly}
 \end{align}
 
-\section{Sub protocols}
-In the following section we will introduce the cryptographic protocols that provide the building blocks used to build the SD-in-the-Head scheme.
+\section{Cryptographic Primitives and protocols}
+%TODO: maybe move some of the information from the section above to here.
+% and maybe rename 
 
-\subsection{Commitment Scheme (Merkle Tree)}
-A commitment scheme is a way for a prover to commit to a value, and then later prove that it's still the same value as was initially committed to. Such that the following 2 properties are upheld:
-\begin{itemize}
-  \item \textbf{Binding}: The prover cannot change the value after it has been committed to.
-  \item \textbf{Hiding}: The value is hidden from the verifier until the prover reveals it.
-\end{itemize}
-One such variant which allows for partial opening, is the merkle tree.
-Let $v_1, \dots, v_n$ be the values being committed to. And let $h$ be a cryptographic PQC secure hash function.
-The leafs $a_{0,1},\dots, a_{0,n}$ of the tree is the initial hash values $h(v_1), \dots, h(v_n)$. Every parent $a_{1,0},\dots a_{h,j}$, here $h$ is the height of the tree and $j$ is the number of parents per layer in the tree, is the hash of its children $h(h(v_1)|h(v_2)),\dots, h(h(v_{n-1})|h(v_n))$. The root of the tree $a_{h,0}$ is the commitment value, which is sent to the verifier. Now to open a value $v$, the prover computes the authentication path for $v_p$, where $p$ is the index of the chosen value. The authentication path $A$ for any leaf $a_{0,i}$ is the accumulated neighboring nodes from the leaf up to the root. So the first node $A_0$ is going to be the neighboring node $a_{0,p-1}$ if $p$ is odd or $a_{0,p+1}$ if $p$ is even. This node is going to be the $auth_0$. For the rest of the path $A_i = h(A_{i-1} | auth_{i-1})$ where $auth_i$ is the neighboring node of $A_{i-1}$ at the same level.
-The prover sends $A$ and the index $p$ for the chosen value to the verifier whenever he wants to open a value. The verifier can check that the commitment is correct by recomputing the root using the authentication path and the leaf value.
+\subsection{Collision Resistant Hash Functions}
+We denote a hash function by a generator $\mathcal{H}$ which on input of a security parameter $k$ outputs a function $h : \{0,1\}^* \rightarrow \{0,1\}^k$. We denote a hash function $h$ to be cryptographically secure if it satisfies the following properties
 
-Due to the use of a PQC secure and collision-resistant hash function the commitment ensures the \textbf{Hiding} property. This comes from the fact that only the root of the tree is shared and if the adversary wants any information on the initial values, she would have to find collisions for the hash function. The same argument holds for the \textbf{Binding} property, as the adversary would have to find a collision for the hash function to change the commitment value.
+\begin{lemma}[Preimage Resistance]
+  \label{lem:preimage}
+  Given a hash function $h$ and a hashed message $c$, there exist no PPT algorithm that can find a message $m$ such that $h(m) = c$ with non-negligible probability.
+\end{lemma}
 
-A nice property of the merkle tree is that you can open a partial set of the committed values by only supplying the authentication path that is needed for the subset of values to be opened. And only sharing a global root values. This is very useful in the SD-in-the-Head threshold protocol, where we only want to open a subset of the committed values.
+\begin{lemma}[Collision Resistance]\label{lem:collision}
+  Given a hash function $h$, there exist no PPT algorithm that can find two distinct messages $m, m'$ such that $h(m) = h(m')$ with non-negligible probability.
+\end{lemma}
+
+The consensus among researchers indicates that for combinatorial problems, such as those underlying SHA2 and the more recent SHA3, quantum computing is expected to reduce the security level from $k$ to $k/2$ for preimage resistance through approaches like Grover's algorithm~\cite{nielsen2010quantumgrover}. In contrast, no known methods have been proposed to reduce the security level for collision resistance. Consequently, protocols that depend on collision-resistant hash functions, such as Merkle Signature or SD-in-the-Head, remain a viable choice for post-quantum secure protocols.
+
+In proving the security of hash functions, researchers often resort to models like the Quantum Random Oracle Model (QROM), while there is significant work being done to further prove the future security of hash functions~\cite{dtuPostquantumSecurity}.
+
+% subsection  (end)
+
+\subsection{Merkle Tree Commitment Scheme}
+A commitment scheme allows a \textit{prover} to commit to a value $v$ and later prove that the revealed value is identical to the one initially committed to. The scheme satisfies the following two properties:
+
+\begin{lemma}[Binding]
+  \label{lem:binding}
+  Given a commitment $c$ to a value $v$, a dishonest prover can only change the committed value and have the verifier accept the new value with negligible probability.
+\end{lemma}
+
+\begin{lemma}[Hiding]
+  \label{lem:hiding}
+  Given a commitment $c$ to a value $v$, the verifier can only recover the value $v$ with negligible probability.
+\end{lemma}
+
+A variant of such a scheme which allows for partial opening, is the \textit{Merkle Tree Commitment scheme}.
+
+Let $v_1, \dots, v_n$ be the values to be committed, and let $h$ denote a cryptographically secure hash function. The leaves of the Merkle tree, $a_{0,1}, \dots, a_{0,n}$, are initialized as the hash values of the input values:
+\[
+  a_{0,i} = h(v_i), \quad \text{for } i = 1, \dots, n.
+\]
+
+Each parent node $a_{i,j}$, where $i$ represents the level of the tree and $j$ denotes the parent index at that level, is computed as the hash of its two child nodes:
+\[
+  a_{i,j} = h(a_{i-1,2j} \, | \, a_{i-1,2j+1}),
+\]
+where $|$ indicates concatenation of the child nodes.
+
+The root node, $a_{h,0}$, where $h$ is the height of the tree, serves as the commitment value and is sent to the verifier.
+
+To reveal a committed value $v$, the prover computes the authentication path for the value's leaf node $a_{0,p}$, where $p$ is the index of the value. The authentication path $A$ consists of the sequence of sibling nodes required to reconstruct the root. The first element in the authentication path, $A_0$, is the sibling of the leaf node:
+\[
+  A_0 =
+  \begin{cases}
+    a_{0,p-1}, & \text{if } p \text{ is odd,}  \\
+    a_{0,p+1}, & \text{if } p \text{ is even.}
+  \end{cases}
+\]
+This element is recorded as $auth_0$.
+
+For higher levels, each subsequent element in the path is determined as:
+\[
+  A_i = h(A_{i-1} \, | \, auth_{i-1}),
+\]
+where $auth_i$ is the sibling node of $A_{i-1}$ at the same level.
+
+The prover transmits the authentication path $A$ and the index $p$ of the selected value to the verifier. The verifier checks the validity of the commitment by using the provided leaf value and authentication path to recompute the root of the Merkle tree.
+
+\subsubsection{Security properties}
+
+The hiding property of the protocol is ensured by the use of a secure hash function, as the prover only shares the root of the tree. If the adversary were able to recover any value $v$, this would break the preimage resistance \autoref{lem:preimage} of the hash function.
+
+Conversely, the binding property \autoref{lem:binding} is upheld by the fact that the adversary would have to find a collision for the hash function to change the commitment value.
+
+A notable property of the Merkle tree is its ability to open a partial subset of the committed values by providing only the necessary authentication paths for the values in the subset. The verifier can still validate these values using a single global root value. 
+
+This property is particularly advantageous in protocols like the SD-in-the-Head threshold protocol, where only a subset of the committed values needs to be opened while keeping the rest concealed. By leveraging this feature, the prover can efficiently prove the validity of the subset without revealing the entire set of commitments.
 
 \subsection{Secure Multi-Party Computation}\label{sec:mpc}
 
@@ -253,15 +306,6 @@ This section will only give a brief introduction to \textit{two-party interactiv
     \mathcal{R} = \{(x, w)\; x \in L, w \in W(x)\}
   \end{align*}
 \end{definition}
-
-\subsection{Fiat-Shamir Heuristic}\label{sec:fiatshamir}
-To transform any zero-knowledge protocol into a signature scheme, one can use the approach described in \cite{fiat1986prove}. Here, we outline the general concept.
-
-Zero-knowledge protocols typically rely on the verifier to issue a challenge to the prover. This challenge serves as a source of randomness that the prover is not supposed to control. In the Fiat-Shamir framework, the original protocol is based on the problem of factoring integers -- a problem that is now vulnerable to quantum attacks, specifically Shor's algorithm. However, the fundamental method of converting a zero-knowledge protocol into a signature scheme remains unaffected.
-
-To adapt a zero-knowledge protocol into a signature scheme, the prover eliminates the need for a verifier to provide randomness. Instead, the prover generates the randomness using a pseudo-random function. This function takes as input the message to be signed along with some random values generated by the prover. The output of this function serves as the challenge. With this, the prover can compute the required values to prove authenticity without external interaction.
-
-In the context of the SD-in-the-Head protocol, the prover uses the pseudo-randomly generated challenge to locally compute the witness values required for the proof. These witness values are derived through the MPC protocol, where the prover simulates the necessary computations internally, generating and processing the shares "in their head." This eliminates the need for the verifier's active participation in the MPC protocol, streamlining the signature generation process.
 
 \section{Syndrome Decoding Problem}\label{sec:syndrome}
 
@@ -352,7 +396,7 @@ We see the following properties of the protocol:
 \end{lemma}
 
 \begin{lemma}[Soundness \cite{ishai2007zero}]
-  \textbf{Soundness}: If the statement $x$ is false, i.e. $x \notin L$, then $\mathcal{R}(x,w) = 0$ for all $w$. By the correctness of $\Pi_f$, the output of all parties must be $0$. If the verifier accepts, then the prover must have created $\ell$ inconsistent views. This happens with probability at most $p = 1 / \binom{n}{\ell}$. The error probability can be reduced to $2^{-k}$ by repeating the protocol $O(kn^2)$ times.
+  If the statement $x$ is false, i.e. $x \notin L$, then $\mathcal{R}(x,w) = 0$ for all $w$. By the correctness of $\Pi_f$, the output of all parties must be $0$. If the verifier accepts, then the prover must have created $\ell$ inconsistent views. This happens with probability at most $p = 1 / \binom{n}{\ell}$. The error probability can be reduced to $2^{-k}$ by repeating the protocol $O(kn^2)$ times.
 \end{lemma}
 
 \begin{lemma}[Zero-Knowledge \cite{ishai2007zero}]
@@ -364,7 +408,7 @@ The basic MPC-in-the-Head protocol provides a foundation for constructing ZK pro
 Recent advancements, however, offer promising improvements on both fronts. First, the integration of \textit{MPC preprocessing}\cite{katz2018improved} enables the instantiation of an MPC-in-the-Head instance where communication complexity is independent of $N$, thereby facilitating increased security while maintaining low communication costs. Additionally, employing \textit{Linear Secret Sharing Schemes} (LSSS)\cite{feneuil2023threshold} in place of additive sharing significantly enhances computational efficiency, as the computations for both prover and verifier become bounded by the threshold $\ell$. The incorporation of these techniques ultimately paves the way for the development of the SD-in-the-Head protocol.
 
 \subsection{Proving the SD relation using Beaver triples}\label{sec:verify}
-In the following section we introduce the specific MPC protocol employed to verify the SD polynomial relation $P \cdot F = S \cdot Q$ (\autoref{sec:polynomial_representation}). 
+In the following section we introduce the specific MPC protocol employed to verify the SD polynomial relation $P \cdot F = S \cdot Q$ (\autoref{sec:polynomial_representation}).
 
 Consider the multiplication MPC protocol by \cite{baum2020concretely} which verifies the relation $z = x\cdot y$ for $x,y,z \in \mathbb{F}_q$.
 
@@ -441,9 +485,16 @@ For a secret $s$ and a given security threshold $\ell$, the share $[[s]]$ is gen
 
 The $(t,n)$ Shamir's polynomial based secret sharing scheme is $(+,+)$-homomorphic in which the addition of two polynomials secrets equals the Lagrange's interpolation of the sum-of-shares for the same subset of shares.
 
-
-
 \todo{Proof of lemma and solution}
+
+\section{Fiat-Shamir Heuristic}\label{sec:fiatshamir}
+To transform any zero-knowledge protocol into a signature scheme, one can use the approach described in \cite{fiat1986prove}. Here, we outline the general concept.
+
+Zero-knowledge protocols typically rely on the verifier to issue a challenge to the prover. This challenge serves as a source of randomness that the prover is not supposed to control. In the Fiat-Shamir framework, the original protocol is based on the problem of factoring integers -- a problem that is now vulnerable to quantum attacks, specifically Shor's algorithm. However, the fundamental method of converting a zero-knowledge protocol into a signature scheme remains unaffected.
+
+To adapt a zero-knowledge protocol into a signature scheme, the prover eliminates the need for a verifier to provide randomness. Instead, the prover generates the randomness using a pseudo-random function. This function takes as input the message to be signed along with some random values generated by the prover. The output of this function serves as the challenge. With this, the prover can compute the required values to prove authenticity without external interaction.
+
+In the context of the SD-in-the-Head protocol, the prover uses the pseudo-randomly generated challenge to locally compute the witness values required for the proof. These witness values are derived through the MPC protocol, where the prover simulates the necessary computations internally, generating and processing the shares "in their head." This eliminates the need for the verifier's active participation in the MPC protocol, streamlining the signature generation process.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
