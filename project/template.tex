@@ -32,6 +32,16 @@
 \theoremstyle{plain}
 \newtheorem{lemma}{Lemma}[section]
 
+\newtheoremstyle{lemma}% <name>
+{3pt}% <Space above>
+{3pt}% <Space below>
+{\normalfont}% <Body font>
+{}% <Indent amount>
+{\upshape}% <Theorem head font>
+{:}% <Punctuation after theorem head>
+{.5em}% <Space after theorem headi>
+{}% <Theorem head spec (can be left empty, meaning `normal')>
+
 \renewcommand*\sfdefault{lmss}
 \renewcommand*\ttdefault{txtt}
 
@@ -334,29 +344,42 @@ We will give insight into the basic construction suggested by Ishai et al \cite{
   \end{enumerate}
 \end{definition}
 
+We see the following properties of the protocol:
+
+\begin{lemma}[Completeness \cite{ishai2007zero}]
+  \label{def:mpcinth_completeness}
+  A boolean function is said to be complete if it depends on all inputs of the function. Given an honest prover, $\mathcal{R}(x,w) = 1$ and the correctness of $\Pi_f$, all outputs of $P_i$ are one and all views are consistent.
+\end{lemma}
+
+\begin{lemma}[Soundness \cite{ishai2007zero}]
+  \textbf{Soundness}: If the statement $x$ is false, i.e. $x \notin L$, then $\mathcal{R}(x,w) = 0$ for all $w$. By the correctness of $\Pi_f$, the output of all parties must be $0$. If the verifier accepts, then the prover must have created $\ell$ inconsistent views. This happens with probability at most $p = 1 / \binom{n}{\ell}$. The error probability can be reduced to $2^{-k}$ by repeating the protocol $O(kn^2)$ times.
+\end{lemma}
+
+\begin{lemma}[Zero-Knowledge \cite{ishai2007zero}]
+  The verifier only sees $\ell$ views, and therefore from the definition of $\Pi_f$ learns nothing of the secret witness $w$.
+\end{lemma}
+
+The basic MPC-in-the-Head protocol provides a foundation for constructing ZK proofs for any NP relation and has been shown to produce relatively efficient ZK protocols~\cite{feneuil2023threshold,baum2020concretely,katz2018improved}. Variants of the protocol have demonstrated reductions in communication complexity, though at the cost of decreased computational efficiency on the prover's side, as these constructions require a substantial increase in the number of parties $N$~\cite{ishai2007zero, feneuil2023threshold}, which subsequently leads to heightened computational complexity.
+
+Recent advancements, however, offer promising improvements on both fronts. First, the integration of \textit{MPC preprocessing}\cite{katz2018improved} enables the instantiation of an MPC-in-the-Head instance where communication complexity is independent of $N$, thereby facilitating increased security while maintaining low communication costs. Additionally, employing \textit{Linear Secret Sharing Schemes} (LSSS)\cite{feneuil2023threshold} in place of additive sharing significantly enhances computational efficiency, as the computations for both prover and verifier become bounded by the threshold $\ell$. The incorporation of these techniques ultimately paves the way for the development of the SD-in-the-Head protocol.
+
+\subsection{Proving the SD relation using Beaver triples}\label{sec:verify}
+In the following section we introduce the specific MPC protocol employed to verify the SD polynomial relation $P \cdot F = S \cdot Q$ (\autoref{sec:polynomial_representation}). 
+
+Consider the multiplication MPC protocol by \cite{baum2020concretely} which verifies the relation $z = x\cdot y$ for $x,y,z \in \mathbb{F}_q$.
+
 \begin{definition}
-  \label{def:mpcinth_properties}
-  The basic MPC-in-the-Head protocol has the following properties:
-  \begin{itemize}
-    \item \textbf{Completeness}: A boolean function is said to be complete if it depends on all inputs of the function. Given an honest prover, $\mathcal{R}(x,w) = 1$ and the correctness of $\Pi_f$, all outputs of $P_i$ are one and all views are consistent.
-    \item \textbf{Soundness}: If the statement $x$ is false, i.e. $x \notin L$, then $\mathcal{R}(x,w) = 0$ for all $w$. By the correctness of $\Pi_f$, the output of all parties must be $0$. If the verifier accepts, then the prover must have created $\ell$ inconsistent views. This happens with probability at most $p = 1 / \binom{n}{\ell}$. The error probability can be reduced to $2^{-k}$ by repeating the protocol $O(kn^2)$ times.
-    \item \textbf{Zero-Knowledge}: The verifier only sees $\ell$ views, and therefore from the definition of $\Pi_f$ learns nothing of the secret witness $w$.
-  \end{itemize}
+  \label{def:beaver}
+  Given an input triple $(x,y,z) \in \mathbb{F}$ random shared triple $([[a]], [[b]], [[c]]) \in \mathbb{F}$, it is possible to verify the correctness of the statement $z = x \cdot y$ without revealing any information on either of the input.
+  \begin{enumerate}
+    \item The parties generate a random $\epsilon \in \mathbb{F}$.
+    \item The parties locally set $[[\alpha]] = \epsilon[[x]] + [[a]], [[\beta]] = [[y]] + [[b]]$.
+    \item The parties run \texttt{open}$([[\alpha]])$ and \texttt{open}$([[\beta]])$ to obtain $\alpha$ and $\beta$.
+    \item The parties locally set $[[v]] = \epsilon[[z]] - [[c]] + \alpha  \cdot [[b]] + \beta  \cdot [[a]] - \alpha  \cdot \beta$.
+    \item The parties run \texttt{open}$([[v]])$ to obtain $v$ and accept iff $v = 0$.
+  \end{enumerate}
 \end{definition}
 
-The basic MPC-in-the-Head protocol can be used to construct a ZK proof for any NP relatio and has been shown to produce fairly efficient ZK protocols. Feneuil
-
-\subsection{Verification of a multiplication triple using another}\label{sec:verify}
-Given a random triple $([[a]], [[b]], [[c]])$, it is possible to verify the correctness of a triple $([[x]], [[y]], [[z]])$, i.e., that $z = x \cdot y$, without revealing any information on either of the triples, in the following way \cite{baum2020concretely}.
-
-\begin{enumerate}
-  \item The parties generate a random $\epsilon \in \mathbb{F}$, for a finite field $\mathbb{F}$.
-  \item The parties locally set $[[\alpha]] = \epsilon[[x]] + [[a]], [[\beta]] = [[y]] + [[b]]$.
-  \item The parties run \texttt{open}$([[\alpha]])$ and \texttt{open}$([[\beta]])$ to obtain $\alpha$ and $\beta$.
-  \item The parties locally set $[[v]] = \epsilon[[z]] - [[c]] + \alpha  \cdot [[b]] + \beta  \cdot [[a]] - \alpha  \cdot \beta$.
-  \item The parties run \texttt{open}$([[v]])$ to obtain $v$ and accept iff $v = 0$.
-
-\end{enumerate}
 Observe that if both triples are correct multiplication triples (i.e., $z = xy$ and $c = ab$) then the parties will always accept since
 \begin{align}
   v & = \epsilon \cdot z - c + \alpha \cdot b + \beta \cdot a - \alpha \cdot \beta                                            \\
@@ -366,20 +389,31 @@ Observe that if both triples are correct multiplication triples (i.e., $z = xy$ 
     & = 0
 \end{align}
 
-\subsection{Error probability}
-
 \begin{lemma}
-  If $([[a]], [[b]], [[c]])$ or $([[x]], [[y]], [[z]])$ is an incorrect multiplication triple then the parties output \texttt{accept} in the sub-protocol above with probability $\frac{1}{|\mathbb{F}|}$.
+  If $([[a]], [[b]], [[c]])$ or $([[x]], [[y]], [[z]])$ is an incorrect multiplication triple then the parties output \texttt{Accept} in the sub-protocol above with probability $\frac{1}{|\mathbb{F}|}$.\footnote{A full proof of this can be found in \cite{baum2020concretely}.}
 \end{lemma}
 
-The framework benefits from previous efficiency improvements in MPC protocols to improve the efficiency of ZKAoK protocols. Particularly, its possible to achieve \textit{constant-rate} zero knowledge. For an arbitrary circuit $C$ of size $s$ and a bounded fan-in, it is possible to construct a ZKAoK protocol with communication complexity $O(s) + \text{poly}(k)$, for a security parameter $k$. This is an improvement over previous ZKAoK protocols, which had communication complexity $O(ks)$. \todo{write about this in the previous section}.
+\subsection{MPC preprocessing model}
 
+\todo{This part can quickly become tedious, so we need to make sure that we are not going too deep into the details.}
 
-\subsection{MPC preprocessing}
+We need to read into \cite{katz2018improved} and how they use preprocessing to improve the efficiency of MPCitH from \cite{ishai2007zero}. Se page 3 in \cite{katz2018improved} for preprocessing phase.
 
-We first generalize the idea of [KKW18] to work over arithmetic circuits using a variant of the SPDZ MPC protocol [DPSZ12,LN17] and provide a formal proof of security to their "cut-and-choose" preprocessing heuristic. Then, we present a new construction where we replace the "cut-and-choose" mechanism with a "sacrificing"-based approach. While both approaches have similar cost per MPC instance, our "sacrificing"-based approach yields a smaller cheating probability, which means that the number of MPC instances simulated in the proof can be significantly smaller, thus reducing the overall communication footprint. Our scheme is highly flexible in its choice of parameters. In particular, by changing the number of parties in the underlying MPC protocol, one can alternate between achieving low communication and low running time. Our construction only requires efficient standard symmetric primitives, and thus is plausibly post-quantum secure even in the non-interactive case [DFMS19]. The two constructions can be found in \cite{baum2020concretely} \todo{Copied from citation. rewrite this}
+\begin{quote}
+  As a consequence of being able to rely on preprocessing, the
+  space of possible protocols Π we can use is greatly expanded. In
+  particular, we find that we obtain much shorter proofs by using
+  an n-party protocol (secure against semi-honest corruption of allbut-one of the parties) with n as high as 64. The ability to rely
+  on preprocessing is critical here: the communication complexity
+  of traditional MPC protocols (that do not rely on preprocessing)
+  with security against all-but-one corruption is quadratic in the
+  number of parties, but by relying on preprocessing we can obtain
+  communication complexity independent of n.
+  Further optimizations and specific parameter choices for the
+  above proof are discussed in the remainder of the paper.
+\end{quote}
 
-\section{Secret Sharing Schemes}\label{sec:lsss}
+\section{Linear Secret Sharing Schemes (LSSS)}\label{sec:lsss}
 
 \textit{Secret sharing schemes} (SSS) are a type of cryptographic protocol that allows for the distribution of a secret amongst a group of participants. The secret can only be reconstructed when a sufficient number of shares are combined together. The threshold variant of the SD-in-the-Head protocol relies on a low-threshold linear secret sharing scheme (\textit{LSSS}). Threshold secret sharing schemes allow for the reconstruction of a secret from a subset of shares of length $\ell$, where $\ell$ is the threshold. The threshold allows for the SD-in-the-Head protocol to be more communication efficient, as the amount of shares needed to reconstruct the secret is low.
 
