@@ -614,6 +614,52 @@ compiling constants for categories
 
 can we use other hashes that still provide the same security assumption from \autoref{sec:assumptions} as post-quantum security (Xoodyak, KangarooTwelve, Haraka v2)
 
+\subsection{Subroutines}
+\label{sub:subroutines}
+Here we implemented hashing as the first part, along with commitment. (cd1acdb0b6e9)
+
+\subsubsection{Addition of parameters}
+Then we introduced the parameters from the spec. f4739166d684
+
+\subsubsection{Galois field arithmetic}
+\label{}
+Implemented the galois field. 94c3d9889709
+
+\subsection{MPC}\label{sub:mpc_algo} 
+We started on implementing the mpc computation algo along with the inverse
+
+\subsection{Comparison with spec impl}\label{sub:comparison_with_spec_impl}
+In order to verify and debug our own code we tried to setup our implementation to fit with the specification implementation in C, meaning we had to run their code in order to get the intermediate data in order to compare the internal states. 
+Here we found a bug in the way the view-opening challenges was calculated, they had forgotten to finalize the Shake before squeezing, which was a problem because in the tiny keccak rust library this was always done when initializing a hash or xof. 
+Furthermore we found that in order to generate the same output from the xof we needed to first rotate the permutation once by supplying an empty vector before actually using the function. 
+We also found that the merkle tree was not using the salt. 
+
+\subsection{Benchmarking}\label{sub:benchmarking} % (fold)
+We setup Criterion in order to do initial benchmarking
+
+% subsection Benchmarking (end)
+
+\subsection{Array structure}\label{sub:array_structure} % (fold)
+
+% subsection Array structure (end)
+
+\subsection{Feature flags}\label{sub:feature_flags} % (fold)
+
+% subsection Feature flags (end)
+
+\subsection{Rayon}\label{sub:rayon} % (fold)
+
+% subsection Rayon (end)
+
+\subsection{SIMD}\label{sub:simd} % (fold)
+
+% subsection SIMD (end)
+
+\subsection{Kat for NIST}\label{sub:kat_for_nist} % (fold)
+
+% subsection Kat for NIST (end)
+
+
 \section{Rust}
 \cite{nistsaferlanguages}
 
