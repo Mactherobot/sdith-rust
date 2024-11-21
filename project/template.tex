@@ -95,6 +95,7 @@ In 1994, the discovery of Shor's algorithm~\cite{shor1997}, provided a polynomia
 
 In 2016, the National Institute of Standards and Technology (NIST), known for standardizing cryptographic primitives like AES and SHA, initiated a call for quantum resistant public-key cryptosystems~\cite{nistcall}. This led to the standardization of three signature schemes, namely Dilithium~\cite{ducas2018crystals}, Falcon~\cite{fouque2018falcon} and SPHINCS+~\cite{bernstein2019sphincs+}. All three of the schemes are based on the hardness of structured lattice problems. This has led to the most recent call in 2022 for additional quantum resistant signature schemes based on different assumptions to diversify the standards available for the future.
 
+With the introduction of public-key cryptosystems by Diffie and Hellman in 1976, we saw the introduction to schemes like RSA, that is based on factoring of large primes and ElGamal which is based on the discrete logarithm problem. While these protocols have seen wide adoption, there exists schemes based on coding theory. These are their own discipline of information theory which predates the introduction of public-key cryptography. Although the scheme is less prominent, McEliece introduced a PK scheme based on coding theory already in 1978 \cite{mceliece1978public}. The McEliece PK scheme is based on the hardness of decoding random linear codes \cite{berlekamp1978inherent}. While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based crypto-schemes have seen a resurgence as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent movements in code-based cryptosystems have shown that the performance needed for code based cryptographic schemes practically is within reach. Introductions of linear based codes on finite fields and MPC (Multi Party Computation) threshold schemes \cite{baum2020concretely} show promising results and with the SD-in-the-Head scheme, such techniques are combined to create a post-quantum secure signature scheme.
 \todo{Why does it need to be implemented? and why in Rust?}
 
 \section{Our contributions}
@@ -107,19 +108,22 @@ In 2016, the National Institute of Standards and Technology (NIST), known for st
 
 \chapter{Mathematical preliminaries}\label{ch:mathprelim}
 
-With the introduction of public-key cryptosystems by Diffie and Hellman in 1976, we saw the introduction schemes like the RSA based on factoring of large integers and the ElGamal scheme based on the discrete logarithm problem. While these are the protocols that have seen wide adoption, there exists schemes based on coding theory. These are their own discipline of information theory which predates the introduction of public-key cryptography. Although the scheme is less prominent, McEliece introduced a PK scheme based on coding theory already in 1978 \cite{mceliece1978public}. The McEliece PK scheme is based on the hardness of decoding random linear codes \cite{berlekamp1978inherent}. While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based crypto-schemes have seen a resurgence as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent movements in code-based cryptosystems have shown that the performance needed for code based cryptographic schemes practically is within reach. Introductions of linear based codes on finite fields and MPC (Multi Party Computation) threshold schemes \cite{baum2020concretely} show promising results and with the SD-in-the-Head scheme, such techniques are combined to create a post-quantum secure signature scheme.
-
+%TODO: Move the first maybe to the introduction
 In this section, we outline the mathematical and cryptographic foundations necessary to understand the SD-in-the-Head scheme and its components, providing a step-by-step progression from the basics to the construction of the protocol.
 
-We begin by introducing the essential cryptographic primitives that underpin the protocol. These include \textbf{collision-resistant hash functions}, the \textbf{Merkle tree commitment scheme} \todo{add citation}, and \textbf{Galois Finite Fields} $\mathbb{F}_q$ \cite{martinez2023syndromes, reed1960polynomial, brownadvanced}. In addition, we provide short introductions to the foundational protocols of \textbf{Secure Multi-Party Computation} (MPC) and \textbf{Zero-Knowledge} (ZK) proofs, which serve as the underlying cryptographic protocols.
+%TODO: Rewrite this when the order is set in stone
+We begin by introducing the essential cryptographic primitives that underpin the protocol. These include \textbf{collision-resistant hash functions}, the \textbf{Merkle tree commitment scheme} \cite{becker2008merkle}, and \textbf{Galois Finite Fields} $\mathbb{F}_q$ \cite{martinez2023syndromes, reed1960polynomial, brownadvanced}. In addition, we provide short introductions to the foundational protocols of \textbf{Secure Multi-Party Computation} (MPC) and \textbf{Zero-Knowledge} (ZK) proofs, which serve as the underlying cryptographic protocols.
 
-Next, we delve into the Syndrome Decoding (SD) problem, which forms the backbone of the SD-in-the-Head protocol. This includes an overview of the problem definition \cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}, and its polynomial representation. This will support and understanding of how the protocol operates on hard instances of the SD problem.
+Next, we delve into the Syndrome Decoding (SD) problem, which forms the backbone of the SD-in-the-Head protocol. This includes an overview of the problem definition \cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}, and its polynomial representation. This will support an understanding of how the protocol operates on hard instances of the SD problem.
 
-Building upon these foundations, we lay the groundwork for the construction of the SD-in-the-Head protocol. First, we introduce the \textbf{Fiat-Shamir heuristic}, a powerful tool that transforms an interactive ZK protocol into a non-interactive signature scheme \cite{fiat1986prove}. Next, we discuss the \textbf{Multi-Party-Computation-in-the-Head} (MPCitH) paradigm, explaining how it is leveraged to construct efficient ZK proofs \cite{ishai2007zero}. Additionally we detail the role of the MPC preprocessing \cite{baum2020concretely} and linear secret-sharing scheme \cite{feneuil2023threshold}, which dramatically improves the efficiency of the MPCitH construction.
+Building upon these foundations, we lay the groundwork for the construction of the SD-in-the-Head protocol. First, we discuss the \textbf{Multi-Party-Computation-in-the-Head} (MPCitH) paradigm, explaining how it is leveraged to construct efficient ZK proofs \cite{ishai2007zero}. Next, we introduce the \textbf{Fiat-Shamir heuristic}, a powerful tool that transforms an interactive ZK protocol into a non-interactive signature scheme \cite{fiat1986prove}. Additionally we detail the role of the MPC preprocessing \cite{baum2020concretely} and linear secret-sharing scheme \cite{feneuil2023threshold}, which dramatically improves the efficiency of the MPCitH construction, and verification.
 
 \section{Cryptographic Primitives}
+%TODO: maybe move some of the information from the section above to here.
+% and maybe rename 
 
 \subsection{Collision Resistant Hash Functions}
+%TODO: is missing
 
 % subsection  (end)
 \subsection{Galois Finite Field}\label{sec:gf256}
@@ -173,8 +177,8 @@ A common choice for the irreducible polynomial is the Rijndael polynomial $p(x) 
 
 \subsubsection{Field extension}
 
-A advantageous property of Galois fields is that they can easily be extended, like it was done from $\mathbb{F}_{2}$ to $\mathbb{F}_{2^8}$. To ensure security in the SD-in-the-Head protocol, the field $\mathbb{F}_{2^8}$ is extended to encompass the field 32-bit unsigned integers. This can be done as a \textit{tower extension} by first building a degree-2 extension to $\mathbb{F}_{2^{16}}$ using the irreducible polynomial $q(x) = x^2 x + 32$ and finally extending this field to $\mathbb{F}_{2^{32}}$ using the irreducible polynomial $r(x) = x^2 + x + 32(x)$. While you could create the final field independently, the tower extension allows us to reuse the construction of the intermediate field. Addition and multiplication in the extension fields are represented as the following
-
+An advantageous property of Galois fields is that they can easily be extended, like $\mathbb{F}_{2}$ to $\mathbb{F}_{2^8}$. To ensure security in the SD-in-the-Head protocol, the field $\mathbb{F}_{2^8}$ is extended to encompass the field 32-bit unsigned integers. This can be done as a \textit{tower extension} by first building a degree-2 extension to $\mathbb{F}_{2^{16}}$ using the irreducible polynomial $q(x) = x^2 + x + 32$ and finally extending this field to $\mathbb{F}_{2^{32}}$ using the irreducible polynomial $r(x) = x^2 + x + 32(x)$. While you could create the final field independently, the tower extension allows us to reuse the construction of the intermediate field. Addition and multiplication in the extension fields are represented as the following
+%TODO: is the r(x) correct. In ours we represent it with z, which is not the x value that you times 32.
 \begin{align*}
   a     & = a_0 + a_1x                                               &  & a \in \mathbb{F}_{q^\eta}, a_0, a_1 \in \mathbb{F}_q \\
   b     & = b_0 + b_1x                                               &  & b \in \mathbb{F}_{q^\eta}, b_0, b_1 \in \mathbb{F}_q \\\\
@@ -185,10 +189,9 @@ A advantageous property of Galois fields is that they can easily be extended, li
         & = a_0b_0 + 32a_1b_1 + (a_0b_1 + a_1b_0 + a_1b_1)x
 \end{align*}
 
-
 \subsubsection{Polynomial evaluation}
 \todo{Should this be moved to the specification section?}
-For polynomial evaluation in the multiparty computation seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. The polynomial $P(x)$ is defined as
+For polynomial evaluation in the multiparty computation algorithm, seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. The polynomial $P(x)$ is defined as
 \begin{align}
   \textstyle\bigcup_{|Q|}(F_q)^{|Q|} \times F_q^\eta & \rightarrow F_q^\eta                 \nonumber                                  \\
   Q(r)                                               & = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1} &  & Q_i \in F_q, r \in F_q^\eta
