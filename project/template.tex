@@ -130,7 +130,12 @@ Additionally, we aim to identify and address potential pitfalls and challenges e
 Finally, this project serves as an opportunity to test our capabilities by implementing a cutting-edge cryptographic protocol in a modern, memory-safe language like Rust.
 
 \subsection{Choosing the SD-in-the-Head protocol}
-The SD-in-the-Head protocol offers a highly modular design which allows for a wide range of subroutines and configurability. This configurability is especially showcased in the two variants covered by the specification; the \textit{hypercube} and \textit{threshold} variants which show 
+The SD-in-the-Head protocol offers a highly modular design, enabling extensive configurability and support for various subroutines. This flexibility is particularly evident in the two variants included in the specification~\c{aguilarsyndrome11}: the \textit{hypercube} and \textit{threshold} variants, both of which demonstrate significant performance improvements over the original protocol~\cite{feneuil2022syndrome,aguilar2023return,feneuil2023threshold}.
+
+The threshold variant, in particular, provides an opportunity to explore and implement several cryptographic primitives, including Galois Fields~\cite{brownadvanced}, Merkle Trees~\cite{becker2008merkle}, Linear Secret Sharing (Shamir), and Multi-Party Computation in the Head (MPCitH)~\cite{baum2020concretely}.
+
+Additionally, the authors supply a detailed and well-crafted specification, along with a reference implementation in C++, which serves as a robust starting point for our work.
+
 
 \subsection{Choosing Rust}
 We chose to implement the SD-in-the-Head protocol in Rust for several compelling reasons. Rust, as a modern systems programming language, offers inherent memory and thread safety without compromising performance. Its strong safety guarantees are a key reason why Rust is included in the NIST list of safer programming languages \cite{nistsaferlanguages}. These properties are particularly critical when implementing cryptographic primitives, where memory safety and robustness against concurrency issues are foundational to secure software development. Additionally, Rust provides fine-grained control over hardware resources, enabling the optimization of performance -- an essential consideration in cryptographic implementations.
