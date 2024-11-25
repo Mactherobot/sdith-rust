@@ -130,7 +130,8 @@ Our objectives include delivering a high-performance, thoroughly documented impl
 
 Additionally, we aim to identify and address potential pitfalls and challenges encountered during the implementation process and supply these to the authors.
 
-Finally, this project serves as an opportunity to test our capabilities by implementing a cutting-edge cryptographic protocol in a modern, memory-safe language like Rust.
+Finally, this project serves as an opportunity to test our capabilities by implementing a cutting-edge cryptographic protocol in a modern, memory-safe language like Rust. As the final product, we will deliver this report alongside a Rust library and a client implementation for the SD-in-the-Head protocol.
+
 
 \subsection{Choosing the SD-in-the-Head protocol}
 The SD-in-the-Head protocol offers a highly modular design, enabling extensive configurability and support for various subroutines. This flexibility is particularly evident in the two variants included in the specification~\cite{aguilarsyndrome11}: the \textit{hypercube} and \textit{threshold} variants, both of which demonstrate significant performance improvements over the original protocol~\cite{feneuil2022syndrome,aguilar2023return,feneuil2023threshold}.
@@ -540,9 +541,10 @@ In the context of the SD-in-the-Head protocol, the prover uses the pseudo-random
   e.g. how we sampled I[e] witness challenge
   table of spec params (with our code naming and different categories)}
 
-For our implementation we chose the \textit{threshold} variant of the SD-in-the-Head protocol~\cite{aguilarsyndrome11,feneuil2023threshold} as this variant introduces the biggest performance increases, when compared to the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11, aguilar2023return} at the cost of a slightly larger signature size.
+For our implementation, we selected the \textit{threshold} variant of the SD-in-the-Head protocol~\cite{aguilarsyndrome11,feneuil2023threshold}, as this variant offers the most significant performance improvements compared to the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11,aguilar2023return}, albeit at the cost of a slightly larger signature size.
 
-In this chapter, we will provide a specification of the initial SD-in-the-Head protocol along with the specifics of the threshold variant. We will include pseudo-code for major subroutines and algorithms, as well as a detailed description of the parameters used in the protocol.
+In this chapter, we provide a specification of the initial SD-in-the-Head protocol, along with the details specific to the threshold variant. We include pseudo-code for the major subroutines and algorithms, as well as a comprehensive description of the parameters used in the protocol. Finally, we present an overview of the associated security guarantees.
+
 
 \section{SD-in-the-Head Protocol}
 The original SD-in-the-Head protocol is based on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field. As a reminder, problem is expressed as follows (see \autoref{sec:syndrome})
@@ -556,7 +558,17 @@ The original SD-in-the-Head protocol is based on the computational hardness of t
     S\cdot Q = P\cdot F \text{ \ \ \ where \ \ \ } S, Q, P, F \in \mathbb{F}_q[X]
   \end{align*}
 \end{quote}
-\noindent The protocol
+\noindent Testing that the relation holds has a small probability of a \textit{false positive}. We denote this as $p$. The protocol takes several steps to reduce $p$. First, the relation is evaluated at random points $\{r_k \in \mathbb{F}_q\}_{k\in[t]}$. Second, the field of the random points is extended from $\mathbb{F}_q$ to $\mathbb{F}_{q^4}$.
+
+\begin{lemma}[Schwartz-Zippel]\label{lem:schwartz}
+  For a non-zero polynomial $P \in \mathbb{S}[X]$ of degree $d \geq 0$. Let $\mathbb{R}$ be a finite subset of $\mathbb{S}$ and set of random points $[r_1, \dots, r_n] \in \mathbb{R}$, the probability that $\textnormal{Pr}[P(r_1, \dots, r_n) = 0] \leq d/|\mathbb{R}|$.
+\end{lemma}
+
+security
+
+The SD-in-the-Head protocol is based on the \textit{Multi-Party Computation in the Head} (MPCitH) framework (see \autoref{sec:mpcinth}). \todo{Explain why we then use MPC and the linearity of polynomial evaulation with sacrificing random beaver triples}
+
+
 
 \section{Field implementation}
 
@@ -804,7 +816,7 @@ We tried reworking to use dynamically sized vectors instead of compile time size
 % subsection Array structure (end)
 
 \section{Optimizations}
-In order to find optimizations we used the samply CPU profiler \cite{Stange2024mstange}, to locate long running functions and loops. This was done by building the binary with cargo and supplying it to the samply CPU profiler. The profiler then generates a call stack and a flamegraph from the binary, this shows how many cycles of the cpu were used in different sections of the code. 
+In order to find optimizations we used the samply CPU profiler \cite{Stange2024mstange}, to locate long running functions and loops. This was done by building the binary with cargo and supplying it to the samply CPU profiler. The profiler then generates a call stack and a flamegraph from the binary, this shows how many cycles of the cpu were used in different sections of the code.
 \todo{Maybe a picture of how the base program looked in the call stack}
 
 \subsection{Feature flags}\label{sub:feature_flags} % (fold)
