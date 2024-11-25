@@ -129,10 +129,10 @@ Additionally, we aim to identify and address potential pitfalls and challenges e
 
 Finally, this project serves as an opportunity to test our capabilities by implementing a cutting-edge cryptographic protocol in a modern, memory-safe language like Rust.
 
-\subsection{In choosing the SD-in-the-Head protocol}
+\subsection{Choosing the SD-in-the-Head protocol}
 The SD-in-the-Head protocol offers a highly modular design which allows for a wide range of subroutines and configurability. This configurability is especially showcased in the two variants covered by the specification; the \textit{hypercube} and \textit{threshold} variants which show 
 
-\subsection{In choosing Rust}
+\subsection{Choosing Rust}
 We chose to implement the SD-in-the-Head protocol in Rust for several compelling reasons. Rust, as a modern systems programming language, offers inherent memory and thread safety without compromising performance. Its strong safety guarantees are a key reason why Rust is included in the NIST list of safer programming languages \cite{nistsaferlanguages}. These properties are particularly critical when implementing cryptographic primitives, where memory safety and robustness against concurrency issues are foundational to secure software development. Additionally, Rust provides fine-grained control over hardware resources, enabling the optimization of performance -- an essential consideration in cryptographic implementations.
 
 Our choice of Rust was also driven by a desire to investigate its strengths and limitations in the context of implementing and optimizing cryptographic protocols. To this end, we prioritized code readability and maintainability. For maintainability, we incorporated rigorous testing frameworks and benchmarking tools to validate the correctness and efficiency of the implementation. These measures also facilitate meaningful comparisons with alternative signature schemes. For readability, we emphasized clear, well-documented, and logically structured code.
