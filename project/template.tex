@@ -119,6 +119,9 @@ With the introduction of public-key cryptosystems by Diffie and Hellman in 1976,
 While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based crypto-schemes have seen a resurgence as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent developments in code-based cryptosystems have shown that the performance needed for code based cryptographic schemes practically is within reach. Introductions of linear based codes on finite fields and MPCitH (Multi-Party Computation in the Head) threshold schemes \cite{baum2020concretely} show promising results. With the SD-in-the-Head scheme~\cite{aguilarsyndrome11,feneuil2023threshold} presented in this report, such techniques are combined to define an efficient post-quantum secure signature scheme.
 
 \section{Our contributions}
+
+\todo{describe how we progressed through the project in an interesting way. What did we set out to do, what were the hurdles.}
+
 In this report, we present an implementation of the SD-in-the-Head protocol in Rust. While the NIST standardization process initially prioritizes selecting the appropriate protocols, the ultimate goal is to produce a well-documented specification that enables implementors to safely and accurately reproduce the chosen protocols.
 
 To this end, it is crucial for both NIST and the authors to provide an in-depth specification accompanied by clear, well-documented examples to facilitate a smooth transition to the new standard.
@@ -146,9 +149,12 @@ Given the inherent flexibility and modular nature of the SD-in-the-Head protocol
 
 Other signature schemes. How many signatures can be generated per second.
 
-\todo{describe how we progressed through the project in an interesting way. What did we set out to do, what were the hurdles.}
+\section{Structure of the report}
+The report is structured as follows: \autoref{ch:prelim} provides the necessary background information on the cryptographic primitives and sub-protocols used in the SD-in-the-Head protocol. \autoref{ch:spec} presents the specification of the SD-in-the-Head protocol, focusing on the threshold variant. \autoref{ch:impl} details our implementation of the protocol in Rust, including the development process, design choices, and optimizations. \autoref{ch:bench} evaluates the performance of our implementation and compares it to the reference implementation and other alternatives. Finally, \autoref{ch:conclusion} summarizes our contributions.
 
-\todo{contributions: rust, issues we found.}
+
+
+\todo{Keep this up to date}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
