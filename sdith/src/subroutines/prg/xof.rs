@@ -26,6 +26,13 @@ pub struct SDitHXOF<T> {
     xof: T,
 }
 
+/// Consume the first output to ensure the XOF is initialized in the same way as the reference implementation `xof_final`
+/// Technically, this is not necessary for the implementation to work, but it is necessary for the implementation to match outputs of the reference implementation
+fn xof_final(xof: &mut Shake) {
+    let mut tmp = [0u8; 0];
+    xof.squeeze(&mut tmp);
+}
+
 #[cfg(not(feature = "xof_blake3"))]
 impl SDitHXOFTrait<Shake> for SDitHXOF<Shake> {
     fn get_xof() -> Shake {
@@ -38,8 +45,7 @@ impl SDitHXOFTrait<Shake> for SDitHXOF<Shake> {
     fn init_base(x: &[u8]) -> Self {
         let mut xof = Self::get_xof();
         xof.update(x);
-        let mut tmp = [0u8; 0];
-        xof.squeeze(&mut tmp);
+        xof_final(&mut xof);
         SDitHXOF { xof }
     }
 
@@ -51,9 +57,10 @@ impl SDitHXOFTrait<Shake> for SDitHXOF<Shake> {
         if let Some(salt) = salt {
             xof.update(salt);
         }
-        let mut tmp = [0u8; 0];
-        xof.squeeze(&mut tmp);
         xof.update(seed);
+
+        xof_final(&mut xof);
+
         SDitHXOF { xof }
     }
 
