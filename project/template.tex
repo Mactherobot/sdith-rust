@@ -112,10 +112,12 @@ With the introduction of public-key cryptosystems by Diffie and Hellman in 1976,
 
 \section{Our contributions}
 
-Why rust:
-Modern, memory safe, learning experience. Explore the rust language and its capabilities, and limitations. 
-Well tested and benchmarked. 
-Modifiable and interchangable parts, with feature flags. 
+\section{Why rust}
+We chose to implement the SD-in-the-Head protocol in Rust for several compelling reasons. Rust, as a modern systems programming language, offers inherent memory safety without compromising performance. This characteristic is particularly critical when implementing cryptographic primitives, as memory safety is a cornerstone of secure software development. Additionally, Rust provides fine-grained control over hardware resources, enabling the optimization of performance—an essential consideration in cryptographic implementations.
+
+Our choice of Rust was also driven by a desire to investigate its strengths and limitations in the context of implementing and optimizing cryptographic protocols. To this end, we prioritized code readability and maintainability. For maintainability, we incorporated rigorous testing frameworks and benchmarking tools to validate the correctness and efficiency of the implementation. These measures also facilitate meaningful comparisons with alternative signature schemes. For readability, we emphasized clear, well-documented, and logically structured code.
+
+Given the inherent flexibility and modular nature of the SD-in-the-Head protocol, our implementation leverages Rust’s feature flags to enhance modularity and interchangeability. This approach not only supports a high degree of configurability but also ensures that the implementation remains adaptable to future changes and extensions.
 
 Other signature schemes. How many signatures can be generated per second.
 
