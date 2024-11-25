@@ -119,9 +119,18 @@ With the introduction of public-key cryptosystems by Diffie and Hellman in 1976,
 While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based crypto-schemes have seen a resurgence as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent developments in code-based cryptosystems have shown that the performance needed for code based cryptographic schemes practically is within reach. Introductions of linear based codes on finite fields and MPCitH (Multi-Party Computation in the Head) threshold schemes \cite{baum2020concretely} show promising results. With the SD-in-the-Head scheme~\cite{aguilarsyndrome11,feneuil2023threshold} presented in this report, such techniques are combined to define an efficient post-quantum secure signature scheme.
 
 \section{Our contributions}
-In this report we present an implementation of the SD-in-the-Head protocol in Rust. The protocol
+In this report, we present an implementation of the SD-in-the-Head protocol in Rust. While the NIST standardization process initially prioritizes selecting the appropriate protocols, the ultimate goal is to produce a well-documented specification that enables implementors to safely and accurately reproduce the chosen protocols.
 
-\subsection{Choosing the SD-in-the-Head protocol}
+To this end, it is crucial for both NIST and the authors to provide an in-depth specification accompanied by clear, well-documented examples to facilitate a smooth transition to the new standard.
+
+Our objectives include delivering a high-performance, thoroughly documented implementation, complemented by extensive test coverage to ensure correctness and security.
+
+Additionally, we aim to identify and address potential pitfalls and challenges encountered during the implementation process and supply these to the authors.
+
+Finally, this project serves as an opportunity to test our capabilities by implementing a cutting-edge cryptographic protocol in a modern, memory-safe language like Rust.
+
+\subsection{In choosing the SD-in-the-Head protocol}
+The SD-in-the-Head protocol offers a highly modular design which allows for a wide range of subroutines and configurability. This configurability is especially showcased in the two variants covered by the specification; the \textit{hypercube} and \textit{threshold} variants which show 
 
 \subsection{In choosing Rust}
 We chose to implement the SD-in-the-Head protocol in Rust for several compelling reasons. Rust, as a modern systems programming language, offers inherent memory and thread safety without compromising performance. Its strong safety guarantees are a key reason why Rust is included in the NIST list of safer programming languages \cite{nistsaferlanguages}. These properties are particularly critical when implementing cryptographic primitives, where memory safety and robustness against concurrency issues are foundational to secure software development. Additionally, Rust provides fine-grained control over hardware resources, enabling the optimization of performance -- an essential consideration in cryptographic implementations.
