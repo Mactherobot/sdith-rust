@@ -142,7 +142,6 @@ Other signature schemes. How many signatures can be generated per second.
 
 In this section, we outline the mathematical and cryptographic foundations necessary to understand the SD-in-the-Head scheme and its components, providing a step-by-step progression from the basics to the construction of the protocol.
 
-%TODO: Rewrite this when the order is set in stone
 We begin by introducing the essential subroutines that underpin the SD-in-the-Head protocol. This includes \textbf{Galois Finite Fields} $\mathbb{F}_q$ \cite{martinez2023syndromes, reed1960polynomial, brownadvanced} along with cryptographic primitives; \textbf{collision-resistant hash functions} and \textbf{Merkle tree commitment scheme} \cite{becker2008merkle}. In addition, we provide short introductions to the foundational protocols of \textbf{Secure Multi-Party Computation} (MPC) and \textbf{Zero-Knowledge} (ZK) proofs, which serve as the underlying cryptographic protocols.
 
 Next, we delve into the Syndrome Decoding (SD) problem, which forms the backbone of the SD-in-the-Head protocol. This includes an overview of the problem definition \cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}, and its polynomial representation. This will support an understanding of how the protocol operates on hard instances of the SD problem.
@@ -200,8 +199,8 @@ A common choice for the irreducible polynomial is the Rijndael polynomial $p(x) 
 
 \subsubsection{Field extension}
 
-An advantageous property of Galois fields is that they can easily be extended, like $\mathbb{F}_{2}$ to $\mathbb{F}_{2^8}$. To ensure security in the SD-in-the-Head protocol, the field $\mathbb{F}_{2^8}$ is extended to encompass the field 32-bit unsigned integers. This can be done as a \textit{tower extension} by first building a degree-2 extension to $\mathbb{F}_{2^{16}}$ using the irreducible polynomial $q(x) = x^2 + x + 32$ and finally extending this field to $\mathbb{F}_{2^{32}}$ using the irreducible polynomial $r(x) = x^2 + x + 32(x)$. While you could create the final field independently, the tower extension allows us to reuse the construction of the intermediate field. Addition and multiplication in the extension fields are represented as the following
-%TODO: is the r(x) correct. In ours we represent it with z, which is not the x value that you times 32.
+An advantageous property of Galois fields is that they can easily be extended, like $\mathbb{F}_{2}$ to $\mathbb{F}_{2^8}$. To ensure security in the SD-in-the-Head protocol, the field $\mathbb{F}_{2^8}$, which we shall denote as $\mathbb{F}_q$ is extended to encompass the field 32-bit unsigned integers. This can be done as a \textit{tower extension} by first building a degree-2 extension to $\mathbb{F}_{q^2}$ using the irreducible polynomial $F_q^2 = F_q[X] / (X^2 + X + 32)$ and finally extending this field to $\mathbb{F}_{q^4}$ using the irreducible polynomial $F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))$. While you could create the final field independently, the tower extension allows us to reuse the construction of the intermediate field. Addition and multiplication in the extension fields are represented as the following
+
 \begin{align*}
   a     & = a_0 + a_1x                                               &  & a \in \mathbb{F}_{q^\eta}, a_0, a_1 \in \mathbb{F}_q \\
   b     & = b_0 + b_1x                                               &  & b \in \mathbb{F}_{q^\eta}, b_0, b_1 \in \mathbb{F}_q \\\\
