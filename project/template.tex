@@ -785,8 +785,11 @@ We tried reworking to use dynamically sized vectors instead of compile time size
 % subsection Array structure (end)
 
 \section{Optimizations}
+In order to find optimizations we used the samply CPU profiler \cite{Stange2024mstange}, to locate long running functions and loops. This was done by building the binary with cargo and supplying it to the samply CPU profiler. The profiler then generates a call stack and a flamegraph from the binary, this shows how many cycles of the cpu were used in different sections of the code. 
+\todo{Maybe a picture of how the base program looked in the call stack}
 
 \subsection{Feature flags}\label{sub:feature_flags} % (fold)
+To maintain a baseline implementation while enabling flexibility to switch between different NIST categories, we utilized Rust's feature flags. These flags support conditional compilation, allowing multiple implementations of the same function to coexist in the codebase. Only the specific implementation required is compiled, based on the flag provided to the compiler. This approach made it possible to test individual optimizations in isolation, rather than applying all optimizations simultaneously.
 
 % subsection Feature flags (end)
 
