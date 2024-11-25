@@ -98,11 +98,15 @@
 
 few pages. Introduce what we have done and how the paper is structured
 
-\section{Post-Quantum Cryptography and the NIST call to action}\label{sec:quantum}
+\section{Post-Quantum Cryptography}\label{sec:quantum}
 
-\todo{motivate and explain the problem to be addressed}
+Digital signatures are essential for ensuring a secure internet. As our individual reliance on the internet grows, signatures play a critical role in identifying and verifying the authenticity of the sources we interact with over the network. Digital signatures ensure that software or web pages come from trusted sources and have not been tampered with, forming a cornerstone of IT security. They also enable the verification of the signer's identity and detect unauthorized changes to data. Additionally, digital signatures support non-repudiation, meaning they provide proof to a third party that a signature was genuinely created by the signer.
 
-In 1994, the discovery of Shor's algorithm~\cite{shor1997}, provided a polynomial time algorithm for factoring integers and computing discrete logarithms using quantum computing. Back then, quantum computers where theories on paper. However, two decades later, significant developments in quantum technology, has brought us dangerously close to the point where quantum computers can solve foundational problems, which would break the security of modern standards of public-key cryptosystems. For example the Diffie-Hellman key exchange standard X25519, used in TLSv1.3, is not post-quantum secure.
+The most widely used digital signature schemes rely on public-key cryptography, where security is grounded in the computational difficulty of specific mathematical problems. Standardization efforts in the early 2000s~\cite{pub2000digital} pushed Algorithms like RSA, DSA, and ECDSA are commonly employed, leveraging the challenges of factoring large integers and solving discrete logarithms to ensure robust protection.
+
+In 1994, the discovery of Shor's algorithm~\cite{shor1997}, provided a polynomial time algorithm for factoring integers and computing discrete logarithms using quantum computing. Back then, quantum computers where theories playing around on paper. However, two decades later, significant developments in quantum technology, has brought us closer to the point where quantum computers can solve foundational problems, which would break the security of modern standards of public-key cryptosystems.
+
+\section{The NIST call to action}
 
 In 2016, the National Institute of Standards and Technology (NIST), known for standardizing cryptographic primitives like AES and SHA, initiated a call for quantum resistant public-key cryptosystems~\cite{nistcall}. This led to the standardization of three signature schemes, namely Dilithium~\cite{ducas2018crystals}, Falcon~\cite{fouque2018falcon} and SPHINCS+~\cite{bernstein2019sphincs+}. All three of the schemes are based on the hardness of structured lattice problems. This has led to the most recent call in 2022 for additional quantum resistant signature schemes based on different assumptions to diversify the standards available for the future.
 
@@ -113,11 +117,11 @@ With the introduction of public-key cryptosystems by Diffie and Hellman in 1976,
 \section{Our contributions}
 
 \section{Why rust}
-We chose to implement the SD-in-the-Head protocol in Rust for several compelling reasons. Rust, as a modern systems programming language, offers inherent memory safety without compromising performance. This characteristic is particularly critical when implementing cryptographic primitives, as memory safety is a cornerstone of secure software development. Additionally, Rust provides fine-grained control over hardware resources, enabling the optimization of performance—an essential consideration in cryptographic implementations.
+We chose to implement the SD-in-the-Head protocol in Rust for several compelling reasons. Rust, as a modern systems programming language, offers inherent memory safety without compromising performance. This characteristic is particularly critical when implementing cryptographic primitives, as memory safety is a cornerstone of secure software development. Additionally, Rust provides fine-grained control over hardware resources, enabling the optimization of performance -- an essential consideration in cryptographic implementations.
 
 Our choice of Rust was also driven by a desire to investigate its strengths and limitations in the context of implementing and optimizing cryptographic protocols. To this end, we prioritized code readability and maintainability. For maintainability, we incorporated rigorous testing frameworks and benchmarking tools to validate the correctness and efficiency of the implementation. These measures also facilitate meaningful comparisons with alternative signature schemes. For readability, we emphasized clear, well-documented, and logically structured code.
 
-Given the inherent flexibility and modular nature of the SD-in-the-Head protocol, our implementation leverages Rust’s feature flags to enhance modularity and interchangeability. This approach not only supports a high degree of configurability but also ensures that the implementation remains adaptable to future changes and extensions.
+Given the inherent flexibility and modular nature of the SD-in-the-Head protocol, our implementation leverages Rust's feature flags to enhance modularity and interchangeability. This approach not only supports a high degree of configurability but also ensures that the implementation remains adaptable to future changes and extensions.
 
 Other signature schemes. How many signatures can be generated per second.
 
@@ -284,7 +288,7 @@ The hiding property of the protocol is ensured by the use of a secure hash funct
 
 Conversely, the binding property \autoref{lem:binding} is upheld by the fact that the adversary would have to find a collision for the hash function to change the commitment value.
 
-A notable property of the Merkle tree is its ability to open a partial subset of the committed values by providing only the necessary authentication paths for the values in the subset. The verifier can still validate these values using a single global root value. 
+A notable property of the Merkle tree is its ability to open a partial subset of the committed values by providing only the necessary authentication paths for the values in the subset. The verifier can still validate these values using a single global root value.
 
 This property is particularly advantageous in protocols like the SD-in-the-Head threshold protocol, where only a subset of the committed values needs to be opened while keeping the rest concealed. By leveraging this feature, the prover can efficiently prove the validity of the subset without revealing the entire set of commitments.
 
@@ -783,6 +787,8 @@ Blake3, Haraka v2, KangarooTwelve, Xoodyak
 \chapter{Benchmarks}\label{ch:bench}
 diaries of benchmarks.
 discussion of results
+
+\todo{old benchmarks \url{https://asecuritysite.com/openssl/openssl3_b2}}
 
 Test on both mac and linux.
 nightly vs stable rust

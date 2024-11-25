@@ -40,6 +40,7 @@ default = ["category_one", "optimized"]
 category_one = []
 category_three = []
 category_five = []
+
 # Optimization features
 optimized = ["simd", "parallel"]
 parallel = ["dep:rayon"]
@@ -50,5 +51,6 @@ kat = ["dep:hex", "dep:nist-pqc-seeded-rng"]        # Include Known Answer Tests
 cycles_per_byte = ["dep:criterion-cycles-per-byte"] # Benchmarking feature
 
 # Experimental features
+blake3 = ["xof_blake3", "hash_blake3"]
 xof_blake3 = ["dep:blake3"]
 hash_blake3 = ["dep:blake3"]
