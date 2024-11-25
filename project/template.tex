@@ -104,7 +104,7 @@ Digital signatures are essential for ensuring a secure internet. As our individu
 
 The most widely used digital signature schemes rely on public-key cryptography. Each signer has a public and a private key. The private key allows the signer to sign messages, while the public key is used to verify the signature. The security of a signature is grounded in the computational complexity of specific mathematical problems. Standardization efforts in the early 2000s~\cite{pub2000digital} led to the adoption of algorithms such as RSA, DSA, and ECDSA, which leverage intractability of factoring large integers and solving discrete logarithms to ensure robust protection.
 
-\subsection{The NIST call to action}
+\subsection{NIST call to action}
 
 In 1994, the discovery of Shor's algorithm~\cite{shor1997} introduced a polynomial-time method for solving these problems using quantum computing. At that time, quantum computers were theoretical constructs. However, in 2001, Chuang et al.~\cite{vandersypen2001experimental,buchmann2004post} successfully implemented Shor's algorithm on a 7-qubit quantum computer. Two decades later, significant advancements in quantum technology have brought us closer to the point where quantum computers could be a reality.
 
@@ -119,8 +119,11 @@ With the introduction of public-key cryptosystems by Diffie and Hellman in 1976,
 While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based crypto-schemes have seen a resurgence as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent developments in code-based cryptosystems have shown that the performance needed for code based cryptographic schemes practically is within reach. Introductions of linear based codes on finite fields and MPCitH (Multi-Party Computation in the Head) threshold schemes \cite{baum2020concretely} show promising results. With the SD-in-the-Head scheme~\cite{aguilarsyndrome11,feneuil2023threshold} presented in this report, such techniques are combined to define an efficient post-quantum secure signature scheme.
 
 \section{Our contributions}
+In this report we present an implementation of the SD-in-the-Head protocol in Rust. The protocol
 
-\section{Why rust}
+\subsection{Choosing the SD-in-the-Head protocol}
+
+\subsection{In choosing Rust}
 We chose to implement the SD-in-the-Head protocol in Rust for several compelling reasons. Rust, as a modern systems programming language, offers inherent memory and thread safety without compromising performance. Its strong safety guarantees are a key reason why Rust is included in the NIST list of safer programming languages \cite{nistsaferlanguages}. These properties are particularly critical when implementing cryptographic primitives, where memory safety and robustness against concurrency issues are foundational to secure software development. Additionally, Rust provides fine-grained control over hardware resources, enabling the optimization of performance -- an essential consideration in cryptographic implementations.
 
 Our choice of Rust was also driven by a desire to investigate its strengths and limitations in the context of implementing and optimizing cryptographic protocols. To this end, we prioritized code readability and maintainability. For maintainability, we incorporated rigorous testing frameworks and benchmarking tools to validate the correctness and efficiency of the implementation. These measures also facilitate meaningful comparisons with alternative signature schemes. For readability, we emphasized clear, well-documented, and logically structured code.

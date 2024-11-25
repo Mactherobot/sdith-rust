@@ -45,7 +45,7 @@ impl SDitHXOFTrait<Shake> for SDitHXOF<Shake> {
     fn init_base(x: &[u8]) -> Self {
         let mut xof = Self::get_xof();
         xof.update(x);
-        xof_final(&mut xof);
+        // xof_final(&mut xof);
         SDitHXOF { xof }
     }
 
@@ -54,12 +54,14 @@ impl SDitHXOFTrait<Shake> for SDitHXOF<Shake> {
             XOFPrimitive::SHAKE128 => Shake::v128(),
             XOFPrimitive::SHAKE256 => Shake::v256(),
         };
+
         if let Some(salt) = salt {
             xof.update(salt);
         }
+
         xof.update(seed);
 
-        xof_final(&mut xof);
+        // xof_final(&mut xof);
 
         SDitHXOF { xof }
     }
