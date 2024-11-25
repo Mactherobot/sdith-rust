@@ -535,9 +535,28 @@ In the context of the SD-in-the-Head protocol, the prover uses the pseudo-random
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \chapter{Specification}\label{ch:spec}
-more detailed description of the algorithm
-e.g. how we sampled I[e] witness challenge
-table of spec params (with our code naming and different categories)
+
+\todo{more detailed description of the algorithm
+  e.g. how we sampled I[e] witness challenge
+  table of spec params (with our code naming and different categories)}
+
+For our implementation we chose the \textit{threshold} variant of the SD-in-the-Head protocol~\cite{aguilarsyndrome11,feneuil2023threshold} as this variant introduces the biggest performance increases, when compared to the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11, aguilar2023return} at the cost of a slightly larger signature size.
+
+In this chapter, we will provide a specification of the initial SD-in-the-Head protocol along with the specifics of the threshold variant. We will include pseudo-code for major subroutines and algorithms, as well as a detailed description of the parameters used in the protocol.
+
+\section{SD-in-the-Head Protocol}
+The original SD-in-the-Head protocol is based on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field. As a reminder, problem is expressed as follows (see \autoref{sec:syndrome})
+\begin{quote}
+  For a parity check matrix $H \in \mathbb{F}_q^{(m-k)\times m}$ in standard form and a syndrome $y$. The challenge is to find a vector $x$ s.t. $Hx = y$ and $wt(x) \leq w$.
+  \begin{align*}
+    y = Hx = H'x_a + x_b \text{ \ \ \ where \ \ \ } H' \in \mathbb{F}_q^{(m-k)\times k}
+  \end{align*}
+  for $x = (x_a | x_b)$. We have the polynomial representation of the problem (see \autoref{sec:polynomial_representation})
+  \begin{align*}
+    S\cdot Q = P\cdot F \text{ \ \ \ where \ \ \ } S, Q, P, F \in \mathbb{F}_q[X]
+  \end{align*}
+\end{quote}
+\noindent The protocol
 
 \section{Field implementation}
 
