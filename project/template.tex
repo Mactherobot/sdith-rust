@@ -5,6 +5,8 @@
 \usepackage{a4}
 \usepackage{latexsym}
 \usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage[]{amsmath}
 \usepackage{epsfig}
 \usepackage[T1]{fontenc}
@@ -29,6 +31,8 @@
   \def\lemmaautorefname{Lemma}%
 }
 
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
 
 \theoremstyle{plain}
 \newtheorem{lemma}{Lemma}[section]
@@ -557,8 +561,6 @@ security
 
 The SD-in-the-Head protocol is based on the \textit{Multi-Party Computation in the Head} (MPCitH) framework (see \autoref{sec:mpcinth}). \todo{Explain why we then use MPC and the linearity of polynomial evaluation with sacrificing random beaver triples}
 
-
-
 \section{Field implementation}
 
 \subsection{Field extension}
@@ -577,6 +579,70 @@ For polynomial evaluation in the multiparty computation algorithm, seen in \auto
 \todo{See gf256\_ext.rs}
 
 \section{Merkle Tree Commitment}
+For the merkle tree implementation, we have followed the specification. But added a function that calculates bottom up the revealed nodes based on the view opening challenges. This is used to know the length of the authentication path that is added to the signature and is needed when parsing the signature for verification. The algorithm uses the queue structure which is also mentioned in the spec, where the tree structure is a 1D array with the last elements being the leaf. First it checks for empty input. Then we initiate an empty list to hold the revealed nodes. Now in order to traverse the tree we will get the $heightIndex$ and $lastIndex$, which are the current layer of the tree, and the index of the 1D array of where the current layer stops. Lastly we need a queue to hold the indexes. Now in order to find the revealed nodes it starts by adding the indexes of the selected leaves to the queue. Then we go through the queue until the next index is $1$ which indicates that we are at the root. In the while loop we first get the current index, and then check if we have gone up a layer in the tree, and if the current node is a left child. If the current node is a left child and it is the last index in the layer, then we can just skip to the next node because we know it has no sibling. If it is not the last node we get the next node as a candidate, if the queue is not empty. If the current node is still the left child, and the next node in the queue is the other child of the same parent we do not need to add this as a revealed node as it is part of the known values. But if the next node is not the right child of the current node we add it as a revealed node. If the current node is not the left child we add the left child to the revealed nodes. And then we add the parent index to the queue. When we exit the while loop we have traversed the tree bottom up adding for each layer the neighbours of the selected leaves. It works as follows:
+
+\begin{algorithm}
+\caption{Get Revealed Nodes for Selected Leaves in Merkle Tree}
+\begin{algorithmic}[1]
+\Require $selectedLeaves$: List of selected leaf indices
+\Ensure List of revealed node indices
+
+\Function{getRevealedNodes}{$selectedLeaves$}
+    \If{$selectedLeaves$ is empty}
+        \State \Return empty list
+    \EndIf
+
+    \State $revealedNodes \gets \text{empty list}$
+    \State $(heightIndex,\; lastIndex) \gets (1 \ll treeHeight,\; treeNodes - 1)$
+    \State $queue \gets \text{empty queue}$
+
+    
+    \ForAll{$leaf \in selectedLeaves$} \Comment{Add commitments to the queue}
+        \State $val \gets (1 \ll treeHeight) + leaf$
+        \If{$\text{queue.add}(val)$ fails}
+            \State \textbf{panic} ``Could not add element to queue''
+        \EndIf
+    \EndFor
+
+    \While{$queue.peek() \neq 1$} \Comment{Do until we reach the root}
+        \State $index \gets queue.remove()$
+        
+        \If{$index < heightIndex$}
+            \State $heightIndex \gets heightIndex \gg 1$
+            \State $lastIndex \gets lastIndex \gg 1$
+        \EndIf
+
+        \State $isLeftChild \gets (index \; \% \; 2 == 0)$
+
+        \If{$isLeftChild \land index == lastIndex$}
+            \Comment{Node has no sibling}
+            \State \textbf{continue}
+        \Else
+            \State $candidateIndex \gets 0$
+            \If{\textbf{not} $queue.isEmpty()$}
+                \State $candidateIndex \gets queue.peek()$
+            \EndIf
+
+            \If{$isLeftChild \land (candidateIndex == index + 1)$}
+                \State $queue.remove()$
+            \ElsIf{$isLeftChild$}
+                \State $revealedNodes.append(index + 1)$
+            \Else
+                \State $revealedNodes.append(index - 1)$
+            \EndIf
+        \EndIf
+
+        \State $parentIndex \gets index \gg 1$
+        \If{$queue.add(parentIndex)$ fails}
+            \State \textbf{panic} ``Could not add element to queue''
+        \EndIf
+    \EndWhile
+
+    \State \Return $revealedNodes$
+\EndFunction
+
+\end{algorithmic}
+\end{algorithm}
 
 \todo{Can we use Haraka v2}
 
