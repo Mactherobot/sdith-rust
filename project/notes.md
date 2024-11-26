@@ -87,9 +87,9 @@ While implementing we found some bugs/interesting things, and struggled with som
 
 For bugs/interesting things we found the following:
 
-1) Shake xof for the expand view challenges (views.c:10-11) there's a missing finalise for the xof. This proved itself to be problematic when attempting to compare outputs between our implementations. The problem mostly stems from the fact that the Rust library we used (https://github.com/debris/tiny-keccak) does not supply a fine grained API, meaning we could not get into the same state. Based on your implementation of the expand mpc challenge, (mpc.c:207) it seemed like it is missing. We added a finalize to your implementation for comparisons, which worked.
+1. Shake xof for the expand view challenges (views.c:10-11) there's a missing finalise for the xof. This proved itself to be problematic when attempting to compare outputs between our implementations. The problem mostly stems from the fact that the Rust library we used (https://github.com/debris/tiny-keccak) does not supply a fine grained API, meaning we could not get into the same state. Based on your implementation of the expand mpc challenge, (mpc.c:207) it seemed like it is missing. We added a finalize to your implementation for comparisons, which worked.
 
-2) When implementing our matrix multiplication, we ran into a curious issue. Accidentally removing the matrix multiplication, did not make the signing and verification fail. We are still unsure about why this is the case, but we suspect that you essentially just run into the "random" SD intance where H' is I. Essentially, this is still a valid SD instance, but of course now we have that y = H'x_a + x_b = x_a + x_b. We expect that this comes to a case of an insecure key generation. For our implementation we added a check for this case. However, we are interested in hearing your thoughts on this.
+2. When implementing our matrix multiplication, we ran into a curious issue. Accidentally removing the matrix multiplication, did not make the signing and verification fail. We are still unsure about why this is the case, but we suspect that you essentially just run into the "random" SD intance where H' is I. Essentially, this is still a valid SD instance, but of course now we have that y = H'x_a + x_b = x_a + x_b. We expect that this comes to a case of an insecure key generation. For our implementation we added a check for this case. However, we are interested in hearing your thoughts on this.
 
 As for the specification paper we ran into the following issues (mostly understanding):
 
@@ -98,6 +98,6 @@ As for the specification paper we ran into the following issues (mostly understa
   - Algorithm 4, line 22: Should be "Serialize(c)" or exchange other references to `c` ?
   - Algorithm 13, line 10: Should be "InversePartyComputation" instead of "PartyComputationFromBroadcast"?
 
-Finally, we wanted to ask if you have any optimisations that are not mentioned in round 1? If so, we would love to hear about them and potentially implement them.
+Finally, we wanted to ask if you have any optimisations that are not mentioned in round 1? We have looked a little into replacing the merkle tree with a verkle tree. But are a bit unsure if it's cost in creation of the tree outweighs the gain. If so, we would love to hear about them and potentially implement them.
 
 Greetings Benjamin and Magnus
