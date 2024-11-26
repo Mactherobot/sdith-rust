@@ -153,8 +153,6 @@ Other signature schemes. How many signatures can be generated per second.
 \section{Structure of the report}
 The report is structured as follows: \autoref{ch:prelim} provides the necessary background information on the cryptographic primitives and sub-protocols used in the SD-in-the-Head protocol. \autoref{ch:spec} presents the specification of the SD-in-the-Head protocol, focusing on the threshold variant. \autoref{ch:impl} details our implementation of the protocol in Rust, including the development process, design choices, and optimizations. \autoref{ch:bench} evaluates the performance of our implementation and compares it to the reference implementation and other alternatives. Finally, \autoref{ch:conclusion} summarizes our contributions.
 
-
-
 \todo{Keep this up to date}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -231,15 +229,6 @@ An advantageous property of Galois fields is that they can easily be extended, l
         & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1(x + 32)                                                                       \\
         & = a_0b_0 + 32a_1b_1 + (a_0b_1 + a_1b_0 + a_1b_1)x
 \end{align*}
-
-\subsubsection{Polynomial evaluation}
-\todo{Should this be moved to the specification section?}
-For polynomial evaluation in the multiparty computation algorithm, seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. The polynomial $P(x)$ is defined as
-\begin{align}
-  \textstyle\bigcup_{|Q|}(F_q)^{|Q|} \times F_q^\eta & \rightarrow F_q^\eta                 \nonumber                                  \\
-  Q(r)                                               & = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1} &  & Q_i \in F_q, r \in F_q^\eta
-  \label{eq:mpcpoly}
-\end{align}
 
 \section{Cryptographic Primitives and protocols}
 We assume the reader has basic knowledge of cryptographic primitives but will provide brief introductions to the primitives used in the SD-in-the-Head protocol. If you know the basics feel free to skip this section.
@@ -566,7 +555,7 @@ The original SD-in-the-Head protocol is based on the computational hardness of t
 
 security
 
-The SD-in-the-Head protocol is based on the \textit{Multi-Party Computation in the Head} (MPCitH) framework (see \autoref{sec:mpcinth}). \todo{Explain why we then use MPC and the linearity of polynomial evaulation with sacrificing random beaver triples}
+The SD-in-the-Head protocol is based on the \textit{Multi-Party Computation in the Head} (MPCitH) framework (see \autoref{sec:mpcinth}). \todo{Explain why we then use MPC and the linearity of polynomial evaluation with sacrificing random beaver triples}
 
 
 
@@ -575,6 +564,15 @@ The SD-in-the-Head protocol is based on the \textit{Multi-Party Computation in t
 \subsection{Field extension}
 
 First extend $F_q$ to $F_{q^4} = F_q[Z] / (Z^2 + Z + 32(X))$. This is done by representing elements in the field as polynomials of degree at most 1 with coefficients in $F_q$. \todo{Define addition and multiplication}
+
+\subsubsection{Polynomial evaluation}
+\todo{Should this be moved to the specification section?}
+For polynomial evaluation in the multiparty computation algorithm, seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. The polynomial $P(x)$ is defined as
+\begin{align}
+  \textstyle\bigcup_{|Q|}(F_q)^{|Q|} \times F_q^\eta & \rightarrow F_q^\eta                 \nonumber                                  \\
+  Q(r)                                               & = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1} &  & Q_i \in F_q, r \in F_q^\eta
+  \label{eq:mpcpoly}
+\end{align}
 
 \todo{See gf256\_ext.rs}
 
