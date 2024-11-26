@@ -18,6 +18,8 @@
 \DTMlangsetup[en-US]{showdayofmonth=false}
 \usepackage{lipsum}
 \usepackage{ctable} % for \specialrule command
+\usepackage{enumitem}
+
 
 
 \setlength{\parindent}{10pt} % indentation
@@ -209,7 +211,7 @@ The Galois field $\mathbb{F}{2^n}$ is an extension field of $\mathbb{F}2$, defin
 Each element in $\mathbb{F}_{2^n}$ is represented as a polynomial of degree at most $n-1$ with coefficients in $\mathbb{F}_2$.
 
 \begin{align*}
-  a(x) = a_{n-1}x^{n-1} + a_{n-2}x^{n-2} + \dots + a_1x + a_0
+  a(x) = a_{n-1}x^{n-1} + a_{n-2}x^{n-2} + \cdots + a_1x + a_0
 \end{align*}
 
 where $a_i \in \mathbb{F}_2$ This corresponds directly into the 8-bit binary representation $a_{n-1}a_{n-2}\dots a_1a_0$. The addition and multiplication operations within $\mathbb{F}{2^n}$ are defined as follows:
@@ -398,17 +400,18 @@ We will give insight into the basic construction suggested by Ishai et al~\cite{
 
 \begin{definition}\label{def:mpcinth_basic}
   Given a semi-honest $\ell$-private MPC protocol $\Pi_f$ with perfect correctness, a relation $\mathcal{R}$ for some public statement $x$, a witness $w$. Let $w_i$ be an additive secret share of $[[w]]$ for the party $P_i$. Let $f$ be a $n$-party functionality $f(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, i.e. $f(x,w)$ accepts if $(x,w) \in \mathcal{R}$.
-  \begin{enumerate}
+
+  \begin{enumerate}[parsep=2pt, itemsep=0pt]
     \item The prover builds a random sharing of $[[w]] = w_1, \dots, w_n$. Then
-          \begin{itemize}
+          \begin{enumerate}[nolistsep]
             \item Simulates the outputs of the MPC protocol $\Pi_f$ on the inputs $(x, w_1, \dots, w_n)$ and the randomness $r_1, \dots, r_n$.
             \item Prepares views $V_1, \dots, V_n$ of the parties in the protocol $\Pi_f$.\footnote{Remember that the views include the inputs, randomness and messages received by the parties.}
             \item Commits to each view $V_i$ using a secure commitment scheme, and sends ($\text{Commit}(V_1), \dots, \text{Commit}(V_n)$) to the verifier.
-          \end{itemize}
+          \end{enumerate}
     \item The verifier picks $\ell$ random distinct indices $i \in [n]$ and sends them to the prover.
     \item The prover opens the commitments into the views $V_i$ and sends the openings to the verifier.
     \item The verifier accepts if and only if:
-          \begin{enumerate}
+          \begin{enumerate}[nolistsep]
             \item\label{prop:mpcinth_commit} The views are valid according to the commitment scheme.
             \item\label{prop:mpcinth_consistent} The views are consistent according to the public input $x$.
             \item\label{prop:mpcinth_knowledge} The views output $1$ according to $\mathcal{R}$ meaning that $\mathcal{R}(x,w) = 1$.
@@ -432,7 +435,30 @@ We see the following properties of the protocol:
 
 The basic MPC-in-the-Head protocol provides a foundation for constructing ZK proofs for any NP relation and has been shown to produce relatively efficient ZK protocols~\cite{feneuil2023threshold,baum2020concretely,katz2018improved}. Variants of the protocol have demonstrated reductions in communication complexity, though at the cost of decreased computational efficiency on the prover's side, as these constructions require a substantial increase in the number of parties $N$~\cite{ishai2007zero, feneuil2023threshold}, which subsequently leads to heightened computational complexity.
 
-Recent advancements, however, offer promising improvements on both fronts. First, the integration of \textit{MPC preprocessing}~\cite{katz2018improved} enables the instantiation of an MPC-in-the-Head instance where communication complexity is independent of $N$, thereby facilitating increased security while maintaining low communication costs. Additionally, employing \textit{Linear Secret Sharing Schemes} (LSSS)\cite{feneuil2023threshold} in place of additive sharing significantly enhances computational efficiency, as the computations for both prover and verifier become bounded by the threshold $\ell$. The incorporation of these techniques ultimately paves the way for the development of the SD-in-the-Head protocol.
+Recent advancements, however, offer promising improvements on both fronts. First, the integration of \textit{MPC preprocessing}~\cite{katz2018improved,baum2020concretely} enables the instantiation of an MPC-in-the-Head instance where communication complexity is independent of $N$, thereby facilitating increased security while maintaining low communication costs. Additionally, employing \textit{Linear Secret Sharing Schemes} (LSSS)\cite{feneuil2023threshold} in place of additive sharing significantly enhances computational efficiency, as the computations for both prover and verifier become bounded by the threshold $\ell$. The incorporation of these techniques ultimately paves the way for the development of the SD-in-the-Head protocol.
+
+\subsection{MPC preprocessing}
+
+Pre-processing in MPC is an optimisation technique that relies on shares of correlated randomness -- say randomness generated from a shared seed -- which are independent of the inputs to the protocol. Due to this independence, the parties can perform pre-computation ahead of time, reducing the computation needed in the protocol. The technique was first introduced by~\cite{katz2018improved} in their \textit{cut-and-choose} technique. While the technique serves for both squared and multiplication relations, we simplify the technique here to multiplication only, as that is all we will need for the SD relation \autoref{eq:polynomial_representation}. In \autoref{def:cut_and_choose} we present the overall idea of the cut-and-choose technique. For a more detailed overview, see \textit{HVZKAoK Protocol using Cut and Choose} in~\cite{baum2020concretely}.
+
+\begin{definition}[Cut-and-Choose for multiplication]\label{def:cut_and_choose}
+  Denote the security parameters $M, N, \tau$. Given a $N$-private MPC protocol $\Pi_C$ for a circuit $C$ and an ideal functionality $\mathcal{F}$. \textit{Note that we assume that there is only one multiplication gate in the circuit, to align with our purposes.}
+  For each $e \in [M]$:
+  \begin{enumerate}[itemsep=0pt, parsep=0pt]
+    \item\label{itm:cut-choose-r1} $\mathcal{P}$ Chooses a master seed $sd_e$ and
+          \begin{enumerate}[nolistsep]
+            \item expands $sd_e$ to $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$.
+            \item computes valid beaver triples $[a_{e}]$, $[b_{e}]$ and $[c_{e}]$ using $sd_{e,i}$ as the seed for each party $i \in [N]$.
+            \item computes a sharing of the input $w$ using $sd_{e,i}$ as the seed for each party $i \in [N]$.
+          \end{enumerate}
+    \item $\mathcal{P}$ commits to the triples and a sharing of the input $w$ along with the seeds $sd_{e,i}$ for each party $i \in [N]$.
+    \item $\mathcal{V}$ chooses a random challenge $E \subset [M]$ such that $|E| = \tau$ and sends it to $\mathcal{P}$.
+    \item $\mathcal{P}$ sends the seeds $sd_e$ to $\mathcal{V}$ who verifies that the triples are correctly generated per step~\ref{itm:cut-choose-r1}
+    \item \todo{complete this}
+  \end{enumerate}
+\end{definition}
+
+\todo{explain soundness and lead into sacrificing protocol}
 
 \subsection{Proving a multiplication triple by sacrificing another}\label{sec:sacrifice_beaver}
 
@@ -467,10 +493,6 @@ Otherwise, the parties will accept with probability $\frac{1}{|\mathbb{F}|}$ fol
   If $([[a]], [[b]], [[c]])$ or $([[x]], [[y]], [[z]])$ is an incorrect multiplication triple then the parties output \texttt{Accept} in the sub-protocol above with probability $\frac{1}{|\mathbb{F}|}$.\footnote{A full proof of this can be found in~\cite{baum2020concretely}.}
 \end{lemma}
 
-\subsection{MPC preprocessing}
-
-Pre-processing in MPC is a technique that relies on shares of correlated randomness -- say randomness
-
 \section{Linear Secret Sharing Schemes (LSSS)}\label{sec:lsss}
 
 \textit{Secret sharing schemes} (SSS) are a type of cryptographic protocol that allows for the distribution of a secret amongst a group of participants. The secret can only be reconstructed when a sufficient number of shares are combined together. The threshold variant of the SD-in-the-Head protocol relies on a low-threshold linear secret sharing scheme (\textit{LSSS}). Threshold secret sharing schemes allow for the reconstruction of a secret from a subset of shares of length $\ell$, where $\ell$ is the threshold. The threshold allows for the SD-in-the-Head protocol to be more communication efficient, as the amount of shares needed to reconstruct the secret is low.
@@ -479,7 +501,7 @@ Pre-processing in MPC is a technique that relies on shares of correlated randomn
   \textit{$S$ is a $(\ell,n)$ threshold SSS if it satisfies the following properties}:
 
   \begin{itemize}
-    \item \textbf{Share generation}: Given a secret $s$, the scheme generates $n$ shares $\texttt{share}(s) = [[s]] = [[s_1, s_2, \dots, s_n]]$.
+    \item \textbf{Share generation}: Given a secret $s$, the scheme generates seeds $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$. $n$ shares $\texttt{share}(s) = [[s]] = [[s_1, s_2, \dots, s_n]]$.
     \item \textbf{Reconstruction}: Given a subset of shares $[[s']]$ of size $\ell$, the scheme can reconstruct the secret $s = \texttt{open}([[s']])$.
   \end{itemize}
 
@@ -505,7 +527,7 @@ To transform any zero-knowledge protocol into a signature scheme, one can use th
 
 Zero-knowledge protocols typically rely on the verifier to issue a challenge to the prover. This challenge serves as a source of randomness that the prover is not supposed to control. In the Fiat-Shamir framework, the original protocol is based on the problem of factoring integers -- a problem that is now vulnerable to quantum attacks, specifically Shor's algorithm. However, the fundamental method of converting a zero-knowledge protocol into a signature scheme remains unaffected.
 
-To adapt a zero-knowledge protocol into a signature scheme, the prover eliminates the need for a verifier to provide randomness. Instead, the prover generates the randomness using a pseudo-random function. This function takes as input the message to be signed along with some random values generated by the prover. The output of this function serves as the challenge. With this, the prover can compute the required values to prove authenticity without external interaction.
+To adapt a zero-knowledge protocol into a signature scheme, the prover eliminates the need for a verifier to provide randomness. Instead, the prover generates seeds $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$.the randomness using a pseudo-random function. This function takes as input the message to be signed along with some random values generated by the prover. The output of this function serves as the challenge. With this, the prover can compute the required values to prove authenticity without external interaction.
 
 In the context of the SD-in-the-Head protocol, the prover uses the pseudo-randomly generated challenge to locally compute the witness values required for the proof. These witness values are derived through the MPC protocol, where the prover simulates the necessary computations internally, generating and processing the shares "in their head." This eliminates the need for the verifier's active participation in the MPC protocol, streamlining the signature generation process.
 
@@ -557,7 +579,75 @@ For polynomial evaluation in the multiparty computation algorithm, seen in \auto
 \todo{See gf256\_ext.rs}
 
 \section{Merkle Tree Commitment}
+<<<<<<< HEAD
 We chose to follow the sepcification definitions for the merkle tree. But have added some functionality to it which we will describe in the implementation section \autoref{sub:merkle_tree_impl}.
+=======
+For the merkle tree implementation, we have followed the specification. But added a function that calculates bottom up the revealed nodes based on the view opening challenges. This is used to know the length of the authentication path that is added to the signature and is needed when parsing the signature for verification. The algorithm uses the queue structure which is also mentioned in the spec, where the tree structure is a 1D array with the last elements being the leaf. First it checks for empty input. Then we initiate an empty list to hold the revealed nodes. Now in order to traverse the tree we will get the $heightIndex$ and $lastIndex$, which are the current layer of the tree, and the index of the 1D array of where the current layer stops. Lastly we need a queue to hold the indexes. Now in order to find the revealed nodes it starts by adding the indexes of the selected leaves to the queue. Then we go through the queue until the next index is $1$ which indicates that we are at the root. In the while loop we first get the current index, and then check if we have gone up a layer in the tree, and if the current node is a left child. If the current node is a left child and it is the last index in the layer, then we can just skip to the next node because we know it has no sibling. If it is not the last node we get the next node as a candidate, if the queue is not empty. If the current node is still the left child, and the next node in the queue is the other child of the same parent we do not need to add this as a revealed node as it is part of the known values. But if the next node is not the right child of the current node we add it as a revealed node. If the current node is not the left child we add the left child to the revealed nodes. And then we add the parent index to the queue. When we exit the while loop we have traversed the tree bottom up adding for each layer the neighbours of the selected leaves. It works as follows:
+
+\begin{algorithm}
+  \caption{Get Revealed Nodes for Selected Leaves in Merkle Tree}
+  \begin{algorithmic}[1]
+    \Require $selectedLeaves$: List of selected leaf indices
+    \Ensure List of revealed node indices
+
+    \Function{getRevealedNodes}{$selectedLeaves$}
+    \If{$selectedLeaves$ is empty}
+    \State \Return empty list
+    \EndIf
+
+    \State $revealedNodes \gets \text{empty list}$
+    \State $(heightIndex,\; lastIndex) \gets (1 \ll treeHeight,\; treeNodes - 1)$
+    \State $queue \gets \text{empty queue}$
+
+
+    \ForAll{$leaf \in selectedLeaves$} \Comment{Add commitments to the queue}
+    \State $val \gets (1 \ll treeHeight) + leaf$
+    \If{$\text{queue.add}(val)$ fails}
+    \State \textbf{panic} ``Could not add element to queue''
+    \EndIf
+    \EndFor
+
+    \While{$queue.peek() \neq 1$} \Comment{Do until we reach the root}
+    \State $index \gets queue.remove()$
+
+    \If{$index < heightIndex$}
+    \State $heightIndex \gets heightIndex \gg 1$
+    \State $lastIndex \gets lastIndex \gg 1$
+    \EndIf
+
+    \State $isLeftChild \gets (index \; \% \; 2 == 0)$
+
+    \If{$isLeftChild \land index == lastIndex$}
+    \Comment{Node has no sibling}
+    \State \textbf{continue}
+    \Else
+    \State $candidateIndex \gets 0$
+    \If{\textbf{not} $queue.isEmpty()$}
+    \State $candidateIndex \gets queue.peek()$
+    \EndIf
+
+    \If{$isLeftChild \land (candidateIndex == index + 1)$}
+    \State $queue.remove()$
+    \ElsIf{$isLeftChild$}
+    \State $revealedNodes.append(index + 1)$
+    \Else
+    \State $revealedNodes.append(index - 1)$
+    \EndIf
+    \EndIf
+
+    \State $parentIndex \gets index \gg 1$
+    \If{$queue.add(parentIndex)$ fails}
+    \State \textbf{panic} ``Could not add element to queue''
+    \EndIf
+    \EndWhile
+
+    \State \Return $revealedNodes$
+    \EndFunction
+
+  \end{algorithmic}
+\end{algorithm}
+
+>>>>>>> f3b6cab (quicksave)
 \todo{Can we use Haraka v2}
 
 \section{Hashing and XOF}
@@ -690,7 +780,7 @@ according to the proposal by NIST, the SD-in-the-Head specification provides sec
 The SD-in-the-Head signature scheme upholds the \textbf{E}xistential \textbf{U}n\textbf{f}orgeability under \textbf{C}hosen \textbf{M}essage \textbf{A}ttack (EUF-CMA) security property for digital signature schemes as this is the type of attack that NIST will evaluate signature proposals~\cite{nistcall,aguilarsyndrome11}. EUF-CMA works as the following game:
 
 \begin{enumerate}
-  \item The challenger generates a key pair $(pk, sk)$ and sends $pk$ to the adversary.
+  \item The challenger generates seeds $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$.a key pair $(pk, sk)$ and sends $pk$ to the adversary.
   \item The adversary is then allowed to query a signing oracle for signatures of chosen messages $(m_1, ..., m_r)$ and receives valid signatures $(\sigma_1, ..., \sigma_r)$. For the NIST evaluation it is assumed that the adversary can query the signing oracle for up to $2^{64}$ chosen messages according to the adversary's running time. However, there is no requirement on the timing of the queries.
   \item The adversary then outputs a pair $(m^*, \sigma^*)$. The adversary wins if the following holds
         \begin{enumerate}
@@ -866,7 +956,7 @@ Benchmarks were conducted on two machines: a Dell XPS 15 9510 and a MacBook Pro 
       \item \textbf{OS}: macOS Sequoia 15.1.1 (24B91)
     \end{itemize}
 \end{itemize}
-This setup provided a diverse testing environment, ensuring our benchmarks accounted for both x86_64 and ARM architectures.
+This setup provided a diverse testing environment, ensuring our benchmarks accounted for both x86\_64 and ARM architectures.
 % subsection Benchmarking (end)
 
 \section{Categories}\label{sub:categories} % (fold)
@@ -875,7 +965,7 @@ We tried reworking to use dynamically sized vectors instead of compile time size
 % subsection Array structure (end)
 
 \section{Optimizations}
-In order to find optimizations we used the samply CPU profiler~\cite{Stange2024mstange}, to locate long running functions and loops. This was done by building the binary with cargo and supplying it to the samply CPU profiler. The profiler then generates a call stack and a flamegraph from the binary, this shows how many cycles of the cpu were used in different sections of the code.
+In order to find optimizations we used the samply CPU profiler~\cite{Stange2024mstange}, to locate long running functions and loops. This was done by building the binary with cargo and supplying it to the samply CPU profiler. The profiler then generates seeds $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$. a call stack and a flamegraph from the binary, this shows how many cycles of the cpu were used in different sections of the code.
 \todo{Maybe a picture of how the base program looked in the call stack}
 
 \subsection{Feature flags}\label{sub:feature_flags} % (fold)
@@ -937,7 +1027,7 @@ future work: Verkle trees optimisation
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\cleardoublepage 
+\cleardoublepage
 \appendix
 \chapter{The Technical Details}
 
