@@ -843,12 +843,33 @@ Furthermore we found that in order to generate the same output from the xof we n
 We also found that the merkle tree was not using the salt.
 
 \section{Benchmarking}\label{sub:benchmarking} % (fold)
-We setup Criterion in order to do initial benchmarking
+We utilized Criterion.rs~\cite{criterion} for initial benchmarking. Criterion.rs is a statistics-driven benchmarking library for Rust, offering robust tools to measure and analyze performance reliably.
 
+\subsection{Benchmark setup}
+Benchmarking functions are organized in a separate folder named bench. Within this folder, we create files dedicated to specific benchmarking tasks. To enable benchmarking, the target functions must be declared as pub (public) and exported through a lib.rs file. This structure creates a package that can be accessed and invoked by the benchmarking files.
+
+\subsection{Test Environment}
+Benchmarks were conducted on two machines: a Dell XPS 15 9510 and a MacBook Pro with an M2 Pro chip. These machines represent different architectures, allowing us to observe subtle variations in runtime performance based on hardware differences. The specifications of the machines are as follows:
+
+\begin{itemize}
+  \item \textbf{Dell XPS 15 9510}:
+    \begin{itemize}
+      \item \textbf{CPU}: 11th Gen Intel Core i7-11800H @ 2.30GHz x 16 
+      \item \textbf{GPU}: GeForce RTX 3050 Ti Mobile
+      \item \textbf{RAM}: 32GB DDR4 3200MHz
+      \item \textbf{OS}: Ubuntu 22.04.5 LTS, 64-bit
+    \end{itemize}
+  \item \textbf{MacBook Pro (M2 Pro)}:
+    \begin{itemize}
+      \item \textbf{CPU}: Apple M2 Pro (10-core CPU: 6 performance cores, 4 efficiency cores)
+      \item \textbf{RAM}: 32GB LPDDR5
+      \item \textbf{OS}: macOS Sequoia 15.1.1 (24B91)
+    \end{itemize}
+\end{itemize}
+This setup provided a diverse testing environment, ensuring our benchmarks accounted for both x86_64 and ARM architectures.
 % subsection Benchmarking (end)
 
 \section{Categories}\label{sub:categories} % (fold)
-
 We tried reworking to use dynamically sized vectors instead of compile time sized arrays. Big rework and refactor. Benching showed slower running times. Instead we went with compile time script to set constants.
 
 % subsection Array structure (end)
