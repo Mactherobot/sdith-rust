@@ -170,14 +170,14 @@ The report is structured as follows: \autoref{ch:prelim} provides the necessary 
 
 In this section, we outline the mathematical and cryptographic foundations necessary to understand the SD-in-the-Head scheme and its components, providing a step-by-step progression from the basics to the construction of the protocol.
 
-We begin by introducing the essential subroutines that underpin the SD-in-the-Head protocol. This includes \textbf{Galois Finite Fields} $\mathbb{F}_q$~\cite{martinez2023syndromes, reed1960polynomial, brownadvanced} along with cryptographic primitives; \textbf{collision-resistant hash functions} and \textbf{Merkle tree commitment scheme}~\cite{becker2008merkle}. In addition, we provide short introductions to the foundational protocols of \textbf{Secure Multi-Party Computation} (MPC) and \textbf{Zero-Knowledge} (ZK) proofs, which serve as the underlying cryptographic protocols.
+We begin by introducing the essential subroutines that underpin the SD-in-the-Head protocol. This includes \textbf{Galois Finite Fields}~\cite{martinez2023syndromes, reed1960polynomial, brownadvanced} along with cryptographic primitives; \textbf{collision-resistant hash functions} and \textbf{Merkle tree commitment scheme}~\cite{becker2008merkle}. In addition, we provide short introductions to the foundational protocols of \textbf{Secure Multi-Party Computation} (MPC) and \textbf{Zero-Knowledge} (ZK) proofs, which serve as the underlying cryptographic protocols.
 
 Next, we delve into the Syndrome Decoding (SD) problem, which forms the backbone of the SD-in-the-Head protocol. This includes an overview of the problem definition~\cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}, and its polynomial representation. This will support an understanding of how the protocol operates on hard instances of the SD problem.
 
-Building upon these foundations, we lay the groundwork for the construction of the SD-in-the-Head protocol. First, we discuss the \textbf{Multi-Party-Computation-in-the-Head} (MPCitH) paradigm, explaining how it is leveraged to construct efficient ZK proofs~\cite{ishai2007zero}. Additionally we detail the role of the MPC preprocessing~\cite{baum2020concretely} and linear secret-sharing scheme~\cite{feneuil2023threshold}, which dramatically improves the efficiency of the MPCitH construction, and verification. Next, we introduce the \textbf{Fiat-Shamir heuristic}, a powerful tool that transforms an interactive ZK protocol into a non-interactive signature scheme~\cite{fiat1986prove}.
+Building upon these foundations, we lay the groundwork for the construction of the SD-in-the-Head protocol. First, we discuss the \textbf{Multi-Party-Computation-in-the-Head} (MPCitH) paradigm, explaining how it is leveraged to construct efficient ZK proofs~\cite{ishai2007zero}. Additionally we detail the role of the MPC preprocessing~\cite{baum2020concretely} and linear secret-sharing scheme~\cite{feneuil2023threshold}, which dramatically improve the efficiency of the MPCitH construction, and verification. Next, we introduce the \textbf{Fiat-Shamir heuristic}, a powerful tool that transforms an interactive ZK protocol into a non-interactive signature scheme~\cite{fiat1986prove}.
 
 \section{Galois Finite Field}\label{sec:gf256}
-Finite fields lays the basis for many cryptographic protocols and primitives. In essence, finite field theory describes the research into the relation and properties between numbers, while disregarding the numbers themselves. In order to define finite fields, we first need to define a \textit{group} and a \textit{finite field} (\autoref{def:group} and \autoref{def:field}, respectively).
+Finite fields lays the basis for many cryptographic protocols and primitives. In essence, finite field theory describes the relation and properties between numbers, while disregarding the numbers themselves. In order to define finite fields, we first need to define a \textit{group} and a \textit{finite field} (\autoref{def:group} and \autoref{def:field}, respectively).
 
 \begin{definition}\label{def:group}
   A group $\mathbb{G}$ is a tuple $(\mathbb{G}, \times, 1)$ where, $\mathbb{G}$ is the set of elements in the group, $\times$ is a binary operator, and $1$ is the multiplicative identity. The group $\mathbb{G}$ must satisfy the following properties:
@@ -204,9 +204,9 @@ Finite fields lays the basis for many cryptographic protocols and primitives. In
 \end{definition}
 
 \noindent
-The most commonly known finite fields are the prime fields $\mathbb{F}p$, widely used in protocols like RSA. These fields can be extended into $\mathbb{F}{p^n}$, containing $p^n$ elements. However, prime fields are not efficient for iterating over large numbers of digits, a common requirement in protocols such as SD-in-the-Head. For better efficiency, we require a field that can be represented using bits or bytes. One method to achieve this is by constructing fields commonly known as Galois fields. Consider the simplest prime field $\mathbb{F}_2 = ({0,1}, \texttt{XOR}, \texttt{AND}, 0, 1)$. It is straightforward to verify that this field satisfies the properties outlined in \autoref{def:field}.
+The most commonly known finite fields are the prime fields $\mathbb{F}_p$, widely used in discrete logarithm cryptosystems, such as ECDSA and ElGamal. These fields can be extended into $\mathbb{F}_{p^n}$, containing $p^n$ elements which we will describe in \autoref{sub:field_extension}. However, prime fields are not efficient for iterating over large numbers, due to the modular reduction overhead, a common requirement in protocols such as SD-in-the-Head. For better efficiency, we require a field that can be represented using bits or bytes. One method to achieve this is by constructing fields commonly known as Galois fields. Consider the simplest prime field, also called binary field, $\mathbb{F}_2 = ({0,1}, \texttt{XOR}, \texttt{AND}, 0, 1)$. It is straightforward to verify that this field satisfies the properties outlined in \autoref{def:field}.
 
-The Galois field $\mathbb{F}{2^n}$ is an extension field of $\mathbb{F}2$, defined as $\mathbb{F}{2^n}$. This field is constructed by selecting an irreducible polynomial $p(x)$ of degree $n$ with coefficients in $\mathbb{F}2$. The elements of $\mathbb{F}{2^n}$ are represented as polynomials of degree at most $n-1$ with coefficients in $\mathbb{F}2$. Consequently, $\mathbb{F}{2^n}$ contains exactly $2^n$ elements. The polynomial $p(x)$ ensures that $\mathbb{F}_{2^n}$ forms a valid field as it defines the modular reduction in multiplication.
+The Galois field $\mathbb{F}{2^n}$ is an extension field of $\mathbb{F}2$, defined as $\mathbb{F}{2^n}$. This field is constructed by selecting an irreducible polynomial $f(x)$ of degree $n$ with coefficients in $\mathbb{F}2$. The elements of $\mathbb{F}{2^n}$ are represented as polynomials of degree at most $n-1$ with coefficients in $\mathbb{F}2$. Consequently, $\mathbb{F}{2^n}$ contains exactly $2^n$ elements. The polynomial $f(x)$ ensures that $\mathbb{F}_{2^n}$ forms a valid field as it defines the modular reduction in multiplication.
 
 Each element in $\mathbb{F}_{2^n}$ is represented as a polynomial of degree at most $n-1$ with coefficients in $\mathbb{F}_2$.
 
@@ -214,16 +214,17 @@ Each element in $\mathbb{F}_{2^n}$ is represented as a polynomial of degree at m
   a(x) = a_{n-1}x^{n-1} + a_{n-2}x^{n-2} + \cdots + a_1x + a_0
 \end{align*}
 
+\noindent
 where $a_i \in \mathbb{F}_2$ This corresponds directly into the 8-bit binary representation $a_{n-1}a_{n-2}\dots a_1a_0$. The addition and multiplication operations within $\mathbb{F}{2^n}$ are defined as follows:
 
 \begin{itemize}
-  \item \textbf{Addition}: The addition of two elements $a,b \in \mathbb{F}_{2^n}$ is defined as the bitwise XOR of the two elements.
+  \item \textbf{Addition}: The addition of two elements $a,b \in \mathbb{F}_{2^n}$ is defined as the bitwise XOR of the two elements. Due to the fact that it corresponds to addition modulo $2$.
   \item \textbf{Multiplication}: The multiplication of two elements $a,b \in \mathbb{F}_{2^n}$ is defined as the multiplication of the two polynomials modulo the irreducible polynomial $p(x)$.
 \end{itemize}
 
 A common choice for the irreducible polynomial is the Rijndael polynomial $p(x) = x^8 + x^4 + x^3 + x + 1$ used in the AES protocol~\cite{brownadvanced}. This field is commonly known as $\mathbb{F}_{2^8}$. The size of the field allows us to represent elements as bytes, which is efficient for iterating over large numbers of digits and it contains all the elements of a byte.
 
-\subsubsection{Field extension}
+\subsubsection{Field extension}\label{sub:field_extension}
 
 An advantageous property of Galois fields is that they can easily be extended, like $\mathbb{F}_{2}$ to $\mathbb{F}_{2^8}$. To ensure security in the SD-in-the-Head protocol, the field $\mathbb{F}_{2^8}$, which we shall denote as $\mathbb{F}_q$ is extended to encompass the field 32-bit unsigned integers. This can be done as a \textit{tower extension} by first building a degree-2 extension to $\mathbb{F}_{q^2}$ using the irreducible polynomial $F_{q^2} = F_q[X] / (X^2 + X + 32)$ and finally extending this field to $\mathbb{F}_{q^4}$ using the irreducible polynomial $F_{q^4} = F_q[Z] / (Z^2 + Z + 32(X))$. While you could create the final field independently, the tower extension allows us to reuse the construction of the intermediate field. Addition and multiplication in the extension fields are represented as the following
 
@@ -231,7 +232,7 @@ An advantageous property of Galois fields is that they can easily be extended, l
   a     & = a_0 + a_1x                                               &  & a \in \mathbb{F}_{q^\eta}, a_0, a_1 \in \mathbb{F}_q \\
   b     & = b_0 + b_1x                                               &  & b \in \mathbb{F}_{q^\eta}, b_0, b_1 \in \mathbb{F}_q \\\\
   a + b & = (a_0 + a_1x) + (b_0 + b_1x) = (a_0 + b_0) + (a_1 + b_1)x                                                           \\
-  a * b & = (a_0 + a_1x) * (b_0 + b_1x)                                                                                        \\
+  a \cdot b & = (a_0 + a_1x) \cdot (b_0 + b_1x)                                                                                        \\
         & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1x^2                                                                            \\
         & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1(x + 32)                                                                       \\
         & = a_0b_0 + 32a_1b_1 + (a_0b_1 + a_1b_0 + a_1b_1)x
@@ -241,7 +242,7 @@ An advantageous property of Galois fields is that they can easily be extended, l
 We assume the reader has basic knowledge of cryptographic primitives but will provide brief introductions to the primitives used in the SD-in-the-Head protocol. If you know the basics feel free to skip this section.
 
 \subsection{Collision Resistant Hash Functions}
-We denote a hash function by a generator $\mathcal{H}$ which on input of a security parameter $k$ outputs a function $h : \{0,1{\}}^* \rightarrow \{0,1{\}}^k$. We denote a hash function $h$ to be cryptographically secure if it satisfies the following properties
+We denote a hash function by a generator $\mathcal{H}$ which on input of a security parameter $k$ outputs a function $h : \{0,1{\}}^* \rightarrow \{0,1{\}}^{2k}$. We denote a hash function $h$ to be cryptographically secure if it satisfies the following properties
 
 \begin{lemma}[Preimage Resistance]\label{lem:preimage}
   Given a hash function $h$ and a hashed message $c$, there exist no PPT algorithm that can find a message $m$ such that $h(m) = c$ with non-negligible probability.
@@ -256,17 +257,17 @@ The consensus among researchers indicates that for combinatorial problems, such 
 In proving the security of hash functions, researchers often resort to models like the Quantum Random Oracle Model (QROM), while there is significant work being done to further prove the future security of hash functions~\cite{dtuPostquantumSecurity}.
 
 \subsection{Merkle Tree Commitment Scheme}
-A commitment scheme allows a \textit{prover} to commit to a value $v$ and later prove that the revealed value is identical to the one initially committed to. The scheme satisfies the following two properties:
+A commitment scheme allows a \textit{prover}, Alice, to commit to a value $v$,\textit{heads} or \textit{tails}, and later prove, when Bob has flipped a coin, that the revealed value is identical to the one initially committed to, so if Alice picks \textit{heads} she can not change it after Bob has flipped the coin, and Bob does not know what Alice picked. A simple scheme can be created with a hash function, where the commitment is simply the hash of the value. Now Alice can send this hash value to Bob, neither Bob nor Alice can change the value, and Bob does not learn anything about the value. After Bob has flipped the coin, Alice can reveal the value to Bob. This way none of the parties can cheat in a simple coin flip.
 
+A commitment scheme should satisfy the following two properties:
 \begin{lemma}[Binding]\label{lem:binding}
   Given a commitment $c$ to a value $v$, a dishonest prover can only change the committed value and have the verifier accept the new value with negligible probability.
 \end{lemma}
-
 \begin{lemma}[Hiding]\label{lem:hiding}
   Given a commitment $c$ to a value $v$, the verifier can only recover the value $v$ with negligible probability.
 \end{lemma}
 
-A variant of such a scheme which allows for partial opening, is the \textit{Merkle Tree Commitment scheme}.
+A variant of such a scheme which allows for partial opening, meaning that the prover does not have to open the entire commitment, but can instead open a subset of the commitment, is the \textit{Merkle Tree Commitment scheme}.
 
 Let $v_1, \dots, v_n$ be the values to be committed, and let $h$ denote a cryptographically secure hash function. The leaves of the Merkle tree, $a_{0,1}, \dots, a_{0,n}$, are initialized as the hash values of the input values:
 \[
@@ -281,12 +282,12 @@ where $|$ indicates concatenation of the child nodes.
 
 The root node, $a_{h,0}$, where $h$ is the height of the tree, serves as the commitment value and is sent to the verifier.
 
-To reveal a committed value $v$, the prover computes the authentication path for the value's leaf node $a_{0,p}$, where $p$ is the index of the value. The authentication path $A$ consists of the sequence of sibling nodes required to reconstruct the root. The first element in the authentication path, $A_0$, is the sibling of the leaf node:
+To reveal a committed value $v$, the prover computes the authentication path for the value's leaf node $a_{0,l}$, where $l$ is the index of the value. The authentication path $A$ consists of the sequence of sibling nodes required to reconstruct the root. The first element in the authentication path, $A_0$, is the sibling of the leaf node:
 \[
   A_0 =
   \begin{cases}
-    a_{0,p-1}, & \text{if } p \text{ is odd,}  \\
-    a_{0,p+1}, & \text{if } p \text{ is even.}
+    a_{0,l-1}, & \text{if } l \text{ is odd,}  \\
+    a_{0,l+1}, & \text{if } l \text{ is even.}
   \end{cases}
 \]
 This element is recorded as $auth_0$.
@@ -315,7 +316,7 @@ Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling
 
 \begin{itemize}
   \item \textbf{Correctness}: The output of the protocol is the correct evaluation of the function $f$ on the inputs of the parties $w_i$ and the public input $x$
-  \item \textbf{Privacy}: The protocol ensures that no partylearns anything about the inputs of the other parties beyond what can be inferred from the output of the function.
+  \item \textbf{Privacy}: The protocol ensures that no party learns anything about the inputs of the other parties beyond what can be inferred from the output of the function.
 \end{itemize}
 
 In terms of security needed for the SD-in-the-Head protocol, we define the following security requirements for the MPC protocol $\Pi_f$
@@ -325,10 +326,10 @@ In terms of security needed for the SD-in-the-Head protocol, we define the follo
   \item \textbf{Low-threshold security}: The protocol is secure against a coalition of up to $\ell$ parties, where $\ell$ is the threshold. This is also known as a $\ell$-private MPC protocol.
 \end{itemize}
 
-We denote the view $V_i$ of a party $P_i$ in the protocol as $(i, x, r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share, and $(m_1, \dots, m_j)$ is the messages received by $P_i$ in the first $j+1$ rounds of the protocol. We say that two views $V_i, V_j$ are \textit{consistent} according to the public input $x$ if the views are identical given the public input $x$.
+We denote the view $V_i$ of a party $P_i$ in the protocol as $(i, x, r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share, and $(m_1, \dots, m_j)$ are the messages received by $P_i$ in the first $j+1$ rounds of the protocol. We say that two views $V_i, V_j$ are \textit{consistent} according to the public input $x$ if the views are identical given the public input $x$.
 
 \subsection{Zero-Knowledge Proofs}\label{sec:zk}
-This section will only give a brief introduction to \textit{two-party interactive} Zero-Knowledge (ZK) schemes for a \textit{prover} and a \textit{verifier}. We denote a ZK $\Pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$. Let $x$ be a public statement in \textbf{NP} and $w$ be a witness such that $(x, w) \in \mathcal{R}$~\cite{feneuil2023threshold}.
+This section will give a brief introduction to \textit{two-party interactive} Zero-Knowledge (ZK) schemes for a \textit{prover} and a \textit{verifier}. The intuition behind a Zero-Knowledge proof of knowledge is that the prover can convince the verifier that they know a secret $w$, such that $x$ is true, without revealing the secret $w$ to the verifier. This could be someone wanting to prove that they are above the age of 18 without revealing their age. We denote a ZK $\Pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$. Let $x$ be a public statement in \textbf{NP} and $w$ be a witness such that $(x, w) \in \mathcal{R}$~\cite{feneuil2023threshold}.
 
 \begin{definition}
   Let $x$ be a statement of language $L$ in \textbf{NP}, and $W(x)$ the set of witnesses for $x$ such that the following relation holds:
@@ -341,19 +342,19 @@ This section will only give a brief introduction to \textit{two-party interactiv
 
 The SD-in-the-Head protocol is built on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field (see \autoref{sec:gf256}). This protocol uses a variant of the SD problem, referred to as the \textit{coset weights} problem, first introduced by Berlekamp and McEliece in 1978~\cite{berlekamp1978inherent}. The problem is defined as follows:
 \begin{definition}\label{def:syndrome}
-  Given $H \in \mathbb{F}^{(m-k)\times m}_q$ and $y \in \mathbb{F}^{m-k}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t.\ wt$(x) \leq w$ and $Hx = y$.
+  Given $H \in \mathbb{F}^{(m-k)\times m}_q$ and $y \in \mathbb{F}^{m-k}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t.\ wt$(x) \leq w$ such that $Hx = y$.
 \end{definition}
-Generating such an instance is straightforward: one can construct a uniformly random parity-check matrix $H$ and a codeword $x$ (with $wt(x) \leq w$), and then compute the syndrome $y = Hx$. In the SD-in-the-Head protocol, the values of the matrix $H$ and the syndrome $y$ are elements of the finite field $\mathbb{F}_q$ which we will explain further in \autoref{sec:gf256}. The SD problem is well-known to be NP-complete for random instances~\cite{berlekamp1978inherent} also referred to as the general decoding problem.To illustrate the computational difficulty, solving the problem using brute force would require $O(\binom{m}{w} q^w)$ operations, which is computationally infeasible for large $m$ and $k$.
+Generating such an instance is straightforward: one can construct a uniformly random parity-check matrix $H$ and a codeword $x$ (with $wt(x) \leq w$), and then compute the syndrome $y = Hx$. In the SD-in-the-Head protocol, the values of the matrix $H$ and the syndrome $y$ are elements of the finite field $\mathbb{F}_q$ explained previously in \autoref{sec:gf256}. The SD problem is well-known to be NP-complete for random instances~\cite{berlekamp1978inherent} also referred to as the general decoding problem.To illustrate the computational difficulty, solving the problem using brute force would require $O(\binom{m}{w} q^w)$ operations, which is computationally infeasible for large $m$ and $k$.
 
 \subsubsection{Standard form of the parity-check matrix}\label{sec:standard_form_of_the_parity_check_matrix}
-To improve the performance and reduce the key size of the protocol, its possible to utilize the fact that the matrix $H$ can be in standard form. $H = (H'|I_{m-k}) $ Where $H' \in \mathbb{F}^{(m-k)\times k}_q$. This allows for the following representation of the syndrome:
+To improve the performance and reduce the key size of the protocol, its possible to utilize the fact that the matrix $H$ can be in standard form. $H = (H'|I_{m-k}) $ Where $H' \in \mathbb{F}^{(m-k)\times k}_q$, and $I_{m-k}$ is the identity matrix of size $m-k$. This allows for the following representation of the syndrome:
 \begin{equation}
   y = Hx = H'x_a + x_b\label{eq:standard_form_of_the_parity_check_matrix}
 \end{equation}
 with $x = (x_a | x_b)$. This improves the performance of the algorithms used in the SD-in-the-Head protocol in the following ways
 \begin{itemize}
   \item At the MPC layer, we only need to reveal one share $x_a$. Due to the fact that the other share $x_b$ can simply be recomputed by $x_b = y - H'x_a$.
-  \item By linearity of the above relation one only needs to send $x_a$ in order to recover the SD instance. So from a sharing of $x_a$ one can check the correctness of the SD instance.
+  \item By linearity of the above relation one only needs to send $x_a$ in order to recover $Hx = H'x_a + x_b$ the Syndrome decoding instance. So from a sharing of $x_a$ one can check the correctness of the SD instance.
 \end{itemize}
 
 \subsubsection{Polynomial representation of SD}\label{sec:polynomial_representation}
@@ -363,7 +364,7 @@ These are used for checking the correctness of the SD solution by verifying the 
   \centering
   S\cdot Q = P\cdot F\label{eq:polynomial_representation}
 \end{equation}
-Let $f_1,\dots, f_q$ denote elements of $\mathbb{F}_q$, then the polynomials are defined as:
+Let $f_1,\dots, f_q$ denote all the elements of $\mathbb{F}_q$ and $x\in \mathbb{F}^m_q$ is a binary vector with hamming weight $wt(x) /leq w$, then the polynomials are defined as:
 \begin{itemize}
   \item $S\in \mathbb{F}_q[X]$ is the Lagrange interpolation of the coordinates of $x$, such that it matches $S(f_i) = x_i$ for $i\in [1:m]$ and has degree $\text{deg}(S) \leq m-1$
   \item $Q\in \mathbb{F}_q[X]$ is defined by $Q(X) = \prod_{i\in E}(X - f_i)$. $E \subset [1:m]$ with order $|E| = w$, such that $E$ contains the non-zero coordinates of $x$. $Q$ has degree $\text{deg}(Q) = w$.
@@ -374,14 +375,14 @@ We can now look at the relation in \autoref{eq:polynomial_representation}. If we
 
 For the right-hand side, the polynomial $F$ is the vanishing polynomial for the set ${f_1, \dots, f_m}$, so $F(f_i) = 0\ \forall\ f_i \in [1:m]$. The polynomial $P$ is needed to match the degree of $S \cdot Q$. As the degree of $F$ is $m \leq \text{deg}(S\cdot Q) \leq m + w - 1$.
 
-It is now apparent that if the prover can convince the verifier that they know of polynomials $P,Q$ such that $S\cdot Q = F \cdot P = 0$ at all points $f_i \in [1:m]$. The following must hold, either $S(f_i) = x_i = 0$ or $Q(f_i) = 0$. However, the polynomial $Q$ can be zero in at most $w$ points based on the degree, this means that S is non-zero in at most $w$ points, based on the construction, which in turn implies that $x$ has weight as most $w$.
+It is now apparent that if the prover can convince the verifier that they know of polynomials $P,Q$ such that $S\cdot Q = F \cdot P = 0$ at all points $f_i \in [1:m]$. The following must hold, either $S(f_i) = x_i = 0$ or $Q(f_i) = 0$. However, the polynomial $Q$ can be zero in at most $w$ points based on the degree, this means that S is non-zero in at most $w$ points, based on the construction, which in turn implies that $x$ has weight at most $w$.
 
-With this, we can define the soundness of the MPC protocol as follows:
+With this, we can define the soundness of the language for ZKP as follows:
 \begin{equation}
   wt(x) \leq w \Leftrightarrow \exists P,Q \text{  with  }\text{deg}(P)\leq w-1\text{  and  }\text{deg}(Q) = w\text{ s.t. \autoref{eq:polynomial_representation} holds}\label{eq:soundness}
 \end{equation}
 
-We can now share a witness $(x_a, Q, P)$. Now based on the relation \autoref{eq:standard_form_of_the_parity_check_matrix}, $x$ can be locally computed along with the polynomial $S$, this can then be used to run an equality test for the relation $S \cdot Q = P \cdot F$.
+We can now share a witness $(x_a, Q, P)$. Now based on the relation from \autoref{eq:standard_form_of_the_parity_check_matrix}, $x$ can be locally computed along with the polynomial $S$, this can then be used to run an equality test for the relation $S \cdot Q = P \cdot F$.
 
 \subsubsection{False positive probability}\label{sub:equality_test}
 The equality test from \autoref{eq:polynomial_representation} has a small probability of false positives, denoted $p$. To reduce this probability, the relation is evaluated at random points $\{r_k \in \mathbb{F}_q{\}}_{k\in[t]}$. By Schwartz-Zippel \autoref{lem:schwartz}, the probability of a false positive is bounded by $p \leq \frac{t}{q}$, where $q$ is the size of the finite field $\mathbb{F}_q$. In short, this makes it unlikely that the relation will hold for all points $r_k$ if the relation is not sound according to \autoref{eq:soundness}. Furthermore, we can tweak the parameters $t$ and $q$ to reduce $p$.
@@ -394,7 +395,7 @@ The equality test from \autoref{eq:polynomial_representation} has a small probab
 
 The SD-in-the-Head protocol construction is based on the \textit{Multi-Party Computation in the Head} (MPCitH) framework. In this section we will give an introduction to the framework and how it can be used to construct ZK proofs, which in turn can be combined with the Fiat-Shamir heuristic to create a signature scheme.
 
-The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as its security relies on assumptions that are still believed to be quantum secure. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold} which has no known quantum algorithms that break their security.
+The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as its security relies on assumptions that are still believed to be quantum secure. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold} which have no known quantum algorithms that break their security.
 
 We will give insight into the basic construction suggested by Ishai et al~\cite{ishai2007zero}.
 
@@ -529,7 +530,7 @@ Zero-knowledge protocols typically rely on the verifier to issue a challenge to 
 
 To adapt a zero-knowledge protocol into a signature scheme, the prover eliminates the need for a verifier to provide randomness. Instead, the prover generates seeds $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$.the randomness using a pseudo-random function. This function takes as input the message to be signed along with some random values generated by the prover. The output of this function serves as the challenge. With this, the prover can compute the required values to prove authenticity without external interaction.
 
-In the context of the SD-in-the-Head protocol, the prover uses the pseudo-randomly generated challenge to locally compute the witness values required for the proof. These witness values are derived through the MPC protocol, where the prover simulates the necessary computations internally, generating and processing the shares "in their head." This eliminates the need for the verifier's active participation in the MPC protocol, streamlining the signature generation process.
+In the context of the SD-in-the-Head protocol, the prover uses the pseudo-randomly generated challenge to locally compute the witness values required for the proof. These witness values are derived through the MPC protocol, where the prover simulates the necessary computations internally. This eliminates the need for the verifier's active participation in the MPC protocol, streamlining the signature generation process.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -570,7 +571,7 @@ First extend $F_q$ to $F_{q^4} = F_q[Z] / (Z^2 + Z + 32(X))$. This is done by re
 
 \subsubsection{Polynomial evaluation}
 \todo{Should this be moved to the specification section?}
-For polynomial evaluation in the multiparty computation algorithm, seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. The polynomial $P(x)$ is defined as
+For polynomial evaluation in the algorithm, seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. The polynomial $P(x)$ is defined as
 \begin{align}
   \textstyle\bigcup_{|Q|}(F_q)^{|Q|} \times F_q^\eta & \rightarrow F_q^\eta                 \nonumber                                                    \\
   Q(r)                                               & = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1} &  & Q_i \in F_q, r \in F_q^\eta\label{eq:mpcpoly}
@@ -579,75 +580,7 @@ For polynomial evaluation in the multiparty computation algorithm, seen in \auto
 \todo{See gf256\_ext.rs}
 
 \section{Merkle Tree Commitment}
-<<<<<<< HEAD
 We chose to follow the sepcification definitions for the merkle tree. But have added some functionality to it which we will describe in the implementation section \autoref{sub:merkle_tree_impl}.
-=======
-For the merkle tree implementation, we have followed the specification. But added a function that calculates bottom up the revealed nodes based on the view opening challenges. This is used to know the length of the authentication path that is added to the signature and is needed when parsing the signature for verification. The algorithm uses the queue structure which is also mentioned in the spec, where the tree structure is a 1D array with the last elements being the leaf. First it checks for empty input. Then we initiate an empty list to hold the revealed nodes. Now in order to traverse the tree we will get the $heightIndex$ and $lastIndex$, which are the current layer of the tree, and the index of the 1D array of where the current layer stops. Lastly we need a queue to hold the indexes. Now in order to find the revealed nodes it starts by adding the indexes of the selected leaves to the queue. Then we go through the queue until the next index is $1$ which indicates that we are at the root. In the while loop we first get the current index, and then check if we have gone up a layer in the tree, and if the current node is a left child. If the current node is a left child and it is the last index in the layer, then we can just skip to the next node because we know it has no sibling. If it is not the last node we get the next node as a candidate, if the queue is not empty. If the current node is still the left child, and the next node in the queue is the other child of the same parent we do not need to add this as a revealed node as it is part of the known values. But if the next node is not the right child of the current node we add it as a revealed node. If the current node is not the left child we add the left child to the revealed nodes. And then we add the parent index to the queue. When we exit the while loop we have traversed the tree bottom up adding for each layer the neighbours of the selected leaves. It works as follows:
-
-\begin{algorithm}
-  \caption{Get Revealed Nodes for Selected Leaves in Merkle Tree}
-  \begin{algorithmic}[1]
-    \Require $selectedLeaves$: List of selected leaf indices
-    \Ensure List of revealed node indices
-
-    \Function{getRevealedNodes}{$selectedLeaves$}
-    \If{$selectedLeaves$ is empty}
-    \State \Return empty list
-    \EndIf
-
-    \State $revealedNodes \gets \text{empty list}$
-    \State $(heightIndex,\; lastIndex) \gets (1 \ll treeHeight,\; treeNodes - 1)$
-    \State $queue \gets \text{empty queue}$
-
-
-    \ForAll{$leaf \in selectedLeaves$} \Comment{Add commitments to the queue}
-    \State $val \gets (1 \ll treeHeight) + leaf$
-    \If{$\text{queue.add}(val)$ fails}
-    \State \textbf{panic} ``Could not add element to queue''
-    \EndIf
-    \EndFor
-
-    \While{$queue.peek() \neq 1$} \Comment{Do until we reach the root}
-    \State $index \gets queue.remove()$
-
-    \If{$index < heightIndex$}
-    \State $heightIndex \gets heightIndex \gg 1$
-    \State $lastIndex \gets lastIndex \gg 1$
-    \EndIf
-
-    \State $isLeftChild \gets (index \; \% \; 2 == 0)$
-
-    \If{$isLeftChild \land index == lastIndex$}
-    \Comment{Node has no sibling}
-    \State \textbf{continue}
-    \Else
-    \State $candidateIndex \gets 0$
-    \If{\textbf{not} $queue.isEmpty()$}
-    \State $candidateIndex \gets queue.peek()$
-    \EndIf
-
-    \If{$isLeftChild \land (candidateIndex == index + 1)$}
-    \State $queue.remove()$
-    \ElsIf{$isLeftChild$}
-    \State $revealedNodes.append(index + 1)$
-    \Else
-    \State $revealedNodes.append(index - 1)$
-    \EndIf
-    \EndIf
-
-    \State $parentIndex \gets index \gg 1$
-    \If{$queue.add(parentIndex)$ fails}
-    \State \textbf{panic} ``Could not add element to queue''
-    \EndIf
-    \EndWhile
-
-    \State \Return $revealedNodes$
-    \EndFunction
-
-  \end{algorithmic}
-\end{algorithm}
-
->>>>>>> f3b6cab (quicksave)
 \todo{Can we use Haraka v2}
 
 \section{Hashing and XOF}
