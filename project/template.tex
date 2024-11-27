@@ -19,7 +19,8 @@
 \usepackage{lipsum}
 \usepackage{ctable} % for \specialrule command
 \usepackage{enumitem}
-
+\usepackage{stmaryrd}
+ 
 
 
 \setlength{\parindent}{10pt} % indentation
@@ -71,6 +72,9 @@
 \noindent{\Large\sf Master's Thesis, Computer Science\\[1ex]
   \today \\[1ex] Advisor: Diego F. Aranha\\[15ex]}\\[\fill]}
 \epsfig{file=logo.eps}\clearpage
+
+% A math share macro
+\newcommand{\sh}[1] {\ensuremath{\llbracket #1 \rrbracket}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -313,7 +317,7 @@ This property is particularly advantageous in protocols like the SD-in-the-Head 
 \todo{TODO}
 
 \begin{definition}[Opening a shared value]\label{def:ss-opening}
-  Denote \texttt{open}
+  Denote \texttt{open}$(\sh{s})$ to be the opening of the shared value $s$ where each party $P_i$ broadcasts its share $s_i$ allowing all participants to reconstruct the secret value $s$.
 \end{definition}
  
 \begin{definition}[$(\ell, n)$-private secret sharing scheme]\label{def:mpc-ss-threshold}
@@ -437,10 +441,10 @@ The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, buil
 We will give insight into the basic construction suggested by Ishai et al~\cite{ishai2007zero}.
 
 \begin{definition}\label{def:mpcinth_basic}
-  Given a semi-honest $\ell$-private MPC protocol $\Pi_f$ with perfect correctness, a relation $\mathcal{R}$ for some public statement $x$, a witness $w$. Let $w_i$ be an additive secret share of $[[w]]$ for the party $P_i$. Let $f$ be a $n$-party functionality $f(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, i.e. $f(x,w)$ accepts if $(x,w) \in \mathcal{R}$.
+  Given a semi-honest $\ell$-private MPC protocol $\Pi_f$ with perfect correctness, a relation $\mathcal{R}$ for some public statement $x$, a witness $w$. Let $w_i$ be an additive secret share of $\sh{w}$ for the party $P_i$. Let $f$ be a $n$-party functionality $f(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, i.e. $f(x,w)$ accepts if $(x,w) \in \mathcal{R}$.
 
   \begin{enumerate}[parsep=2pt, itemsep=0pt]
-    \item The prover builds a random sharing of $[[w]] = w_1, \dots, w_n$. Then
+    \item The prover builds a random sharing of $\sh{w} = w_1, \dots, w_n$. Then
           \begin{enumerate}[nolistsep]
             \item Simulates the outputs of the MPC protocol $\Pi_f$ on the inputs $(x, w_1, \dots, w_n)$ and the randomness $r_1, \dots, r_n$.
             \item Prepares views $V_1, \dots, V_n$ of the parties in the protocol $\Pi_f$.\footnote{Remember that the views include the inputs, randomness and messages received by the parties.}
@@ -477,22 +481,24 @@ The basic MPC-in-the-Head protocol serves as a foundation for constructing zero-
 
 Pre-processing in MPC is an optimization technique that leverages shares of correlated randomness, such as randomness derived from a shared seed, which remains independent of the inputs to the protocol. This independence allows the parties to accelerate computation and perform pre-computation in advance. Consequently, this approach enables the design of MPCitH protocols that can utilize any $N$-party MPC protocol during pre-processing with minimal impact on the proof size. This method was first introduced by~\cite{katz2018improved} as part of their \textit{cut-and-choose} approach. 
 
-In order to form a ZK proof for the SD polynomial relation $P \cdot F = S \cdot Q$ (\autoref{sec:polynomial_representation}), we need a MPC protocol that allows us to securely compute an arithmetic circuit. For this we use \textit{beaver triples}.
+\subsubsection{MPC over arithmetic circuits}
+
+In order to form a ZK proof for the SD polynomial relation in \autoref{sec:polynomial_representation}, we need a MPC protocol that allows us to securely compute an arithmetic circuit. For this we use \textit{beaver triples}.
 
 \begin{definition}[Beaver triple~\cite{beaver1992efficient}]\label{def:beaver}
   A beaver triple is a tuple $(a, b, c)$ where $a \cdot b = c$ and $a, b, c \in \mathbb{F}_q$.
 \end{definition}
 
-Consider the protocol for a single multiplication gate below by~\cite{baum2020concretely}, based on the MPC protocol described in~\cite{damgaard2012multiparty}.
+Consider the protocol for a single multiplication gate below by~\cite{baum2020concretely}, based on the MPC protocol described in~\cite{damgaard2012multiparty}. Note, that a similar technique can be applied to square relations. Howeverwe focus here solely on multiplication, as it suffices for the SD relation.
 
 \begin{definition}[Verification of a multiplication triple by sacrificing another]\label{def:sacrifice}
-  Given an input triple $(x,y,z) \in \mathbb{F}$ random shared triple $([[a]], [[b]], [[c]]) \in \mathbb{F}$, it is possible to verify the correctness of the statement $z = x \cdot y$ without revealing any information on either of the input. Define \texttt{open} to denote the opening of a shared value by broadcasting the shares between all parties allowing them to reconstruct the original value.
+  Given an input triple $(x,y,z) \in \mathbb{F}$ random shared triple $(\sh{a}, \sh{b}, \sh{c}) \in \mathbb{F}$, it is possible to verify the correctness of the statement $z = x \cdot y$ without revealing any information on either of the input. Define \texttt{open} according to \autoref{def:ss-opening}.
   \begin{enumerate}
     \item The parties generate a random $\epsilon \in \mathbb{F}$.
-    \item The parties locally set $[[\alpha]] = \epsilon[[x]] + [[a]], [[\beta]] = [[y]] + [[b]]$.
-    \item The parties run \texttt{open}$([[\alpha]])$ and \texttt{open}$([[\beta]])$ to obtain $\alpha$ and $\beta$.
-    \item The parties locally set $[[v]] = \epsilon[[z]] - [[c]] + \alpha  \cdot [[b]] + \beta  \cdot [[a]] - \alpha  \cdot \beta$.
-    \item The parties run \texttt{open}$([[v]])$ to obtain $v$ and accept iff $v = 0$.
+    \item The parties locally set $\sh{\alpha} = \epsilon\sh{x} + \sh{a}, \sh{\beta} = \sh{y} + \sh{b}$.
+    \item The parties run \texttt{open}$(\sh{\alpha})$ and \texttt{open}$(\sh{\beta})$ to obtain $\alpha$ and $\beta$.
+    \item The parties locally set $\sh{v} = \epsilon\sh{z} - \sh{c} + \alpha  \cdot \sh{b} + \beta  \cdot \sh{a} - \alpha  \cdot \beta$.
+    \item The parties run \texttt{open}$(\sh{v})$ to obtain $v$ and accept iff $v = 0$.
   \end{enumerate}
 \end{definition}
 Observe that if both triples are correct multiplication triples (i.e., $z = xy$ and $c = ab$) then the parties will always accept since
@@ -503,13 +509,15 @@ Observe that if both triples are correct multiplication triples (i.e., $z = xy$ 
     & = (\epsilon \cdot xy - \epsilon \cdot xy) + (ab - ab) + (\epsilon \cdot xb - \epsilon \cdot xb) + (ya - ay) + (ba - ab) \\
     & = 0
 \end{align}
-Otherwise, the parties will accept with probability $\frac{1}{|\mathbb{F}|}$ following from \autoref{lem:sacrifice}.
+Otherwise, the parties will accept with probability $\frac{1}{|\mathbb{F}|}$ following from \autoref{lem:mpc-multiplication}.
 
-\begin{lemma}\label{lem:sacrifice}
-  If $([[a]], [[b]], [[c]])$ or $([[x]], [[y]], [[z]])$ is an incorrect multiplication triple then the parties output \texttt{Accept} in the sub-protocol above with probability $\frac{1}{|\mathbb{F}|}$.\footnote{A full proof of this can be found in~\cite{baum2020concretely}.}
+\begin{lemma}\label{lem:mpc-multiplication}
+  If $(\sh{a}, \sh{b}, \sh{c})$ or $(\sh{x}, \sh{y}, \sh{z})$ is an incorrect multiplication triple then the parties output \texttt{Accept} in the sub-protocol above with probability $\frac{1}{|\mathbb{F}|}$.\footnote{A full proof of this can be found in~\cite{baum2020concretely}.}
 \end{lemma}
 
-Note, that a similar technique can be applied to square relations, we focus here solely on multiplication, as it suffices for the SD relation described in \autoref{eq:polynomial_representation}. \autoref{def:cut-and-choose} outlines the fundamental concept of the cut-and-choose technique. For a more comprehensive protocol, refer to the \textit{HVZKAoK Protocol using Cut and Choose} discussed in~\cite{baum2020concretely}. Note
+\subsubsection{ZK from Cut-and-Choose}\label{sec:zk-cut-and-choose}
+
+Building upon the MPC protocol above, \autoref{def:cut-and-choose} outlines the fundamental concept of the cut-and-choose technique. For a more comprehensive protocol, refer to the \textit{HVZKAoK Protocol using Cut and Choose} discussed in~\cite{baum2020concretely}. Note
 
 \begin{definition}[ZK from Cut-and-Choose (Multiplication)]\label{def:cut-and-choose}
   Denote the security parameters $M, N, \tau$ a secure hash function \autoref{sec:prelim_hash} and a \textit{Random Oracle-based commitment scheme}. Given a $N$-private MPC protocol $\Pi_C$ for a circuit $C$ and an ideal functionality $\mathcal{F}$. \textit{Note} that we assume that there is only one multiplication gate in the circuit, to align with our purposes.
@@ -520,9 +528,9 @@ Note, that a similar technique can be applied to square relations, we focus here
       \item $\mathcal{P}$ chooses a master seed $sd_e$ and  expands $sd_e$ to $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$.\footnote{If the seed is expanded in a correlated way, you can send just $sd_e$ and have the verifer recreate the expanded seeds accordingly}
       \item $\mathcal{P}$ computes valid shares of beaver triples (\autoref{def:beaver}) $a_{e,i}$, $b_{e, i}$ and $c_{e,i}$ using $sd_{e,i}$.
       \begin{enumerate}
-        \item To fix the initial randomness of $[c_e]$, recompute $a_e$ and $b_e$ from the shares and set $c_e = a_e \cdot b_e$.
+        \item To fix the initial randomness of $\sh{c_e}$, recompute $a_e$ and $b_e$ from the shares and set $c_e = a_e \cdot b_e$.
         \item Compute $\Delta_e = c_e - \sum_{i=1}^N c_{e,i}$.
-        \item Set the triple of the multiplication gate to ($[a_e], [b_e], [c_e] + \Delta_e$).
+        \item Set the triple of the multiplication gate to ($\sh{a_e}, \sh{b_e}, \sh{c_e} + \Delta_e$).
       \end{enumerate}
       \item $\mathcal{P}$ generates random sharings $w_i$ of the input $w$ using $sd_{e,i}$.
     \end{enumerate}
@@ -537,7 +545,7 @@ Note, that a similar technique can be applied to square relations, we focus here
           \begin{enumerate}[nolistsep]
             \item Step~\ref{itm:cut-choose-r3} was verified
             \item $\mathcal{V}$ verifies the commitments and consistency \autoref{def:mpc-consistent-view} of the views by running $\Pi_C$ as an honest participant using the pseudo-randomness from the seed and \texttt{salt}.
-            \item $\mathcal{V}$ verifies for each $e \in \bar{E}$ that the recomputed output of $\Pi_C$ is $y$
+            \item $\mathcal{V}$ verifies for each $e \in \bar{E}$ that the recomputed output $\sh{y}$ of $\Pi_C$ is $y$
           \end{enumerate}
   \end{enumerate}
 \end{definition}
@@ -555,7 +563,7 @@ We bound probability of $\mathcal{V}$ accepting a cheating outcome of \autoref{d
 
 To re-iterate, we set out to make it so that the communication complexity of the ZK MPCitH protocol was not bounded by $N$. We achieve this by having any communication needed between parties
 
-\subsubsection{Proving a multiplication triple by sacrificing another}\label{sec:sacrifice_beaver}
+\subsubsection{ZK from sacrificing}\label{sec:zk-sacrifice}
 
 \todo{define the function \texttt{open}}
 
@@ -568,13 +576,13 @@ To re-iterate, we set out to make it so that the communication complexity of the
   \textit{$S$ is a $(\ell,n)$ threshold SSS if it satisfies the following properties}:
 
   \begin{itemize}
-    \item \textbf{Share generation}: Given a secret $s$, the scheme generates seeds $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$. $n$ shares $\texttt{share}(s) = [[s]] = [[s_1, s_2, \dots, s_n]]$.
-    \item \textbf{Reconstruction}: Given a subset of shares $[[s']]$ of size $\ell$, the scheme can reconstruct the secret $s = \texttt{open}([[s']])$.
+    \item \textbf{Share generation}: Given a secret $s$, the scheme generates seeds $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$. $n$ shares $\texttt{share}(s) = \sh{s} = [s_1, s_2, \dots, s_n]$.
+    \item \textbf{Reconstruction}: Given a subset of shares $\sh{s'}$ of size $\ell$, the scheme can reconstruct the secret $s = \texttt{open}(\sh{s'})$.
   \end{itemize}
 
 \end{definition}
 
-\textit{Linear secret charing schemes}, or $(+,+)$-homomorphic schemes, refers to secret sharing schemes that are linearly homomorphic over some field $\mathbb{F}$ (say the galois field \texttt{GF256} described in \autoref{sec:gf256}). This means that given shares $[[a]]$ and $[[b]]$ we have that
+\textit{Linear secret charing schemes}, or $(+,+)$-homomorphic schemes, refers to secret sharing schemes that are linearly homomorphic over some field $\mathbb{F}$ (say the galois field \texttt{GF256} described in \autoref{sec:gf256}). This means that given shares $\sh{a}$ and $\sh{b}$ we have that
 \begin{definition}
   A $(\ell,n)$ threshold SSS is $(+,+)$-homomorphic if for any two secrets $s_1$ and $s_2$ and their shares $[[s_1]]$ and $[[s_2]]$, the sum of the shares $[[s_1]] + [[s_2]] = [[s_{11} + s_{21}, s_{12} + s_{22}, \dots, s_{1n} + s_{2n}]]$ is equal to the share of the sum of the secrets $[[s_1 + s_2]]$ for the same subset of shares.
 \end{definition}
@@ -583,7 +591,7 @@ To re-iterate, we set out to make it so that the communication complexity of the
 
 Shamir's Secret Sharing scheme~\cite{shamir1979share}. Shamir's Secret Sharing is a method for distributing a secret amongst a group of participants, each of which is given a share of the secret. The secret can only be reconstructed when a sufficient number of shares are combined together.
 
-For a secret $s$ and a given security threshold $\ell$, the share $[[s]]$ is generated by sampling a random polynomial of degree $t-1$ with $s$ as the free coefficient. Each participant is given a share of the polynomial evaluated at a point. The secret can be reconstructed by interpolating the polynomial from a sufficient number of shares.
+For a secret $s$ and a given security threshold $\ell$, the share $\sh{s}$ is generated by sampling a random polynomial of degree $t-1$ with $s$ as the free coefficient. Each participant is given a share of the polynomial evaluated at a point. The secret can be reconstructed by interpolating the polynomial from a sufficient number of shares.
 
 The $(t,n)$ Shamir's polynomial based secret sharing scheme is $(+,+)$-homomorphic in which the addition of two polynomials secrets equals the Lagrange's interpolation of the sum-of-shares for the same subset of shares.
 
@@ -709,8 +717,8 @@ If we first instantiate an input $i$ and one random input $i^*$ (like the \textt
 \begin{align*}
   i             & = (s_a, Q, P, a,b,c)                                             \\
   i^*           & = ({s_a}^*, Q^*, P^*, a^*,b^*,c^*)                               \\
-  [i] = i + i^* & = ({s_a} + {s_a}^*, Q + Q^*, P + P^*, a + a^*, b + b^*, c + c^*) \\
-                & = ([s_a], [Q], [P], [a], [b], [c])                               \\
+  \sh{i} = i + i^* & = ({s_a} + {s_a}^*, Q + Q^*, P + P^*, a + a^*, b + b^*, c + c^*) \\
+                & = (\sh{s_a}, \sh{Q}, \sh{P}, \sh{a}, \sh{b}, \sh{c})                               \\
   \texttt{chal} & = (\epsilon, r)                                                  \\
   \texttt{pk}   & = (H', y)
 \end{align*}
@@ -743,23 +751,23 @@ This broadcast share is sent to the verifier along with the truncated input shar
   \beta'                & = {S^*}_0(r) + b^* + \overline{\beta}                                  \\
                         & = {S^*}_0(r) + b^* + S_y(r) + b                                        \\
 \end{align*}
-Next, the verifier computes the inverse of the broadcast share to recompute $([a], [b], [c])$ using the \texttt{InverseComputation} function. This is done as per Algorithm 13, line 10.
+Next, the verifier computes the inverse of the broadcast share to recompute $(\sh{a}, \sh{b}, \sh{c})$ using the \texttt{InverseComputation} function. This is done as per Algorithm 13, line 10.
 \begin{align*}
-  (a', b', c') & = \texttt{InverseComputation}([i], (\alpha', \beta', v'),
+  (a', b', c') & = \texttt{InverseComputation}(\sh{i}, (\alpha', \beta', v'),
   (\overline{\alpha}, \overline{\beta}), \texttt{chal}, \texttt{pk}, \texttt{true})                                                  \\\\
-  a'           & = \alpha' - \epsilon \cdot {[Q]}_1(r)                                                                               \\
-               & = \epsilon \cdot {Q^*}_0(r) + a^* + \epsilon \cdot Q_1(r) + a - \epsilon \cdot {[Q]}_1(r)                           \\
-               & = \epsilon \cdot {Q^*}_0(r) - \epsilon \cdot {[Q]}_1(r) + \epsilon \cdot Q_1(r) + [a]                               \\
-               & = \epsilon \cdot ({Q^*}_0(r) - {[Q]}_1(r) +  Q_1(r)) + [a]                                                          \\
-               & = \epsilon \cdot (Q^*_0(r) +  Q^*_0(r)) + [a]                                             &  & \autoref{eq:mpcpoly} \\
-               & = [a]                                                                                     &  & \autoref{eq:mpcpoly} \\
-  b'           & = \beta' - {[S]}_y(r)                                                                                               \\
-               & = {S^*}_0(r) + b^* + S_y(r) + b - {[S]}_y(r)                                                                        \\
-               & = {S^*}_0(r) - {[S]}_y(r) + S_y(r)  + [b]                                                                           \\
-               & = {S^*}_0(r) - S^*_0(r)  + [b]                                                            &  & \autoref{eq:mpcpoly} \\
-               & = [b]                                                                                     &  & \autoref{eq:mpcpoly} \\
+  a'           & = \alpha' - \epsilon \cdot {\sh{Q}}_1(r)                                                                               \\
+               & = \epsilon \cdot {Q^*}_0(r) + a^* + \epsilon \cdot Q_1(r) + a - \epsilon \cdot {\sh{Q}}_1(r)                           \\
+               & = \epsilon \cdot {Q^*}_0(r) - \epsilon \cdot {\sh{Q}}_1(r) + \epsilon \cdot Q_1(r) + \sh{a}                               \\
+               & = \epsilon \cdot ({Q^*}_0(r) - {\sh{Q}}_1(r) +  Q_1(r)) + \sh{a}                                                          \\
+               & = \epsilon \cdot (Q^*_0(r) +  Q^*_0(r)) + \sh{a}                                             &  & \autoref{eq:mpcpoly} \\
+               & = \sh{a}                                                                                     &  & \autoref{eq:mpcpoly} \\
+  b'           & = \beta' - {\sh{S}}_y(r)                                                                                               \\
+               & = {S^*}_0(r) + b^* + S_y(r) + b - {\sh{S}}_y(r)                                                                        \\
+               & = {S^*}_0(r) - {\sh{S}}_y(r) + S_y(r)  + \sh{b}                                                                           \\
+               & = {S^*}_0(r) - S^*_0(r)  + \sh{b}                                                            &  & \autoref{eq:mpcpoly} \\
+               & = \sh{b}                                                                                     &  & \autoref{eq:mpcpoly} \\
 \end{align*}
-\todo{Want to explain the above in a more detailed manner? Specifically ${Q^*}_0(r) - {[Q]}_1(r) = Q_1(r)$}
+\todo{Want to explain the above in a more detailed manner? Specifically ${Q^*}_0(r) - {\sh{Q}}_1(r) = Q_1(r)$}
 
 \section{Security}
 
