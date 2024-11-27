@@ -7,7 +7,7 @@
 \usepackage{amssymb}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
-\usepackage{minted}
+\usepackage[outputdir=out]{minted}
 \usepackage[]{amsmath}
 \usepackage{epsfig}
 \usepackage[T1]{fontenc}
@@ -967,6 +967,24 @@ Benchmarks were conducted on two machines: a Dell XPS 15 9510 and a MacBook Pro 
 This setup provided a diverse testing environment, ensuring our benchmarks accounted for both x86\_64 and ARM architectures.
 % subsection Benchmarking (end)
 
+\subsection{Feature flags}\label{sub:feature_flags} % (fold)
+To maintain a baseline implementation while enabling flexibility to switch between different NIST categories, we utilized Rust's feature flags. These flags support conditional compilation, allowing multiple implementations of the same function to coexist in the codebase. Only the specific implementation required is compiled, based on the flag provided to the compiler. This approach made it possible to test individual optimizations in isolation, rather than applying all optimizations simultaneously.
+
+The way we implemented this was by using the \texttt{cfg} attribute. This attribute allows us to specify a feature flag, which can be used to conditionally compile code. For example, we can use the following code to conditionally compile a function:
+\begin{minted}{rust}
+#[cfg(not(feature = "simd"))]
+pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
+...
+}
+
+#[cfg(feature = "simd")]
+pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
+...
+}
+\end{minted}
+This ensures that when the feature flag for $simd$ is set the compiled code will have the simd function only.
+
+
 \section{Categories}\label{sub:categories} % (fold)
 We tried reworking to use dynamically sized vectors instead of compile time sized arrays. Which proved to be a big rework and refactor. Benching showed slower running times. So instead we went with compile time script to set the constants. 
 
@@ -1008,7 +1026,7 @@ fn get_feature_flag_category() -> Result<Category, String> {
 }
 \end{minted}
 One can now invoke the benchmarking for category one by running the following command:
-\begin{minted}
+\begin{minted}{bash}
   ~$ cargo bench --features category_one
 \end{minted}
 
@@ -1016,10 +1034,6 @@ One can now invoke the benchmarking for category one by running the following co
 In order to find optimizations we used the samply CPU profiler~\cite{Stange2024mstange}, to locate long running functions and loops. This was done by building the binary with cargo and supplying it to the samply CPU profiler. The profiler then generates seeds $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$. a call stack and a flamegraph from the binary, this shows how many cycles of the cpu were used in different sections of the code.
 \todo{Maybe a picture of how the base program looked in the call stack}
 
-\subsection{Feature flags}\label{sub:feature_flags} % (fold)
-To maintain a baseline implementation while enabling flexibility to switch between different NIST categories, we utilized Rust's feature flags. These flags support conditional compilation, allowing multiple implementations of the same function to coexist in the codebase. Only the specific implementation required is compiled, based on the flag provided to the compiler. This approach made it possible to test individual optimizations in isolation, rather than applying all optimizations simultaneously.
-
-% subsection Feature flags (end)
 
 \subsection{Parallelisation}\label{sub:rayon} % (fold)
 
