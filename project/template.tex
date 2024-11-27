@@ -135,9 +135,7 @@ In this report, we present an implementation of the SD-in-the-Head protocol in R
 
 To this end, it is crucial for both NIST and the authors to provide an in-depth specification accompanied by clear, well-documented examples to facilitate a smooth transition to the new standard.
 
-Our objectives include delivering a high-performance, thoroughly documented implementation, complemented by extensive test coverage to ensure correctness and security.
-
-Additionally, we aim to identify and address potential pitfalls and challenges encountered during the implementation process and supply these to the authors.
+Our objectives include delivering a high-performance, thoroughly documented implementation, complemented by extensive test coverage to ensure correctness and security. Additionally, we aim to identify and address potential pitfalls and challenges encountered during the implementation process and supply these to the authors. Furthermore, we will be condensing the literature behind the SD-in-the-Head protocol and presenting an in-depth report on the protocol and its prerequisites.
 
 Finally, this project serves as an opportunity to test our capabilities by implementing a cutting-edge cryptographic protocol in a modern, memory-safe language like Rust. As the final product, we will deliver this report alongside a Rust library and a client implementation for the SD-in-the-Head protocol.
 
@@ -199,7 +197,7 @@ Finite fields lays the basis for many cryptographic protocols and primitives. In
             \item $\forall a,b,c \in \mathbb{F}: a \times (b + c) = a \times b + a \times c$ (distributive)
           \end{enumerate}
     \item $(\mathbb{F}, +, 0)$ forms an additive group
-    \item $(\mathbb{F} \setminus \{0{\}}, \times, 1)$ forms a multiplicative group
+    \item $(\mathbb{F} \setminus \{0\}, \times, 1)$ forms a multiplicative group
   \end{enumerate}
 \end{definition}
 
@@ -241,7 +239,7 @@ An advantageous property of Galois fields is that they can easily be extended, l
 \section{Cryptographic Primitives and protocols}
 We assume the reader has basic knowledge of cryptographic primitives but will provide brief introductions to the primitives used in the SD-in-the-Head protocol. If you know the basics feel free to skip this section.
 
-\subsection{Collision Resistant Hash Functions}
+\subsection{Collision Resistant Hash Functions}\label{sec:prelim_hash}
 We denote a hash function by a generator $\mathcal{H}$ which on input of a security parameter $k$ outputs a function $h : \{0,1{\}}^* \rightarrow \{0,1{\}}^{2k}$. We denote a hash function $h$ to be cryptographically secure if it satisfies the following properties
 
 \begin{lemma}[Preimage Resistance]\label{lem:preimage}
@@ -310,14 +308,37 @@ A notable property of the Merkle tree is its ability to open a partial subset of
 
 This property is particularly advantageous in protocols like the SD-in-the-Head threshold protocol, where only a subset of the committed values needs to be opened while keeping the rest concealed. By leveraging this feature, the prover can efficiently prove the validity of the subset without revealing the entire set of commitments.
 
+\subsection{Secret sharing}
+
+\todo{TODO}
+
+\begin{definition}[Opening a shared value]\label{def:ss-opening}
+  Denote \texttt{open}
+\end{definition}
+ 
+\begin{definition}[$(\ell, n)$-private secret sharing scheme]\label{def:mpc-ss-threshold}
+  A $(t, n)$-threshold secret sharing scheme~\cite{cramer2015secure}, where $t, n$ are integers with $0 \leq t < n$, provides a means to ``disperse'' secret data $s$ into a  sequence of $n$ pieces of data, called \emph{shares}, such that:
+\begin{itemize}[parsep=0pt, itemsep=0pt]
+    \item Any $\leq t$ shares jointly give no information on the secret $s$ (\textit{t-privacy}).
+    \item Any $\geq t + 1$ of these shares jointly determine the secret $s$ uniquely (\textit{(t + 1)-reconstruction}).
+\end{itemize}
+\end{definition}
+
 \subsection{Secure Multi-Party Computation}\label{sec:mpc}
 
 Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following, sections we will denote a MPC protocol by $\Pi_f$ for an $n$-party functionality $f(x, w_1, \dots, w_n)$, a public input $x$ and secret inputs $w_i$ of the party $P_i$. The goal is to compute the function $f$ on the inputs of the $n$ parties while upholding the following properties~\cite{cramer2015secure}
 
-\begin{itemize}
-  \item \textbf{Correctness}: The output of the protocol is the correct evaluation of the function $f$ on the inputs of the parties $w_i$ and the public input $x$
-  \item \textbf{Privacy}: The protocol ensures that no party learns anything about the inputs of the other parties beyond what can be inferred from the output of the function.
-\end{itemize}
+\begin{definition}[Correctness]\label{def:mpc-correctness}
+  We say that $\Pi$ realizes a deterministic $n$-party functionality $f(x, w_1, \dots, w_n)$ with perfect (resp., statistical) correctness if for all inputs $x, w_1, \dots, w_n$, the probability that the output of some player is different from the output of $f$ is $0$ (resp., negligible in $k$), where the probability is over the independent choices of the random inputs $r_1, \dots, r_n$.
+\end{definition}
+
+\begin{definition}[Privacy]\label{def:mpc-privacy}
+  The protocol ensures that no party learns anything about the inputs of the other parties beyond what can be inferred from the output of the function.
+\end{definition}
+
+\begin{definition}[$\ell$-privacy]\label{def:mpc-ell-privacy}
+  The MPC protocol has privacy up to $\ell$ malicious parties.\footnote{Most often achieved by using a $(\ell, n)$-private secret sharing scheme \autoref{def:mpc-ss-threshold}}
+\end{definition}
 
 In terms of security needed for the SD-in-the-Head protocol, we define the following security requirements for the MPC protocol $\Pi_f$
 
@@ -326,7 +347,23 @@ In terms of security needed for the SD-in-the-Head protocol, we define the follo
   \item \textbf{Low-threshold security}: The protocol is secure against a coalition of up to $\ell$ parties, where $\ell$ is the threshold. This is also known as a $\ell$-private MPC protocol.
 \end{itemize}
 
-We denote the view $V_i$ of a party $P_i$ in the protocol as $(i, x, r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share, and $(m_1, \dots, m_j)$ are the messages received by $P_i$ in the first $j+1$ rounds of the protocol. We say that two views $V_i, V_j$ are \textit{consistent} according to the public input $x$ if the views are identical given the public input $x$.
+In order to prove the validity of a MPC protocol that have been run in the head, we define the following notion of \textit{consistency}~\cite{ishai2007zero}.
+
+\begin{definition}[MPC view]\label{def:mpc-view}
+  We denote the view $V_i$ of a party $P_i$ in the protocol as $(i, x, r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share, and $(m_1, \dots, m_j)$ is the messages received by $P_i$ in the first $j$ rounds of the protocol. Note that the messages sent by the parties can be inferred from the $V_i$ by invoking $\Pi$.
+\end{definition}
+
+\begin{definition}[Consistent views]\label{def:mpc-consistent-view}
+  We say that a pair of views $V_i, V_j$ are consistent (with respect to the protocol $\Pi$ and some public input $x$) if the outgoing messages implicit in $V_i, x$ are identical to the incoming messages reported in $V_j$ and vice versa.
+\end{definition}
+
+\begin{lemma}[Local vs. global consistency]\label{lem:consistency}
+  Let $\Pi$ be an $n$-party protocol as above and $x$ be a public input.
+  Let $V_1, \dots, V_n$ be an $n$-tuple of (possibly incorrect) views. Then all pairs of views $V_i, V_j$ are consistent with respect to $\Pi$ and $x$ if and only if there exists an honest execution of $\Pi$ with public input $x$ (and some choice of private inputs $w_i$ and random inputs $r_i$) in which $V_i$ is the view of $P_i$ for every $1 \leq i \leq n$.
+\end{lemma}
+
+\textbf{Proof of \autoref{lem:consistency}} The \textit{if} direction is trivial and follows from \autoref{def:mpc-view} and \autoref{def:mpc-consistent-view}.
+The \textit{only if} direction is shown by the following. Consider $n$ pairwise consistent views $V_1, \dots, V_n$ \autoref{def:mpc-view}. Let us define an MPC protocol $\Pi$ by its \textit{next sent message} function $\Pi_j(i,x,w_i,r_i, (m_1, \dots, m_j)) = m_{j+1}$. The pairwise consistency, \autoref{def:mpc-consistent-view} and $\Pi_j$ implies, by induction that after $d$ rounds, that the actual view of all parties $P_i$ is the same as the view of $P_i$ in the first $d$ rounds. It follows that the views $V_i, \dots, V_n$ are consistent with the full execution of $\Pi$. \qed
 
 \subsection{Zero-Knowledge Proofs}\label{sec:zk}
 This section will give a brief introduction to \textit{two-party interactive} Zero-Knowledge (ZK) schemes for a \textit{prover} and a \textit{verifier}. The intuition behind a Zero-Knowledge proof of knowledge is that the prover can convince the verifier that they know a secret $w$, such that $x$ is true, without revealing the secret $w$ to the verifier. This could be someone wanting to prove that they are above the age of 18 without revealing their age. We denote a ZK $\Pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$. Let $x$ be a public statement in \textbf{NP} and $w$ be a witness such that $(x, w) \in \mathcal{R}$~\cite{feneuil2023threshold}.
@@ -334,7 +371,7 @@ This section will give a brief introduction to \textit{two-party interactive} Ze
 \begin{definition}
   Let $x$ be a statement of language $L$ in \textbf{NP}, and $W(x)$ the set of witnesses for $x$ such that the following relation holds:
   \begin{align*}
-    \mathcal{R} = \{(x, w)\; x \in L, w \in W(x){\}}
+    \mathcal{R} = \{(x, w)\; x \in L, w \in W(x)\}
   \end{align*}
 \end{definition}
 
@@ -385,10 +422,10 @@ With this, we can define the soundness of the language for ZKP as follows:
 We can now share a witness $(x_a, Q, P)$. Now based on the relation from \autoref{eq:standard_form_of_the_parity_check_matrix}, $x$ can be locally computed along with the polynomial $S$, this can then be used to run an equality test for the relation $S \cdot Q = P \cdot F$.
 
 \subsubsection{False positive probability}\label{sub:equality_test}
-The equality test from \autoref{eq:polynomial_representation} has a small probability of false positives, denoted $p$. To reduce this probability, the relation is evaluated at random points $\{r_k \in \mathbb{F}_q{\}}_{k\in[t]}$. By Schwartz-Zippel \autoref{lem:schwartz}, the probability of a false positive is bounded by $p \leq \frac{t}{q}$, where $q$ is the size of the finite field $\mathbb{F}_q$. In short, this makes it unlikely that the relation will hold for all points $r_k$ if the relation is not sound according to \autoref{eq:soundness}. Furthermore, we can tweak the parameters $t$ and $q$ to reduce $p$.
+The equality test from \autoref{eq:polynomial_representation} has a small probability of false positives, denoted $p$. To reduce this probability, the relation is evaluated at random points $\{r_k \in \mathbb{F}_q\}_{k\in[t]}$. By Schwartz-Zippel \autoref{lem:schwartz}, the probability of a false positive is bounded by $p \leq \frac{t}{q}$, where $q$ is the size of the finite field $\mathbb{F}_q$. In short, this makes it unlikely that the relation will hold for all points $r_k$ if the relation is not sound according to \autoref{eq:soundness}. Furthermore, we can tweak the parameters $t$ and $q$ to reduce $p$.
 
 \begin{lemma}[Schwartz-Zippel]\label{lem:schwartz}
-  For a non-zero polynomial $P \in \mathbb{S}[X]$ of degree $d \geq 0$. Let $\mathbb{R}$ be a finite subset of $\mathbb{S}$ and set of random points $[r_1, \dots, r_n] \in \mathbb{R}$, the probability that $\textnormal{Pr}[P(r_1, \dots, r_n) = 0] \leq d/|\mathbb{R}|$.
+  For a non-zero polynomial $P \in \mathbb{S}[X]$ of degree $d \geq 0$. Let $\mathbb{R}$ be a finite subset of $\mathbb{S}$ and set of random points $[r_1, \dots, r_n] \in \mathbb{R}$, the probability that $\Pr[P(r_1, \dots, r_n) = 0] \leq d/|\mathbb{R}|$.
 \end{lemma}
 
 \section{MPC-in-the-Head}\label{sec:mpcinth}
@@ -410,7 +447,7 @@ We will give insight into the basic construction suggested by Ishai et al~\cite{
             \item Commits to each view $V_i$ using a secure commitment scheme, and sends ($\text{Commit}(V_1), \dots, \text{Commit}(V_n)$) to the verifier.
           \end{enumerate}
     \item The verifier picks $\ell$ random distinct indices $i \in [n]$ and sends them to the prover.
-    \item The prover opens the commitments into the views $V_i$ and sends the openings to the verifier.
+    \item The prover opens the corresponding $\ell$ commitments into the views $V_i$ and sends the openings to the verifier.
     \item The verifier accepts if and only if:
           \begin{enumerate}[nolistsep]
             \item\label{prop:mpcinth_commit} The views are valid according to the commitment scheme.
@@ -434,45 +471,22 @@ We see the following properties of the protocol:
   The verifier only sees $\ell$ views, and therefore from the definition of $\Pi_f$ learns nothing of the secret witness $w$.
 \end{lemma}
 
-The basic MPC-in-the-Head protocol provides a foundation for constructing ZK proofs for any NP relation and has been shown to produce relatively efficient ZK protocols~\cite{feneuil2023threshold,baum2020concretely,katz2018improved}. Variants of the protocol have demonstrated reductions in communication complexity, though at the cost of decreased computational efficiency on the prover's side, as these constructions require a substantial increase in the number of parties $N$~\cite{ishai2007zero, feneuil2023threshold}, which subsequently leads to heightened computational complexity.
+The basic MPC-in-the-Head protocol serves as a foundation for constructing zero-knowledge (ZK) proofs for any NP relation and has been demonstrated to yield relatively efficient ZK protocols~\cite{feneuil2023threshold,baum2020concretely,katz2018improved}. Giacomelli et al. and Chase et al.~\cite{katz2018improved,giacomelli2016zkboo,chase2017post} provided concrete implementations of the \emph{MPC-in-the-Head} approach and observed that employing a 3-party protocol $\Pi$ achieved optimal performance within the space of protocols they analyzed. However, due to the small number of parties, the soundness of the resulting honest-verifier zero-knowledge (HVZK) proof is relatively weak. As a consequence, a large number of parallel repetitions is required to achieve negligible soundness error. This increases the size of the proofs and the communication overhead of the protocols. However, recent work by Baum and Nof~\cite{baum2020concretely} and Feneuil and Rivain~\cite{feneuil2023threshold} propose promising approaches to mitigate these issues.
 
-Recent advancements, however, offer promising improvements on both fronts. First, the integration of \textit{MPC preprocessing}~\cite{katz2018improved,baum2020concretely} enables the instantiation of an MPC-in-the-Head instance where communication complexity is independent of $N$, thereby facilitating increased security while maintaining low communication costs. Additionally, employing \textit{Linear Secret Sharing Schemes} (LSSS)\cite{feneuil2023threshold} in place of additive sharing significantly enhances computational efficiency, as the computations for both prover and verifier become bounded by the threshold $\ell$. The incorporation of these techniques ultimately paves the way for the development of the SD-in-the-Head protocol.
+\subsection{MPC preprocessing} 
 
-\subsection{MPC preprocessing}
+Pre-processing in MPC is an optimization technique that leverages shares of correlated randomness, such as randomness derived from a shared seed, which remains independent of the inputs to the protocol. This independence allows the parties to accelerate computation and perform pre-computation in advance. Consequently, this approach enables the design of MPCitH protocols that can utilize any $N$-party MPC protocol during pre-processing with minimal impact on the proof size. This method was first introduced by~\cite{katz2018improved} as part of their \textit{cut-and-choose} approach. 
 
-Pre-processing in MPC is an optimisation technique that relies on shares of correlated randomness -- say randomness generated from a shared seed -- which are independent of the inputs to the protocol. Due to this independence, the parties can perform pre-computation ahead of time, reducing the computation needed in the protocol. The technique was first introduced by~\cite{katz2018improved} in their \textit{cut-and-choose} technique. While the technique serves for both squared and multiplication relations, we simplify the technique here to multiplication only, as that is all we will need for the SD relation \autoref{eq:polynomial_representation}. In \autoref{def:cut_and_choose} we present the overall idea of the cut-and-choose technique. For a more detailed overview, see \textit{HVZKAoK Protocol using Cut and Choose} in~\cite{baum2020concretely}.
-
-\begin{definition}[Cut-and-Choose for multiplication]\label{def:cut_and_choose}
-  Denote the security parameters $M, N, \tau$. Given a $N$-private MPC protocol $\Pi_C$ for a circuit $C$ and an ideal functionality $\mathcal{F}$. \textit{Note that we assume that there is only one multiplication gate in the circuit, to align with our purposes.}
-  For each $e \in [M]$:
-  \begin{enumerate}[itemsep=0pt, parsep=0pt]
-    \item\label{itm:cut-choose-r1} $\mathcal{P}$ Chooses a master seed $sd_e$ and
-          \begin{enumerate}[nolistsep]
-            \item expands $sd_e$ to $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$.
-            \item computes valid beaver triples $[a_{e}]$, $[b_{e}]$ and $[c_{e}]$ using $sd_{e,i}$ as the seed for each party $i \in [N]$.
-            \item computes a sharing of the input $w$ using $sd_{e,i}$ as the seed for each party $i \in [N]$.
-          \end{enumerate}
-    \item $\mathcal{P}$ commits to the triples and a sharing of the input $w$ along with the seeds $sd_{e,i}$ for each party $i \in [N]$.
-    \item $\mathcal{V}$ chooses a random challenge $E \subset [M]$ such that $|E| = \tau$ and sends it to $\mathcal{P}$.
-    \item $\mathcal{P}$ sends the seeds $sd_e$ to $\mathcal{V}$ who verifies that the triples are correctly generated per step~\ref{itm:cut-choose-r1}
-    \item \todo{complete this}
-  \end{enumerate}
-\end{definition}
-
-\todo{explain soundness and lead into sacrificing protocol}
-
-\subsection{Proving a multiplication triple by sacrificing another}\label{sec:sacrifice_beaver}
-
-In order to prove the SD polynomial relation $P \cdot F = S \cdot Q$ (\autoref{sec:polynomial_representation}), the SD-in-the-Head protocol relies on the technique described by~\cite{baum2020concretely} where you can prove one multiplication triple (Beaver triple \autoref{def:beaver}) by sacrificing another random triple.
+In order to form a ZK proof for the SD polynomial relation $P \cdot F = S \cdot Q$ (\autoref{sec:polynomial_representation}), we need a MPC protocol that allows us to securely compute an arithmetic circuit. For this we use \textit{beaver triples}.
 
 \begin{definition}[Beaver triple~\cite{beaver1992efficient}]\label{def:beaver}
   A beaver triple is a tuple $(a, b, c)$ where $a \cdot b = c$ and $a, b, c \in \mathbb{F}_q$.
 \end{definition}
 
-Consider the multiplication MPC protocol below.
+Consider the protocol for a single multiplication gate below by~\cite{baum2020concretely}, based on the MPC protocol described in~\cite{damgaard2012multiparty}.
 
 \begin{definition}[Verification of a multiplication triple by sacrificing another]\label{def:sacrifice}
-  Given an input triple $(x,y,z) \in \mathbb{F}$ random shared triple $([[a]], [[b]], [[c]]) \in \mathbb{F}$, it is possible to verify the correctness of the statement $z = x \cdot y$ without revealing any information on either of the input.
+  Given an input triple $(x,y,z) \in \mathbb{F}$ random shared triple $([[a]], [[b]], [[c]]) \in \mathbb{F}$, it is possible to verify the correctness of the statement $z = x \cdot y$ without revealing any information on either of the input. Define \texttt{open} to denote the opening of a shared value by broadcasting the shares between all parties allowing them to reconstruct the original value.
   \begin{enumerate}
     \item The parties generate a random $\epsilon \in \mathbb{F}$.
     \item The parties locally set $[[\alpha]] = \epsilon[[x]] + [[a]], [[\beta]] = [[y]] + [[b]]$.
@@ -490,9 +504,61 @@ Observe that if both triples are correct multiplication triples (i.e., $z = xy$ 
     & = 0
 \end{align}
 Otherwise, the parties will accept with probability $\frac{1}{|\mathbb{F}|}$ following from \autoref{lem:sacrifice}.
+
 \begin{lemma}\label{lem:sacrifice}
   If $([[a]], [[b]], [[c]])$ or $([[x]], [[y]], [[z]])$ is an incorrect multiplication triple then the parties output \texttt{Accept} in the sub-protocol above with probability $\frac{1}{|\mathbb{F}|}$.\footnote{A full proof of this can be found in~\cite{baum2020concretely}.}
 \end{lemma}
+
+Note, that a similar technique can be applied to square relations, we focus here solely on multiplication, as it suffices for the SD relation described in \autoref{eq:polynomial_representation}. \autoref{def:cut-and-choose} outlines the fundamental concept of the cut-and-choose technique. For a more comprehensive protocol, refer to the \textit{HVZKAoK Protocol using Cut and Choose} discussed in~\cite{baum2020concretely}. Note
+
+\begin{definition}[ZK from Cut-and-Choose (Multiplication)]\label{def:cut-and-choose}
+  Denote the security parameters $M, N, \tau$ a secure hash function \autoref{sec:prelim_hash} and a \textit{Random Oracle-based commitment scheme}. Given a $N$-private MPC protocol $\Pi_C$ for a circuit $C$ and an ideal functionality $\mathcal{F}$. \textit{Note} that we assume that there is only one multiplication gate in the circuit, to align with our purposes.
+  \begin{enumerate}[itemsep=0pt, parsep=0pt]
+    \item\label{itm:cut-choose-r1} For each $e \in [M]$ and for each party $P_i \in [N]$:
+    \begin{enumerate}[nolistsep]
+      \item $\mathcal{P}$ chooses a random $\texttt{salt} \leftarrow \{0,1\}^\lambda$ used for commitments.
+      \item $\mathcal{P}$ chooses a master seed $sd_e$ and  expands $sd_e$ to $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$.\footnote{If the seed is expanded in a correlated way, you can send just $sd_e$ and have the verifer recreate the expanded seeds accordingly}
+      \item $\mathcal{P}$ computes valid shares of beaver triples (\autoref{def:beaver}) $a_{e,i}$, $b_{e, i}$ and $c_{e,i}$ using $sd_{e,i}$.
+      \begin{enumerate}
+        \item To fix the initial randomness of $[c_e]$, recompute $a_e$ and $b_e$ from the shares and set $c_e = a_e \cdot b_e$.
+        \item Compute $\Delta_e = c_e - \sum_{i=1}^N c_{e,i}$.
+        \item Set the triple of the multiplication gate to ($[a_e], [b_e], [c_e] + \Delta_e$).
+      \end{enumerate}
+      \item $\mathcal{P}$ generates random sharings $w_i$ of the input $w$ using $sd_{e,i}$.
+    \end{enumerate}
+    \item $\mathcal{P}$ commits to the triples (including $\Delta_e$) and a sharing of the input $w$ along with the seeds $sd_{e,i}$\footnote{In order to further reduce communication all commitments can be hashed together to one hash.}
+    \item $\mathcal{V}$ chooses a random challenge $E \subset [M]$ such that $|E| = \tau$ and sends it to $\mathcal{P}$. Set $\bar{E} = [M] \ E$
+          \item\label{itm:cut-choose-r3} $\mathcal{P}$ sends the seeds $sd_e$ to $\mathcal{V}$ who verifies that the triples are correctly generated per step~\ref{itm:cut-choose-r1}
+    \item $\mathcal{P}$ runs the MPC protocol $\Pi_C$ on the remaining $M-\tau$ pre-computed triples with different randomness $r_e$ resulting in shares $\alpha_e, \beta_e$. 
+    \item $\mathcal{P}$ commits to the views (\autoref{def:mpc-view}) of $\Pi_C$.
+    \item For each $e \in \bar{E}$, $\mathcal{V}$ chooses a random $i \in [N]$ and sends it to $\mathcal{P}$.
+    \item For each $e \in \bar{E}$: Let $I_e = [N] \setminus \{i_e\}$, $\mathcal{P}$ opens the commitments of views of the MPC protocol for $i \in I_e$ and sends the openings to $\mathcal{V}$ along with the seed $sd_{\bar{E}}$ and \texttt{salt} to recompute randomness.
+    \item $\mathcal{V}$ outputs \texttt{Accept} if
+          \begin{enumerate}[nolistsep]
+            \item Step~\ref{itm:cut-choose-r3} was verified
+            \item $\mathcal{V}$ verifies the commitments and consistency \autoref{def:mpc-consistent-view} of the views by running $\Pi_C$ as an honest participant using the pseudo-randomness from the seed and \texttt{salt}.
+            \item $\mathcal{V}$ verifies for each $e \in \bar{E}$ that the recomputed output of $\Pi_C$ is $y$
+          \end{enumerate}
+  \end{enumerate}
+\end{definition}
+
+Zero-Knowledge of the protocol is satisfied by the $N$-privacy of $\Pi_C$ (\autoref{def:mpc-ell-privacy}) as only $N-1$ views are shared, the witness $w$ is never revealed to the verifier.
+
+We bound probability of $\mathcal{V}$ accepting a cheating outcome of \autoref{def:cut-and-choose}, i.e. that $C(w) \neq y$. First, we assume that $\mathcal{P}$ cheats in step~\ref{itm:cut-choose-r1} by incorrectly generating the precomputed values. The first challenge $E$ allows $\mathcal{V}$ to test $\tau$ triples. It's trivial to detect inconsistencies in the triples through the seed $sd_e$ by recomputing the triples and comparing them to the opened commitments. To reduce communication even more, the resulting computation from $\mathcal{P}$ can be hashed into a single hash which $\mathcal{V}$ tries to recompute. The probability that cheating is not detected is $\frac{\binom{M-c}{\tau}}{\binom{M}{tau}}$. Next, we assume that $\mathcal{P}$ cheats by deviating from $\Pi_C$. In order to make the output of the protocol $y$, $\mathcal{P}$ must deviate in $M-\tau-c$ emulations. As $N-1$ views are opened and verified, $\mathcal{P}$ can only cheat in on view of \textbf{one} party. The probability that this is not detected is $\frac{1}{N^{M-\tau-c}}$.
+
+\begin{lemma}[Soundness of the cut-and-choose approach]\label{lem:cut-and-choose-soundness}
+  Let $c$ be the number of pre-processing emulations where $\mathcal{P}$ cheats. The probability that $\mathcal{V}$ accepts the outcome of \autoref{def:cut-and-choose} for $C(w) \neq y$ is bounded by
+  \begin{align*}
+    \xi_c(M, N, \tau) = \max_{0 \leq c \leq M-\tau} \left\{\frac{\binom{M-c}{\tau}}{\binom{M}{tau} \cdot N^{M-\tau-c}} \right\}
+  \end{align*}
+\end{lemma}
+
+To re-iterate, we set out to make it so that the communication complexity of the ZK MPCitH protocol was not bounded by $N$. We achieve this by having any communication needed between parties
+
+\subsubsection{Proving a multiplication triple by sacrificing another}\label{sec:sacrifice_beaver}
+
+\todo{define the function \texttt{open}}
+
 
 \section{Linear Secret Sharing Schemes (LSSS)}\label{sec:lsss}
 
@@ -557,7 +623,7 @@ The original SD-in-the-Head protocol is based on the computational hardness of t
     S\cdot Q = P\cdot F \text{ \ \ \ where \ \ \ } S, Q, P, F \in \mathbb{F}_q[X]
   \end{align*}
 \end{quote}
-\noindent Testing that the relation holds has a small probability of a \textit{false positive}. We denote this as $p$. The protocol takes several steps to reduce $p$. First, the relation is evaluated at random points $\{r_k \in \mathbb{F}_q{\}}_{k\in[t]}$. Second, the field of the random points is extended from $\mathbb{F}_q$ to $\mathbb{F}_{q^4}$.
+\noindent Testing that the relation holds has a small probability of a \textit{false positive}. We denote this as $p$. The protocol takes several steps to reduce $p$. First, the relation is evaluated at random points $\{r_k \in \mathbb{F}_q\}_{k\in[t]}$. Second, the field of the random points is extended from $\mathbb{F}_q$ to $\mathbb{F}_{q^4}$.
 
 security
 
