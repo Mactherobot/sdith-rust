@@ -7,6 +7,7 @@
 \usepackage{amssymb}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{minted}
 \usepackage[]{amsmath}
 \usepackage{epsfig}
 \usepackage[T1]{fontenc}
@@ -254,7 +255,7 @@ We denote a hash function by a generator $\mathcal{H}$ which on input of a secur
   Given a hash function $h$, there exist no PPT algorithm that can find two distinct messages $m, m'$ such that $h(m) = h(m')$ with non-negligible probability.
 \end{lemma}
 
-The consensus among researchers indicates that for combinatorial problems, such as those underlying SHA2 and the more recent SHA3, quantum computing is expected to reduce the security level from $k$ to $k/2$ for preimage resistance through approaches like Grover's algorithm~\cite{nielsen2010quantumgrover}. In contrast, no known methods have been proposed to reduce the security level for collision resistance. Consequently, protocols that depend on collision-resistant hash functions, such as Merkle Signature or SD-in-the-Head, remain a viable choice for post-quantum secure protocols.
+The consensus among researchers indicates that for collision and preimage resistance, quantum computing is expected to reduce the security level from $k$ to $k/2$ through approaches like Grover's algorithm~\cite{nielsen2010quantumgrover}. In contrast, no known methods have been proposed to reduce the security level for collision resistance. Consequently, protocols that depend on collision-resistant hash functions, such as Merkle Signature or SD-in-the-Head, remain a viable choice for post-quantum secure protocols.
 
 In proving the security of hash functions, researchers often resort to models like the Quantum Random Oracle Model (QROM), while there is significant work being done to further prove the future security of hash functions~\cite{dtuPostquantumSecurity}.
 
@@ -967,9 +968,49 @@ This setup provided a diverse testing environment, ensuring our benchmarks accou
 % subsection Benchmarking (end)
 
 \section{Categories}\label{sub:categories} % (fold)
-We tried reworking to use dynamically sized vectors instead of compile time sized arrays. Big rework and refactor. Benching showed slower running times. Instead we went with compile time script to set constants.
+We tried reworking to use dynamically sized vectors instead of compile time sized arrays. Which proved to be a big rework and refactor. Benching showed slower running times. So instead we went with compile time script to set the constants. 
 
-% subsection Array structure (end)
+This allows us to change between categories in the following ways:
+\begin{itemize}
+  \item By environment variable  
+  \item By Feature flag
+\end{itemize}
+
+\subsubsection{Environment variables}\label{sub:env_vars}
+Environment variables can be set in the command line or given to the compiler when invoking cargo. The following code snippet shows how you would pass the category to the compiler. Due to the fact that we went with 
+\begin{minted}{bash}
+~$ SDITH_CATEGORY=5 cargo bench
+\end{minted}
+
+\subsubsection{Feature flags categories}\label{sub:feature_flags_categories}
+After ipmlementing the environment variables, we realised that we could also use feature flags to change the category. This is done by adding the following to the Cargo.toml file.
+\begin{minted}{rust}
+[features]
+default = ["category_one", "optimized"]
+
+# Categories
+category_one = []
+category_three = []
+\end{minted}
+Where we state the default category to be one, and the optimized flag to be enabled. 
+Now in the build.rs file we can change the category based on the feature flag in the following way:
+\begin{minted}{rust}
+fn get_feature_flag_category() -> Result<Category, String> {
+    if cfg!(feature = "category_one") {
+        Ok(CATEGORY_ONE)
+    } else if cfg!(feature = "category_three") {
+        Ok(CATEGORY_THREE)
+    } else if cfg!(feature = "category_five") {
+        Ok(CATEGORY_FIVE)
+    } else {
+        Err("No category feature flag set".to_string())
+    }
+}
+\end{minted}
+One can now invoke the benchmarking for category one by running the following command:
+\begin{minted}
+  ~$ cargo bench --features category_one
+\end{minted}
 
 \section{Optimizations}
 In order to find optimizations we used the samply CPU profiler~\cite{Stange2024mstange}, to locate long running functions and loops. This was done by building the binary with cargo and supplying it to the samply CPU profiler. The profiler then generates seeds $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$. a call stack and a flamegraph from the binary, this shows how many cycles of the cpu were used in different sections of the code.
