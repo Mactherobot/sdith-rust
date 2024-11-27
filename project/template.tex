@@ -984,7 +984,6 @@ pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
 \end{minted}
 This ensures that when the feature flag for $simd$ is set the compiled code will have the simd function only.
 
-
 \section{Categories}\label{sub:categories} % (fold)
 We tried reworking to use dynamically sized vectors instead of compile time sized arrays. Which proved to be a big rework and refactor. Benching showed slower running times. So instead we went with compile time script to set the constants. 
 
@@ -1001,7 +1000,7 @@ Environment variables can be set in the command line or given to the compiler wh
 \end{minted}
 
 \subsubsection{Feature flags categories}\label{sub:feature_flags_categories}
-After ipmlementing the environment variables, we realised that we could also use feature flags to change the category. This is done by adding the following to the Cargo.toml file.
+After implementing the environment variables, we realised that we could also use feature flags to change the category. This is done by adding the following to the Cargo.toml file.
 \begin{minted}{rust}
 [features]
 default = ["category_one", "optimized"]
