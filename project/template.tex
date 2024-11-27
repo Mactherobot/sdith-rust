@@ -856,11 +856,12 @@ can we use other hashes that still provide the same security assumption from \au
 Here we implemented hashing as the first part, along with commitment. (cd1acdb0b6e9)
 
 \subsection{Merkle Tree impl}\label{sub:merkle_tree_impl}
-For the merkle tree implementation, we have followed the specification. But added a function that calculates bottom up the revealed nodes based on the view opening challenges. This is used to know the length of the authentication path that is added to the signature and is needed when parsing the signature for verification. The algorithm uses the queue structure which is also mentioned in the spec, where the tree structure is a 1D array with the last elements being the leaf. First it checks for empty input. Then we initiate an empty list to hold the revealed nodes. Now in order to traverse the tree we will get the $heightIndex$ and $lastIndex$, which are the current layer of the tree, and the index of the 1D array of where the current layer stops. Lastly we need a queue to hold the indexes. Now in order to find the revealed nodes it starts by adding the indexes of the selected leaves to the queue. Then we go through the queue until the next index is $1$ which indicates that we are at the root. In the while loop we first get the current index, and then check if we have gone up a layer in the tree, and if the current node is a left child. If the current node is a left child and it is the last index in the layer, then we can just skip to the next node because we know it has no sibling. If it is not the last node we get the next node as a candidate, if the queue is not empty. If the current node is still the left child, and the next node in the queue is the other child of the same parent we do not need to add this as a revealed node as it is part of the known values. But if the next node is not the right child of the current node we add it as a revealed node. If the current node is not the left child we add the left child to the revealed nodes. And then we add the parent index to the queue. When we exit the while loop we have traversed the tree bottom up adding for each layer the neighbours of the selected leaves. It works as follows:
-
+For the merkle tree implementation, we have followed the specification. But added a function that calculates bottom up the revealed nodes based on the view opening challenges. This is used to know the length of the authentication path that is added to the signature and is needed when parsing the signature for verification. The algorithm uses the queue structure which is also mentioned in the spec, where the tree structure is a 1D array with the last elements being the leaf. First it checks for empty input. Then we initiate an empty list to hold the revealed nodes. Now in order to traverse the tree we will get the $heightIndex$ and $lastIndex$, which are the current layer of the tree, and the index of the 1D array of where the current layer stops. Lastly we need a queue to hold the indexes. Now in order to find the revealed nodes it starts by adding the indexes of the selected leaves to the queue. Then we go through the queue until the next index is $1$ which indicates that we are at the root. In the while loop we first get the current index, and then check if we have gone up a layer in the tree, and if the current node is a left child. If the current node is a left child and it is the last index in the layer, then we can just skip to the next node because we know it has no sibling. If it is not the last node we get the next node as a candidate, if the queue is not empty. If the current node is still the left child, and the next node in the queue is the other child of the same parent we do not need to add this as a revealed node as it is part of the known values. But if the next node is not the right child of the current node we add it as a revealed node. If the current node is not the left child we add the left child to the revealed nodes. And then we add the parent index to the queue. When we exit the while loop we have traversed the tree bottom up adding for each layer the neighbours of the selected leaves. The algorithm is described in pseudocode in Algorithm \ref{alg:get-revealed-nodes}.
+\todo{change last sentence}
 \begin{algorithm}
 \caption{Get Revealed Nodes for Selected Leaves in Merkle Tree}
 \begin{algorithmic}[1]
+\label{alg:get-revealed-nodes}
 \Require $selectedLeaves$: List of selected leaf indices
 \Ensure List of revealed node indices
 
@@ -927,8 +928,16 @@ Then we introduced the parameters from the spec. f4739166d684
 \subsection{Hashing, XOF, and Commitments}
 
 \subsection{Galois field arithmetic}\label{}
-Implemented the galois field. 94c3d9889709
+As stated earlier, we wanted to implement the underlying arithmetic our selves and not rely on there being a library for the arithmetic of the field. This led us to implement the galois field arithmetic. 
+We did this by creating a trait for field arithmetic:
+\inputminted[firstline=10, lastline=66]{rust}{../sdith/src/arith/gf256/mod.rs}
+This allows us to implement the field arithmetic different types, such as u8 and a point in the extended field:
+\inputminted[firstline=81, lastline=115]{rust}{../sdith/src/arith/gf256/gf256_ext.rs}
+And we can now use the field arithmetic in our code to for example generate beaver triples:
+\inputminted[firstline=152, lastline=152]{rust}{../sdith/src/mpc/beaver.rs}
 
+Furthermore, all our arithmetic can be tested individually, as we can see in the following test:
+\inputminted[firstline=2, lastline=12]{rust}{../sdith/src/arith/gf256/gf256_arith.rs}
 \section{Key generation}
 
 \section{MPC}\label{sub:mpc_algo}
@@ -974,12 +983,12 @@ The way we implemented this was by using the \texttt{cfg} attribute. This attrib
 \begin{minted}{rust}
 #[cfg(not(feature = "simd"))]
 pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
-...
+... add vector the naive way ...
 }
 
 #[cfg(feature = "simd")]
 pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
-...
+... add vector the simd way ...
 }
 \end{minted}
 This ensures that when the feature flag for $simd$ is set the compiled code will have the simd function only.
