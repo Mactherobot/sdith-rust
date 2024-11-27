@@ -232,13 +232,13 @@ A common choice for the irreducible polynomial is the Rijndael polynomial $p(x) 
 An advantageous property of Galois fields is that they can easily be extended, like $\mathbb{F}_{2}$ to $\mathbb{F}_{2^8}$. To ensure security in the SD-in-the-Head protocol, the field $\mathbb{F}_{2^8}$, which we shall denote as $\mathbb{F}_q$ is extended to encompass the field 32-bit unsigned integers. This can be done as a \textit{tower extension} by first building a degree-2 extension to $\mathbb{F}_{q^2}$ using the irreducible polynomial $F_{q^2} = F_q[X] / (X^2 + X + 32)$ and finally extending this field to $\mathbb{F}_{q^4}$ using the irreducible polynomial $F_{q^4} = F_q[Z] / (Z^2 + Z + 32(X))$. While you could create the final field independently, the tower extension allows us to reuse the construction of the intermediate field. Addition and multiplication in the extension fields are represented as the following
 
 \begin{align*}
-  a     & = a_0 + a_1x                                               &  & a \in \mathbb{F}_{q^\eta}, a_0, a_1 \in \mathbb{F}_q \\
-  b     & = b_0 + b_1x                                               &  & b \in \mathbb{F}_{q^\eta}, b_0, b_1 \in \mathbb{F}_q \\\\
-  a + b & = (a_0 + a_1x) + (b_0 + b_1x) = (a_0 + b_0) + (a_1 + b_1)x                                                           \\
-  a \cdot b & = (a_0 + a_1x) \cdot (b_0 + b_1x)                                                                                        \\
-        & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1x^2                                                                            \\
-        & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1(x + 32)                                                                       \\
-        & = a_0b_0 + 32a_1b_1 + (a_0b_1 + a_1b_0 + a_1b_1)x
+  a         & = a_0 + a_1x                                               &  & a \in \mathbb{F}_{q^\eta}, a_0, a_1 \in \mathbb{F}_q \\
+  b         & = b_0 + b_1x                                               &  & b \in \mathbb{F}_{q^\eta}, b_0, b_1 \in \mathbb{F}_q \\\\
+  a + b     & = (a_0 + a_1x) + (b_0 + b_1x) = (a_0 + b_0) + (a_1 + b_1)x                                                           \\
+  a \cdot b & = (a_0 + a_1x) \cdot (b_0 + b_1x)                                                                                    \\
+            & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1x^2                                                                            \\
+            & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1(x + 32)                                                                       \\
+            & = a_0b_0 + 32a_1b_1 + (a_0b_1 + a_1b_0 + a_1b_1)x
 \end{align*}
 
 \section{Cryptographic Primitives and protocols}
@@ -313,21 +313,63 @@ A notable property of the Merkle tree is its ability to open a partial subset of
 
 This property is particularly advantageous in protocols like the SD-in-the-Head threshold protocol, where only a subset of the committed values needs to be opened while keeping the rest concealed. By leveraging this feature, the prover can efficiently prove the validity of the subset without revealing the entire set of commitments.
 
-\subsection{Secret sharing}
+\subsection{Secret Sharing Schemes (SSS)}
 
-\todo{TODO}
+Secret Sharing Schemes (SSS) are a class of cryptographic primitives that allow a secret to be dispersed into multiple \textit{shares}, each of which can be distributed to different parties. These shares can then be recombined to reconstruct the original secret. SSS was initially invented~\cite{shamir1979share} to alleviate the single-point-of-failure problem for storage. Below we supply a definition of a secret sharing scheme~\cite{cramer2015secure} and the notation used in this report.
 
-\begin{definition}[Opening a shared value]\label{def:ss-opening}
-  Denote \texttt{open}$(\sh{s})$ to be the opening of the shared value $s$ where each party $P_i$ broadcasts its share $s_i$ allowing all participants to reconstruct the secret value $s$.
+\begin{definition}[Secret Sharing Scheme (SSS)]\label{def:ss-share}
+  We denote a SSS be a system of ``dispersing'' a secret $s$ into a sequence of $N$ pieces of data $\sh{s} = [s_1, \dots, s_n]$, called \emph{shares}, such that we have the following properties:
+  \begin{itemize}[parsep=0pt, itemsep=0pt]
+    \item \textit{$(N-1)$-privacy}: An adversary holding $l < N$ shares learns nothing about the secret $s$.
+    \item \textit{Reconstruction}: Given a subset of shares $s_i$ of size $\ell$, the scheme can reconstruct the secret $s = \texttt{open}(s_i)$.
+  \end{itemize}
+  We denote the following notation:
+  \begin{itemize}
+    \item \texttt{share}: We denote a the function \texttt{share}$_n(s) \rightarrow \sh{s}$ to be a function that takes a secret $s$ and returns a sharing $\sh{s}$ consisting of $n$ shares $s_i$ such that \texttt{open}$(\sh{s}) = s$.
+    \item \texttt{open}: We denote a function \texttt{open}$(\sh{s}) \rightarrow s$ to be the opening of the shared value $\sh{s}$ where each party $P_i$ broadcasts its share $s_i$ allowing all participants to recover the secret value $s$.
+  \end{itemize}
 \end{definition}
- 
-\begin{definition}[$(\ell, n)$-private secret sharing scheme]\label{def:mpc-ss-threshold}
-  A $(t, n)$-threshold secret sharing scheme~\cite{cramer2015secure}, where $t, n$ are integers with $0 \leq t < n$, provides a means to ``disperse'' secret data $s$ into a  sequence of $n$ pieces of data, called \emph{shares}, such that:
-\begin{itemize}[parsep=0pt, itemsep=0pt]
-    \item Any $\leq t$ shares jointly give no information on the secret $s$ (\textit{t-privacy}).
-    \item Any $\geq t + 1$ of these shares jointly determine the secret $s$ uniquely (\textit{(t + 1)-reconstruction}).
-\end{itemize}
+
+\subsubsection{Additive SSS and additive homomorphism}\label{sec:additive-sss}
+
+In its simple form, a SSS can be based on the same ideas as the \textit{one-time pad} encryption. Assume a Abelian group $F$ and a share $\sh{s} \in F^n$ of a secret $s \in F$. Sample $n-1$ uniformly random elements $[s_1, \dots, s_{n-1}] \in \mathbb{F}^{n-1}$ and set $s_n = s - \sum_{i=1}^{n-1} s_i$. Then we have that
+\begin{align*}
+  s = \sum_{i=1}^{n} s_i
+\end{align*}
+A notable feature of this construction is that if the parties possess two shares, $\sh{x}$ and $\sh{y}$, they can easily compute $\sh{x + y}$ by simply adding their individual shares. This property is referred to as \textit{partial homomorphic} or \textit{additively homomorphic}. The correctness of $\sh{x} + \sh{y} = \sh{c}$ for $c = x + y$ can be demonstrated as follows:
+\begin{align*}
+  c & = \texttt{open}(\sh{c})                         \\
+    & = \texttt{open}(\sh{x} + \sh{y})                \\
+    & = \texttt{open}([x_i + y_i])                    \\
+    & = \sum_{i=1}^{n} x_i + y_i                      \\
+    & = \sum_{i=1}^{n} x_i + \sum_{i=1}^{n} y_i       \\
+    & = \texttt{open}(\sh{x}) + \texttt{open}(\sh{y}) \\
+    & = x + y
+\end{align*}
+This property enables us to easily produce Multi-Party Computation (MPC) (see \autoref{sec:mpc}) on top of such a SSS\@. However, to allow full arithmetic circuits, we need more elaborate protocols, which we will discuss in \autoref{sec:zk-arithmetic-mpc-circuits}.
+\subsubsection{Threshold SSS}\label{sec:threshold-sss}
+
+In many situations such schemes are not sufficient. Imagine wanting to solve the the distribution of a secret (e.g. a password) among a set of locations to ensure that you do not have a single-point-of-failure. To solve this, we require a SSS that can reconstruct the secret from a a subset of shares up to a threshold $\ell$. This is called a $(\ell, n)$-threshold SSS\@.
+
+\begin{definition}[$(\ell, n)$-private (threshold) SSS]\label{def:mpc-ss-threshold}
+  A $(\ell, n)$-threshold SSS~\cite{cramer2015secure}, where $\ell, n$ are integers with $0 \leq \ell < n$, denotes a SSS such that:
+  \begin{itemize}[parsep=0pt, itemsep=0pt]
+    \item \textit{$\ell$-privacy}: Any $\leq t$ shares jointly give no information on the secret $s$.
+    \item \texttt{Reconstruction}: Any $\geq t + 1$ of these shares jointly determine the secret $s$ uniquely (\textit{($\ell + 1$)-opening}).
+  \end{itemize}
 \end{definition}
+
+In this case, the SSS described above would not suffice as loosing even one share would result in the loss of the secret. There are several ways to solve this problem. We could distribute more than one share to each location. If distributed correctly, we can ensure that only $t \leq N$ parties need to be available. However, there are also other more sophisticated schemes that can be used to ensure that the secret is not lost.
+
+\subsubsection{Shamir's Secret Sharing}\label{sec:shamir}
+
+Shamir's Secret Sharing scheme~\cite{shamir1979share}. For a secret $s$ and a given security threshold $\ell$, the share $\sh{s}$ is generated by sampling a random polynomial of degree $\ell-1$ with $s$ as the free coefficient. Each participant is given a share of the polynomial evaluated at a point. The secret can be reconstructed by interpolating the polynomial from a sufficient number of shares.
+
+The $(\ell,n)$ Shamir's polynomial based secret sharing scheme is $(+,+)$-homomorphic in which the addition of two polynomials secrets equals the Lagrange's interpolation of the sum-of-shares for the same subset of shares.
+
+\todo{Proof of lemma and solution}
+
+In \autoref{sec:lsss} we can see how schemes such as this can be used to dramatically reduce the size of the proofs required to prove the SD relation.
 
 \subsection{Secure Multi-Party Computation}\label{sec:mpc}
 
@@ -478,11 +520,11 @@ We see the following properties of the protocol:
 
 The basic MPC-in-the-Head protocol serves as a foundation for constructing zero-knowledge (ZK) proofs for any NP relation and has been demonstrated to yield relatively efficient ZK protocols~\cite{feneuil2023threshold,baum2020concretely,katz2018improved}. Giacomelli et al. and Chase et al.~\cite{katz2018improved,giacomelli2016zkboo,chase2017post} provided concrete implementations of the \emph{MPC-in-the-Head} approach and observed that employing a 3-party protocol $\Pi$ achieved optimal performance within the space of protocols they analyzed. However, due to the small number of parties, the soundness of the resulting honest-verifier zero-knowledge (HVZK) proof is relatively weak. As a consequence, a large number of parallel repetitions is required to achieve negligible soundness error. This increases the size of the proofs and the communication overhead of the protocols. However, recent work by Baum and Nof~\cite{baum2020concretely} and Feneuil and Rivain~\cite{feneuil2023threshold} propose promising approaches to mitigate these issues.
 
-\subsection{MPC preprocessing} 
+\subsection{MPC preprocessing}
 
-Pre-processing in MPC is an optimization technique that leverages shares of correlated randomness, such as randomness derived from a shared seed, which remains independent of the inputs to the protocol. This independence allows the parties to accelerate computation and perform pre-computation in advance. Consequently, this approach enables the design of MPCitH protocols that can utilize any $N$-party MPC protocol during pre-processing with minimal impact on the proof size. This method was first introduced by~\cite{katz2018improved} as part of their \textit{cut-and-choose} approach. 
+Pre-processing in MPC is an optimization technique that leverages shares of correlated randomness, such as randomness derived from a shared seed, which remains independent of the inputs to the protocol. This independence allows the parties to accelerate computation and perform pre-computation in advance. Consequently, this approach enables the design of MPCitH protocols that can utilize any $N$-party MPC protocol during pre-processing with minimal impact on the proof size. This method was first introduced by~\cite{katz2018improved} as part of their \textit{cut-and-choose} approach.
 
-\subsubsection{MPC over arithmetic circuits}
+\subsubsection{MPC over arithmetic circuits}\label{sec:zk-arithmetic-mpc-circuits}
 
 In order to form a ZK proof for the SD polynomial relation in \autoref{sec:polynomial_representation}, we need a MPC protocol that allows us to securely compute an arithmetic circuit. For this we use \textit{beaver triples}.
 
@@ -521,24 +563,24 @@ Otherwise, the parties will accept with probability $\frac{1}{|\mathbb{F}|}$ fol
 Building upon the MPC protocol above, \autoref{def:cut-and-choose} outlines the fundamental concept of the cut-and-choose technique. For a more comprehensive protocol, refer to the \textit{HVZKAoK Protocol using Cut and Choose} discussed in~\cite{baum2020concretely}. Note
 
 \begin{definition}[ZK from Cut-and-Choose (Multiplication)]\label{def:cut-and-choose}
-  Denote the security parameters $M, N, \tau$ a secure hash function \autoref{sec:prelim_hash} and a \textit{Random Oracle-based commitment scheme}. Given a $N$-private MPC protocol $\Pi_C$ for a circuit $C$ and an ideal functionality $\mathcal{F}$. \textit{Note} that we assume that there is only one multiplication gate in the circuit, to align with our purposes.
+  Denote the security parameters $M, N, \tau$ a secure hash function \autoref{sec:prelim_hash} and a \textit{Random Oracle-based commitment scheme}. Given a $(N-1)$-private MPC protocol $\Pi_C$ for a circuit $C$ and an ideal functionality $\mathcal{F}$. \textit{Note} that we assume that there is only one multiplication gate in the circuit, to align with our purposes.
   \begin{enumerate}[itemsep=0pt, parsep=0pt]
     \item\label{itm:cut-choose-r1} For each $e \in [M]$ and for each party $P_i \in [N]$:
     \begin{enumerate}[nolistsep]
       \item $\mathcal{P}$ chooses a random $\texttt{salt} \leftarrow \{0,1\}^\lambda$ used for commitments.
       \item $\mathcal{P}$ chooses a master seed $sd_e$ and  expands $sd_e$ to $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$.\footnote{If the seed is expanded in a correlated way, you can send just $sd_e$ and have the verifer recreate the expanded seeds accordingly}
       \item $\mathcal{P}$ computes valid shares of beaver triples (\autoref{def:beaver}) $a_{e,i}$, $b_{e, i}$ and $c_{e,i}$ using $sd_{e,i}$.
-      \begin{enumerate}
-        \item To fix the initial randomness of $\sh{c_e}$, recompute $a_e$ and $b_e$ from the shares and set $c_e = a_e \cdot b_e$.
-        \item Compute $\Delta_e = c_e - \sum_{i=1}^N c_{e,i}$.
-        \item Set the triple of the multiplication gate to ($\sh{a_e}, \sh{b_e}, \sh{c_e} + \Delta_e$).
-      \end{enumerate}
+            \begin{enumerate}
+              \item To fix the initial randomness of $\sh{c_e}$, recompute $a_e$ and $b_e$ from the shares and set $c_e = a_e \cdot b_e$.
+              \item Compute $\Delta_e = c_e - \sum_{i=1}^N c_{e,i}$.
+              \item Set the triple of the multiplication gate to ($\sh{a_e}, \sh{b_e}, \sh{c_e} + \Delta_e$).
+            \end{enumerate}
       \item $\mathcal{P}$ generates random sharings $w_i$ of the input $w$ using $sd_{e,i}$.
     \end{enumerate}
     \item $\mathcal{P}$ commits to the triples (including $\Delta_e$) and a sharing of the input $w$ along with the seeds $sd_{e,i}$\footnote{In order to further reduce communication all commitments can be hashed together to one hash.}
     \item $\mathcal{V}$ chooses a random challenge $E \subset [M]$ such that $|E| = \tau$ and sends it to $\mathcal{P}$. Set $\bar{E} = [M] \ E$
           \item\label{itm:cut-choose-r3} $\mathcal{P}$ sends the seeds $sd_e$ to $\mathcal{V}$ who verifies that the triples are correctly generated per step~\ref{itm:cut-choose-r1}
-    \item $\mathcal{P}$ runs the MPC protocol $\Pi_C$ on the remaining $M-\tau$ pre-computed triples with different randomness $r_e$ resulting in shares $\alpha_e, \beta_e$. 
+    \item $\mathcal{P}$ runs the MPC protocol $\Pi_C$ on the remaining $M-\tau$ pre-computed triples with different randomness $r_e$ resulting in shares $\alpha_e, \beta_e$.
     \item $\mathcal{P}$ commits to the views (\autoref{def:mpc-view}) of $\Pi_C$.
     \item For each $e \in \bar{E}$, $\mathcal{V}$ chooses a random $i \in [N]$ and sends it to $\mathcal{P}$.
     \item For each $e \in \bar{E}$: Let $I_e = [N] \setminus \{i_e\}$, $\mathcal{P}$ opens the commitments of views of the MPC protocol for $i \in I_e$ and sends the openings to $\mathcal{V}$ along with the seed $sd_{\bar{E}}$ and \texttt{salt} to recompute randomness.
@@ -587,16 +629,6 @@ To re-iterate, we set out to make it so that the communication complexity of the
 \begin{definition}
   A $(\ell,n)$ threshold SSS is $(+,+)$-homomorphic if for any two secrets $s_1$ and $s_2$ and their shares $[[s_1]]$ and $[[s_2]]$, the sum of the shares $[[s_1]] + [[s_2]] = [[s_{11} + s_{21}, s_{12} + s_{22}, \dots, s_{1n} + s_{2n}]]$ is equal to the share of the sum of the secrets $[[s_1 + s_2]]$ for the same subset of shares.
 \end{definition}
-
-\subsection{Shamir's Secret Sharing}\label{sec:shamir}
-
-Shamir's Secret Sharing scheme~\cite{shamir1979share}. Shamir's Secret Sharing is a method for distributing a secret amongst a group of participants, each of which is given a share of the secret. The secret can only be reconstructed when a sufficient number of shares are combined together.
-
-For a secret $s$ and a given security threshold $\ell$, the share $\sh{s}$ is generated by sampling a random polynomial of degree $t-1$ with $s$ as the free coefficient. Each participant is given a share of the polynomial evaluated at a point. The secret can be reconstructed by interpolating the polynomial from a sufficient number of shares.
-
-The $(t,n)$ Shamir's polynomial based secret sharing scheme is $(+,+)$-homomorphic in which the addition of two polynomials secrets equals the Lagrange's interpolation of the sum-of-shares for the same subset of shares.
-
-\todo{Proof of lemma and solution}
 
 \section{Fiat-Shamir Heuristic}\label{sec:fiatshamir}
 To transform any zero-knowledge protocol into a signature scheme, one can use the approach described in~\cite{fiat1986prove}. Here, we outline the general concept.
@@ -716,12 +748,12 @@ Note that the
 
 If we first instantiate an input $i$ and one random input $i^*$ (like the \texttt{input\_coef}).Then the input share is generated by adding the two. Similar, but simpler, to the input share generation of Algorithm 12, line 13 of the specification.
 \begin{align*}
-  i             & = (s_a, Q, P, a,b,c)                                             \\
-  i^*           & = ({s_a}^*, Q^*, P^*, a^*,b^*,c^*)                               \\
+  i                & = (s_a, Q, P, a,b,c)                                             \\
+  i^*              & = ({s_a}^*, Q^*, P^*, a^*,b^*,c^*)                               \\
   \sh{i} = i + i^* & = ({s_a} + {s_a}^*, Q + Q^*, P + P^*, a + a^*, b + b^*, c + c^*) \\
-                & = (\sh{s_a}, \sh{Q}, \sh{P}, \sh{a}, \sh{b}, \sh{c})                               \\
-  \texttt{chal} & = (\epsilon, r)                                                  \\
-  \texttt{pk}   & = (H', y)
+                   & = (\sh{s_a}, \sh{Q}, \sh{P}, \sh{a}, \sh{b}, \sh{c})             \\
+  \texttt{chal}    & = (\epsilon, r)                                                  \\
+  \texttt{pk}      & = (H', y)
 \end{align*}
 We also compute the plain broadcast share of the input as per Algorithm 12, line 18. Note that $\overline{v}$ is computed to zero and therefore removed from the computation in the implementation.
 \begin{align*}
@@ -755,16 +787,16 @@ This broadcast share is sent to the verifier along with the truncated input shar
 Next, the verifier computes the inverse of the broadcast share to recompute $(\sh{a}, \sh{b}, \sh{c})$ using the \texttt{InverseComputation} function. This is done as per Algorithm 13, line 10.
 \begin{align*}
   (a', b', c') & = \texttt{InverseComputation}(\sh{i}, (\alpha', \beta', v'),
-  (\overline{\alpha}, \overline{\beta}), \texttt{chal}, \texttt{pk}, \texttt{true})                                                  \\\\
+  (\overline{\alpha}, \overline{\beta}), \texttt{chal}, \texttt{pk}, \texttt{true})                                                     \\\\
   a'           & = \alpha' - \epsilon \cdot {\sh{Q}}_1(r)                                                                               \\
                & = \epsilon \cdot {Q^*}_0(r) + a^* + \epsilon \cdot Q_1(r) + a - \epsilon \cdot {\sh{Q}}_1(r)                           \\
-               & = \epsilon \cdot {Q^*}_0(r) - \epsilon \cdot {\sh{Q}}_1(r) + \epsilon \cdot Q_1(r) + \sh{a}                               \\
-               & = \epsilon \cdot ({Q^*}_0(r) - {\sh{Q}}_1(r) +  Q_1(r)) + \sh{a}                                                          \\
+               & = \epsilon \cdot {Q^*}_0(r) - \epsilon \cdot {\sh{Q}}_1(r) + \epsilon \cdot Q_1(r) + \sh{a}                            \\
+               & = \epsilon \cdot ({Q^*}_0(r) - {\sh{Q}}_1(r) +  Q_1(r)) + \sh{a}                                                       \\
                & = \epsilon \cdot (Q^*_0(r) +  Q^*_0(r)) + \sh{a}                                             &  & \autoref{eq:mpcpoly} \\
                & = \sh{a}                                                                                     &  & \autoref{eq:mpcpoly} \\
   b'           & = \beta' - {\sh{S}}_y(r)                                                                                               \\
                & = {S^*}_0(r) + b^* + S_y(r) + b - {\sh{S}}_y(r)                                                                        \\
-               & = {S^*}_0(r) - {\sh{S}}_y(r) + S_y(r)  + \sh{b}                                                                           \\
+               & = {S^*}_0(r) - {\sh{S}}_y(r) + S_y(r)  + \sh{b}                                                                        \\
                & = {S^*}_0(r) - S^*_0(r)  + \sh{b}                                                            &  & \autoref{eq:mpcpoly} \\
                & = \sh{b}                                                                                     &  & \autoref{eq:mpcpoly} \\
 \end{align*}
@@ -865,61 +897,61 @@ For the merkle tree implementation, we have followed the specification. But adde
 \Require $selectedLeaves$: List of selected leaf indices
 \Ensure List of revealed node indices
 
-\Function{getRevealedNodes}{$selectedLeaves$}
+    \Function{getRevealedNodes}{$selectedLeaves$}
     \If{$selectedLeaves$ is empty}
-        \State \Return empty list
+    \State \Return empty list
     \EndIf
 
     \State $revealedNodes \gets \text{empty list}$
     \State $(heightIndex,\; lastIndex) \gets (1 \ll treeHeight,\; treeNodes - 1)$
     \State $queue \gets \text{empty queue}$
 
-    
+
     \ForAll{$leaf \in selectedLeaves$} \Comment{Add commitments to the queue}
-        \State $val \gets (1 \ll treeHeight) + leaf$
-        \If{$\text{queue.add}(val)$ fails}
-            \State \textbf{panic} ``Could not add element to queue''
-        \EndIf
+    \State $val \gets (1 \ll treeHeight) + leaf$
+    \If{$\text{queue.add}(val)$ fails}
+    \State \textbf{panic} ``Could not add element to queue''
+    \EndIf
     \EndFor
 
     \While{$queue.peek() \neq 1$} \Comment{Do until we reach the root}
-        \State $index \gets queue.remove()$
-        
-        \If{$index < heightIndex$}
-            \State $heightIndex \gets heightIndex \gg 1$
-            \State $lastIndex \gets lastIndex \gg 1$
-        \EndIf
+    \State $index \gets queue.remove()$
 
-        \State $isLeftChild \gets (index \; \% \; 2 == 0)$
+    \If{$index < heightIndex$}
+    \State $heightIndex \gets heightIndex \gg 1$
+    \State $lastIndex \gets lastIndex \gg 1$
+    \EndIf
 
-        \If{$isLeftChild \land index == lastIndex$}
-            \Comment{Node has no sibling}
-            \State \textbf{continue}
-        \Else
-            \State $candidateIndex \gets 0$
-            \If{\textbf{not} $queue.isEmpty()$}
-                \State $candidateIndex \gets queue.peek()$
-            \EndIf
+    \State $isLeftChild \gets (index \; \% \; 2 == 0)$
 
-            \If{$isLeftChild \land (candidateIndex == index + 1)$}
-                \State $queue.remove()$
-            \ElsIf{$isLeftChild$}
-                \State $revealedNodes.append(index + 1)$
-            \Else
-                \State $revealedNodes.append(index - 1)$
-            \EndIf
-        \EndIf
+    \If{$isLeftChild \land index == lastIndex$}
+    \Comment{Node has no sibling}
+    \State \textbf{continue}
+    \Else
+    \State $candidateIndex \gets 0$
+    \If{\textbf{not} $queue.isEmpty()$}
+    \State $candidateIndex \gets queue.peek()$
+    \EndIf
 
-        \State $parentIndex \gets index \gg 1$
-        \If{$queue.add(parentIndex)$ fails}
-            \State \textbf{panic} ``Could not add element to queue''
-        \EndIf
+    \If{$isLeftChild \land (candidateIndex == index + 1)$}
+    \State $queue.remove()$
+    \ElsIf{$isLeftChild$}
+    \State $revealedNodes.append(index + 1)$
+    \Else
+    \State $revealedNodes.append(index - 1)$
+    \EndIf
+    \EndIf
+
+    \State $parentIndex \gets index \gg 1$
+    \If{$queue.add(parentIndex)$ fails}
+    \State \textbf{panic} ``Could not add element to queue''
+    \EndIf
     \EndWhile
 
     \State \Return $revealedNodes$
-\EndFunction
+    \EndFunction
 
-\end{algorithmic}
+  \end{algorithmic}
 \end{algorithm}
 
 \subsection{Addition of parameters}
@@ -960,18 +992,18 @@ Benchmarks were conducted on two machines: a Dell XPS 15 9510 and a MacBook Pro 
 
 \begin{itemize}
   \item \textbf{Dell XPS 15 9510}:
-    \begin{itemize}
-      \item \textbf{CPU}: 11th Gen Intel Core i7-11800H @ 2.30GHz x 16 
-      \item \textbf{GPU}: GeForce RTX 3050 Ti Mobile
-      \item \textbf{RAM}: 32GB DDR4 3200MHz
-      \item \textbf{OS}: Ubuntu 22.04.5 LTS, 64-bit
-    \end{itemize}
+        \begin{itemize}
+          \item \textbf{CPU}: 11th Gen Intel Core i7-11800H @ 2.30GHz x 16
+          \item \textbf{GPU}: GeForce RTX 3050 Ti Mobile
+          \item \textbf{RAM}: 32GB DDR4 3200MHz
+          \item \textbf{OS}: Ubuntu 22.04.5 LTS, 64-bit
+        \end{itemize}
   \item \textbf{MacBook Pro (M2 Pro)}:
-    \begin{itemize}
-      \item \textbf{CPU}: Apple M2 Pro (10-core CPU: 6 performance cores, 4 efficiency cores)
-      \item \textbf{RAM}: 32GB LPDDR5
-      \item \textbf{OS}: macOS Sequoia 15.1.1 (24B91)
-    \end{itemize}
+        \begin{itemize}
+          \item \textbf{CPU}: Apple M2 Pro (10-core CPU: 6 performance cores, 4 efficiency cores)
+          \item \textbf{RAM}: 32GB LPDDR5
+          \item \textbf{OS}: macOS Sequoia 15.1.1 (24B91)
+        \end{itemize}
 \end{itemize}
 This setup provided a diverse testing environment, ensuring our benchmarks accounted for both x86\_64 and ARM architectures.
 % subsection Benchmarking (end)
