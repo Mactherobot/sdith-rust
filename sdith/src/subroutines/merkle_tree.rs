@@ -11,8 +11,7 @@ use queues::*;
 use super::prg::hashing::{SDitHHash, SDitHHashTrait as _};
 
 pub const PARAM_MERKLE_TREE_HEIGHT: usize = PARAM_LOG_N;
-pub const PARAM_MERKLE_TREE_NODES: usize =
-    2_usize.pow(PARAM_MERKLE_TREE_HEIGHT as u32) + (PARAM_N);
+pub const PARAM_MERKLE_TREE_NODES: usize = 2_usize.pow(PARAM_MERKLE_TREE_HEIGHT as u32) + (PARAM_N);
 
 pub const HASH_PREFIX_MERKLE_TREE: u8 = 3;
 
@@ -161,7 +160,6 @@ pub fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
     let (mut height_index, mut last_index) =
         (1 << PARAM_MERKLE_TREE_HEIGHT, PARAM_MERKLE_TREE_NODES - 1);
 
-    // We use "leaves" as a circular queue, so it destroys the input data.
     let mut q: Queue<usize> = queue![];
 
     // Add the commitments to the queue but with the correct index in the tree
