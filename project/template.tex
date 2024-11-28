@@ -121,10 +121,10 @@ The most widely used digital signature schemes rely on public-key cryptography. 
 
 \subsection{NIST call to action}
 
-In 1994, the discovery of Shor's algorithm~\cite{shor1997} introduced a polynomial-time method for solving these problems using quantum computing. At that time, quantum computers were theoretical constructs. However, in 2001, Chuang et al.~\cite{vandersypen2001experimental,buchmann2004post} successfully implemented Shor's algorithm on a 7-qubit quantum computer. Two decades later, significant advancements in quantum technology have brought us closer to the point where quantum computers could be a reality.
+In 1994, the discovery of Shor's algorithm~\cite{shor1997} introduced a polynomial-time method for solving these problems using quantum computing. At that time, quantum computers were theoretical constructs. However, in 2001, Chuang et al.~\cite{vandersypen2001experimental,buchmann2004post} successfully implemented Shor's algorithm on a 7-qubit quantum computer. Two decades later, significant advancements in quantum technology, have brought us closer to the point where quantum computers could be a reality.
+\todo{Add some examples of the significant advancements in quantum technology.}
 
-A necessary pre-requisite for a post-quantum secure signature scheme is the existence of a problem that is intractable for quantum computers. Several candidates from complexity theory have been proposed.
-\todo{Write something about np-hardness to show that we need problems in NP and not with P}
+A necessary pre-requisite for a post-quantum secure signature scheme is the existence of a problem that is intractable for quantum computers. Several candidates from the family of NP-hard problems within complexity theory have been proposed. These are problems that can not be solved in polynomial-time by any classical or quantum computer.  
 
 In 2016, the National Institute of Standards and Technology (NIST) initiated a call for quantum-resistant public-key cryptosystems~\cite{nistcall}. This effort led to the standardization of three signature schemes: Dilithium~\cite{ducas2018crystals}, Falcon~\cite{fouque2018falcon}, and SPHINCS+~\cite{bernstein2019sphincs+}. Dilithium and Falcon are lattice-based schemes that rely on the hardness of structured lattice problems. They offer efficient key generation, signing, and verification, making them practical for many applications. However, their shared dependence on the same mathematical assumption poses a risk if this assumption is broken.
 
@@ -167,7 +167,7 @@ Our choice of Rust was also driven by a desire to investigate its strengths and 
 
 Given the inherent flexibility and modular nature of the SD-in-the-Head protocol, our implementation leverages Rust's feature flags to enhance modularity and interchangeability. This approach not only supports a high degree of configurability but also ensures that the implementation remains adaptable to future changes and extensions.
 
-Other signature schemes. How many signatures can be generated per second.
+\todo{Other signature schemes. How many signatures can be generated per second.}
 
 \section{Structure of the report}
 The report is structured as follows: \autoref{ch:prelim} provides the necessary background information on the cryptographic primitives and sub-protocols used in the SD-in-the-Head protocol. \autoref{ch:spec} presents the specification of the SD-in-the-Head protocol, focusing on the threshold variant. \autoref{ch:impl} details our implementation of the protocol in Rust, including the development process, design choices, and optimizations. \autoref{ch:bench} evaluates the performance of our implementation and compares it to the reference implementation and other alternatives. Finally, \autoref{ch:conclusion} summarizes our contributions.
@@ -456,6 +456,7 @@ The \textit{only if} direction is shown by the following. Consider $n$ pairwise 
 
 \subsection{Zero-Knowledge Proofs}\label{sec:zk}
 This section will give a brief introduction to \textit{two-party interactive} Zero-Knowledge (ZK) schemes for a \textit{prover} and a \textit{verifier}. The intuition behind a Zero-Knowledge proof of knowledge is that the prover can convince the verifier that they know a secret $w$, such that $x$ is true, without revealing the secret $w$ to the verifier. This could be someone wanting to prove that they are above the age of 18 without revealing their age. We denote a ZK $\Pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$. Let $x$ be a public statement in \textbf{NP} and $w$ be a witness such that $(x, w) \in \mathcal{R}$~\cite{feneuil2023threshold}.
+\todo{Use the ivan reference}
 
 \begin{definition}
   Let $x$ be a statement of language $L$ in \textbf{NP}, and $W(x)$ the set of witnesses for $x$ such that the following relation holds:
@@ -1005,8 +1006,18 @@ Then we introduced the parameters from the spec. f4739166d684
 As stated earlier, we wanted to implement the underlying arithmetic our selves and not rely on there being a library for the arithmetic of the field. This led us to implement the galois field arithmetic.
 We did this by creating a trait for field arithmetic:
 \inputminted[firstline=10, lastline=66]{rust}{../sdith/src/arith/gf256/mod.rs}
-This allows us to implement the field arithmetic different types, such as u8 and a point in the extended field:
-\inputminted[firstline=81, lastline=115]{rust}{../sdith/src/arith/gf256/gf256_ext.rs}
+This allows us to implement the field arithmetic for different types:
+\begin{minted}{rust}
+pub type FPoint = [u8; 4];
+
+impl FieldArith for FPoint {
+
+    fn field_mul(&self, rhs: Self) -> Self {
+        gf256_ext32_mul(*self, rhs)
+    }
+
+}
+\end{minted}
 And we can now use the field arithmetic in our code to for example generate beaver triples:
 \inputminted[firstline=152, lastline=152]{rust}{../sdith/src/mpc/beaver.rs}
 
@@ -1015,7 +1026,9 @@ Furthermore, all our arithmetic can be tested individually, as we can see in the
 \section{Key generation}
 
 \section{MPC}\label{sub:mpc_algo}
-We started on implementing the mpc computation algo along with the inverse
+After implementing all the subroutines, we could now do the MPC computations necessary for signing and verification. 
+
+
 
 \section{Comparison with spec impl}\label{sub:comparison_with_spec_impl}
 In order to verify and debug our own code we tried to setup our implementation to fit with the specification implementation in C, meaning we had to run their code in order to get the intermediate data in order to compare the internal states.
