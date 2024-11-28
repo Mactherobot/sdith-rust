@@ -284,22 +284,23 @@ Consider a simple scenario. Alice and Bob are playing a game of \textit{heads or
 Therefore, consider the following protocol. Given a public secure hash function $h$ \autoref{sec:prelim_hash}:
 \begin{enumerate}[parsep=0pt, itemsep=0pt]
   \item Alice chooses a guess $g \in \{0,1\}$ for \textit{tails} and \textit{heads} respectively.
-  \item Alice computes her commitment $c_A = h(g | s_r)$ for some random string $s_r$ and sends $c_A$ to Bob.
+  \item Alice computes her commitment $c = h(g | w)$ for some random string $w$ and sends $c$ to Bob.
   \item Bob flips his coin to get the result $r \in \{0,1\}$ for \textit{tails} and \textit{heads} respectively.
   \item Bob announces $r$ to Alice.
-  \item Alice announces $g', s_r$ to Bob.
-  \item Bob accepts the result if $h(g | s_r) = c_A$.
+  \item Alice announces $g', w$ to Bob.
+  \item Bob accepts the result if $h(g' | w) = c$.
 \end{enumerate}
 
-From \autoref{lem:preimage}, we can see that Bob is not able to learn $g$ before he flips his coin without knowing $g \mid s_r$. We can adjust the length of $s_r$ to enhance the security of the protocol.
+From \autoref{lem:preimage}, we can see that Bob is not able to learn $g$ before he flips his coin without knowing $g \mid w$.\footnote{We can adjust the length of $w$ to enhance the security of the protocol.} This ensures \autoref{lem:hiding}.
 
-Furthermore, by \autoref{lem:collision}, Alice cannot change her result $g$ without being able to find a different $s_r'$ such that:
+Furthermore, Alice cannot change her result $g$ without being able to find a different $w'$ such that:
 \[
-h(g' \mid s_r') = c_A.
+h(g' \mid w') = c.
 \]
+which she can only do with negligible probability per \autoref{lem:collision}, ensuring \autoref{lem:binding}.
 
 \subsubsection{Merkle Tree Commitment Scheme}
-A variant of such a scheme which allows for partial opening, meaning that the prover does not have to open the entire commitment, but can instead open a subset of the commitment, is the \textit{Merkle Tree Commitment scheme}.
+A variant of such a scheme which allows for partial opening, meaning that the prover does not have to open the entire commitment, but can instead open a subset of the commitment, is the \textit{Merkle Tree Commitment scheme}~\cite{becker2008merkle}.
 
 Let $v_1, \dots, v_n$ be the values to be committed, and let $h$ denote a cryptographically secure hash function. The leaves of the Merkle tree, $a_{0,1}, \dots, a_{0,n}$, are initialized as the hash values of the input values:
 \[
