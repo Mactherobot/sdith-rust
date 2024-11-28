@@ -266,10 +266,9 @@ The consensus among researchers indicates that for collision and preimage resist
 
 In proving the security of hash functions, researchers often resort to models like the Quantum Random Oracle Model (QROM), while there is significant work being done to further prove the future security of hash functions~\cite{dtuPostquantumSecurity}.
 
-\subsection{Merkle Tree Commitment Scheme}
-A commitment scheme allows a \textit{prover}, Alice, to commit to a value $v$,\textit{heads} or \textit{tails}, and later prove, when Bob has flipped a coin, that the revealed value is identical to the one initially committed to, so if Alice picks \textit{heads} she can not change it after Bob has flipped the coin, and Bob does not know what Alice picked. A simple scheme can be created with a hash function, where the commitment is simply the hash of the value. Now Alice can send this hash value to Bob, neither Bob nor Alice can change the value, and Bob does not learn anything about the value. After Bob has flipped the coin, Alice can reveal the value to Bob. This way none of the parties can cheat in a simple coin flip.
+\subsection{Commitment Schemes}
+A commitment scheme allows a \textit{prover} to \textit{commit} to a value and later \textit{open} or reveal the value to a \textit{verifier}. It satisfies the following two properties:
 
-A commitment scheme should satisfy the following two properties:
 \begin{lemma}[Binding]\label{lem:binding}
   Given a commitment $c$ to a value $v$, a dishonest prover can only change the committed value and have the verifier accept the new value with negligible probability.
 \end{lemma}
@@ -277,6 +276,26 @@ A commitment scheme should satisfy the following two properties:
   Given a commitment $c$ to a value $v$, the verifier can only recover the value $v$ with negligible probability.
 \end{lemma}
 
+Consider a simple scenario. Alice and Bob are playing a game of heads and tails. However each does not trust the other not to cheat
+\begin{enumerate}[parsep=0pt, itemsep=0pt]
+  \item Bob does not trust Alice not to correct her result after learning his result
+  \item Alice does not trust Bob not to use the knowledge of her result to cheat
+\end{enumerate}
+Therefore, consider the following protocol. Given a public secure hash function $h$ \autoref{sec:prelim_hash}:
+\begin{enumerate}[parsep=0pt, itemsep=0pt]
+  \item Alice flips her coin to get the result $r_A \in \{0,1\}$ for \textit{tails} and \textit{heads} respectively.
+  \item Alice computes her commitment $c_A = h(r_A | s_r)$ for some random string $s_r$ and sends $c_A$ to Bob.
+  \item Bob flips his coin to get the result $r_B \in \{0,1\}$ for \textit{tails} and \textit{heads} respectively.
+  \item Bob announces $r_B$ to Alice.
+  \item Alice announces $r_A', s_r$ to Bob.
+  \item Bob accepts the result if $h(r_A | s_r) = c_A$.
+\end{enumerate}
+
+From \autoref{lem:preimage} we can see that Bob is not able to learn $r_A$ before he flips his coin without knowing $r_A | s_r$. We can play with the length of $s_r$ to enhance the security of the protocol.
+
+Furthermore, by \autoref{lem:collision}, Alice cannot change her result $r_A$ without being able to find a different $s_r'$ s.t. $h(r_A' | s_r') = c_A$. 
+
+\subsubsection{Merkle Tree Commitment Scheme}
 A variant of such a scheme which allows for partial opening, meaning that the prover does not have to open the entire commitment, but can instead open a subset of the commitment, is the \textit{Merkle Tree Commitment scheme}.
 
 Let $v_1, \dots, v_n$ be the values to be committed, and let $h$ denote a cryptographically secure hash function. The leaves of the Merkle tree, $a_{0,1}, \dots, a_{0,n}$, are initialized as the hash values of the input values:
