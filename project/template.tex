@@ -276,24 +276,27 @@ A commitment scheme allows a \textit{prover} to \textit{commit} to a value and l
   Given a commitment $c$ to a value $v$, the verifier can only recover the value $v$ with negligible probability.
 \end{lemma}
 
-Consider a simple scenario. Alice and Bob are playing a game of heads and tails. However each does not trust the other not to cheat
+Consider a simple scenario. Alice and Bob are playing a game of \textit{heads or tails}. However each does not trust the other not to cheat
 \begin{enumerate}[parsep=0pt, itemsep=0pt]
-  \item Bob does not trust Alice not to correct her result after learning his result
-  \item Alice does not trust Bob not to use the knowledge of her result to cheat
+  \item Bob does not trust Alice not to correct her guess after learning his result
+  \item Alice does not trust Bob not to use the knowledge of her guess to cheat
 \end{enumerate}
 Therefore, consider the following protocol. Given a public secure hash function $h$ \autoref{sec:prelim_hash}:
 \begin{enumerate}[parsep=0pt, itemsep=0pt]
-  \item Alice flips her coin to get the result $r_A \in \{0,1\}$ for \textit{tails} and \textit{heads} respectively.
-  \item Alice computes her commitment $c_A = h(r_A | s_r)$ for some random string $s_r$ and sends $c_A$ to Bob.
-  \item Bob flips his coin to get the result $r_B \in \{0,1\}$ for \textit{tails} and \textit{heads} respectively.
-  \item Bob announces $r_B$ to Alice.
-  \item Alice announces $r_A', s_r$ to Bob.
-  \item Bob accepts the result if $h(r_A | s_r) = c_A$.
+  \item Alice chooses a guess $g \in \{0,1\}$ for \textit{tails} and \textit{heads} respectively.
+  \item Alice computes her commitment $c_A = h(g | s_r)$ for some random string $s_r$ and sends $c_A$ to Bob.
+  \item Bob flips his coin to get the result $r \in \{0,1\}$ for \textit{tails} and \textit{heads} respectively.
+  \item Bob announces $r$ to Alice.
+  \item Alice announces $g', s_r$ to Bob.
+  \item Bob accepts the result if $h(g | s_r) = c_A$.
 \end{enumerate}
 
-From \autoref{lem:preimage} we can see that Bob is not able to learn $r_A$ before he flips his coin without knowing $r_A | s_r$. We can play with the length of $s_r$ to enhance the security of the protocol.
+From \autoref{lem:preimage}, we can see that Bob is not able to learn $g$ before he flips his coin without knowing $g \mid s_r$. We can adjust the length of $s_r$ to enhance the security of the protocol.
 
-Furthermore, by \autoref{lem:collision}, Alice cannot change her result $r_A$ without being able to find a different $s_r'$ s.t. $h(r_A' | s_r') = c_A$. 
+Furthermore, by \autoref{lem:collision}, Alice cannot change her result $g$ without being able to find a different $s_r'$ such that:
+\[
+h(g' \mid s_r') = c_A.
+\]
 
 \subsubsection{Merkle Tree Commitment Scheme}
 A variant of such a scheme which allows for partial opening, meaning that the prover does not have to open the entire commitment, but can instead open a subset of the commitment, is the \textit{Merkle Tree Commitment scheme}.
