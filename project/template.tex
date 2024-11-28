@@ -38,7 +38,29 @@
   \def\subsectionautorefname{Section}%
   \def\lemmaautorefname{Lemma}%
   \def\figureautorefname{Figure}%
+  \def\algorithmautorefname{Algorithm}%
 }
+
+\makeatletter
+\newenvironment{breakablealgorithm}
+  {% \begin{breakablealgorithm}
+   \begin{center}
+     \refstepcounter{algorithm}% New algorithm
+     \hrule height.8pt depth0pt \kern2pt% \@fs@pre for \@fs@ruled
+     \renewcommand{\caption}[2][\relax]{% Make a new \caption
+       {\raggedright\textbf{\fname@algorithm~\thealgorithm} ##2\par}%
+       \ifx\relax##1\relax % #1 is \relax
+         \addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##2}%
+       \else % #1 is not \relax
+         \addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##1}%
+       \fi
+       \kern2pt\hrule\kern2pt
+     }
+  }{% \end{breakablealgorithm}
+     \kern2pt\hrule\relax% \@fs@post for \@fs@ruled
+   \end{center}
+  }
+\makeatother
 
 
 
@@ -124,7 +146,7 @@ The most widely used digital signature schemes rely on public-key cryptography. 
 In 1994, the discovery of Shor's algorithm~\cite{shor1997} introduced a polynomial-time method for solving these problems using quantum computing. At that time, quantum computers were theoretical constructs. However, in 2001, Chuang et al.~\cite{vandersypen2001experimental,buchmann2004post} successfully implemented Shor's algorithm on a 7-qubit quantum computer. Two decades later, significant advancements in quantum technology, have brought us closer to the point where quantum computers could be a reality.
 \todo{Add some examples of the significant advancements in quantum technology.}
 
-A necessary pre-requisite for a post-quantum secure signature scheme is the existence of a problem that is intractable for quantum computers. Several candidates from the family of NP-hard problems within complexity theory have been proposed. These are problems that can not be solved in polynomial-time by any classical or quantum computer.  
+A necessary pre-requisite for a post-quantum secure signature scheme is the existence of a problem that is intractable for quantum computers. Several candidates from the family of NP-hard problems within complexity theory have been proposed. These are problems that can not be solved in polynomial-time by any classical or quantum computer.
 
 In 2016, the National Institute of Standards and Technology (NIST) initiated a call for quantum-resistant public-key cryptosystems~\cite{nistcall}. This effort led to the standardization of three signature schemes: Dilithium~\cite{ducas2018crystals}, Falcon~\cite{fouque2018falcon}, and SPHINCS+~\cite{bernstein2019sphincs+}. Dilithium and Falcon are lattice-based schemes that rely on the hardness of structured lattice problems. They offer efficient key generation, signing, and verification, making them practical for many applications. However, their shared dependence on the same mathematical assumption poses a risk if this assumption is broken.
 
@@ -295,7 +317,7 @@ From \autoref{lem:preimage}, we can see that Bob is not able to learn $g$ before
 
 Furthermore, Alice cannot change her result $g$ without being able to find a different $w'$ such that:
 \[
-h(g' \mid w') = c.
+  h(g' \mid w') = c.
 \]
 which she can only do with negligible probability per \autoref{lem:collision}, ensuring \autoref{lem:binding}.
 
@@ -426,8 +448,8 @@ This implies that there are $|\mathbb{F}|^\ell$ possible polynomials which in tu
 
 Furthermore, the $(\ell, n)$ the scheme is $(+, +)$-homomorphic. This follows from the fact that polynomials over $\mathbb{F}$ are \textit{distributive over addition}. In other words, given two secrets $a, b$ and their corresponding polynomials $h_a(x)$ and $h_b(x)$, we have
 \begin{align*}
-              & (h_a + h_b)(i) = h_a(i) + h_b(i)          \\
-  \Rightarrow\ & (h_a + h_b)(0) = h_a(0) + h_b(0) = a + b.
+                & (h_a + h_b)(i) = h_a(i) + h_b(i)          \\
+  \Rightarrow\  & (h_a + h_b)(0) = h_a(0) + h_b(0) = a + b.
 \end{align*}
 
 \begin{figure}
@@ -670,7 +692,7 @@ We bound probability of $\mathcal{V}$ accepting a cheating outcome of \autoref{d
   \end{align*}
 \end{lemma}
 
-To re-iterate, we set out to make it so that the communication complexity of the ZK MPCitH protocol was not bounded by $N$. We achieve this by having any communication needed between parties
+To re-iterate, we set out to make it so that the communication complexity of the ZK MPCitH protocol was not bounded by $N$.
 
 \subsubsection{ZK from sacrificing}\label{sec:zk-sacrifice}
 
@@ -753,13 +775,13 @@ For polynomial evaluation in the algorithm, seen in \autoref{sec:mpc}, we need t
 \todo{See gf256\_ext.rs}
 
 \section{Merkle Tree Commitment}
-We chose to follow the sepcification definitions for the merkle tree. 
-But added a function that calculates bottom up the revealed nodes based on the view opening challenges. This is used to know the length of the authentication path that is added to the signature and is needed when parsing the signature for verification. The algorithm uses the queue structure which is also mentioned in the spec, where the tree structure is a 1D array with the last elements being the leaf. First it checks for empty input. Then we initiate an empty list to hold the revealed nodes. Now in order to traverse the tree we will get the $heightIndex$ and $lastIndex$, which are the current layer of the tree, and the index of the 1D array of where the current layer stops. Lastly we need a queue to hold the indexes. Now in order to find the revealed nodes it starts by adding the indexes of the selected leaves to the queue. Then we go through the queue until the next index is $1$ which indicates that we are at the root. In the while loop we first get the current index, and then check if we have gone up a layer in the tree, and if the current node is a left child. If the current node is a left child and it is the last index in the layer, then we can just skip to the next node because we know it has no sibling. If it is not the last node we get the next node as a candidate, if the queue is not empty. If the current node is still the left child, and the next node in the queue is the other child of the same parent we do not need to add this as a revealed node as it is part of the known values. But if the next node is not the right child of the current node we add it as a revealed node. If the current node is not the left child we add the left child to the revealed nodes. And then we add the parent index to the queue. When we exit the while loop we have traversed the tree bottom up adding for each layer the neighbours of the selected leaves. The algorithm is described in pseudocode in Algorithm \ref{alg:get-revealed-nodes}.
+We chose to follow the definitions for the merkle tree provided in \cite{aguilarsyndrome11}. However, we added a method that calculates bottom up the revealed nodes based on the view opening challenges. This is used to know the length of the authentication path that is added to the signature and is needed when parsing the signature for verification. The algorithm uses the queue structure which is also mentioned in the spec, where the tree structure is a 1D array with the last elements being the leaf. First it checks for empty input. Then we initiate an empty list to hold the revealed nodes. Now in order to traverse the tree we will get the $heightIndex$ and $lastIndex$, which are the current layer of the tree, and the index of the 1D array of where the current layer stops. Lastly we need a queue to hold the indexes. Now in order to find the revealed nodes it starts by adding the indexes of the selected leaves to the queue. Then we go through the queue until the next index is $1$ which indicates that we are at the root. In the while loop we first get the current index, and then check if we have gone up a layer in the tree, and if the current node is a left child. If the current node is a left child and it is the last index in the layer, then we can just skip to the next node because we know it has no sibling. If it is not the last node we get the next node as a candidate, if the queue is not empty. If the current node is still the left child, and the next node in the queue is the other child of the same parent we do not need to add this as a revealed node as it is part of the known values. But if the next node is not the right child of the current node we add it as a revealed node. If the current node is not the left child we add the left child to the revealed nodes. And then we add the parent index to the queue. When we exit the while loop we have traversed the tree bottom up adding for each layer the neighbours of the selected leaves. The algorithm is described in pseudocode in \autoref{alg:get-revealed-nodes}.
+
 \todo{change last sentence}
-\begin{algorithm}[H]
-  \caption{Get Revealed Nodes for Selected Leaves in Merkle Tree}
+
+\begin{breakablealgorithm}[H]
+  \caption{Get Revealed Nodes for Selected Leaves in Merkle Tree}\label{alg:get-revealed-nodes}
   \begin{algorithmic}[1]
-    \label{alg:get-revealed-nodes}
     \Require $selectedLeaves$: List of selected leaf indices
     \Ensure List of revealed node indices
 
@@ -818,7 +840,7 @@ But added a function that calculates bottom up the revealed nodes based on the v
     \EndFunction
 
   \end{algorithmic}
-\end{algorithm}
+\end{breakablealgorithm}
 
 
 \todo{Can we use Haraka v2}
@@ -1002,7 +1024,7 @@ Recall the definition of the syndrome detection problem from \autoref{def:syndro
 
 \chapter{Implementation}\label{ch:impl}
 
-We set out to manually develop as many of the subroutines and primitives ourselves, including GF256 and merkle trees. However, hashing and XOF where made using pre-existing Rust libraries. 
+We set out to manually develop as many of the subroutines and primitives ourselves, including GF256 and merkle trees. However, hashing and XOF where made using pre-existing Rust libraries.
 
 Tooling and language feaures (rust, criterion, rayon)
 code sections
@@ -1021,7 +1043,7 @@ can we use other hashes that still provide the same security assumption from \au
 We started out by implementing the different subroutines that are used in the SD-in-the-Head protocol. We will describe the implementation of each subroutine in detail.
 
 \subsection{PRG}
-First we implemented a pseudo random generator (PRG) based on a extendable output hash function (XOF). We used a library called \textit{tiny-keccak} \cite{tiny-keccak}, which contains implementations of Keccak derived functions specified in the NIST FIPS 202 standard, SP800-185 and KangarooTwelve. 
+First we implemented a pseudo random generator (PRG) based on a extendable output hash function (XOF). We used a library called \textit{tiny-keccak} \cite{tiny-keccak}, which contains implementations of Keccak derived functions specified in the NIST FIPS 202 standard, SP800-185 and KangarooTwelve.
 
 Our initial implementation focused on the NIST category one, which needs a security level of 128 bits. For this we used the SHAKE-128 implementation. But when we later had to adhere to the NIST category tree and five, we had to be able to switch between different implementations of the underlying XOF. For this we implemented a generic trait for the XOF:
 \inputminted[firstline=18, lastline=23]{rust}{../sdith/src/subroutines/prg/xof.rs}
@@ -1041,7 +1063,7 @@ This was done by creating a generic trait for the hash function:
 \subsection{commitments}
 
 \subsection{Merkle Tree impl}\label{sub:merkle_tree_impl}
-Our merkle tree implementation was done using a sized array as data structure. Meaning that we save all the leafs of the tree in the last 256 values of the array. 
+Our merkle tree implementation was done using a sized array as data structure. Meaning that we save all the leafs of the tree in the last 256 values of the array.
 \inputminted[firstline=18, lastline=23]{rust}{../sdith/src/subroutines/merkle_tree.rs}
 We then build the tree buttom up by hashing the left and right children of the current node and storing the result in the next position in the array. We do this until we reach the root node, which we then return as our global commitment.
 
@@ -1072,7 +1094,7 @@ Furthermore, all our arithmetic can be tested individually, as we can see in the
 \section{Key generation}
 
 \section{MPC}\label{sub:mpc_algo}
-After implementing all the subroutines, we could now do the MPC computations necessary for signing and verification. 
+After implementing all the subroutines, we could now do the MPC computations necessary for signing and verification.
 
 \section{Comparison with spec impl}\label{sub:comparison_with_spec_impl}
 In order to verify and debug our own code we tried to setup our implementation to fit with the specification implementation in C, meaning we had to run their code in order to get the intermediate data in order to compare the internal states.
