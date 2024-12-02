@@ -1,12 +1,20 @@
-use crate::constants::types::{Hash, Salt};
+//! # Commitment
+//! 
+//! Commitment primitive for shares in the MPCitH protocol.
 
+use crate::constants::types::{Hash, Salt};
 use super::prg::hashing::{SDitHHash, SDitHHashTrait as _};
 
+/// The prefix for the commitment hash function.
 pub const COMMITMENT_HASH_PREFIX: [u8; 1] = [0];
 
-/// The subroutine Commit takes as input a 2λ-bit `salt`, an execution index `i`,
-/// a share index `i` and some data `data` ∈ {0, 1}∗ . It hashes them all together and returns the
-/// corresponding digest.
+/// Commit to a share through hashing.
+/// 
+/// # Arguments
+/// - `salt`: 2λ-bit salt
+/// - `e`: Execution index [`crate::constants::params::PARAM_TAU`] of the share
+/// - `i`: Party index [`crate::constants::params::PARAM_N`] of the share
+/// - `share`: Share data to commit to
 pub fn commit_share(salt: &Salt, e: u16, i: u16, share: &[u8]) -> Hash {
     // get e_0, e_1 such that e = e_0 + 256 * e_1
     let [e_0, e_1] = e.to_le_bytes();

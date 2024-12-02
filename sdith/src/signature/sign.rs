@@ -9,7 +9,7 @@ use crate::{
     },
     keygen::SecretKey,
     mpc::{broadcast::BROADCAST_SHARE_PLAIN_SIZE, challenge::Challenge, MPC},
-    subroutines::{commitments::commit_share, merkle_tree::MerkleTree, prg::prg::PRG},
+    subroutines::{commitments::commit_share, merkle_tree::MerkleTree, prg::PRG},
 };
 
 use super::input::INPUT_SIZE;

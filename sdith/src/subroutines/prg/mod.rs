@@ -2,7 +2,7 @@
 //! Pseudo-randomness used in the SDitH protocol
 //!
 //! ## Hashing
-//! Hashing for Fiat-Shamir Heuristic and [Commitment scheme](crate::subroutines::merkle_tree::MerkleTree) is 
+//! Hashing for Fiat-Shamir Heuristic, Commitments and [Merkle-Tree Commitment scheme](crate::subroutines::merkle_tree::MerkleTree) is 
 //! implemented in the [`hashing`](crate::subroutines::prg::hashing) module.
 //! 
 //! ## XOF
