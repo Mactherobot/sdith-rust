@@ -3,8 +3,10 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use criterion_cycles_per_byte::CyclesPerByte;
 use nist_pqc_seeded_rng::{NistPqcAes256CtrRng, RngCore, Seed, SeedableRng};
 use sdith::arith::gf256::gf256_matrices::{field_mul_matrix_vector, HPrimeMatrix};
-use sdith::arith::gf256::gf256_vector::{gf256_add_vector, gf256_add_vector_add_scalar};
-use sdith::constants::params::{PARAM_DIGEST_SIZE, PARAM_K, PARAM_M_SUB_K, PARAM_N, PARAM_SALT_SIZE, PARAM_SEED_SIZE, PARAM_TAU};
+use sdith::arith::gf256::gf256_vector::{gf256_add_vector, gf256_mul_scalar_add_vector};
+use sdith::constants::params::{
+    PARAM_DIGEST_SIZE, PARAM_K, PARAM_M_SUB_K, PARAM_N, PARAM_SALT_SIZE, PARAM_SEED_SIZE, PARAM_TAU,
+};
 use sdith::keygen::keygen;
 use sdith::keygen::{PublicKey, SecretKey};
 use sdith::mpc::mpc::MPC;
@@ -96,7 +98,7 @@ fn simd_benchmark(c: &mut Criterion) {
     let mut vz = [0u8; PARAM_M_SUB_K];
     let scalar = 2u8;
     c.bench_function("simd_vector_add_times_scalar", |b| {
-        b.iter(|| gf256_add_vector_add_scalar(&mut vz, &vx, scalar))
+        b.iter(|| gf256_mul_scalar_add_vector(&mut vz, &vx, scalar))
     });
 }
 

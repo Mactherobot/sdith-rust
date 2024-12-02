@@ -1,17 +1,18 @@
 #![cfg_attr(feature = "simd", feature(portable_simd))]
 #![allow(dead_code)] // TODO: remove when we create final version
+#![warn(missing_docs)]
 
 pub mod api;
 pub mod arith;
 pub mod constants;
+#[cfg(feature = "kat")]
+mod kat;
 pub mod keygen;
 pub mod mpc;
 pub mod signature;
 pub mod subroutines;
 pub mod utils;
 pub mod witness;
-#[cfg(feature = "kat")]
-mod kat;
 
 #[cfg(test)]
 mod tests {
