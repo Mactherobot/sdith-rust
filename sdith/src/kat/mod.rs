@@ -126,7 +126,9 @@ fn read_response_test_vectors(n: usize) -> Vec<TestVectorResponse> {
 mod kat_tests {
     use super::*;
 
-    use crate::{keygen::keygen, signature::signature::Signature};
+    use crate::{
+        keygen::keygen, signature::signature::Signature, subroutines::marshalling::Marshalling,
+    };
 
     #[test]
     fn test_read_test_vectors() {
@@ -155,7 +157,7 @@ mod kat_tests {
             assert!(signature.is_ok());
             let signature = signature.unwrap();
 
-            let verification = Signature::verify_signature(&pk, &signature);
+            let verification = Signature::verify_signature(&pk, &signature.serialise());
             assert!(verification.is_ok());
         }
     }

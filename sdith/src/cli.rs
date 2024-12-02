@@ -11,7 +11,7 @@ use sdith::{
     },
     keygen::{self, PublicKey, SecretKey},
     signature::signature::Signature,
-    subroutines::marshalling::Marshalling,
+    subroutines::marshalling::Marshalling as _,
 };
 
 macro_rules! clap_err_result {
@@ -196,7 +196,7 @@ impl Signing {
         }
         let signature = clap_err_result!(Signature::sign_message((seed, salt), &secret_key, &msg))?;
 
-        println!("{}", STANDARD.encode(signature));
+        println!("{}", STANDARD.encode(signature.serialise()));
         Ok(())
     }
 }

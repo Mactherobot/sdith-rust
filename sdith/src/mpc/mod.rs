@@ -21,7 +21,7 @@ use crate::{
         types::Hash,
     },
     signature::input::{Input, InputSharePlain, INPUT_SIZE},
-    subroutines::prg::PRG,
+    subroutines::{marshalling::Marshalling as _, prg::PRG},
     utils::iterator::*,
     witness::{complete_q, compute_s, compute_s_poly, Solution, SOLUTION_PLAIN_SIZE},
 };
@@ -219,7 +219,7 @@ fn _party_computation(
     with_offset: bool,
     compute_v: bool,
 ) -> Result<BroadcastShare, String> {
-    let input_share = Input::parse(input_share_plain);
+    let input_share = Input::parse(&input_share_plain)?;
     let (a, b) = input_share.beaver_ab;
     let c = input_share.beaver_c;
     let (s_a, q_poly, p_poly) = (
@@ -303,7 +303,7 @@ pub fn inverse_party_computation(
     broadcast: &Broadcast,
     with_offset: bool,
 ) -> (BeaverA, BeaverB, BeaverC) {
-    let solution = Solution::parse(solution_plain);
+    let solution = Solution::parse(&solution_plain).unwrap();
     let (s_a, q_poly, p_poly) = (solution.s_a, solution.q_poly, solution.p_poly);
 
     // (α, β, v) The broadcast share values
@@ -549,7 +549,7 @@ mod mpc_tests {
             true,
         );
 
-        let input_share = Input::parse(input_share);
+        let input_share = Input::parse(&input_share).unwrap();
 
         assert_eq!(recomputed_input_share_triples.0, input_share.beaver_ab.0);
         assert_eq!(recomputed_input_share_triples.1, input_share.beaver_ab.1);

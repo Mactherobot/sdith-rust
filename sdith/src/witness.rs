@@ -13,7 +13,7 @@ use crate::{
         precomputed::{PRECOMPUTED_F_POLY, PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S},
         types::Seed,
     },
-    subroutines::prg::PRG,
+    subroutines::{marshalling::Marshalling, prg::PRG},
 };
 
 // Polynomial types
@@ -43,7 +43,7 @@ pub struct Instance {
 /// It is part of the secret key of the signature scheme.
 ///
 /// It corresponds to the extended solution, meaning that it contains all the secret values which can be deterministically built from the solution itself and which are inputs of the underlying MPC protocol.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Solution {
     pub s_a: [u8; PARAM_K],
     pub q_poly: QPoly,
@@ -53,8 +53,8 @@ pub struct Solution {
 /// k + 2w
 pub const SOLUTION_PLAIN_SIZE: usize = PARAM_K + (PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2);
 
-impl Solution {
-    pub fn serialise(&self) -> [u8; SOLUTION_PLAIN_SIZE] {
+impl Marshalling<[u8; SOLUTION_PLAIN_SIZE]> for Solution {
+    fn serialise(&self) -> [u8; SOLUTION_PLAIN_SIZE] {
         let mut serialised = [0u8; PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2];
         serialised[..PARAM_K].copy_from_slice(&self.s_a);
         for i in 0..PARAM_SPLITTING_FACTOR {
@@ -69,15 +69,17 @@ impl Solution {
         serialised
     }
 
-    pub fn parse(solution_plain: [u8; SOLUTION_PLAIN_SIZE]) -> Self {
+    fn parse(solution_plain: &[u8; SOLUTION_PLAIN_SIZE]) -> Result<Self, String> {
         let mut s_a = [0u8; PARAM_K];
         s_a.copy_from_slice(&solution_plain[..PARAM_K]);
+
         let mut q_poly = [[0u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
         for i in 0..PARAM_SPLITTING_FACTOR {
             q_poly[i].copy_from_slice(
                 &solution_plain[PARAM_K + i * PARAM_CHUNK_W..PARAM_K + (i + 1) * PARAM_CHUNK_W],
             );
         }
+
         let mut p_poly = [[0u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
         for i in 0..PARAM_SPLITTING_FACTOR {
             p_poly[i].copy_from_slice(
@@ -85,11 +87,12 @@ impl Solution {
                     ..PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR + (i + 1) * PARAM_CHUNK_W],
             );
         }
-        Solution {
+
+        Ok(Solution {
             s_a,
             q_poly,
             p_poly,
-        }
+        })
     }
 }
 
@@ -368,7 +371,7 @@ mod test_witness {
             PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2
         );
 
-        let deserialised = Solution::parse(serialised);
+        let deserialised = Solution::parse(&serialised).unwrap();
 
         assert_eq!(solution.s_a, deserialised.s_a);
         assert_eq!(solution.q_poly, deserialised.q_poly);
@@ -504,10 +507,21 @@ mod test_helpers {
             gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
         },
         constants::params::{PARAM_CHUNK_W, PARAM_SEED_SIZE, PARAM_W},
-        subroutines::prg::PRG,
+        subroutines::{marshalling::test_marhalling, prg::PRG},
     };
 
     use super::*;
+
+    fn get_solution(seed: Seed) -> Solution {
+        let mut prg = PRG::init(&seed, None);
+        let (q_poly, s_poly, p_poly, ..) = sample_witness(&mut prg);
+        let witness = generate_witness(seed, (q_poly, s_poly, p_poly));
+        Solution {
+            s_a: witness.s_a,
+            q_poly: witness.q_poly,
+            p_poly: witness.p_poly,
+        }
+    }
 
     #[test]
     fn test_positions() {
@@ -603,25 +617,11 @@ mod test_helpers {
 
     #[test]
     fn test_serialise_parse() {
-        let seed = [0u8; PARAM_SEED_SIZE];
-        let mut prg = PRG::init(&seed, None);
-        let (q_poly, s_poly, p_poly, ..) = sample_witness(&mut prg);
-        let witness = generate_witness(seed, (q_poly, s_poly, p_poly));
-        let solution = Solution {
-            s_a: witness.s_a,
-            q_poly: witness.q_poly,
-            p_poly: witness.p_poly,
-        };
+        let seed1 = [0u8; PARAM_SEED_SIZE];
+        let seed2 = [1u8; PARAM_SEED_SIZE];
+        let solution1 = get_solution(seed1);
+        let solution2 = get_solution(seed2);
 
-        let serialised = solution.serialise();
-        assert_eq!(
-            serialised.len(),
-            PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2
-        );
-
-        let deserialised = Solution::parse(serialised);
-        assert_eq!(solution.s_a, deserialised.s_a);
-        assert_eq!(solution.q_poly, deserialised.q_poly);
-        assert_eq!(solution.p_poly, deserialised.p_poly);
+        test_marhalling(solution1, solution2);
     }
 }

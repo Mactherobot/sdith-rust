@@ -9,9 +9,10 @@ use sdith::constants::params::{
 };
 use sdith::keygen::keygen;
 use sdith::keygen::{PublicKey, SecretKey};
-use sdith::mpc::mpc::MPC;
+use sdith::mpc;
 use sdith::signature::input::INPUT_SIZE;
 use sdith::signature::signature::Signature;
+use sdith::subroutines::marshalling::Marshalling as _;
 use sdith::subroutines::prg::PRG;
 
 fn criterion_benchmark(c: &mut Criterion) {
@@ -34,7 +35,9 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| signing_bench(entropy, *sk, message.clone()))
     });
 
-    let signature: Vec<u8> = Signature::sign_message(entropy, &sk, &message).unwrap();
+    let signature: Vec<u8> = Signature::sign_message(entropy, &sk, &message)
+        .unwrap()
+        .serialise();
     c.bench_function("verification", |b| {
         b.iter(|| verification_bench(*pk, &signature))
     });
@@ -114,7 +117,7 @@ fn parallel_benchmark(c: &mut Criterion) {
     prg.sample_field_fq_elements(&mut input_plain);
 
     c.bench_function("parallel_compute_input_shares", |b| {
-        b.iter(|| MPC::compute_input_shares(&input_plain, &mut prg))
+        b.iter(|| mpc::compute_input_shares(&input_plain, &mut prg))
     });
 
     // Benchmarking commit shares

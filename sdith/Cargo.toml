@@ -13,6 +13,7 @@ num-traits = "0.2.19"
 rayon = { version = "1.10.0", optional = true }
 blake3 = { version = "1.5.4", optional = true }
 hex = { version = "0.4.3", optional = true }
+criterion-cycles-per-byte = { version = "0.6.1", optional = true }
 nist-pqc-seeded-rng = { version = "0.2.0", optional = true }
 
 [dev-dependencies]
@@ -48,6 +49,7 @@ simd = []
 
 # Testing and Benchmarking features
 kat = ["dep:hex", "dep:nist-pqc-seeded-rng"] # Include Known Answer Tests
+cycles_per_byte = ["dep:criterion-cycles-per-byte"] # Benchmarking feature
 
 # Experimental features
 blake3 = ["xof_blake3", "hash_blake3"]

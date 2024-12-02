@@ -1,5 +1,5 @@
-//! # Extendable output function (XOF). 
-//! 
+//! # Extendable output function (XOF).
+//!
 //! The pseudorandomness in SD-in-the-Head is generated through an extendable output hash function (XOF).
 //! For example, we can easily generate an array of random values in [F_q](crate::arith::gf256::FieldArith) by
 //! sampling a random hash `n` byte hash output and interpreting it as an array of field elements.
@@ -12,12 +12,12 @@ use tiny_keccak::{Hasher, Shake, Xof};
 use crate::constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
 
 /// Trait for the extendable output function (XOF) implementation
-/// 
+///
 /// The trait holds the necessary functions to initialize the XOF, update the XOF with data, and squeeze the XOF to get the output.
 /// The trait is implemented for both the Shake and Blake3 XOFs.
 pub trait SDitHXOFTrait<T> {
     /// Get the XOF instance
-    /// 
+    ///
     /// Matches the [`XOF_PRIMITIVE`] to get the correct XOF based on Category configuration.
     fn get_xof() -> T;
     /// Initialize the XOF with a base value `x`
@@ -29,16 +29,17 @@ pub trait SDitHXOFTrait<T> {
 }
 
 /// SDitHXOF struct
-/// 
+///
 /// Holds the generic XOF
 pub struct SDitHXOF<T> {
     xof: T,
 }
 
 /// Consume the first output to ensure the XOF is initialized in the same way as the reference implementation `xof_final`
-/// Technically, this is not necessary for the implementation to work, but it is necessary for the implementation to match outputs of the reference implementation
+/// Technically, this is not necessary for the implementation to work, but it is necessary for the implementation to match outputs
+/// of the reference implementation
 #[cfg(not(feature = "xof_blake3"))]
-fn xof_final(xof: &mut Shake) {
+fn _xof_final(xof: &mut Shake) {
     let mut tmp = [0u8; 0];
     xof.squeeze(&mut tmp);
 }

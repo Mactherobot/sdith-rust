@@ -3,10 +3,11 @@ use crate::{
     mpc::beaver::{
         parse, serialise, BeaverA, BeaverB, BeaverC, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE,
     },
+    subroutines::marshalling::Marshalling,
     witness::{Solution, SOLUTION_PLAIN_SIZE},
 };
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Input {
     pub solution: Solution,
     pub beaver_ab: (BeaverA, BeaverB),
@@ -19,9 +20,9 @@ pub const INPUT_SIZE: usize = SOLUTION_PLAIN_SIZE + BEAVER_ABPLAIN_SIZE + BEAVER
 pub type InputSharePlain = [u8; INPUT_SIZE];
 pub type InputSharesPlain = [[InputSharePlain; PARAM_N]; PARAM_TAU];
 
-impl Input {
+impl Marshalling<InputSharePlain> for Input {
     // Turn the input into a byte array for mpc of `F_q^(k+2w+t(2d+1)η)`
-    pub fn serialise(&self) -> [u8; INPUT_SIZE] {
+    fn serialise(&self) -> InputSharePlain {
         let mut serialised = [0u8; INPUT_SIZE];
         serialised[..SOLUTION_PLAIN_SIZE].copy_from_slice(&self.solution.serialise());
         serialised[SOLUTION_PLAIN_SIZE..].copy_from_slice(&serialise(
@@ -32,22 +33,19 @@ impl Input {
         serialised
     }
 
-    pub fn deserialise_solution(truncated_input_plain: [u8; SOLUTION_PLAIN_SIZE]) -> Solution {
-        let solution = Solution::parse(truncated_input_plain);
-        solution
-    }
-
-    pub fn parse(input_plain: InputSharePlain) -> Input {
-        let solution = Solution::parse(input_plain[..SOLUTION_PLAIN_SIZE].try_into().unwrap());
+    fn parse(input_plain: &InputSharePlain) -> Result<Input, String> {
+        let solution = Solution::parse(input_plain[..SOLUTION_PLAIN_SIZE].try_into().unwrap())?;
         let (a, b, c) = parse(input_plain[SOLUTION_PLAIN_SIZE..].try_into().unwrap());
 
-        Input {
+        Ok(Input {
             solution,
             beaver_ab: (a, b),
             beaver_c: c,
-        }
+        })
     }
+}
 
+impl Input {
     /// Remove the Beaver triples from the input shares as they can be derived from the Solution shares
     /// {[x_A]_i, [P]_i, [Q]_i}_(i \in I) and broadcast shares {[α]_i, [β]_i, [v]_i}_(i \in I).
     pub fn truncate_beaver_triples(input_share: &[u8; INPUT_SIZE]) -> [u8; SOLUTION_PLAIN_SIZE] {
@@ -99,7 +97,7 @@ mod input_tests {
         let solution_plain = Input::truncate_beaver_triples(&input_plain);
         assert!(solution_plain.len() == SOLUTION_PLAIN_SIZE);
 
-        let deserialised_solution = Input::deserialise_solution(solution_plain);
+        let deserialised_solution = Solution::parse(&solution_plain).unwrap();
 
         assert_eq!(input.solution.s_a, deserialised_solution.s_a);
         assert_eq!(input.solution.q_poly, deserialised_solution.q_poly);

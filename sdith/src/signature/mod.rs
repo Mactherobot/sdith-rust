@@ -12,7 +12,7 @@ mod signing_and_verifying_tests {
             params::{PARAM_K, PARAM_M_SUB_K, PARAM_SALT_SIZE, PARAM_SEED_SIZE},
             types::Seed,
         },
-        keygen::keygen,
+        keygen::keygen, subroutines::marshalling::Marshalling,
     };
 
     #[test]
@@ -23,7 +23,7 @@ mod signing_and_verifying_tests {
         let entropy = (spec_master_seed, [0u8; PARAM_SALT_SIZE]);
 
         let signature = Signature::sign_message(entropy, &sk, &message).unwrap();
-        let valid = Signature::verify_signature(&pk, &signature);
+        let valid = Signature::verify_signature(&pk, &signature.serialise());
 
         if valid.is_err() {
             println!("{:?}", valid);
@@ -51,10 +51,10 @@ mod signing_and_verifying_tests {
         let message = b"Hello, World!".to_vec();
         let entropy = (spec_master_seed, [0u8; PARAM_SALT_SIZE]);
 
-        let signature = Signature::sign_message(entropy, &sk, &message);
+        let signature = Signature::sign_message(entropy, &sk, &message).unwrap().serialise();
 
         pk.y = [0u8; PARAM_M_SUB_K];
-        let valid = Signature::verify_signature(&pk, &signature.unwrap());
+        let valid = Signature::verify_signature(&pk, &signature);
         assert!(valid.is_err());
     }
 }

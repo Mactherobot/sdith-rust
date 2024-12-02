@@ -7,13 +7,13 @@ use crate::{
     witness::{generate_instance_with_solution, Solution, SOLUTION_PLAIN_SIZE},
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PublicKey {
     pub seed_h: Seed,
     pub y: [u8; PARAM_M_SUB_K],
 }
 
-impl Marshalling for PublicKey {
+impl Marshalling<Vec<u8>> for PublicKey {
     fn serialise(&self) -> Vec<u8> {
         let mut serialised = Vec::new();
         serialised.extend_from_slice(&self.seed_h);
@@ -36,7 +36,7 @@ impl Marshalling for PublicKey {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SecretKey {
     pub seed_h: Seed,
     pub y: [u8; PARAM_M_SUB_K],
@@ -44,7 +44,7 @@ pub struct SecretKey {
     pub solution: Solution,
 }
 
-impl Marshalling for SecretKey {
+impl Marshalling<Vec<u8>> for SecretKey {
     fn serialise(&self) -> Vec<u8> {
         let mut serialised = Vec::new();
         serialised.extend_from_slice(&self.seed_h);
@@ -70,7 +70,7 @@ impl Marshalling for SecretKey {
                 ..PARAM_SEED_SIZE + PARAM_M_SUB_K + SOLUTION_PLAIN_SIZE]
                 .try_into()
                 .unwrap(),
-        );
+        )?;
 
         Ok(SecretKey {
             seed_h,
@@ -93,4 +93,23 @@ pub fn keygen(seed_root: Seed) -> (Box<PublicKey>, Box<SecretKey>) {
     });
 
     (pk, sk)
+}
+
+#[cfg(test)]
+mod keygen_tests {
+    use crate::constants::params::PARAM_SEED_SIZE;
+
+    #[test]
+    fn test_marhalling() {
+        let seed1 = [0u8; PARAM_SEED_SIZE];
+        let seed2 = [1u8; PARAM_SEED_SIZE];
+        let keys1 = super::keygen(seed1);
+        let keys2 = super::keygen(seed2);
+
+        // Test marshalling for PublicKey
+        crate::subroutines::marshalling::test_marhalling(*keys1.0, *keys2.0);
+
+        // Test marshalling for SecretKey
+        crate::subroutines::marshalling::test_marhalling(*keys1.1, *keys2.1);
+    }
 }

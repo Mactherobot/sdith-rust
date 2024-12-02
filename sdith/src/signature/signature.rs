@@ -15,7 +15,7 @@ use crate::{
     witness::SOLUTION_PLAIN_SIZE,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Signature {
     pub message: Vec<u8>,
     pub salt: Salt,
@@ -83,7 +83,7 @@ impl Signature {
     }
 }
 
-impl Marshalling for Signature {
+impl Marshalling<Vec<u8>> for Signature {
     // Serialise message into (signature_len:[u8; 4] | msg | salt | h1 | broadcast_plain | broadcast_shares | auth)
     fn serialise(&self) -> Vec<u8> {
         let mut serialised = vec![];
@@ -210,19 +210,19 @@ mod signature_tests {
     use crate::{constants::params::PARAM_SEED_SIZE, keygen::keygen};
 
     #[test]
-    fn test_serialise_parse_signature() {
+    fn test_marhalling() {
         let message = vec![1u8, 2u8, 3u8, 4u8];
-        let seed_root = [0u8; PARAM_SEED_SIZE];
+        let seed1 = [0u8; PARAM_SEED_SIZE];
+        let seed2 = [1u8; PARAM_SEED_SIZE];
         let salt = [1u8; PARAM_SALT_SIZE];
-        let entropy = (seed_root, salt);
-        let (_, sk) = keygen(seed_root);
+        let entropy = (seed1, salt);
 
-        let signature = Signature::sign_message(entropy, &sk, &message).unwrap();
+        let (_, sk1) = keygen(seed1);
+        let (_, sk2) = keygen(seed2);
 
-        let deserialised = Signature::parse(&signature).unwrap();
+        let signature1 = Signature::sign_message(entropy, &sk1, &message).unwrap();
+        let signature2 = Signature::sign_message(entropy, &sk2, &message).unwrap();
 
-        assert_eq!(message, deserialised.message);
-        assert_eq!(salt, deserialised.salt);
-        assert_eq!(signature, deserialised.serialise());
+        crate::subroutines::marshalling::test_marhalling(signature1, signature2);
     }
 }

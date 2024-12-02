@@ -48,7 +48,7 @@ impl Signature {
         entropy: (Seed, Salt),
         secret_key: &SecretKey,
         message: &Vec<u8>,
-    ) -> Result<Vec<u8>, String> {
+    ) -> Result<Self, String> {
         // TODO: error handling
 
         // Expansion of the parity matrix H'
@@ -138,6 +138,6 @@ impl Signature {
             view_opening_challenges,
         };
 
-        Ok(signature.serialise())
+        Ok(signature)
     }
 }
