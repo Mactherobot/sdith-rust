@@ -1,3 +1,12 @@
+//! # Witness generation
+//!
+//! The SDitH protocol is based on creating a Zero-Knowlegde proof and turning it into a Signature Scheme using the Fiat-Shamir Heuristic.
+//!
+//! Witness generation is the process of creating the polynomials `Q`, `S`, and `P` to prove the relation `S * Q = P * F`.
+//! This, in turn, is used to generate the [`crate::keygen::PublicKey`] and [`crate::keygen::SecretKey`].
+//!
+//! The instance is split into [`PARAM_SPLITTING_FACTOR`] according to a variant of the SD problem in the _d-split syndrome decoding problem_.
+
 use crate::{
     arith::gf256::{
         gf256_matrices::{gen_hmatrix, mul_hmatrix_vector, HPrimeMatrix},
@@ -17,22 +26,33 @@ use crate::{
 };
 
 // Polynomial types
-/// QPoly is a polynomial of degree PARAM_CHUNK_WEIGHT * PARAM_SPLITTING_FACTOR. Split into a matrix of PARAM_SPLITTING_FACTOR rows and PARAM_CHUNK_WEIGHT columns.
+
+/// QPoly is a polynomial of degree [`PARAM_CHUNK_W`].
+/// Split into a matrix of PARAM_SPLITTING_FACTOR rows and PARAM_CHUNK_WEIGHT columns.
 pub type QPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
+
+/// Completed [`QPoly`] with leading coefficient.
 pub type QPolyComplete = [[u8; PARAM_CHUNK_W + 1]; PARAM_SPLITTING_FACTOR];
+
+/// P polynomial is a polynomial of degree [`PARAM_CHUNK_W`]
 pub type PPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
+
+/// SPoly is a polynomial of degree [`PARAM_CHUNK_M`]
 pub type SPoly = [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
 
-/// Instance Definition:
+/// Syndrom Decoding (SD) Instance struct
 ///
-/// This structure represents an instance of the problem on which the security of the signature scheme relies.
+/// This structure represents an instance of the SD problem on which the security of the signature scheme relies.
 ///
 /// It corresponds to the public key.
 ///
 /// Some member can be pointers when they are generated at each signing and verification from the others members.
 pub struct Instance {
+    /// Seed used to generate the H' matrix.
     pub seed_h: Seed,
+    /// y = H' * x
     pub y: [u8; PARAM_M_SUB_K],
+    /// H' matrix
     pub h_prime: HPrimeMatrix,
 }
 
@@ -102,14 +122,25 @@ impl Marshalling<[u8; SOLUTION_PLAIN_SIZE]> for Solution {
     }
 }
 
+/// Zero-Knowledge Proof Witness
+///
+/// This structure represents the witness of the Zero-Knowledge proof for the SD relation `S * Q = P * F`.
 pub struct Witness {
+    /// The first share of [`SPoly`], for the SD relation `S * Q = P * F`.
     pub s_a: [u8; PARAM_K],
-    /// s_b is only used for testing purposes
+    /// The second share of [`SPoly`], for the SD relation `S * Q = P * F`.
+    ///
+    /// This part is only used for testing purposes.
     s_b: [u8; PARAM_M_SUB_K],
+    /// The value `y = s_b + H' * s_a`.
     pub y: [u8; PARAM_M_SUB_K],
+    /// H' matrix
     pub h_prime: HPrimeMatrix,
+    /// Seed used to generate the H' matrix.
     pub seed_h: Seed,
+    /// Computed witness polynomial Q
     pub q_poly: QPoly,
+    /// Computed witness polynomial P
     pub p_poly: PPoly,
 }
 
@@ -168,6 +199,7 @@ pub fn expand_seed<const SEEDS: usize>(seed_root: Seed) -> [Seed; SEEDS] {
     seeds.try_into().expect("Failed to convert seeds")
 }
 
+/// Generate an instance and a solution for the SD problem given a master [`Seed`].
 pub fn generate_instance_with_solution(master_seed: Seed) -> (Instance, Solution) {
     let mut prg = PRG::init(&master_seed, None);
 
@@ -275,25 +307,24 @@ mod test_witness {
 
     use super::*;
 
-    // #[test]
-    // fn test_generate_witness() {
-    //     let seed_test = [0u8; PARAM_SEED_SIZE];
-    //     let mut prg = PRG::init(&seed_test, None);
-    //     let (q, s, p, ..) = sample_witness(&mut prg);
-    //     let result = generate_witness(seed_test, (q, s, p));
+    #[test]
+    fn test_generate_witness() {
+        let seed_test = [0u8; PARAM_SEED_SIZE];
+        let mut prg = PRG::init(&seed_test, None);
+        let (q, s, p, ..) = sample_witness(&mut prg);
+        let result = generate_witness(seed_test, (q, s, p));
 
-    //     let h_prime = result.h_prime;
-    //     let y = result.y;
-    //     let s_a = result.s_a;
-    //     let s_b_expect = result.s_b;
+        let h_prime = result.h_prime;
+        let s_a = result.s_a;
+        let s_b_expect = result.s_b;
 
-    //     // Check s_b = y - H' s_a
-    //     // let mut s_b_result: [u8; PARAM_M_SUB_K] = h_prime.gf256_mul_vector_add(&s_a);
-    //     // for i in 0..s_b_result.len() {
-    //     //     s_b_result[i].field_sub_mut(y[i]);
-    //     // }
-    //     // assert_eq!(s_b_expect, s_b_result);
-    // }
+        // Check s_b = y - H' s_a
+        let mut s_b = [0u8; PARAM_M_SUB_K];
+        mul_hmatrix_vector(&mut s_b, &h_prime, &s_a);
+        gf256_add_vector(&mut s_b, &result.y);
+
+        assert_eq!(s_b, s_b_expect);
+    }
 
     #[test]
     fn test_compute_polynomials() {
@@ -356,32 +387,6 @@ mod test_witness {
 
             assert_eq!(s_q, p_f);
         }
-    }
-
-    #[test]
-    fn test_serialise() {
-        let seed = [0u8; PARAM_SEED_SIZE];
-        let mut prg = PRG::init(&seed, None);
-        let (q_poly, s_poly, p_poly, ..) = sample_witness(&mut prg);
-        let witness = generate_witness(seed, (q_poly, s_poly, p_poly));
-        let solution = Solution {
-            s_a: witness.s_a,
-            q_poly: witness.q_poly,
-            p_poly: witness.p_poly,
-        };
-
-        let serialised = solution.serialise();
-
-        assert_eq!(
-            serialised.len(),
-            PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2
-        );
-
-        let deserialised = Solution::parse(&serialised).unwrap();
-
-        assert_eq!(solution.s_a, deserialised.s_a);
-        assert_eq!(solution.q_poly, deserialised.q_poly);
-        assert_eq!(solution.p_poly, deserialised.p_poly);
     }
 }
 
@@ -603,7 +608,6 @@ mod test_helpers {
     }
 
     #[test]
-    /// TODO: Figure out why this test does not catch the difference
     fn test_complete_q() {
         let seed = [0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);

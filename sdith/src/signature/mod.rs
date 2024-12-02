@@ -3,6 +3,7 @@
 //! This module contains the implementation of the signature struct and its methods.
 
 pub mod input;
+#[doc()]
 mod sign;
 mod verify;
 
