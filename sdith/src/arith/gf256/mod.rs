@@ -2,11 +2,11 @@ use crate::subroutines::prg::prg::PRG;
 
 pub mod gf256_arith;
 pub mod gf256_ext;
+pub mod gf256_matrices;
 pub mod gf256_poly;
 pub mod gf256_vector;
-pub mod gf256_matrices;
 
-/// TODO: Replace calls to gf256_* methods to use the FieldArith trait.
+/// TODO: Write documentation in the trait.
 pub trait FieldArith
 where
     Self: Sized + Clone + Copy + PartialEq,
@@ -65,6 +65,7 @@ where
     fn field_sample(prg: &mut PRG) -> Self;
 }
 
+/// A thorough test for properties in the extended fields
 pub(super) fn test_field_definitions<T>(a: T, b: T, c: T)
 where
     T: FieldArith + std::fmt::Debug,

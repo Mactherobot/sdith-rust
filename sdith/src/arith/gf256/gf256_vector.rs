@@ -1,11 +1,10 @@
-// ----------------------- Vector operations -----------------------
-
 #[cfg(feature = "simd")]
 use std::simd::{num::SimdUint, u8x32};
 
 use super::{gf256_arith::gf256_add, FieldArith};
 
 #[cfg(not(feature = "simd"))]
+#[inline(always)]
 /// vz'[] = vz[] + vx[]
 pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
     assert!(vx.len() >= vz.len());
@@ -16,6 +15,7 @@ pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
 }
 
 #[cfg(not(feature = "simd"))]
+#[inline(always)]
 /// vx'[] = vx[] * scalar
 pub fn gf256_mul_vector_by_scalar(vx: &mut [u8], scalar: u8) {
     let bytes = vx.len();
@@ -25,6 +25,7 @@ pub fn gf256_mul_vector_by_scalar(vx: &mut [u8], scalar: u8) {
 }
 
 #[cfg(not(feature = "simd"))]
+#[inline(always)]
 /// vz'[] = vz[] * scalar + vx[]
 pub fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) {
     let bytes = vz.len();
@@ -39,8 +40,6 @@ pub fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) {
 pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
     let chunk_size = 32;
 
-    // Then go through the chunks using SIMD
-    // using the gf256_add_vector_add_scalar_simd_32 function
     let vz_chunks = vz.chunks_mut(chunk_size);
     let mut vx_chunks = vx.chunks(chunk_size);
 
@@ -67,8 +66,6 @@ pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
 pub fn gf256_mul_vector_by_scalar(vz: &mut [u8], scalar: u8) {
     let chunk_size = 32;
 
-    // Then go through the chunks using SIMD
-    // using the gf256_add_vector_add_scalar_simd_32 function
     let vz_chunks = vz.chunks_mut(chunk_size);
     let scalar_chunk = u8x32::splat(scalar);
     let one = u8x32::splat(1);
@@ -116,17 +113,16 @@ pub fn gf256_mul_vector_by_scalar(vz: &mut [u8], scalar: u8) {
         vz_chunk.copy_from_slice(vz_chunk_simd.as_array());
     }
 }
+
 #[cfg(feature = "simd")]
 /// vz'[] = vz[] * scalar + vx[]
-pub fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) {
+pub fn gf256_mul_scalar_add_vector(vz: &mut [u8], vx: &[u8], scalar: u8) {
     assert!(
         vz.len() == vx.len(),
         "Length of the two vectors must be the same"
     );
     let chunk_size = 32;
 
-    // Then go through the chunks using SIMD
-    // using the gf256_add_vector_add_scalar_simd_32 function
     let vz_chunks = vz.chunks_mut(chunk_size);
     let mut vx_chunks = vx.chunks(chunk_size);
     let scalar_chunk = u8x32::splat(scalar);
@@ -135,6 +131,7 @@ pub fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) {
 
     for vz_chunk in vz_chunks {
         let vx_chunk = vx_chunks.next().unwrap();
+        // If outside chunks use the vormal vector arithmetic instead of SIMD
         if vz_chunk.len() < chunk_size {
             for i in 0..vz_chunk.len() {
                 vz_chunk[i] = vx_chunk[i].field_add(vz_chunk[i].field_mul(scalar));
@@ -212,6 +209,7 @@ mod tests_vector_ops {
     }
 
     #[test]
+    /// This test is created using the reference implementation
     fn test_gf256_add_vector_add_scalar() {
         let mut vz = [
             124, 219, 230, 229, 212, 149, 74, 252, 76, 136, 197, 12, 15, 249, 224, 215, 204, 20,
@@ -261,7 +259,7 @@ mod tests_vector_ops {
         ];
         let y = 128;
 
-        gf256_add_vector_add_scalar(&mut vz, &vx, y);
+        gf256_mul_scalar_add_vector(&mut vz, &vx, y);
         assert_eq!(
             vz,
             [

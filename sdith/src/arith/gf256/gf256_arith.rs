@@ -10,6 +10,7 @@ pub(super) const MODULUS: u8 = 0x1B; // The primitive polynomial x^4 + x^3 + x +
 const _GENERATOR: u8 = 0x03; // The generator polynomial x + 1 ({03}) of the multiplicative group of GF(2^8)
 const ORDER: u16 = 0xff; // The order of the multiplicative group of GF(2^8)
 
+// TODO: Test this trait with some test vectors
 impl FieldArith for u8 {
     fn field_add(&self, rhs: u8) -> Self {
         gf256_add(*self, rhs)
@@ -85,6 +86,7 @@ const POWER_TABLE_0X03: [u8; 512] = [
     242, 13, 23, 57, 75, 221, 124, 132, 151, 162, 253, 28, 36, 108, 180, 199, 82, 246, 1, 0,
 ];
 
+/// Extension function for the lookup table
 fn power_lookup(a: u16) -> u8 {
     POWER_TABLE_0X03[a as usize]
 }
@@ -109,14 +111,17 @@ const LOG_TABLE_0X03: [u16; 256] = [
     24, 13, 99, 140, 128, 192, 247, 112, 7,
 ];
 
+/// Accessing log tables
 fn log_lookup(a: u8) -> u16 {
     LOG_TABLE_0X03[a as usize]
 }
 
+/// Function for GF(256) addition
 pub(super) fn gf256_add(a: u8, b: u8) -> u8 {
     a ^ b
 }
 
+/// Function for GF(256) multiplication between two u8
 pub(super) fn gf256_mul(a: u8, b: u8) -> u8 {
     if (a == 0) || (b == 0) {
         return 0;
@@ -125,6 +130,7 @@ pub(super) fn gf256_mul(a: u8, b: u8) -> u8 {
 }
 
 /// Multiplication from the spec implementation
+/// TODO: Small benchmark with different multiplication functions
 pub(super) fn _mul_spec(a: u8, b: u8) -> u8 {
     let a = Wrapping(a);
     let b = Wrapping(b);
@@ -195,6 +201,7 @@ pub(super) fn gf256_mul_inverse_lookup(a: u8) -> u8 {
     power_lookup(log_a_inv)
 }
 
+/// Function for GF(256) division
 pub(super) fn gf256_div(a: u8, b: u8) -> u8 {
     gf256_mul(a, gf256_mul_inverse_lookup(b))
 }
@@ -207,6 +214,7 @@ mod tests {
         subroutines::prg::prg::PRG,
     };
 
+    /// TODO: remove these tests when we have used the proper test vectors
     // #[test]
     // fn test_all_add_cases() {
     //     // Test all possible addition cases

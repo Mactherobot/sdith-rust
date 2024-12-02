@@ -1,5 +1,3 @@
-// ----------------------- Polynomial operations -----------------------
-
 use crate::arith::gf256::gf256_arith::{gf256_add, gf256_mul};
 
 /// Evaluate a polynomial at a point using Horner's method.

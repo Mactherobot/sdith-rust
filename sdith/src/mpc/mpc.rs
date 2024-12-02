@@ -2,7 +2,7 @@ use crate::{
     arith::gf256::{
         gf256_ext::FPoint,
         gf256_matrices::HPrimeMatrix,
-        gf256_vector::{gf256_add_vector_add_scalar, gf256_mul_vector_by_scalar},
+        gf256_vector::{gf256_mul_scalar_add_vector, gf256_mul_vector_by_scalar},
         FieldArith,
     },
     constants::{
@@ -105,11 +105,11 @@ impl MPC {
         // Horner method
         if !skip_loop {
             for j in (0..(rnd_coefs.len() - 1)).rev() {
-                gf256_add_vector_add_scalar(&mut share, &rnd_coefs[j], fi);
+                gf256_mul_scalar_add_vector(&mut share, &rnd_coefs[j], fi);
             }
 
             // Add the plain to the share
-            gf256_add_vector_add_scalar(&mut share, plain, fi);
+            gf256_mul_scalar_add_vector(&mut share, plain, fi);
         }
 
         share

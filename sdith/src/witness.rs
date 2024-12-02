@@ -253,14 +253,15 @@ pub fn sample_witness(
 
 #[cfg(test)]
 mod test_witness {
-    use crate::arith::{
-        gf256::{
-            gf256_poly::{
-                gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
-            },
-            FieldArith,
-        },
-        hamming_weight_vector,
+
+    /// Calculate hamming weight of the given vector, which is the number of non-zero elements.
+    fn hamming_weight_vector(x: &[u8]) -> u64 {
+        x.iter().fold(0, |a, b| a + (*b != 0) as u64)
+    }
+
+    use crate::arith::gf256::{
+        gf256_poly::{gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic},
+        FieldArith,
     };
 
     use super::*;
@@ -323,7 +324,6 @@ mod test_witness {
                 );
 
                 // Test that Q(fi) = 0 for all xi != 0
-                // TODO: This currently does not work. Seems it might not be Q, but Q'? However, we dont know as of yet
                 if x_vector_d[i] != 0 {
                     assert_eq!(
                         gf256_evaluate_polynomial_horner_monic(&q_poly_d, i as u8),
@@ -472,7 +472,6 @@ pub fn compute_s(
     // Check that the h_prime * s_a is not equal to y (if provided)
     // This can happen if the h_prime is the zero matrix or if the s_a is the zero vector
     // And if we want a correct SD instance we need to ensure that the s_b is not equal to y
-    // TODO: Check if other schemes check for tivial public keys
     if let Some(y) = y {
         if s[PARAM_K..] == *y {
             return Err("s_b is equal to y".to_string());
@@ -495,12 +494,14 @@ pub fn compute_s_poly(s: [u8; PARAM_M]) -> SPoly {
 #[cfg(test)]
 mod test_helpers {
 
+    /// Calculate hamming weight of the given vector, which is the number of non-zero elements.
+    fn hamming_weight_vector(x: &[u8]) -> u64 {
+        x.iter().fold(0, |a, b| a + (*b != 0) as u64)
+    }
+
     use crate::{
-        arith::{
-            gf256::gf256_poly::{
-                gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
-            },
-            hamming_weight_vector,
+        arith::gf256::gf256_poly::{
+            gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
         },
         constants::params::{PARAM_CHUNK_W, PARAM_SEED_SIZE, PARAM_W},
         subroutines::prg::prg::PRG,
@@ -582,6 +583,7 @@ mod test_helpers {
     }
 
     #[test]
+    /// TODO: Figure out why this test does not catch the difference
     fn test_complete_q() {
         let seed = [0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);

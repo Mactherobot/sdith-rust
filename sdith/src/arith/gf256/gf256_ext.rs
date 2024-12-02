@@ -18,6 +18,7 @@ const GF256_32_ONE: [u8; 4] = [1, 0, 0, 0];
 /// Addition: Field extension `F_q^2 = F_q[X] / (X^2 + X + 32)`
 ///
 /// (a + bX) + (c + dX) = (a + c) + (b + d)X
+#[inline(always)]
 fn gf256_ext16_add(a: [u8; 2], b: [u8; 2]) -> [u8; 2] {
     [gf256_add(a[0], b[0]), gf256_add(a[1], b[1])]
 }
@@ -31,6 +32,7 @@ fn gf256_ext16_add(a: [u8; 2], b: [u8; 2]) -> [u8; 2] {
 ///                     = (ac + bd * 32) + (ad + bc + bd)X
 ///                     = (ac + bd * 32) + ((a + b) * (c + d) - ac)X
 ///                     = c0 + c1X
+#[inline(always)]
 fn gf256_ext16_mul(_a: [u8; 2], _b: [u8; 2]) -> [u8; 2] {
     let [a, b] = _a;
     let [c, d] = _b;
@@ -50,6 +52,7 @@ fn gf256_ext16_mul(_a: [u8; 2], _b: [u8; 2]) -> [u8; 2] {
 ///
 ///   (0, 32X) * (a + bX) = (0a + 32b * 32) + (0b + 32a + 32b)X
 ///                       = (32^2)b + 32(a + b)X
+#[inline(always)]
 fn gf256_ext16_mul32(_a: [u8; 2]) -> [u8; 2] {
     let [a, b] = _a;
     let c0 = b.field_mul(0x20).field_mul(0x20);
@@ -119,6 +122,7 @@ impl FieldArith for FPoint {
 /// For u = (p,q) = p + qZ
 ///
 /// u + v = (p + qZ) + (r + sZ) = (p + r) + (q + s)Z
+#[inline(always)]
 pub(super) fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
     let [p0, p1, q0, q1] = a;
     let [r0, r1, s0, s1] = b;
@@ -139,6 +143,7 @@ pub(super) fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
 ///       = pr + (ps + qr)Z + qsZ + 32qsX
 ///       = (pr + 32qsX) + (ps + qr + qs)Z
 ///       = (pr + 32qsX) + ((p + q) * (r + s) - pr)Z
+#[inline(always)]
 pub(super) fn gf256_ext32_mul(a: FPoint, b: FPoint) -> FPoint {
     let [p0, p1, q0, q1] = a;
     let [r0, r1, s0, s1] = b;
@@ -154,6 +159,8 @@ pub(super) fn gf256_ext32_mul(a: FPoint, b: FPoint) -> FPoint {
     [r0, r1, r2, r3]
 }
 
+/// Multiplication in the 32-bit extended field
+#[inline(always)]
 fn gf256_ext32_gf256_mul(a: u8, b: FPoint) -> FPoint {
     let [b0, b1, b2, b3] = b;
     let c0 = a.field_mul(b0);
@@ -164,6 +171,7 @@ fn gf256_ext32_gf256_mul(a: u8, b: FPoint) -> FPoint {
 }
 
 /// Sample a value from the extended field `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
+#[inline(always)]
 pub(super) fn gf256_ext32_sample(prg: &mut PRG) -> FPoint {
     prg.sample_field_fq_elements_vec(4).try_into().unwrap()
 }
