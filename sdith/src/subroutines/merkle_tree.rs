@@ -2,13 +2,13 @@
 //!
 //! A commitment scheme that allows for efficient communication with partial opening.
 //! This scheme is used by the signature scheme to commit to the shares of the parties.
-//! 
+//!
 //! The tree is constructed from a list of commitments, where each leaf is a commitment.
 //! Parents are calculated by hashing the concatenation of the left and right children along with a [prefix](HASH_PREFIX_MERKLE_TREE).
 //! The root of the tree is then sent as the final commitment.
-//! 
+//!
 //! To open a commitment, the prover sends the commitment along with the hashed path from the leaf to the root.
-//! 
+//!
 //! The verifier can then recalculate the root from the commitment and the path and compare it to the previously received root.
 //!
 //! The structure allows for the Treshold variant of the signature scheme to only open the commitments to a subset of the parties.
@@ -46,7 +46,7 @@ pub struct MerkleTree {
 
 impl MerkleTree {
     /// Creates a new Merkle tree from a list of commitments (i.e. pre-hashed leaves in [`CommitmentsArray`]).
-    /// 
+    ///
     /// The `salt` is optionally added to the hashing of parent nodes.
     pub fn new(commitments: CommitmentsArray, salt: Option<Hash>) -> Self {
         let nb_leaves = commitments.len();
@@ -109,7 +109,7 @@ impl MerkleTree {
     /// Returns a leaf from the tree from the flat structure.
     pub fn get_leaf(&self, n: usize) -> Hash {
         assert!(n <= self.n_leaves, "Invalid leaf index: {}", n);
-        self.nodes[(self.n_leaves + (n as usize)).to_usize().unwrap()]
+        self.nodes[(self.n_leaves + (n)).to_usize().unwrap()]
     }
 
     /// Return non-zero based index of the leaf in the tree
@@ -122,14 +122,7 @@ impl MerkleTree {
         (n - (self.n_leaves - 1)).try_into().unwrap()
     }
 
-    /// Returns the nodes required to calculate the merkle root from the leaves.
-    ///
-    /// # Arguments
-    /// - `selected_leaves`: A vector with the indexes of the selected leaves.
-    ///
-    /// # Returns
-    /// A vector of node hash values that are required to calculate the merkle root from the selected leaves.
-    ///
+    /// Returns a vector of node hash values that are required to calculate the merkle root from the selected leaves.
     /// If you supply all leaves or none, the auth path will be empty.
     pub fn get_merkle_path(&self, selected_leaves: &[u16]) -> Vec<Hash> {
         let revealed_nodes = get_revealed_nodes(selected_leaves);
@@ -149,6 +142,7 @@ impl MerkleTree {
     }
 }
 
+/// Calculates the merkle hash from the left and right children and the parent index.
 fn merkle_hash(parent_index: usize, left: Hash, right: Option<Hash>, salt: Option<Salt>) -> Hash {
     let mut hasher = SDitHHash::init_with_prefix(&[HASH_PREFIX_MERKLE_TREE]);
 
@@ -168,6 +162,7 @@ fn merkle_hash(parent_index: usize, left: Hash, right: Option<Hash>, salt: Optio
     hasher.finalize()
 }
 
+/// Returns the size of the auth path in bytes.
 pub fn get_auth_size(selected_leaves: &[u16]) -> usize {
     let get_revealed_nodes = get_revealed_nodes(selected_leaves);
     get_revealed_nodes.len() * PARAM_DIGEST_SIZE
@@ -180,12 +175,10 @@ pub fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
         return vec![];
     }
 
-    let mut revealed_nodes = vec![];
-
     // Initialize
+    let mut revealed_nodes = vec![];
     let (mut height_index, mut last_index) =
         (1 << PARAM_MERKLE_TREE_HEIGHT, PARAM_MERKLE_TREE_NODES - 1);
-
     let mut q: Queue<usize> = queue![];
 
     // Add the commitments to the queue but with the correct index in the tree
@@ -242,7 +235,7 @@ pub fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
     revealed_nodes
 }
 
-/// Recalculates the merkle root from the commitments and the auth
+/// Recalculates the merkle root from the commitments and the authentication path
 pub fn get_merkle_root_from_auth(
     auth: &mut Vec<Hash>,
     commitments: &[Hash],
