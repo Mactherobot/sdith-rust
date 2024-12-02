@@ -1,3 +1,18 @@
+//! # Merkle Tree Commitment Scheme
+//!
+//! A commitment scheme that allows for efficient communication with partial opening.
+//! This scheme is used by the signature scheme to commit to the shares of the parties.
+//! 
+//! The tree is constructed from a list of commitments, where each leaf is a commitment.
+//! Parents are calculated by hashing the concatenation of the left and right children along with a [prefix](HASH_PREFIX_MERKLE_TREE).
+//! The root of the tree is then sent as the final commitment.
+//! 
+//! To open a commitment, the prover sends the commitment along with the hashed path from the leaf to the root.
+//! 
+//! The verifier can then recalculate the root from the commitment and the path and compare it to the previously received root.
+//!
+//! The structure allows for the Treshold variant of the signature scheme to only open the commitments to a subset of the parties.
+
 use num_traits::ToPrimitive;
 use queues::Queue;
 
@@ -10,19 +25,29 @@ use queues::*;
 
 use super::prg::hashing::{SDitHHash, SDitHHashTrait as _};
 
+/// The height of the Merkle tree
 pub const PARAM_MERKLE_TREE_HEIGHT: usize = PARAM_LOG_N;
+/// The number of nodes in the Merkle tree
 pub const PARAM_MERKLE_TREE_NODES: usize = 2_usize.pow(PARAM_MERKLE_TREE_HEIGHT as u32) + (PARAM_N);
-
+/// The prefix for the Merkle tree hash
 pub const HASH_PREFIX_MERKLE_TREE: u8 = 3;
 
+/// Merkle tree struct
 pub struct MerkleTree {
+    /// The height of the Merkle tree
     pub height: i32,
+    /// The number of nodes in the Merkle tree
     pub n_nodes: usize,
+    /// The number of leaves in the Merkle tree
     pub n_leaves: usize,
+    /// The nodes of the Merkle tree as a flat array with the root at index 1 and the leaves at the end
     pub nodes: [Hash; PARAM_MERKLE_TREE_NODES as usize],
 }
 
 impl MerkleTree {
+    /// Creates a new Merkle tree from a list of commitments (i.e. pre-hashed leaves in [`CommitmentsArray`]).
+    /// 
+    /// The `salt` is optionally added to the hashing of parent nodes.
     pub fn new(commitments: CommitmentsArray, salt: Option<Hash>) -> Self {
         let nb_leaves = commitments.len();
         let height: i32 = nb_leaves
@@ -76,18 +101,19 @@ impl MerkleTree {
         tree
     }
 
-    /// Returns the root of the merkle tree
+    /// Returns the root of the merkle tree which is used as the authentication hash.
     pub fn get_root(&self) -> Hash {
         self.nodes[1]
     }
 
+    /// Returns a leaf from the tree from the flat structure.
     pub fn get_leaf(&self, n: usize) -> Hash {
         assert!(n <= self.n_leaves, "Invalid leaf index: {}", n);
         self.nodes[(self.n_leaves + (n as usize)).to_usize().unwrap()]
     }
 
     /// Return non-zero based index of the leaf in the tree
-    fn get_leaf_index(&self, n: usize) -> u16 {
+    fn _get_leaf_index(&self, n: usize) -> u16 {
         assert!(
             n >= self.n_leaves && n <= self.n_nodes,
             "Invalid leaf index: {}",
@@ -676,8 +702,8 @@ mod test {
         }
         let tree = MerkleTree::new(commitments, None);
 
-        assert_eq!(tree.get_leaf_index(256), 1);
-        assert_eq!(tree.get_leaf_index(379), 124);
-        assert_eq!(tree.get_leaf_index(tree.n_nodes), 256);
+        assert_eq!(tree._get_leaf_index(256), 1);
+        assert_eq!(tree._get_leaf_index(379), 124);
+        assert_eq!(tree._get_leaf_index(tree.n_nodes), 256);
     }
 }
