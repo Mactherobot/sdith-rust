@@ -408,10 +408,7 @@ mod test {
         for i in 1..=255 {
             let left = tree.nodes[i * 2];
             let right = tree.nodes[i * 2 + 1];
-            assert_eq!(
-                tree.nodes[i],
-                merkle_hash(i.try_into().unwrap(), left, Some(right), None)
-            );
+            assert_eq!(tree.nodes[i], merkle_hash(i, left, Some(right), None));
         }
     }
 
@@ -428,7 +425,7 @@ mod test {
 
         let auth = tree.get_merkle_path(&selected_leaves);
         assert_eq!(auth.len(), 0);
-        assert_eq!(auth.is_empty(), true);
+        assert!(auth.is_empty());
 
         let auth = tree.get_merkle_path(&[]);
         assert_eq!(auth.len(), 0);
@@ -556,14 +553,12 @@ mod test {
         let mut commitments = setup();
 
         let mut prg = PRG::init_base(&[1]);
-        for i in 0..PARAM_N {
-            prg.sample_field_fq_non_zero(&mut commitments[i])
-        }
+        (0..PARAM_N).for_each(|i| prg.sample_field_fq_non_zero(&mut commitments[i]));
         let tree = MerkleTree::new(commitments, None);
 
         let selected_leaves = [1u16, 2u16, 235u16];
         for i in 0..2 {
-            let _selected_leaves = &selected_leaves.clone()[..i + 1];
+            let _selected_leaves = &selected_leaves[..i + 1];
 
             // Get the commitments for the selected leaves
             let mut commitments_tau = vec![];
@@ -572,11 +567,11 @@ mod test {
             }
 
             // Get the auth path for the selected leaves
-            let mut auth = tree.get_merkle_path(&_selected_leaves);
+            let mut auth = tree.get_merkle_path(_selected_leaves);
 
             // Get the merkle root from the auth path
             let Ok(root) =
-                get_merkle_root_from_auth(&mut auth, &commitments_tau, &_selected_leaves, None)
+                get_merkle_root_from_auth(&mut auth, &commitments_tau, _selected_leaves, None)
             else {
                 panic!("Could not get merkle root from auth")
             };
@@ -595,9 +590,7 @@ mod test {
         let mut commitments = setup();
 
         let mut prg = PRG::init_base(&[1]);
-        for i in 0..PARAM_N {
-            prg.sample_field_fq_non_zero(&mut commitments[i])
-        }
+        (0..PARAM_N).for_each(|i| prg.sample_field_fq_non_zero(&mut commitments[i]));
         let tree = MerkleTree::new(commitments, None);
 
         let selected_leaves = [233u16, 234u16, 235u16];
@@ -666,9 +659,9 @@ mod test {
 
         let mut prg = PRG::init_base(&[1]);
         let mut commitments = setup();
-        for i in 0..PARAM_N {
+        (0..PARAM_N).for_each(|i| {
             prg.sample_field_fq_non_zero(&mut commitments[i]);
-        }
+        });
 
         let tree = MerkleTree::new(commitments, None);
 
