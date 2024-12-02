@@ -335,7 +335,7 @@ mod test {
             params::{PARAM_L, PARAM_N},
             types::hash_default,
         },
-        subroutines::prg::prg::PRG,
+        subroutines::prg::PRG,
     };
 
     use super::*;

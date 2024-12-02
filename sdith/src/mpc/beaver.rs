@@ -1,7 +1,7 @@
 use crate::{
     arith::gf256::{gf256_ext::FPoint, FieldArith},
     constants::params::{PARAM_ETA, PARAM_SPLITTING_FACTOR, PARAM_T},
-    subroutines::prg::prg::PRG,
+    subroutines::prg::PRG,
 };
 
 pub type BeaverA = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];

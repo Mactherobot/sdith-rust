@@ -1,6 +1,6 @@
 // Field extension `F_q^2 = F_q[X] / (X^2 + X + 32)`. Here "/" means "over"
 
-use crate::subroutines::prg::prg::PRG;
+use crate::subroutines::prg::PRG;
 
 use super::{
     gf256_arith::{gf256_add, gf256_mul},
@@ -64,7 +64,7 @@ fn gf256_ext16_mul32(_a: [u8; 2]) -> [u8; 2] {
 mod ext16_tests {
     use super::*;
 
-    use crate::{constants::params::PARAM_SEED_SIZE, subroutines::prg::prg::PRG};
+    use crate::{constants::params::PARAM_SEED_SIZE, subroutines::prg::PRG};
 
     #[test]
     fn test_f_256_16_mul_32() {
@@ -182,7 +182,7 @@ mod ext32_tests {
 
     use crate::{
         arith::gf256::test_field_definitions, constants::params::PARAM_SEED_SIZE,
-        subroutines::prg::prg::PRG,
+        subroutines::prg::PRG,
     };
 
     #[test]

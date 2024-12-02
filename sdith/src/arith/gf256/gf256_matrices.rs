@@ -3,7 +3,7 @@ use crate::{
         params::{PARAM_K, PARAM_M_SUB_K},
         types::Seed,
     },
-    subroutines::prg::prg::PRG,
+    subroutines::prg::PRG,
 };
 
 /// H' matrix with dimensions `m-k * k`. The ceil value is only do accommodate the way the spec creates the matrix.

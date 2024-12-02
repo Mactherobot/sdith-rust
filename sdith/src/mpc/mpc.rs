@@ -13,7 +13,7 @@ use crate::{
         types::Hash,
     },
     signature::input::{Input, InputSharePlain, INPUT_SIZE},
-    subroutines::prg::prg::PRG,
+    subroutines::prg::PRG,
     utils::iterator::*,
     witness::{complete_q, compute_s, compute_s_poly, Solution, SOLUTION_PLAIN_SIZE},
 };

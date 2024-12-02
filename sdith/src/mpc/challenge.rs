@@ -8,7 +8,7 @@ use crate::{
         precomputed::PRECOMPUTED_F_POLY,
         types::{hash_default, Hash},
     },
-    subroutines::prg::prg::PRG,
+    subroutines::prg::PRG,
 };
 
 use super::mpc::MPC;

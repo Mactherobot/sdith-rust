@@ -151,7 +151,7 @@ impl BroadcastShare {
 #[cfg(test)]
 mod broadcast_tests {
     use super::*;
-    use crate::subroutines::prg::prg::PRG;
+    use crate::subroutines::prg::PRG;
 
     #[test]
     fn test_serialise_deserialise_broadcast_value() {

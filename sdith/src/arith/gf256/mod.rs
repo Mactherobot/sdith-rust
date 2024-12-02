@@ -1,4 +1,4 @@
-use crate::subroutines::prg::prg::PRG;
+use crate::subroutines::prg::PRG;
 
 pub mod gf256_arith;
 pub mod gf256_ext;

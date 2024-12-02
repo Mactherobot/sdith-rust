@@ -13,7 +13,7 @@ use crate::{
         precomputed::{PRECOMPUTED_F_POLY, PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S},
         types::Seed,
     },
-    subroutines::prg::prg::PRG,
+    subroutines::prg::PRG,
 };
 
 // Polynomial types
@@ -504,7 +504,7 @@ mod test_helpers {
             gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
         },
         constants::params::{PARAM_CHUNK_W, PARAM_SEED_SIZE, PARAM_W},
-        subroutines::prg::prg::PRG,
+        subroutines::prg::PRG,
     };
 
     use super::*;

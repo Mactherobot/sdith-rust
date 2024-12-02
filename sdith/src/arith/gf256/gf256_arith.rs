@@ -2,7 +2,7 @@
 
 use std::num::Wrapping;
 
-use crate::subroutines::prg::prg::PRG;
+use crate::subroutines::prg::PRG;
 
 use super::FieldArith;
 
@@ -211,7 +211,7 @@ mod tests {
     use super::*;
     use crate::{
         arith::gf256::test_field_definitions, constants::params::PARAM_SEED_SIZE,
-        subroutines::prg::prg::PRG,
+        subroutines::prg::PRG,
     };
 
     /// TODO: remove these tests when we have used the proper test vectors

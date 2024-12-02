@@ -12,7 +12,7 @@ use sdith::keygen::{PublicKey, SecretKey};
 use sdith::mpc::mpc::MPC;
 use sdith::signature::input::INPUT_SIZE;
 use sdith::signature::signature::Signature;
-use sdith::subroutines::prg::prg::PRG;
+use sdith::subroutines::prg::PRG;
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut rng = NistPqcAes256CtrRng::from_seed(Seed::default());

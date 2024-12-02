@@ -77,7 +77,7 @@ mod input_tests {
     use crate::{
         constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
         keygen::keygen,
-        subroutines::prg::prg::PRG,
+        subroutines::prg::PRG,
     };
 
     use super::*;
