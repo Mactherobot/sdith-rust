@@ -41,7 +41,7 @@ pub struct MerkleTree {
     /// The number of leaves in the Merkle tree
     pub n_leaves: usize,
     /// The nodes of the Merkle tree as a flat array with the root at index 1 and the leaves at the end
-    pub nodes: [Hash; PARAM_MERKLE_TREE_NODES as usize],
+    pub nodes: [Hash; PARAM_MERKLE_TREE_NODES],
 }
 
 impl MerkleTree {
