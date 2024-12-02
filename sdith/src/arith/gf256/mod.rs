@@ -11,13 +11,53 @@ pub trait FieldArith
 where
     Self: Sized + Clone + Copy + PartialEq,
 {
+    /// A field element with value 1.
     fn field_one() -> Self;
+    /// A field element with value 0.
     fn field_zero() -> Self {
         Self::field_sub(&Self::field_one(), Self::field_one())
     }
+    /// Field addition operation
+    ///
+    /// For the simple binary field, this is just an XOR operation. But might be more complex for
+    /// other fields.
+    ///
+    /// # Example
+    /// ```
+    /// use sdith::arith::gf256::FieldArith;
+    /// let a = 1u8;
+    /// let b = 2u8;
+    /// assert_eq!(a.field_add(b), 3u8);
+    /// ```
+    ///
     fn field_add(&self, rhs: Self) -> Self;
+    /// Field subtraction operation
+    ///
+    /// For the simple binary field, this is just an XOR operation. But for the extended field, this
+    /// is a subtraction operation.
+    ///
+    /// # Example
+    /// ```
+    /// use sdith::arith::gf256::FieldArith;
+    /// let a = 1u8;
+    /// let b = 2u8;
+    /// assert_eq!(a.field_sub(b), 3u8);
+    /// ```
     fn field_sub(&self, rhs: Self) -> Self;
+    /// Field negation operation
+    ///
+    /// For the simple binary field there is no negation operation as there is no negative values.
+    ///
+    /// # Example
+    /// ```
+    /// use sdith::arith::gf256::FieldArith;
+    /// let a = 1u8;
+    /// assert_eq!(a.field_neg(), 1u8);
+    /// ```
     fn field_neg(&self) -> Self;
+    /// Field multiplication operation
+    ///
+    /// For the extended field
     fn field_mul(&self, rhs: Self) -> Self;
     fn field_mul_inverse(&self) -> Self;
     fn field_div(&self, rhs: Self) -> Self
