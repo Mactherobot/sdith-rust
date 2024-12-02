@@ -3,8 +3,8 @@
 //! This module contains the implementation of the signature struct and its methods.
 
 pub mod input;
-pub mod sign;
-pub mod verify;
+mod sign;
+mod verify;
 
 use crate::{
     constants::{

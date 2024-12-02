@@ -82,7 +82,7 @@ impl PRG {
             i += 1;
         }
 
-        return Ok(());
+        Ok(())
     }
 
     /// Sample a random [`Vec`] in the field [F_q](crate::arith::gf256::FieldArith)
