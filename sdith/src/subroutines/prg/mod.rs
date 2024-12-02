@@ -3,11 +3,11 @@
 //!
 //! ## Hashing
 //! Hashing for Fiat-Shamir Heuristic, Commitments and [Merkle-Tree Commitment scheme](crate::subroutines::merkle_tree::MerkleTree) is 
-//! implemented in the [`hashing`](crate::subroutines::prg::hashing) module.
+//! implemented in the [`hashing`] module.
 //! 
 //! ## XOF
 //! Extendable Output Functions (XOFs) are used to generate pseudorandom values in the fields [F_q](crate::arith::gf256::FieldArith) 
-//! and [F_q^\eta](crate::arith::gf256::gf256_ext::FPoint).. The XOFs are implemented in the [`xof`](crate::subroutines::prg::xof) module.
+//! and [F_q^\eta](crate::arith::gf256::gf256_ext::FPoint).. The XOFs are implemented in the [`xof`] module.
 
 pub mod hashing;
 pub mod xof;

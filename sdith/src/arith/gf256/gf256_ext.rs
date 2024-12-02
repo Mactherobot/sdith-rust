@@ -16,7 +16,7 @@ const GF256_32_ONE: [u8; 4] = [1, 0, 0, 0];
 
 /// Addition: Field extension `F_q^2 = F_q[X] / (X^2 + X + 32)`
 ///
-/// (a + bX) + (c + dX) = (a + c) + (b + d)X
+/// `(a + bX) + (c + dX) = (a + c) + (b + d)X`
 #[inline(always)]
 fn gf256_ext16_add(a: [u8; 2], b: [u8; 2]) -> [u8; 2] {
     [a[0].field_add(b[0]), a[1].field_add(b[1])]
@@ -26,11 +26,15 @@ fn gf256_ext16_add(a: [u8; 2], b: [u8; 2]) -> [u8; 2] {
 ///
 /// X^2 + X + 32 = 0 => X^2 = X + 32
 ///
-/// (a + bX) * (c + dX) = ac + (ad + bc) * X + bd * X^2
-///                     = ac + (ad + bc) * X + bd * (X + 32)
-///                     = (ac + bd * 32) + (ad + bc + bd)X
-///                     = (ac + bd * 32) + ((a + b) * (c + d) - ac)X
-///                     = c0 + c1X
+/// `(a + bX) * (c + dX) = ac + (ad + bc) * X + bd * X^2`
+///
+/// `                    = ac + (ad + bc) * X + bd * (X + 32)`
+/// 
+/// `                    = (ac + bd * 32) + (ad + bc + bd)X`
+/// 
+/// `                    = (ac + bd * 32) + ((a + b) * (c + d) - ac)X`
+/// 
+/// `                    = c0 + c1X`
 #[inline(always)]
 fn gf256_ext16_mul(_a: [u8; 2], _b: [u8; 2]) -> [u8; 2] {
     let [a, b] = _a;
@@ -49,8 +53,9 @@ fn gf256_ext16_mul(_a: [u8; 2], _b: [u8; 2]) -> [u8; 2] {
 ///
 ///   32 in F_256^2 = 0 + 32X
 ///
-///   (0, 32X) * (a + bX) = (0a + 32b * 32) + (0b + 32a + 32b)X
-///                       = (32^2)b + 32(a + b)X
+///`   (0, 32X) * (a + bX) = (0a + 32b * 32) + (0b + 32a + 32b)X`
+/// 
+///`                       = (32^2)b + 32(a + b)X`
 #[inline(always)]
 fn gf256_ext16_mul32(_a: [u8; 2]) -> [u8; 2] {
     let [a, b] = _a;

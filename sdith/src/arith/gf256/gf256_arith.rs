@@ -1,4 +1,4 @@
-//! # Rijndaels Galois Field F_2^8 for bytes.
+//! # Rijndaels Galois Field `F_2^8` for [`u8`].
 
 use super::FieldArith;
 use crate::subroutines::prg::PRG;

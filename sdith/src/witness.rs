@@ -436,7 +436,7 @@ fn compute_q_prime_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N] {
 }
 
 /// Compute the vanishing polynomial F from the set {f1, f2, ..., f_N}.
-/// Returns the coefficients of F ([3,2,1] = x^3 + 2x^2 + 3x).
+/// Returns the coefficients of F (\[3,2,1\] = x^3 + 2x^2 + 3x).
 /// F(X) = prod_{i=1}^{N} (X - f_i) and F(f_i) = 0.
 ///
 /// Essentially this computes the monic polynomial from the roots (f1). I.e. Q(root) = 0. Returns truncated polynomial to N. (removing the leading coefficient 1)
