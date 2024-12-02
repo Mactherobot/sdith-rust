@@ -1,11 +1,21 @@
+//! # Beaver
+//!
+//! Computes the beaver triples a and b and the inner product c
+//! Also contains the Types used for the beaver triples
+
+use std::iter::zip;
+
 use crate::{
     arith::gf256::{gf256_ext::FPoint, FieldArith},
     constants::params::{PARAM_ETA, PARAM_SPLITTING_FACTOR, PARAM_T},
     subroutines::prg::PRG,
 };
 
+/// Beaver triple a
 pub type BeaverA = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];
+/// Beaver triple b
 pub type BeaverB = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];
+/// Beaver triple c = a * b
 pub type BeaverC = [FPoint; PARAM_T];
 
 /// (t * 2d)η
@@ -13,113 +23,112 @@ pub const BEAVER_ABPLAIN_SIZE: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_FAC
 /// tη
 pub const BEAVER_CPLAIN_SIZE: usize = PARAM_ETA * PARAM_T;
 
-/// Beaver triples implementation
-pub struct Beaver {}
+/// Generate serialised beaver a and b values
+pub fn generate_beaver_triples(prg: &mut PRG) -> (BeaverA, BeaverB, BeaverC) {
+    let mut a: BeaverA = Default::default();
+    let mut b: BeaverA = Default::default();
 
-impl Beaver {
-    /// Generate serialised beaver a and b values
-    pub fn generate_beaver_triples(prg: &mut PRG) -> (BeaverA, BeaverB, BeaverC) {
-        let mut a: BeaverA = Default::default();
-        let mut b: BeaverA = Default::default();
-
-        for d in 0..PARAM_SPLITTING_FACTOR {
-            prg.sample_field_fpoint_elements(&mut a[d]);
-            prg.sample_field_fpoint_elements(&mut b[d]);
-        }
-
-        (a, b, Beaver::inner_product(a, b))
+    for d in 0..PARAM_SPLITTING_FACTOR {
+        prg.sample_field_fpoint_elements(&mut a[d]);
+        prg.sample_field_fpoint_elements(&mut b[d]);
     }
 
-    pub fn inner_product(a: BeaverA, b: BeaverB) -> BeaverC {
-        let mut c: BeaverC = [FPoint::default(); PARAM_T];
+    (a, b, inner_product(a, b))
+}
 
-        for d in 0..PARAM_SPLITTING_FACTOR {
-            for j in 0..PARAM_T {
-                c[j] = c[j].field_add(a[d][j].field_mul(b[d][j]));
-            }
+/// Computes the inner procuct of two gf256 points
+pub fn inner_product(a: BeaverA, b: BeaverB) -> BeaverC {
+    let mut c: BeaverC = [FPoint::default(); PARAM_T];
+
+    for d in 0..PARAM_SPLITTING_FACTOR {
+        let ab = zip(a[d], b[d]);
+        for (j, (aj, bj)) in ab.enumerate() {
+            c[j] = c[j].field_add(aj.field_mul(bj));
         }
-
-        c
     }
 
-    /// Serialise beaver a and b values
-    pub fn serialise(
-        a: BeaverA,
-        b: BeaverB,
-        c: BeaverC,
-    ) -> [u8; BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE] {
-        let mut plain = [0u8; BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE];
-        let mut offset = 0;
+    c
+}
 
-        // Serialise a
-        for d in 0..PARAM_SPLITTING_FACTOR {
-            for i in 0..PARAM_T {
-                for j in 0..PARAM_ETA {
-                    plain[offset] = a[d][i][j];
-                    offset += 1;
-                }
-            }
-        }
+/// Serialise beaver a and b values
+pub fn serialise(
+    a: BeaverA,
+    b: BeaverB,
+    c: BeaverC,
+) -> [u8; BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE] {
+    let mut plain = [0u8; BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE];
+    let mut offset = 0;
 
-        // Serialise b
-        for d in 0..PARAM_SPLITTING_FACTOR {
-            for i in 0..PARAM_T {
-                for j in 0..PARAM_ETA {
-                    plain[offset] = b[d][i][j];
-                    offset += 1;
-                }
-            }
-        }
+    // Serialise a
 
-        // Serialise c
+    a.iter().for_each(|ad| {
+        ad.iter().for_each(|adi| {
+            adi.iter().for_each(|adij| {
+                plain[offset] = *adij;
+                offset += 1;
+            });
+        });
+    });
+
+    // Serialise b
+    b.iter().for_each(|bd| {
+        bd.iter().for_each(|bdi| {
+            bdi.iter().for_each(|bdij| {
+                plain[offset] = *bdij;
+                offset += 1;
+            })
+        })
+    });
+
+    // Serialise c
+    c.iter().for_each(|ci| {
+        ci.iter().for_each(|cij| {
+            plain[offset] = *cij;
+            offset += 1;
+        })
+    });
+
+    plain
+}
+
+/// Parses the beaver triples from a byte array
+pub fn parse(
+    beaver_abc_plain: [u8; BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE],
+) -> (BeaverA, BeaverB, BeaverC) {
+    let mut offset = 0;
+    let mut a: BeaverA = Default::default();
+    let mut b: BeaverB = Default::default();
+    let mut c: BeaverC = [FPoint::default(); PARAM_T];
+
+    // Deserialise a
+    for d in 0..PARAM_SPLITTING_FACTOR {
         for i in 0..PARAM_T {
             for j in 0..PARAM_ETA {
-                plain[offset] = c[i][j];
+                a[d][i][j] = beaver_abc_plain[offset];
                 offset += 1;
             }
         }
-
-        plain
     }
 
-    pub fn parse(
-        beaver_abc_plain: [u8; BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE],
-    ) -> (BeaverA, BeaverB, BeaverC) {
-        let mut offset = 0;
-        let mut a: BeaverA = Default::default();
-        let mut b: BeaverB = Default::default();
-        let mut c: BeaverC = [FPoint::default(); PARAM_T];
-
-        // Deserialise a
-        for d in 0..PARAM_SPLITTING_FACTOR {
-            for i in 0..PARAM_T {
-                for j in 0..PARAM_ETA {
-                    a[d][i][j] = beaver_abc_plain[offset];
-                    offset += 1;
-                }
-            }
-        }
-
-        // Deserialise b
-        for d in 0..PARAM_SPLITTING_FACTOR {
-            for i in 0..PARAM_T {
-                for j in 0..PARAM_ETA {
-                    b[d][i][j] = beaver_abc_plain[offset];
-                    offset += 1;
-                }
-            }
-        }
-
-        // Deserialise c
+    // Deserialise b
+    for d in 0..PARAM_SPLITTING_FACTOR {
         for i in 0..PARAM_T {
             for j in 0..PARAM_ETA {
-                c[i][j] = beaver_abc_plain[offset];
+                b[d][i][j] = beaver_abc_plain[offset];
                 offset += 1;
             }
         }
-
-        (a, b, c)
     }
+
+    // Deserialise c
+    for i in 0..PARAM_T {
+        for j in 0..PARAM_ETA {
+            c[i][j] = beaver_abc_plain[offset];
+            offset += 1;
+        }
+    }
+
+    (a, b, c)
 }
 
 #[cfg(test)]
@@ -141,7 +150,7 @@ mod beaver_tests {
             prg.sample_field_fpoint_elements(&mut b[d]);
         }
 
-        let mut c = Beaver::inner_product(a, b);
+        let mut c = inner_product(a, b);
 
         for d in 0..PARAM_SPLITTING_FACTOR {
             for j in 0..PARAM_T {
@@ -164,7 +173,7 @@ mod beaver_tests {
         let mseed = [0u8; PARAM_SEED_SIZE];
         let salt = [0u8; PARAM_SALT_SIZE];
         let mut prg = PRG::init(&mseed, Some(&salt));
-        let (a, b, c) = Beaver::generate_beaver_triples(&mut prg);
+        let (a, b, c) = generate_beaver_triples(&mut prg);
 
         assert_eq!(a.len(), PARAM_SPLITTING_FACTOR);
         assert_eq!(b.len(), PARAM_SPLITTING_FACTOR);
@@ -178,13 +187,13 @@ mod beaver_tests {
     #[test]
     fn test_serialise() {
         let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], Some(&[0u8; PARAM_SALT_SIZE]));
-        let (a, b, c) = Beaver::generate_beaver_triples(&mut prg);
+        let (a, b, c) = generate_beaver_triples(&mut prg);
 
-        let plain = Beaver::serialise(a, b, c);
+        let plain = serialise(a, b, c);
 
         assert_eq!(plain.len(), BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE);
 
-        let (a_des, b_des, c_des) = Beaver::parse(plain);
+        let (a_des, b_des, c_des) = parse(plain);
 
         assert_eq!(a, a_des);
         assert_eq!(b, b_des);

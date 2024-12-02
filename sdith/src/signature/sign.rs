@@ -8,8 +8,8 @@ use crate::{
         types::{Hash, Salt, Seed},
     },
     keygen::SecretKey,
-    mpc::{broadcast::BROADCAST_SHARE_PLAIN_SIZE, challenge::Challenge, mpc::MPC},
-    subroutines::{commitments::commit_share, merkle_tree::MerkleTree, prg::PRG},
+    mpc::{broadcast::BROADCAST_SHARE_PLAIN_SIZE, challenge::Challenge, MPC},
+    subroutines::{commitments::commit_share, merkle_tree::MerkleTree, prg::prg::PRG},
 };
 
 use super::input::INPUT_SIZE;

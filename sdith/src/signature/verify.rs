@@ -9,7 +9,7 @@ use crate::{
         params::{PARAM_L, PARAM_TAU},
         types::Hash,
     },
-    mpc::{broadcast::BROADCAST_SHARE_PLAIN_SIZE, challenge::Challenge, mpc::MPC},
+    mpc::{broadcast::BROADCAST_SHARE_PLAIN_SIZE, challenge::Challenge, MPC},
     subroutines::commitments::commit_share,
 };
 

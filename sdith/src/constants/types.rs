@@ -1,3 +1,8 @@
+//! # Types
+//!
+//! Reusable types that are defined by constants.
+//! These are used throughout the codebase.
+
 use super::params::{PARAM_DIGEST_SIZE, PARAM_N, PARAM_SALT_SIZE, PARAM_SEED_SIZE};
 
 /// Hash type u8 array of size [`PARAM_DIGEST_SIZE`]

@@ -1,6 +1,8 @@
 use crate::{
     constants::params::{PARAM_N, PARAM_TAU},
-    mpc::beaver::{Beaver, BeaverA, BeaverB, BeaverC, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE},
+    mpc::beaver::{
+        parse, serialise, BeaverA, BeaverB, BeaverC, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE,
+    },
     witness::{Solution, SOLUTION_PLAIN_SIZE},
 };
 
@@ -22,7 +24,7 @@ impl Input {
     pub fn serialise(&self) -> [u8; INPUT_SIZE] {
         let mut serialised = [0u8; INPUT_SIZE];
         serialised[..SOLUTION_PLAIN_SIZE].copy_from_slice(&self.solution.serialise());
-        serialised[SOLUTION_PLAIN_SIZE..].copy_from_slice(&Beaver::serialise(
+        serialised[SOLUTION_PLAIN_SIZE..].copy_from_slice(&serialise(
             self.beaver_ab.0,
             self.beaver_ab.1,
             self.beaver_c,
@@ -30,16 +32,14 @@ impl Input {
         serialised
     }
 
-    pub fn deserialise_solution(
-        truncated_input_plain: [u8; SOLUTION_PLAIN_SIZE],
-    ) -> Solution {
+    pub fn deserialise_solution(truncated_input_plain: [u8; SOLUTION_PLAIN_SIZE]) -> Solution {
         let solution = Solution::parse(truncated_input_plain);
         solution
     }
 
     pub fn parse(input_plain: InputSharePlain) -> Input {
         let solution = Solution::parse(input_plain[..SOLUTION_PLAIN_SIZE].try_into().unwrap());
-        let (a, b, c) = Beaver::parse(input_plain[SOLUTION_PLAIN_SIZE..].try_into().unwrap());
+        let (a, b, c) = parse(input_plain[SOLUTION_PLAIN_SIZE..].try_into().unwrap());
 
         Input {
             solution,
@@ -50,9 +50,7 @@ impl Input {
 
     /// Remove the Beaver triples from the input shares as they can be derived from the Solution shares
     /// {[x_A]_i, [P]_i, [Q]_i}_(i \in I) and broadcast shares {[α]_i, [β]_i, [v]_i}_(i \in I).
-    pub fn truncate_beaver_triples(
-        input_share: &[u8; INPUT_SIZE],
-    ) -> [u8; SOLUTION_PLAIN_SIZE] {
+    pub fn truncate_beaver_triples(input_share: &[u8; INPUT_SIZE]) -> [u8; SOLUTION_PLAIN_SIZE] {
         return input_share[..SOLUTION_PLAIN_SIZE].try_into().unwrap();
     }
 
@@ -63,7 +61,7 @@ impl Input {
     ) -> [u8; INPUT_SIZE] {
         let mut input = [0u8; INPUT_SIZE];
         input[..SOLUTION_PLAIN_SIZE].copy_from_slice(&solution_share);
-        input[SOLUTION_PLAIN_SIZE..].copy_from_slice(&Beaver::serialise(
+        input[SOLUTION_PLAIN_SIZE..].copy_from_slice(&serialise(
             beaver_triples.0,
             beaver_triples.1,
             beaver_triples.2,
@@ -77,7 +75,8 @@ mod input_tests {
     use crate::{
         constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
         keygen::keygen,
-        subroutines::prg::PRG,
+        mpc::beaver::generate_beaver_triples,
+        subroutines::prg::prg::PRG,
     };
 
     use super::*;
@@ -86,7 +85,7 @@ mod input_tests {
     fn test_serialise_deserialise_input() {
         let (_pk, sk) = keygen([0u8; PARAM_SEED_SIZE]);
         let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], Some(&[0u8; PARAM_SALT_SIZE]));
-        let (a, b, c) = Beaver::generate_beaver_triples(&mut prg);
+        let (a, b, c) = generate_beaver_triples(&mut prg);
 
         let input = Input {
             solution: sk.solution,
@@ -111,7 +110,7 @@ mod input_tests {
     fn test_append_beaver_triples() {
         let (_pk, sk) = keygen([0u8; PARAM_SEED_SIZE]);
         let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], Some(&[0u8; PARAM_SALT_SIZE]));
-        let (a, b, c) = Beaver::generate_beaver_triples(&mut prg);
+        let (a, b, c) = generate_beaver_triples(&mut prg);
 
         let input = Input {
             solution: sk.solution,

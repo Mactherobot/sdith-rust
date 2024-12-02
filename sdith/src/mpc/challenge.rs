@@ -11,7 +11,7 @@ use crate::{
     subroutines::prg::PRG,
 };
 
-use super::mpc::MPC;
+use super::MPC;
 
 /// Challenge pair `(r, e) ∈ F_point^t, (F_point^t)^d`
 #[derive(Clone)]

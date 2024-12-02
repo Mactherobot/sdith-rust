@@ -1,5 +1,4 @@
 #![cfg_attr(feature = "simd", feature(portable_simd))]
-#![allow(dead_code)] // TODO: remove when we create final version
 #![warn(missing_docs)]
 #![cfg_attr(all(doc, CHANNEL_NIGHTLY), feature(doc_auto_cfg))]
 

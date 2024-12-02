@@ -37,6 +37,7 @@ pub struct SDitHXOF<T> {
 
 /// Consume the first output to ensure the XOF is initialized in the same way as the reference implementation `xof_final`
 /// Technically, this is not necessary for the implementation to work, but it is necessary for the implementation to match outputs of the reference implementation
+#[cfg(not(feature = "xof_blake3"))]
 fn xof_final(xof: &mut Shake) {
     let mut tmp = [0u8; 0];
     xof.squeeze(&mut tmp);

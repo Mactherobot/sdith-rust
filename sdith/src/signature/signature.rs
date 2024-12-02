@@ -5,7 +5,7 @@ use crate::{
     },
     mpc::{
         broadcast::{BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
-        mpc::MPC,
+        MPC,
     },
     subroutines::{
         marshalling::Marshalling,
