@@ -18,6 +18,7 @@ nist-pqc-seeded-rng = { version = "0.2.0", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
+nist-pqc-seeded-rng = "0.2.0"
 
 [[bench]]
 name = "benchmark"
@@ -34,8 +35,11 @@ opt-level = 3
 [profile.release]
 debug = 1 # TODO: remove this
 
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(CHANNEL_NIGHTLY)'] }
+
 [features]
-default = ["category_one", "optimized", "dep:nist-pqc-seeded-rng"]
+default = ["category_one", "optimized"]
 
 # Categories
 category_one = []
@@ -48,8 +52,9 @@ parallel = ["dep:rayon"]
 simd = []
 
 # Testing and Benchmarking features
-kat = ["dep:hex", "dep:nist-pqc-seeded-rng"] # Include Known Answer Tests
+benchmarks = ["dep:nist-pqc-seeded-rng"]
 cycles_per_byte = ["dep:criterion-cycles-per-byte"] # Benchmarking feature
+kat = ["dep:hex", "dep:nist-pqc-seeded-rng"]        # Include Known Answer Tests
 
 # Experimental features
 blake3 = ["xof_blake3", "hash_blake3"]

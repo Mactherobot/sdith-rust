@@ -1,8 +1,13 @@
+//! # NIST API trait
+
 use crate::witness::{Instance, Solution};
 
 type PublicKey = Instance;
 type SecretKey = Solution;
 
+/// SDitH api trait
+/// 
+/// TODO: Not implemented yet
 pub trait SDitH {
     /// Generates public and private key.
     /// Returns true if the key pair was generated successfully.

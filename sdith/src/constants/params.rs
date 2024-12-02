@@ -1,4 +1,6 @@
-//! # Constants
+#![allow(missing_docs)]
+
+//! # Category Parameters
 //!
 //! Ensures that the generated constants are included.
 //! The Constants are used for array sizing `[u8; GEN_CONST]`.

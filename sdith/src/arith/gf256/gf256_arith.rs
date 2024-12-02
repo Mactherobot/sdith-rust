@@ -1,21 +1,28 @@
-// Galois field 256 F_256 operations
-
-use std::num::Wrapping;
-
-use crate::subroutines::prg::PRG;
+//! # Rijndaels Galois Field F_2^8 for bytes.
 
 use super::FieldArith;
+use crate::subroutines::prg::PRG;
+use std::num::Wrapping;
 
-pub(super) const MODULUS: u8 = 0x1B; // The primitive polynomial x^4 + x^3 + x + 1 (0b0001_1011)
-const _GENERATOR: u8 = 0x03; // The generator polynomial x + 1 ({03}) of the multiplicative group of GF(2^8)
-const ORDER: u16 = 0xff; // The order of the multiplicative group of GF(2^8)
+/// The primitive polynomial x^4 + x^3 + x + 1 (0b0001_1011)
+#[allow(dead_code)]
+pub(super) const MODULUS: u8 = 0x1B;
+/// The generator polynomial x + 1 ({03}) of the multiplicative group of GF(2^8)
+const _GENERATOR: u8 = 0x03;
+/// The order of the multiplicative group of GF(2^8)
+const ORDER: u16 = 0xff;
 
-// TODO: Test this trait with some test vectors
 impl FieldArith for u8 {
+    /// Field addition operation
+    /// 
+    /// Addition in GF(2^8) is the same as XOR operation
     fn field_add(&self, rhs: u8) -> Self {
         gf256_add(*self, rhs)
     }
 
+    /// Field subtraction operation
+    /// 
+    /// Subtraction in GF(2^8) is the same as addition
     fn field_sub(&self, rhs: u8) -> Self {
         gf256_add(*self, rhs)
     }
@@ -28,11 +35,11 @@ impl FieldArith for u8 {
         gf256_mul_inverse_lookup(*self)
     }
 
-    fn field_one() -> Self {
+    fn field_mul_identity() -> Self {
         1u8
     }
 
-    fn field_zero() -> Self {
+    fn field_add_identity() -> Self {
         0u8
     }
 
@@ -117,12 +124,12 @@ fn log_lookup(a: u8) -> u16 {
 }
 
 /// Function for GF(256) addition
-pub(super) fn gf256_add(a: u8, b: u8) -> u8 {
+fn gf256_add(a: u8, b: u8) -> u8 {
     a ^ b
 }
 
 /// Function for GF(256) multiplication between two u8
-pub(super) fn gf256_mul(a: u8, b: u8) -> u8 {
+fn gf256_mul(a: u8, b: u8) -> u8 {
     if (a == 0) || (b == 0) {
         return 0;
     }
@@ -195,15 +202,10 @@ fn gf256_pow_lookup(a: u8, b: u8) -> u8 {
 }
 
 /// Inverse using log table lookup a^-1 = g^(|g| - log_g(a))
-pub(super) fn gf256_mul_inverse_lookup(a: u8) -> u8 {
+fn gf256_mul_inverse_lookup(a: u8) -> u8 {
     let log_a = log_lookup(a);
     let log_a_inv = ORDER - log_a;
     power_lookup(log_a_inv)
-}
-
-/// Function for GF(256) division
-pub(super) fn gf256_div(a: u8, b: u8) -> u8 {
-    gf256_mul(a, gf256_mul_inverse_lookup(b))
 }
 
 #[cfg(test)]
@@ -293,7 +295,7 @@ mod tests {
     #[should_panic]
     fn test_div_by_zero() {
         // Multiplicative identity with additive identity is None:
-        2u8.field_div(u8::field_zero());
+        2u8.field_div(u8::field_add_identity());
     }
 
     #[test]

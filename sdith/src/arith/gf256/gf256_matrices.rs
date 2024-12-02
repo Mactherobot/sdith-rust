@@ -1,3 +1,9 @@
+//! # GF(256) matrix operations
+//! 
+//! Matrix operations in GF(256) for the SD instance allowing for the calculation of the syndrome `y = H' * s`.
+//! 
+//! If the feature flag `simd` is enabled, the operations will be done in parallel using SIMD instructions for faster computation.
+
 use crate::{
     constants::{
         params::{PARAM_K, PARAM_M_SUB_K},

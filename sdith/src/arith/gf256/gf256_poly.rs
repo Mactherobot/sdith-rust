@@ -1,4 +1,8 @@
-use crate::arith::gf256::gf256_arith::{gf256_add, gf256_mul};
+//! Operations on polynomials over GF(2^8).
+//!
+//! Implementations use Horner's method for polynomial evaluation for efficiency.
+
+use crate::arith::gf256::FieldArith;
 
 /// Evaluate a polynomial at a point using Horner's method.
 /// coeffs: Coefficients of the polynomial in increasing order of degree. e.g. [1, 2, 3] represents p(x) = 3x^2 + 2x + 1
@@ -7,8 +11,8 @@ pub fn gf256_evaluate_polynomial_horner(coeffs: &[u8], x: u8) -> u8 {
     let degree = coeffs.len() - 1;
     let mut acc = coeffs[degree].clone();
     for i in (0..degree).rev() {
-        acc = gf256_mul(acc, x);
-        acc = gf256_add(acc, coeffs[i]);
+        acc = acc.field_mul(x);
+        acc = acc.field_add(coeffs[i]);
     }
     acc
 }
@@ -19,8 +23,8 @@ pub fn gf256_evaluate_polynomial_horner_monic(coeffs: &[u8], x: u8) -> u8 {
     let degree = coeffs.len() - 1;
     let mut acc = 1;
     for i in (0..=degree).rev() {
-        acc = gf256_mul(acc, x);
-        acc = gf256_add(acc, coeffs[i]);
+        acc = acc.field_mul(x);
+        acc = acc.field_add(coeffs[i]);
     }
     acc
 }
@@ -37,7 +41,7 @@ pub fn gf256_remove_one_degree_factor_monic(
 
     // Start from the second last element
     for i in (0..=in_degree - 2).rev() {
-        q_out[i] = gf256_add(p_in[i + 1], gf256_mul(alpha, q_out[i + 1])); // Q_i = P_i+1 + alpha * Q_i+1
+        q_out[i] = p_in[i + 1].field_add(alpha.field_mul(q_out[i + 1])); // Q_i = P_i+1 + alpha * Q_i+1
     }
 }
 

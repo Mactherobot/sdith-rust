@@ -1,7 +1,13 @@
+//! # Vector operations over GF(2^8)
+//!
+//! This module provides vector operations over the finite field GF(2^8).
+//!
+//! With the `simd` feature enabled, the operations are performed using SIMD instructions if possible.
+
 #[cfg(feature = "simd")]
 use std::simd::{num::SimdUint, u8x32};
 
-use super::{gf256_arith::gf256_add, FieldArith};
+use super::FieldArith;
 
 #[cfg(not(feature = "simd"))]
 #[inline(always)]
@@ -10,7 +16,7 @@ pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
     assert!(vx.len() >= vz.len());
     let bytes = vz.len();
     for i in 0..bytes {
-        vz[i] = gf256_add(vz[i], vx[i]);
+        vz[i] = vz[i].field_add(vx[i]);
     }
 }
 
@@ -20,14 +26,14 @@ pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
 pub fn gf256_mul_vector_by_scalar(vx: &mut [u8], scalar: u8) {
     let bytes = vx.len();
     for i in 0..bytes {
-        vx[i] = super::gf256_arith::gf256_mul(vx[i], scalar);
+        vx[i] = vx[i].field_mul(scalar);
     }
 }
 
 #[cfg(not(feature = "simd"))]
 #[inline(always)]
 /// vz'[] = vz[] * scalar + vx[]
-pub fn gf256_add_vector_add_scalar(vz: &mut [u8], vx: &[u8], scalar: u8) {
+pub fn gf256_mul_scalar_add_vector(vz: &mut [u8], vx: &[u8], scalar: u8) {
     let bytes = vz.len();
     for i in 0..bytes {
         vz[i] = vx[i].field_add(vz[i].field_mul(scalar));
@@ -180,7 +186,7 @@ pub fn gf256_add_vector_with_padding(vz: &mut [u8], vx: &[u8]) {
     assert!(vz.len() >= vx.len());
     let bytes = vx.len();
     for i in 0..bytes {
-        vz[i] = gf256_add(vz[i], vx[i]);
+        vz[i] = vz[i].field_add(vx[i]);
     }
 }
 

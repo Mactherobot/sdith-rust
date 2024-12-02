@@ -1,11 +1,10 @@
-// Field extension `F_q^2 = F_q[X] / (X^2 + X + 32)`. Here "/" means "over"
+//! # Field extensions `F_q^2 = F_q[X] / (X^2 + X + 32)` and `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))`.
+//!
+//! An element of the field is represented as a pair of bytes `(a,b)` corresponding to `a + bX`
 
 use crate::subroutines::prg::PRG;
 
-use super::{
-    gf256_arith::{gf256_add, gf256_mul},
-    FieldArith,
-};
+use super::FieldArith;
 
 const _GF256_16_ONE: [u8; 2] = [1, 0];
 const GF256_32_ONE: [u8; 4] = [1, 0, 0, 0];
@@ -20,7 +19,7 @@ const GF256_32_ONE: [u8; 4] = [1, 0, 0, 0];
 /// (a + bX) + (c + dX) = (a + c) + (b + d)X
 #[inline(always)]
 fn gf256_ext16_add(a: [u8; 2], b: [u8; 2]) -> [u8; 2] {
-    [gf256_add(a[0], b[0]), gf256_add(a[1], b[1])]
+    [a[0].field_add(b[0]), a[1].field_add(b[1])]
 }
 
 /// Multiplication: Field extension `F_q^2 = F_q[X] / (X^2 + X + 32)`
@@ -41,7 +40,7 @@ fn gf256_ext16_mul(_a: [u8; 2], _b: [u8; 2]) -> [u8; 2] {
     let sum_ab = a.field_add(b);
     let sum_cd = c.field_add(d);
 
-    let c0 = u8::field_add(&ac, gf256_mul(bd, 0x20));
+    let c0 = u8::field_add(&ac, bd.field_mul(0x20));
     let c1 = u8::field_sub(&sum_ab.field_mul(sum_cd), ac);
     [c0, c1]
 }
@@ -83,32 +82,64 @@ mod ext16_tests {
 pub type FPoint = [u8; 4];
 
 impl FieldArith for FPoint {
-    fn field_one() -> Self {
+    fn field_mul_identity() -> Self {
         GF256_32_ONE
     }
 
-    fn field_zero() -> Self {
+    fn field_add_identity() -> Self {
         [0u8; 4]
     }
 
+    /// Field negation operation
+    ///
+    /// Negation is the same as the element itself
     fn field_neg(&self) -> Self {
         *self
     }
 
+    /// Sample a value from the extended field `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
     fn field_sample(prg: &mut PRG) -> Self {
-        gf256_ext32_sample(prg)
+        prg.sample_field_fq_elements_vec(4).try_into().unwrap()
     }
 
+    /// Addition: Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
+    ///
+    /// For u = (p,q) = p + qZ
+    ///
+    /// u + v = (p + qZ) + (r + sZ) = (p + r) + (q + s)Z
     fn field_add(&self, rhs: Self) -> Self {
         gf256_ext32_add(*self, rhs)
     }
 
+    /// Subtraction: is the same as addition
     fn field_sub(&self, rhs: Self) -> Self {
         gf256_ext32_add(*self, rhs)
     }
 
+    /// Multiplication: Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
+    ///
+    /// For u = (p,q) = p + qZ,
+    ///
+    /// u * v = (p + qZ) * (r + sZ)
+    ///       = pr + psZ + qrZ + qsZ^2
+    ///       = pr + (ps + qr)Z + qs(Z + 32X)  # Z^2 = Z + 32X i.e. modulo
+    ///       = pr + (ps + qr)Z + qsZ + 32qsX
+    ///       = (pr + 32qsX) + (ps + qr + qs)Z
+    ///       = (pr + 32qsX) + ((p + q) * (r + s) - pr)Z
     fn field_mul(&self, rhs: Self) -> Self {
-        gf256_ext32_mul(*self, rhs)
+        let a = *self;
+        let [p0, p1, q0, q1] = a;
+        let [r0, r1, s0, s1] = rhs;
+
+        let qs = gf256_ext16_mul([q0, q1], [s0, s1]);
+        let pr = gf256_ext16_mul([p0, p1], [r0, r1]);
+        let p_plus_q = gf256_ext16_add([p0, p1], [q0, q1]);
+        let r_plus_s = gf256_ext16_add([r0, r1], [s0, s1]);
+
+        let [r0, r1] = gf256_ext16_add(gf256_ext16_mul32(qs), pr);
+        let [r2, r3] = gf256_ext16_add(gf256_ext16_mul(p_plus_q, r_plus_s), pr);
+
+        [r0, r1, r2, r3]
     }
 
     fn field_mul_inverse(&self) -> Self {
@@ -116,13 +147,8 @@ impl FieldArith for FPoint {
     }
 }
 
-/// Addition: Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
-///
-/// For u = (p,q) = p + qZ
-///
-/// u + v = (p + qZ) + (r + sZ) = (p + r) + (q + s)Z
 #[inline(always)]
-pub(super) fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
+fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
     let [p0, p1, q0, q1] = a;
     let [r0, r1, s0, s1] = b;
 
@@ -130,49 +156,6 @@ pub(super) fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
     let [r2, r3] = gf256_ext16_add([q0, q1], [s0, s1]);
 
     [r0, r1, r2, r3]
-}
-
-/// Multiplication: Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
-///
-/// For u = (p,q) = p + qZ,
-///
-/// u * v = (p + qZ) * (r + sZ)
-///       = pr + psZ + qrZ + qsZ^2
-///       = pr + (ps + qr)Z + qs(Z + 32X)  # Z^2 = Z + 32X i.e. modulo
-///       = pr + (ps + qr)Z + qsZ + 32qsX
-///       = (pr + 32qsX) + (ps + qr + qs)Z
-///       = (pr + 32qsX) + ((p + q) * (r + s) - pr)Z
-#[inline(always)]
-pub(super) fn gf256_ext32_mul(a: FPoint, b: FPoint) -> FPoint {
-    let [p0, p1, q0, q1] = a;
-    let [r0, r1, s0, s1] = b;
-
-    let qs = gf256_ext16_mul([q0, q1], [s0, s1]);
-    let pr = gf256_ext16_mul([p0, p1], [r0, r1]);
-    let p_plus_q = gf256_ext16_add([p0, p1], [q0, q1]);
-    let r_plus_s = gf256_ext16_add([r0, r1], [s0, s1]);
-
-    let [r0, r1] = gf256_ext16_add(gf256_ext16_mul32(qs), pr);
-    let [r2, r3] = gf256_ext16_add(gf256_ext16_mul(p_plus_q, r_plus_s), pr);
-
-    [r0, r1, r2, r3]
-}
-
-/// Multiplication in the 32-bit extended field
-#[inline(always)]
-fn gf256_ext32_gf256_mul(a: u8, b: FPoint) -> FPoint {
-    let [b0, b1, b2, b3] = b;
-    let c0 = a.field_mul(b0);
-    let c1 = a.field_mul(b1);
-    let c2 = a.field_mul(b2);
-    let c3 = a.field_mul(b3);
-    [c0, c1, c2, c3]
-}
-
-/// Sample a value from the extended field `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
-#[inline(always)]
-pub(super) fn gf256_ext32_sample(prg: &mut PRG) -> FPoint {
-    prg.sample_field_fq_elements_vec(4).try_into().unwrap()
 }
 
 #[cfg(test)]
@@ -198,7 +181,7 @@ mod ext32_tests {
     #[should_panic]
     fn test_div_by_zero() {
         // Multiplicative identity with additive identity is None:
-        FPoint::field_one().field_div(FPoint::field_zero());
+        FPoint::field_mul_identity().field_div(FPoint::field_add_identity());
     }
 
     //// Polynomial evaluation
@@ -206,7 +189,7 @@ mod ext32_tests {
     #[test]
     fn test_field_eval_polynomial() {
         let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], None);
-        let a: FPoint = gf256_ext32_sample(&mut prg);
+        let a: FPoint = FPoint::field_sample(&mut prg);
         let poly = [a, a, a];
 
         let eval = a.field_eval_polynomial(&poly);
