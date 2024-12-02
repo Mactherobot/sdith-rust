@@ -1,10 +1,10 @@
 //! # Signature
-//! 
+//!
 //! This module contains the implementation of the signature struct and its methods.
 
 pub mod input;
-mod sign;
-mod verify;
+pub mod sign;
+pub mod verify;
 
 use crate::{
     constants::{
