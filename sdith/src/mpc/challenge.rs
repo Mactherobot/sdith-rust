@@ -1,7 +1,7 @@
 //! # Challenge
 //!
 //! Contains the struct Challenge pair `(r, e) ∈ F_point^t, (F_point^t)^d` along with some
-//! precomputed values
+//! precomputed values,
 //! Furthermore, it contains the functions for generating the challenges and the powers of r
 //! These are generated based on the Fiat-Shamir Transform
 

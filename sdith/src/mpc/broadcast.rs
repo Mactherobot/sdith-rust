@@ -1,6 +1,10 @@
 //! # Broadcast
 //!
-//! Contains the structs used for the broadcast values: Broadcast, BroadcastShare
+//! Contains the structs used for the broadcast values
+//! The broadcast values are created by the MPC party computation, and are sent to the
+//! verifier in the signature. Where they are used in veryfying the signature. By running an
+//! inverse party computation on the broadcast values.
+//!
 //! Also contains the functions for serialising and deserialising the broadcast values
 
 use crate::{

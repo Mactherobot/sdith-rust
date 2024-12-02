@@ -1,7 +1,8 @@
 //! # Beaver
 //!
 //! Computes the beaver triples a and b and the inner product c
-//! Also contains the Types used for the beaver triples: BeaverA, BeaverB, BeaverC
+//! Beaver triples are used in the MPC computation as precomputed multiplication triples.
+//! They are sacrificed in the broadcasting phase to save on communication costs.
 
 use std::iter::zip;
 
