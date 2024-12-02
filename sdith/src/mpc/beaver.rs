@@ -1,7 +1,7 @@
 //! # Beaver
 //!
 //! Computes the beaver triples a and b and the inner product c
-//! Also contains the Types used for the beaver triples
+//! Also contains the Types used for the beaver triples: BeaverA, BeaverB, BeaverC
 
 use std::iter::zip;
 
@@ -101,32 +101,32 @@ pub fn parse(
     let mut c: BeaverC = [FPoint::default(); PARAM_T];
 
     // Deserialise a
-    for d in 0..PARAM_SPLITTING_FACTOR {
+    (0..PARAM_SPLITTING_FACTOR).for_each(|d| {
         for i in 0..PARAM_T {
             for j in 0..PARAM_ETA {
                 a[d][i][j] = beaver_abc_plain[offset];
                 offset += 1;
             }
         }
-    }
+    });
 
     // Deserialise b
-    for d in 0..PARAM_SPLITTING_FACTOR {
+    (0..PARAM_SPLITTING_FACTOR).for_each(|d| {
         for i in 0..PARAM_T {
             for j in 0..PARAM_ETA {
                 b[d][i][j] = beaver_abc_plain[offset];
                 offset += 1;
             }
         }
-    }
+    });
 
     // Deserialise c
-    for i in 0..PARAM_T {
+    (0..PARAM_T).for_each(|i| {
         for j in 0..PARAM_ETA {
             c[i][j] = beaver_abc_plain[offset];
             offset += 1;
         }
-    }
+    });
 
     (a, b, c)
 }
@@ -153,19 +153,19 @@ mod beaver_tests {
         let mut c = inner_product(a, b);
 
         for d in 0..PARAM_SPLITTING_FACTOR {
-            for j in 0..PARAM_T {
+            (0..PARAM_T).for_each(|j| {
                 assert_eq!(a[d][j].len(), PARAM_ETA);
                 assert_eq!(b[d][j].len(), PARAM_ETA);
 
                 // Check that c = sum_d(a[d] * b[d]). Add is the same as substract
                 c[j] = c[j].field_add(a[d][j].field_mul(b[d][j]));
-            }
+            });
         }
 
-        for j in 0..PARAM_T {
+        (0..PARAM_T).for_each(|j| {
             // Should be zero
             assert_eq!(c[j], [0u8; 4]);
-        }
+        });
     }
 
     #[test]
@@ -179,9 +179,9 @@ mod beaver_tests {
         assert_eq!(b.len(), PARAM_SPLITTING_FACTOR);
         assert_eq!(c.len(), PARAM_T);
 
-        for i in 0..PARAM_T {
-            assert_eq!(c[i].len(), PARAM_ETA);
-        }
+        c.iter().for_each(|ci| {
+            assert_eq!(ci.len(), PARAM_ETA);
+        });
     }
 
     #[test]

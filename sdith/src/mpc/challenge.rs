@@ -1,3 +1,10 @@
+//! # Challenge
+//!
+//! Contains the struct Challenge pair `(r, e) ∈ F_point^t, (F_point^t)^d` along with some
+//! precomputed values
+//! Furthermore, it contains the functions for generating the challenges and the powers of r
+//! These are generated based on the Fiat-Shamir Transform
+
 use core::fmt;
 use std::fmt::Formatter;
 
@@ -11,7 +18,7 @@ use crate::{
     subroutines::prg::PRG,
 };
 
-use super::MPC;
+use super::polynomial_evaluation;
 
 /// Challenge pair `(r, e) ∈ F_point^t, (F_point^t)^d`
 #[derive(Clone)]
@@ -34,8 +41,6 @@ impl Challenge {
         let mut r = [FPoint::default(); PARAM_T];
         prg.sample_field_fpoint_elements(&mut r);
 
-        // Print r
-
         let mut eps = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
         for e_i in eps.iter_mut() {
             prg.sample_field_fpoint_elements(e_i);
@@ -49,7 +54,7 @@ impl Challenge {
         for t in 0..PARAM_T {
             powers_of_r[t][1] = r[t];
             get_powers(r[t], &mut powers_of_r[t]);
-            f_poly_eval[t] = MPC::polynomial_evaluation(&PRECOMPUTED_F_POLY, &powers_of_r[t])
+            f_poly_eval[t] = polynomial_evaluation(&PRECOMPUTED_F_POLY, &powers_of_r[t])
         }
 
         Self {
@@ -82,7 +87,7 @@ impl std::fmt::Debug for Challenge {
 /// Compute the powers of a point for fixed length. Used for precomputing the powers of r.
 pub fn get_powers(point: FPoint, out: &mut [FPoint]) {
     out[0] = FPoint::field_one();
-    out[1] = point.clone();
+    out[1] = point;
     for i in 2..out.len() {
         out[i] = out[i - 1].field_mul(point);
     }
@@ -123,8 +128,8 @@ mod challenge_tests {
         let point = FPoint::field_sample(&mut prg);
         let mut out = [FPoint::default(); PARAM_CHUNK_M + 1];
         get_powers(point, &mut out);
-        for i in 0..PARAM_CHUNK_M + 1 {
+        (0..PARAM_CHUNK_M + 1).for_each(|i| {
             assert_eq!(out[i], point.field_pow(i as u8));
-        }
+        });
     }
 }

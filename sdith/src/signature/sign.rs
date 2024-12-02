@@ -1,4 +1,9 @@
 use crate::arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix};
+use crate::mpc::beaver::generate_beaver_triples;
+use crate::mpc::{
+    compute_broadcast, compute_input_shares, expand_view_challenge_hash, party_computation,
+    ComputeInputSharesResult,
+};
 use crate::subroutines::marshalling::Marshalling;
 use crate::utils::iterator::*;
 use crate::witness::SOLUTION_PLAIN_SIZE;
@@ -8,7 +13,7 @@ use crate::{
         types::{Hash, Salt, Seed},
     },
     keygen::SecretKey,
-    mpc::{broadcast::BROADCAST_SHARE_PLAIN_SIZE, challenge::Challenge, MPC},
+    mpc::{broadcast::BROADCAST_SHARE_PLAIN_SIZE, challenge::Challenge},
     subroutines::{commitments::commit_share, merkle_tree::MerkleTree, prg::PRG},
 };
 
@@ -52,7 +57,7 @@ impl Signature {
         // Randomness generation for the Beaver triples and the shares
         let (mseed, salt) = entropy;
         let mut prg = PRG::init(&mseed, Some(&salt));
-        let (a, b, c) = MPC::generate_beaver_triples(&mut prg);
+        let (a, b, c) = generate_beaver_triples(&mut prg);
 
         let input = Input {
             solution: secret_key.solution,
@@ -62,7 +67,8 @@ impl Signature {
 
         // Compute input shares for the MPC
         let input_plain = input.serialise();
-        let (input_shares, input_coefs) = MPC::compute_input_shares(&input_plain, &mut prg);
+        let ComputeInputSharesResult(input_shares, input_coefs): ComputeInputSharesResult =
+            compute_input_shares(&input_plain, &mut prg);
 
         // Commit shares
         let (commitments, merkle_trees) = Signature::commit_shares(&input_shares, salt);
@@ -74,7 +80,7 @@ impl Signature {
         let chal = Challenge::new(h1);
 
         // MPC Simulation
-        let broadcast_result = MPC::compute_broadcast(input, &chal, h_prime, secret_key.y);
+        let broadcast_result = compute_broadcast(input, &chal, h_prime, secret_key.y);
         if broadcast_result.is_err() {
             return Err("MPC Simulation failed".to_string());
         }
@@ -88,7 +94,7 @@ impl Signature {
         // Run through Tau and l to compute the broadcast shares
         for e in 0..PARAM_TAU {
             for j in 0..PARAM_L {
-                let broadcast_share = MPC::party_computation(
+                let broadcast_share = party_computation(
                     input_coefs[e][j],
                     &chal,
                     h_prime,
@@ -106,7 +112,7 @@ impl Signature {
         let h2 = Signature::gen_h2(message, &salt, &h1, &broadcast_plain, &broadcast_shares);
 
         // Create the set of view-opening challenges
-        let view_opening_challenges = MPC::expand_view_challenge_hash(h2);
+        let view_opening_challenges = expand_view_challenge_hash(h2);
 
         // Signature building
         let mut solution_share = [[[0u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];

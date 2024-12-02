@@ -5,7 +5,7 @@ use crate::{
     },
     mpc::{
         broadcast::{BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
-        MPC,
+        expand_view_challenge_hash,
     },
     subroutines::{
         marshalling::Marshalling,
@@ -172,7 +172,7 @@ impl Marshalling for Signature {
         // We can do this by computing the second hash
         // and then expanding the view opening challenges
         let h2 = Signature::gen_h2(&message, &salt, &h1, &broadcast_plain, &broadcast_shares);
-        let view_opening_challenges = MPC::expand_view_challenge_hash(h2);
+        let view_opening_challenges = expand_view_challenge_hash(h2);
 
         // Expand the view opening challenges
         let mut auth_lengths = [0; PARAM_TAU];

@@ -76,7 +76,7 @@ mod input_tests {
         constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
         keygen::keygen,
         mpc::beaver::generate_beaver_triples,
-        subroutines::prg::prg::PRG,
+        subroutines::prg::PRG,
     };
 
     use super::*;

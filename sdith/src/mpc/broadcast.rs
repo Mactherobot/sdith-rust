@@ -1,3 +1,8 @@
+//! # Broadcast
+//!
+//! Contains the structs used for the broadcast values: Broadcast, BroadcastShare
+//! Also contains the functions for serialising and deserialising the broadcast values
+
 use crate::{
     arith::gf256::gf256_ext::FPoint,
     constants::params::{PARAM_ETA, PARAM_SPLITTING_FACTOR, PARAM_T},
@@ -5,24 +10,23 @@ use crate::{
 
 type BroadcastValue = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];
 
-#[derive(Clone)]
+/// Struct for holding the broadcast values
+#[derive(Clone, Default)]
 pub struct Broadcast {
+    /// Broadcast value alpha
     pub alpha: BroadcastValue,
+
+    /// Broadcast value beta
     pub beta: BroadcastValue,
 }
 
 const BROADCAST_VALUE_PLAIN_SIZE: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR;
 
+/// Size of the plain value of the broadcast values
 pub const BROADCAST_PLAIN_SIZE: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR * 2;
-const BROADCAST_V_PLAIN_SIZE: usize = PARAM_ETA * PARAM_T;
 
 impl Broadcast {
-    pub fn default() -> Self {
-        let alpha = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
-        let beta = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
-        Self { alpha, beta }
-    }
-
+    /// Serialise the broadcast values into a byte array
     pub fn serialise(&self) -> [u8; BROADCAST_PLAIN_SIZE] {
         let mut result = [0u8; BROADCAST_PLAIN_SIZE];
 
@@ -33,6 +37,7 @@ impl Broadcast {
         result
     }
 
+    /// Parse the broadcast values from a byte array
     pub fn parse(broadcast_plain: [u8; BROADCAST_PLAIN_SIZE]) -> Self {
         let alpha: BroadcastValue = deserialise_broadcast_value(
             broadcast_plain[..BROADCAST_VALUE_PLAIN_SIZE]
@@ -60,7 +65,7 @@ fn deserialise_broadcast_value(
 ) -> BroadcastValue {
     let mut broadcast_value = BroadcastValue::default();
 
-    for d in 0..PARAM_SPLITTING_FACTOR {
+    (0..PARAM_SPLITTING_FACTOR).for_each(|d| {
         for j in 0..PARAM_T {
             let offset = d * PARAM_T * PARAM_ETA + j * PARAM_ETA;
 
@@ -69,7 +74,7 @@ fn deserialise_broadcast_value(
                 .unwrap();
             broadcast_value[d][j] = point
         }
-    }
+    });
     broadcast_value
 }
 
@@ -83,20 +88,29 @@ impl std::fmt::Debug for Broadcast {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
+/// Broadcast share struct
 pub struct BroadcastShare {
+    /// Broadcast value alpha
     pub alpha: BroadcastValue,
+
+    /// Broadcast value beta
     pub beta: BroadcastValue,
+
+    /// Broadcast value v
     pub v: [FPoint; PARAM_T],
 }
 
-pub const BROADCAST_SHARE_PLAIN_SIZE_AB: usize =
-    PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR * 2;
+/// Size of the plain value for a and b of the broadcast share
+pub const BROADCAST_SHARE_PLAIN_SIZE_AB: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR * 2;
 const BROADCAST_SHARE_PLAIN_SIZE_V: usize = PARAM_ETA * PARAM_T;
+
+/// Size of the complete plain value of the broadcast share
 pub const BROADCAST_SHARE_PLAIN_SIZE: usize =
     BROADCAST_SHARE_PLAIN_SIZE_AB + BROADCAST_SHARE_PLAIN_SIZE_V;
 
 impl BroadcastShare {
+    /// Serialise the broadcast share into a byte array
     pub fn serialise(&self) -> [u8; BROADCAST_SHARE_PLAIN_SIZE] {
         let mut result = [0u8; BROADCAST_SHARE_PLAIN_SIZE];
 
@@ -105,15 +119,15 @@ impl BroadcastShare {
         }
 
         let mut offset = BROADCAST_SHARE_PLAIN_SIZE_AB;
-        for j in 0..PARAM_T {
-            let point = self.v[j];
-            result[offset..(offset + PARAM_ETA)].copy_from_slice(&point);
+        self.v.iter().for_each(|vj| {
+            result[offset..(offset + PARAM_ETA)].copy_from_slice(vj);
             offset += PARAM_ETA;
-        }
+        });
 
         result
     }
 
+    /// Parse the broadcast share from a byte array
     pub fn parse(broadcast_share_plain: [u8; BROADCAST_SHARE_PLAIN_SIZE]) -> Self {
         let alpha: BroadcastValue = deserialise_broadcast_value(
             broadcast_share_plain[..BROADCAST_VALUE_PLAIN_SIZE]
@@ -129,22 +143,13 @@ impl BroadcastShare {
         let mut v = [FPoint::default(); PARAM_T];
 
         let mut offset = BROADCAST_SHARE_PLAIN_SIZE_AB;
-        for j in 0..PARAM_T {
+        v.iter_mut().for_each(|vj| {
             let point = &broadcast_share_plain[offset..(offset + PARAM_ETA)];
-            v[j].copy_from_slice(point);
+            vj.copy_from_slice(point);
             offset += PARAM_ETA;
-        }
+        });
 
         Self { alpha, beta, v }
-    }
-
-    pub fn default() -> BroadcastShare {
-        return BroadcastShare {
-            alpha: [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR],
-
-            beta: [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR],
-            v: [FPoint::default(); PARAM_T],
-        };
     }
 }
 
