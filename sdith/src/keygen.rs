@@ -8,8 +8,11 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Public key for the signature protocol
 pub struct PublicKey {
+    /// Seed for generating the matrix H' in the SD instance
     pub seed_h: Seed,
+    /// The `y` value of the SD instance for `y = H' * x`
     pub y: [u8; PARAM_M_SUB_K],
 }
 
@@ -37,10 +40,19 @@ impl Marshalling<Vec<u8>> for PublicKey {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Secret key for the signature protocol
 pub struct SecretKey {
+    /// Seed for generating the matrix H' in the SD instance
     pub seed_h: Seed,
+    /// The `y` value of the SD instance for `y = H' * s`
     pub y: [u8; PARAM_M_SUB_K],
-    /// Solution to the instance (s_a, Q', )
+    /// Solution to the instance
+    /// 
+    /// Given the SD polynomial relation: S * Q = P * F
+    /// 
+    /// - 's_a': the share of the S polynomial. Calculate `s_b = y + H' * s_a` and `s = s_a || s_b`
+    /// - 'Q': Computed witness polynomial Q
+    /// - 'P': Computed witness polynomial P
     pub solution: Solution,
 }
 

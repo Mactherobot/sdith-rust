@@ -27,7 +27,7 @@ pub trait SDitHHashTrait<T> {
     fn init() -> Self;
     /// Initialize the hasher with a prefix. E.g. for challenge 1.
     fn init_with_prefix(prefix: &[u8]) -> Self;
-    /// Finalize the hash, returning the [`Hash`] value
+    /// Finalize the hash, returning the [`type@Hash`] value
     fn finalize(self) -> Hash;
     /// Update the hasher with data
     fn update(&mut self, data: &[u8]);

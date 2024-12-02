@@ -42,11 +42,17 @@ pub struct Instance {
 ///
 /// It is part of the secret key of the signature scheme.
 ///
-/// It corresponds to the extended solution, meaning that it contains all the secret values which can be deterministically built from the solution itself and which are inputs of the underlying MPC protocol.
+/// It corresponds to the extended solution, meaning that it contains all the secret values
+/// which can be deterministically built from the solution itself and which are inputs of the underlying MPC protocol.
+///
+/// Given the SD polynomial relation: S * Q = P * F
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Solution {
+    /// share of the S polynomial. Calculate `s_b = y + H' * s_a` and `s = s_a || s_b`
     pub s_a: [u8; PARAM_K],
+    /// Computed witness polynomial Q
     pub q_poly: QPoly,
+    /// Computed witness polynomial P
     pub p_poly: PPoly,
 }
 
@@ -453,7 +459,7 @@ pub fn complete_q(q_poly: QPoly, leading: u8) -> QPolyComplete {
     q_poly_out
 }
 
-/// Generate `s = (s_a | s_b)` from `s_a`, `H'` and `y`. Optionally add `y` to `H's_a`.b = H's_a
+/// Generate `s = (s_a | s_b)` from `s_a`, `H'` and `y`. Optionally add `y` to `H's_a` to get `s_b`.
 pub fn compute_s(
     s_a: &[u8; PARAM_K],
     h_prime: &HPrimeMatrix,
