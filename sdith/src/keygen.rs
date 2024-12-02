@@ -42,17 +42,11 @@ impl Marshalling<Vec<u8>> for PublicKey {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Secret key for the signature protocol
 pub struct SecretKey {
-    /// Seed for generating the matrix H' in the SD instance
+    /// [`Seed`] for generating the matrix H' in the SD instance
     pub seed_h: Seed,
     /// The `y` value of the SD instance for `y = H' * s`
     pub y: [u8; PARAM_M_SUB_K],
-    /// Solution to the instance
-    /// 
-    /// Given the SD polynomial relation: S * Q = P * F
-    /// 
-    /// - 's_a': the share of the S polynomial. Calculate `s_b = y + H' * s_a` and `s = s_a || s_b`
-    /// - 'Q': Computed witness polynomial Q
-    /// - 'P': Computed witness polynomial P
+    /// [`Solution`] to the instance
     pub solution: Solution,
 }
 
@@ -92,6 +86,7 @@ impl Marshalling<Vec<u8>> for SecretKey {
     }
 }
 
+/// Generate a public and secret key pair given a root [`Seed`]
 pub fn keygen(seed_root: Seed) -> (Box<PublicKey>, Box<SecretKey>) {
     let (instance, solution) = generate_instance_with_solution(seed_root);
     let pk = Box::new(PublicKey {
