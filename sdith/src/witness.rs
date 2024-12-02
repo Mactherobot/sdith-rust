@@ -131,6 +131,7 @@ pub struct Witness {
     /// The second share of [`SPoly`], for the SD relation `S * Q = P * F`.
     ///
     /// This part is only used for testing purposes.
+    #[cfg(test)]
     s_b: [u8; PARAM_M_SUB_K],
     /// The value `y = s_b + H' * s_a`.
     pub y: [u8; PARAM_M_SUB_K],
@@ -166,6 +167,7 @@ pub fn generate_witness(seed_h: Seed, polynomials: (QPoly, SPoly, PPoly)) -> Wit
 
     Witness {
         s_a,
+        #[cfg(test)]
         s_b,
         y,
         seed_h,

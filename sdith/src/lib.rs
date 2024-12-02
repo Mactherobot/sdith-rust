@@ -18,7 +18,7 @@ pub mod keygen;
 pub mod mpc;
 pub mod signature;
 pub mod subroutines;
-pub mod utils;
+pub(crate) mod utils;
 pub mod witness;
 
 #[cfg(test)]
