@@ -1,12 +1,8 @@
-/// Extendable output function. The pseudorandomness in SD-in-the-Head is generated through
-/// an extendable output hash function (XOF). Such a function takes an arbitrary-long input bit-
-/// string x ∈ {0, 1}∗ and produces an arbitrary-long output bit-string y ∈ {0, 1}∗ whose length is
-/// tailored to the requirements of the application. Formally, a XOF is equipped with two routines:
-/// XOF.Init(x) initializes the XOF state with the input x ∈ {0, 1}∗ . Once initialized, the XOF
-/// can be queried with the routine XOF.GetByte() to generate the next byte of the output y
-/// associated to x. The concrete instance of the XOF we use in the SD-in-the-Head scheme is given
-/// in Section 4.5. In our context, we use the XOF as a secure pseudorandom generator (PRG)
-/// which tolerates input seeds of variable lengths.
+//! # Extendable output function (XOF). 
+//! 
+//! The pseudorandomness in SD-in-the-Head is generated through an extendable output hash function (XOF).
+//! For example, we can easily generate an array of random values in [F_q](crate::arith::gf256::FieldArith) by
+//! sampling a random hash `n` byte hash output and interpreting it as an array of field elements.
 
 #[cfg(not(feature = "xof_blake3"))]
 use crate::constants::params::{XOFPrimitive, XOF_PRIMITIVE};
@@ -15,13 +11,26 @@ use tiny_keccak::{Hasher, Shake, Xof};
 
 use crate::constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
 
+/// Trait for the extendable output function (XOF) implementation
+/// 
+/// The trait holds the necessary functions to initialize the XOF, update the XOF with data, and squeeze the XOF to get the output.
+/// The trait is implemented for both the Shake and Blake3 XOFs.
 pub trait SDitHXOFTrait<T> {
+    /// Get the XOF instance
+    /// 
+    /// Matches the [`XOF_PRIMITIVE`] to get the correct XOF based on Category configuration.
     fn get_xof() -> T;
+    /// Initialize the XOF with a base value `x`
     fn init_base(x: &[u8]) -> Self;
+    /// Initialize the XOF with a [`crate::constants::types::Seed`] and optional [`crate::constants::types::Salt`]
     fn init(seed: &[u8; PARAM_SEED_SIZE], salt: Option<&[u8; PARAM_SALT_SIZE]>) -> Self;
+    /// Squeeze the XOF to get the output of size `output.len()`
     fn squeeze(&mut self, output: &mut [u8]);
 }
 
+/// SDitHXOF struct
+/// 
+/// Holds the generic XOF
 pub struct SDitHXOF<T> {
     xof: T,
 }

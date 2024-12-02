@@ -79,8 +79,7 @@ mod ext16_tests {
     }
 }
 
-// Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
-
+/// Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
 pub type FPoint = [u8; 4];
 
 impl FieldArith for FPoint {

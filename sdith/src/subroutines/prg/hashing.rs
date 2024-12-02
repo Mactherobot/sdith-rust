@@ -1,3 +1,8 @@
+//! # Hashing for the SDitH protocol
+//! 
+//! Cryptographic hashing functions are used to compute Fiat-Shamir hashes and Commitment 
+//! hashes e.g for [Merke-Tree Commitment Scheme](crate::subroutines::merkle_tree::MerkleTree)
+
 #[cfg(not(feature = "hash_blake3"))]
 use tiny_keccak::{Hasher, Sha3};
 
@@ -5,17 +10,32 @@ use tiny_keccak::{Hasher, Sha3};
 use crate::constants::params::{HashPrimitive, HASH_PRIMITIVE};
 use crate::constants::types::Hash;
 
+/// Hash prefix for challenge 1 Fiats-Shamir Heuristic
 pub const HASH_PREFIX_CHALLENGE_1: [u8; 1] = [1];
+/// Hash prefix for challenge 2 Fiats-Shamir Heuristic
 pub const HASH_PREFIX_CHALLENGE_2: [u8; 1] = [2];
 
+/// SDitH Hash Trait
+/// 
+/// Defines the methods for the SDitH Hash and used to switch between different hash primitives e.g. Blake3
 pub trait SDitHHashTrait<T> {
+    /// Get the hasher for the hash primitive
+    /// 
+    /// Matches the [`HASH_PRIMITIVE`] to get the correct hash based on Category configuration.
     fn get_hasher() -> T;
+    /// Initialize the hasher
     fn init() -> Self;
+    /// Initialize the hasher with a prefix. E.g. for challenge 1.
     fn init_with_prefix(prefix: &[u8]) -> Self;
+    /// Finalize the hash, returning the [Hash](crate::constants::types::Hash) value
     fn finalize(self) -> Hash;
+    /// Update the hasher with data
     fn update(&mut self, data: &[u8]);
 }
 
+/// SDitH Hash struct
+/// 
+/// Holds the generic hasher
 pub struct SDitHHash<T> {
     hasher: T,
 }
@@ -86,6 +106,7 @@ fn hash(data: &[u8]) -> Hash {
     SDitHHash::finalize(hasher)
 }
 
+/// Hash `data` using the SDitH Hash initiated with the challenge 1 prefix
 pub fn hash_1(data: Vec<&[u8]>) -> Hash {
     let mut hasher = SDitHHash::init_with_prefix(&HASH_PREFIX_CHALLENGE_1);
     for d in data {
@@ -94,6 +115,7 @@ pub fn hash_1(data: Vec<&[u8]>) -> Hash {
     SDitHHash::finalize(hasher)
 }
 
+/// Hash `data` using the SDitH Hash initiated with the challenge 2 prefix
 pub fn hash_2(data: Vec<&[u8]>) -> Hash {
     let mut hasher = SDitHHash::init_with_prefix(&HASH_PREFIX_CHALLENGE_2);
     for d in data {

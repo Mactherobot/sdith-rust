@@ -1,6 +1,13 @@
 //! # Pseudo Random Generator (PRG)
+//! Pseudo-randomness used in the SDitH protocol
 //!
-//! Generates random values in the fields F_q and F_q^\eta
+//! ## Hashing
+//! Hashing for Fiat-Shamir Heuristic and [Commitment scheme](crate::subroutines::merkle_tree::MerkleTree) is 
+//! implemented in the [`hashing`](crate::subroutines::prg::hashing) module.
+//! 
+//! ## XOF
+//! Extendable Output Functions (XOFs) are used to generate pseudorandom values in the fields [F_q](crate::arith::gf256::FieldArith) 
+//! and [F_q^\eta](crate::arith::gf256::gf256_ext::FPoint).. The XOFs are implemented in the [`xof`](crate::subroutines::prg::xof) module.
 
 pub mod hashing;
 pub mod xof;
@@ -17,12 +24,18 @@ use crate::{
 
 /// Pseudo Random Generator (PRG) struct
 /// Generates random values in the fields F_q and F_q^\eta
-/// 
-/// 
+///
+/// The pseudorandomness is generated through extendable output functions (XOFs)
+///
+/// By default, the randomness is generated using Shake.
+///
+/// If the `xof_blake3` feature is enabled, the randomness is generated using Blake3 for category 1.
 pub struct PRG {
+    /// XOF instance for default Shake
     #[cfg(not(feature = "xof_blake3"))]
     xof: SDitHXOF<tiny_keccak::Shake>,
     #[cfg(feature = "xof_blake3")]
+    /// XOF instance for Blake3
     xof: SDitHXOF<blake3::OutputReader>,
 }
 
@@ -41,6 +54,7 @@ impl PRG {
         }
     }
 
+    /// Sample non-zero random values in the field [F_q](crate::arith::gf256::FieldArith)
     pub fn sample_field_fq_non_zero(&mut self, output: &mut [u8]) {
         for i in 0..output.len() {
             self.sample_field_fq_elements(&mut output[i..i + 1]);
@@ -50,6 +64,9 @@ impl PRG {
         }
     }
 
+    /// Sample non-zero **distinct** random values in the field [F_q](crate::arith::gf256::FieldArith)
+    ///
+    /// The output length must be less than 256
     pub fn sample_field_fq_non_zero_set(&mut self, output: &mut [u8]) -> Result<(), String> {
         if output.len() >= 256 {
             return Err("Output length must be less than 256".to_string());
@@ -68,8 +85,7 @@ impl PRG {
         return Ok(());
     }
 
-    /// Sample a random value in the field F_q = F_256
-    /// The byte B_i is returned as the sampled field element. XOF is called to generate n bytes
+    /// Sample a random [`Vec`] in the field [F_q](crate::arith::gf256::FieldArith)
     pub fn sample_field_fq_elements_vec(&mut self, n: usize) -> Vec<u8> {
         let mut f = vec![0u8; n];
         self.xof.squeeze(&mut f);
@@ -99,6 +115,7 @@ impl PRG {
         f
     }
 
+    /// Sample a random [`Seed`].
     pub fn sample_seed(&mut self) -> Seed {
         let mut seed = [0u8; PARAM_SEED_SIZE];
         self.xof.squeeze(&mut seed);
