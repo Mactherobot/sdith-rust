@@ -126,9 +126,7 @@ fn read_response_test_vectors(n: usize) -> Vec<TestVectorResponse> {
 mod kat_tests {
     use super::*;
 
-    use crate::{
-        keygen::keygen, signature::signature::Signature, subroutines::marshalling::Marshalling,
-    };
+    use crate::{keygen::keygen, signature::Signature, subroutines::marshalling::Marshalling};
 
     #[test]
     fn test_read_test_vectors() {

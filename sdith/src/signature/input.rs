@@ -1,3 +1,8 @@
+//! # Input
+//!
+//! Input shares are used in the MPC protocol to share the solution.
+//! And are used in the inverse party computation.
+
 use crate::{
     constants::params::{PARAM_N, PARAM_TAU},
     mpc::beaver::{BeaverTriples, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE},
@@ -6,7 +11,9 @@ use crate::{
 };
 
 #[derive(Clone, PartialEq, Eq)]
+/// Input shares for the signature protocol
 pub struct Input {
+    /// Solution shares
     pub solution: Solution,
     pub beaver: BeaverTriples,
 }
@@ -14,7 +21,9 @@ pub struct Input {
 /// k+2w+t(2d+1)η
 pub const INPUT_SIZE: usize = SOLUTION_PLAIN_SIZE + BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE;
 
+/// Input share plain, the singular input share
 pub type InputSharePlain = [u8; INPUT_SIZE];
+/// Input shares plain, a collectino of input shares
 pub type InputSharesPlain = [[InputSharePlain; PARAM_N]; PARAM_TAU];
 
 impl Marshalling<InputSharePlain> for Input {
@@ -38,7 +47,7 @@ impl Input {
     /// Remove the Beaver triples from the input shares as they can be derived from the Solution shares
     /// {[x_A]_i, [P]_i, [Q]_i}_(i \in I) and broadcast shares {[α]_i, [β]_i, [v]_i}_(i \in I).
     pub fn truncate_beaver_triples(input_share: &[u8; INPUT_SIZE]) -> [u8; SOLUTION_PLAIN_SIZE] {
-        return input_share[..SOLUTION_PLAIN_SIZE].try_into().unwrap();
+        input_share[..SOLUTION_PLAIN_SIZE].try_into().unwrap()
     }
 
     /// Append the Beaver triples from the input shares as they can be derived from the Solution shares

@@ -10,7 +10,7 @@ use sdith::{
         types::{Salt, Seed},
     },
     keygen::{self, PublicKey, SecretKey},
-    signature::signature::Signature,
+    signature::Signature,
     subroutines::marshalling::Marshalling as _,
 };
 

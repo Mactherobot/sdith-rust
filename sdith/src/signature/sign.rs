@@ -1,3 +1,7 @@
+//! # Signature
+//!
+//! Creates a signature for a message by using the SDitH protocol
+
 use crate::arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::mpc::beaver::BeaverTriples;
 use crate::mpc::{
@@ -18,12 +22,13 @@ use crate::{
 };
 
 use super::input::INPUT_SIZE;
-use super::{input::Input, signature::Signature};
+use super::{input::Input, Signature};
 
 impl Signature {
     #[inline(always)]
+    /// Commit shares to the MPC protocol
     pub fn commit_shares(
-        input_shares: &Box<[[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU]>,
+        input_shares: &[[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU],
         salt: Salt,
     ) -> ([[u8; 32]; 6], Vec<MerkleTree>) {
         let mut commitments: [Hash; PARAM_TAU] = [[0u8; PARAM_DIGEST_SIZE]; PARAM_TAU];
@@ -59,6 +64,7 @@ impl Signature {
         let mut prg = PRG::init(&mseed, Some(&salt));
         let beaver = BeaverTriples::generate(&mut prg);
 
+        // Create the input
         let input = Input {
             solution: secret_key.solution,
             beaver,
@@ -71,8 +77,6 @@ impl Signature {
 
         // Commit shares
         let (commitments, merkle_trees) = Signature::commit_shares(&input_shares, salt);
-
-        // First challenge (MPC challenge)
 
         // h1 = Hash1 (seedH , y, salt, com[1], . . . , com[τ ])
         let h1 = Signature::gen_h1(&secret_key.seed_h, &secret_key.y, salt, commitments);

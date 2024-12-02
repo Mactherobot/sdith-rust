@@ -15,7 +15,7 @@ use crate::{
     subroutines::commitments::commit_share,
 };
 
-use super::{input::Input, signature::Signature};
+use super::{input::Input, Signature};
 
 impl Signature {
     pub fn verify_signature(public_key: &PublicKey, signature: &Vec<u8>) -> Result<bool, String> {
