@@ -1,3 +1,7 @@
+//! # Verification implementation
+//! 
+//! This module contains the implementation of the verification of the signature.
+
 use crate::arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::constants::params::PARAM_DIGEST_SIZE;
 use crate::keygen::PublicKey;
@@ -18,6 +22,7 @@ use crate::{
 use super::{input::Input, Signature};
 
 impl Signature {
+    /// Verify a plain signature given a [`PublicKey`]
     pub fn verify_signature(public_key: &PublicKey, signature: &Vec<u8>) -> Result<bool, String> {
         // Expansion of parity-check matrix
         let h_prime: HPrimeMatrix = gen_hmatrix(public_key.seed_h);

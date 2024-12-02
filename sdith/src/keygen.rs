@@ -1,3 +1,14 @@
+//! # Key generation
+//! 
+//! Public and Secret key structs for the signature protocol.
+//! 
+//! Generating a keypair involves generating a random SD instance along with witness polynomials that 
+//! satisfy the relation 
+//! 
+//! `S * Q = P * F`. 
+//! 
+//! Actual generation functions are located in the [`crate::witness`] module.
+
 use crate::{
     constants::{
         params::{PARAM_M_SUB_K, PARAM_SEED_SIZE},

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 mod utils;
 
 use nist_pqc_seeded_rng::{NistPqcAes256CtrRng, RngCore, SeedableRng};
@@ -56,6 +58,7 @@ struct TestVectorResponse {
     smlen: usize,
 }
 
+/// Convert a hex string to a NIST [`nist_pqc_seeded_rng::Seed`]
 fn seed_from_hex(hex: &str) -> nist_pqc_seeded_rng::Seed {
     hex::decode(hex).unwrap()[..48].try_into().unwrap()
 }

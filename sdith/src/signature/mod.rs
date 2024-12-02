@@ -1,3 +1,7 @@
+//! # Signature
+//! 
+//! This module contains the implementation of the signature struct and its methods.
+
 pub mod input;
 mod sign;
 mod verify;
@@ -220,7 +224,7 @@ mod signature_tests {
     use crate::{constants::params::PARAM_SEED_SIZE, keygen::keygen};
 
     #[test]
-    fn test_marhalling() {
+    fn test_marhalling_signature() {
         let message = vec![1u8, 2u8, 3u8, 4u8];
         let seed1 = [0u8; PARAM_SEED_SIZE];
         let seed2 = [1u8; PARAM_SEED_SIZE];

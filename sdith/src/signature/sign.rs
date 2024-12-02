@@ -1,6 +1,6 @@
-//! # Signature
+//! # Signing a message
 //!
-//! Creates a signature for a message by using the SDitH protocol
+//! Implemtation of the signature for a message by using the SDitH protocol
 
 use crate::arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::mpc::beaver::BeaverTriples;
@@ -49,6 +49,7 @@ impl Signature {
         (commitments, merkle_trees)
     }
 
+    /// Sign a `message` using the `secret_key` and the `entropy`
     pub fn sign_message(
         entropy: (Seed, Salt),
         secret_key: &SecretKey,
