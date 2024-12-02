@@ -11,7 +11,7 @@ use sdith::keygen::keygen;
 use sdith::keygen::{PublicKey, SecretKey};
 use sdith::mpc;
 use sdith::signature::input::INPUT_SIZE;
-use sdith::signature::signature::Signature;
+use sdith::signature::Signature;
 use sdith::subroutines::marshalling::Marshalling as _;
 use sdith::subroutines::prg::PRG;
 

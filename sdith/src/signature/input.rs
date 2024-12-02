@@ -15,6 +15,7 @@ use crate::{
 pub struct Input {
     /// Solution shares
     pub solution: Solution,
+    /// Beaver triples
     pub beaver: BeaverTriples,
 }
 

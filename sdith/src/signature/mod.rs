@@ -233,7 +233,7 @@ mod signature_tests {
         let signature1 = Signature::sign_message(entropy, &sk1, &message).unwrap();
         let signature2 = Signature::sign_message(entropy, &sk2, &message).unwrap();
 
-        crate::subroutines::marshalling::test_marhalling(signature1, signature2);
+        crate::subroutines::marshalling::_test_marhalling(signature1, signature2);
     }
 
     use crate::{

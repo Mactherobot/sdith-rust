@@ -35,7 +35,7 @@ opt-level = 3
 debug = 1 # TODO: remove this
 
 [features]
-default = ["category_one", "optimized"]
+default = ["category_one", "optimized", "dep:nist-pqc-seeded-rng"]
 
 # Categories
 category_one = []
