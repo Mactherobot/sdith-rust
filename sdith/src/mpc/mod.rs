@@ -220,8 +220,9 @@ fn _party_computation(
     compute_v: bool,
 ) -> Result<BroadcastShare, String> {
     let input_share = Input::parse(&input_share_plain)?;
-    let (a, b) = input_share.beaver_ab;
-    let c = input_share.beaver_c;
+    let a = input_share.beaver.a;
+    let b = input_share.beaver.b;
+    let c = input_share.beaver.c;
     let (s_a, q_poly, p_poly) = (
         input_share.solution.s_a,
         input_share.solution.q_poly,
@@ -373,7 +374,7 @@ pub fn inverse_party_computation(
 
 #[cfg(test)]
 mod mpc_tests {
-    use beaver::generate_beaver_triples;
+    use beaver::BeaverTriples;
 
     use crate::{
         arith::gf256::gf256_vector::{gf256_add_vector, gf256_add_vector_with_padding},
@@ -403,7 +404,7 @@ mod mpc_tests {
         let (q, s, p, _) = sample_witness(&mut prg);
         let witness = generate_witness(hseed, (q, s, p));
 
-        let beaver_triples = generate_beaver_triples(&mut prg);
+        let beaver = BeaverTriples::generate(&mut prg);
         let chal = Challenge::new(hash_default());
 
         let solution = Solution {
@@ -414,8 +415,7 @@ mod mpc_tests {
 
         let input = Input {
             solution: solution.clone(),
-            beaver_ab: (beaver_triples.0, beaver_triples.1),
-            beaver_c: beaver_triples.2,
+            beaver,
         };
 
         let broadcast = compute_broadcast(input.clone(), &chal, witness.h_prime, witness.y);
@@ -460,7 +460,7 @@ mod mpc_tests {
 
         let (q, s, p, _) = sample_witness(&mut prg);
         let witness = generate_witness(hseed, (q, s, p));
-        let beaver_triples = generate_beaver_triples(&mut prg);
+        let beaver = BeaverTriples::generate(&mut prg);
 
         let hash1 = [0u8; PARAM_DIGEST_SIZE];
         let chal = Challenge::new(hash1);
@@ -472,8 +472,7 @@ mod mpc_tests {
                     q_poly: q,
                     p_poly: p,
                 },
-                beaver_ab: (beaver_triples.0, beaver_triples.1),
-                beaver_c: beaver_triples.2,
+                beaver,
             },
             &chal,
             witness.h_prime,
@@ -511,9 +510,9 @@ mod mpc_tests {
 
         // Assert that the computed values are the same as the original values
 
-        assert_eq!(a, input.beaver_ab.0);
-        assert_eq!(b, input.beaver_ab.1);
-        assert_eq!(c, input.beaver_c);
+        assert_eq!(a, input.beaver.a);
+        assert_eq!(b, input.beaver.b);
+        assert_eq!(c, input.beaver.c);
     }
 
     #[test]
@@ -537,7 +536,7 @@ mod mpc_tests {
         // randomness_shares += (alpha, beta, v=0)
         gf256_add_vector_with_padding(&mut broadcast_share, &broadcast.serialise());
 
-        let broadcast_shares = BroadcastShare::parse(broadcast_share);
+        let broadcast_shares = BroadcastShare::parse(&broadcast_share).unwrap();
 
         let recomputed_input_share_triples = inverse_party_computation(
             Input::truncate_beaver_triples(&input_share),
@@ -551,9 +550,9 @@ mod mpc_tests {
 
         let input_share = Input::parse(&input_share).unwrap();
 
-        assert_eq!(recomputed_input_share_triples.0, input_share.beaver_ab.0);
-        assert_eq!(recomputed_input_share_triples.1, input_share.beaver_ab.1);
-        assert_eq!(recomputed_input_share_triples.2, input_share.beaver_c);
+        assert_eq!(recomputed_input_share_triples.0, input_share.beaver.a);
+        assert_eq!(recomputed_input_share_triples.1, input_share.beaver.b);
+        assert_eq!(recomputed_input_share_triples.2, input_share.beaver.c);
     }
 
     /// Test that for some random point r_k we have that S(r_k) * Q'(r_k) = F * P(r_k)

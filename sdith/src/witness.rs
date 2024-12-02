@@ -507,7 +507,7 @@ mod test_helpers {
             gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
         },
         constants::params::{PARAM_CHUNK_W, PARAM_SEED_SIZE, PARAM_W},
-        subroutines::{marshalling::test_marhalling, prg::PRG},
+        subroutines::{marshalling::_test_marhalling, prg::PRG},
     };
 
     use super::*;
@@ -616,12 +616,12 @@ mod test_helpers {
     }
 
     #[test]
-    fn test_serialise_parse() {
+    fn test_marhalling_solution() {
         let seed1 = [0u8; PARAM_SEED_SIZE];
         let seed2 = [1u8; PARAM_SEED_SIZE];
         let solution1 = get_solution(seed1);
         let solution2 = get_solution(seed2);
 
-        test_marhalling(solution1, solution2);
+        _test_marhalling(solution1, solution2);
     }
 }

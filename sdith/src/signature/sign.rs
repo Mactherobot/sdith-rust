@@ -1,5 +1,5 @@
 use crate::arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix};
-use crate::mpc::beaver::generate_beaver_triples;
+use crate::mpc::beaver::BeaverTriples;
 use crate::mpc::{
     compute_broadcast, compute_input_shares, expand_view_challenge_hash, party_computation,
     ComputeInputSharesResult,
@@ -57,12 +57,11 @@ impl Signature {
         // Randomness generation for the Beaver triples and the shares
         let (mseed, salt) = entropy;
         let mut prg = PRG::init(&mseed, Some(&salt));
-        let (a, b, c) = generate_beaver_triples(&mut prg);
+        let beaver = BeaverTriples::generate(&mut prg);
 
         let input = Input {
             solution: secret_key.solution,
-            beaver_ab: (a, b),
-            beaver_c: c,
+            beaver,
         };
 
         // Compute input shares for the MPC

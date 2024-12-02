@@ -1,8 +1,6 @@
 use crate::{
     constants::params::{PARAM_N, PARAM_TAU},
-    mpc::beaver::{
-        parse, serialise, BeaverA, BeaverB, BeaverC, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE,
-    },
+    mpc::beaver::{BeaverTriples, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE},
     subroutines::marshalling::Marshalling,
     witness::{Solution, SOLUTION_PLAIN_SIZE},
 };
@@ -10,8 +8,7 @@ use crate::{
 #[derive(Clone, PartialEq, Eq)]
 pub struct Input {
     pub solution: Solution,
-    pub beaver_ab: (BeaverA, BeaverB),
-    pub beaver_c: BeaverC,
+    pub beaver: BeaverTriples,
 }
 
 /// k+2w+t(2d+1)η
@@ -25,23 +22,15 @@ impl Marshalling<InputSharePlain> for Input {
     fn serialise(&self) -> InputSharePlain {
         let mut serialised = [0u8; INPUT_SIZE];
         serialised[..SOLUTION_PLAIN_SIZE].copy_from_slice(&self.solution.serialise());
-        serialised[SOLUTION_PLAIN_SIZE..].copy_from_slice(&serialise(
-            self.beaver_ab.0,
-            self.beaver_ab.1,
-            self.beaver_c,
-        ));
+        serialised[SOLUTION_PLAIN_SIZE..].copy_from_slice(&self.beaver.serialise());
         serialised
     }
 
     fn parse(input_plain: &InputSharePlain) -> Result<Input, String> {
         let solution = Solution::parse(input_plain[..SOLUTION_PLAIN_SIZE].try_into().unwrap())?;
-        let (a, b, c) = parse(input_plain[SOLUTION_PLAIN_SIZE..].try_into().unwrap());
+        let beaver = BeaverTriples::parse(&input_plain[SOLUTION_PLAIN_SIZE..].try_into().unwrap())?;
 
-        Ok(Input {
-            solution,
-            beaver_ab: (a, b),
-            beaver_c: c,
-        })
+        Ok(Input { solution, beaver })
     }
 }
 
@@ -55,15 +44,11 @@ impl Input {
     /// Append the Beaver triples from the input shares as they can be derived from the Solution shares
     pub fn append_beaver_triples(
         solution_share: [u8; SOLUTION_PLAIN_SIZE],
-        beaver_triples: (BeaverA, BeaverB, BeaverC),
+        beaver_triples: BeaverTriples,
     ) -> [u8; INPUT_SIZE] {
         let mut input = [0u8; INPUT_SIZE];
         input[..SOLUTION_PLAIN_SIZE].copy_from_slice(&solution_share);
-        input[SOLUTION_PLAIN_SIZE..].copy_from_slice(&serialise(
-            beaver_triples.0,
-            beaver_triples.1,
-            beaver_triples.2,
-        ));
+        input[SOLUTION_PLAIN_SIZE..].copy_from_slice(&beaver_triples.serialise());
         input
     }
 }
@@ -73,7 +58,6 @@ mod input_tests {
     use crate::{
         constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
         keygen::keygen,
-        mpc::beaver::generate_beaver_triples,
         subroutines::prg::PRG,
     };
 
@@ -83,12 +67,11 @@ mod input_tests {
     fn test_serialise_deserialise_input() {
         let (_pk, sk) = keygen([0u8; PARAM_SEED_SIZE]);
         let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], Some(&[0u8; PARAM_SALT_SIZE]));
-        let (a, b, c) = generate_beaver_triples(&mut prg);
+        let beaver = BeaverTriples::generate(&mut prg);
 
         let input = Input {
             solution: sk.solution,
-            beaver_ab: (a, b),
-            beaver_c: c,
+            beaver,
         };
 
         let input_plain = input.serialise();
@@ -108,20 +91,16 @@ mod input_tests {
     fn test_append_beaver_triples() {
         let (_pk, sk) = keygen([0u8; PARAM_SEED_SIZE]);
         let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], Some(&[0u8; PARAM_SALT_SIZE]));
-        let (a, b, c) = generate_beaver_triples(&mut prg);
+        let beaver = BeaverTriples::generate(&mut prg);
 
         let input = Input {
             solution: sk.solution,
-            beaver_ab: (a, b),
-            beaver_c: c,
+            beaver: beaver.clone(),
         };
 
         let input_plain = input.serialise();
         let solution_plain = Input::truncate_beaver_triples(&input_plain);
-
-        let beaver_triples = (a, b, c);
-        let input_with_beaver_triples =
-            Input::append_beaver_triples(solution_plain, beaver_triples);
+        let input_with_beaver_triples = Input::append_beaver_triples(solution_plain, beaver);
 
         assert_eq!(input_plain, input_with_beaver_triples);
     }

@@ -210,7 +210,7 @@ mod signature_tests {
     use crate::{constants::params::PARAM_SEED_SIZE, keygen::keygen};
 
     #[test]
-    fn test_marhalling() {
+    fn test_marhalling_signature() {
         let message = vec![1u8, 2u8, 3u8, 4u8];
         let seed1 = [0u8; PARAM_SEED_SIZE];
         let seed2 = [1u8; PARAM_SEED_SIZE];
@@ -223,6 +223,6 @@ mod signature_tests {
         let signature1 = Signature::sign_message(entropy, &sk1, &message).unwrap();
         let signature2 = Signature::sign_message(entropy, &sk2, &message).unwrap();
 
-        crate::subroutines::marshalling::test_marhalling(signature1, signature2);
+        crate::subroutines::marshalling::_test_marhalling(signature1, signature2);
     }
 }

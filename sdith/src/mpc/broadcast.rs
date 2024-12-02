@@ -10,12 +10,13 @@
 use crate::{
     arith::gf256::gf256_ext::FPoint,
     constants::params::{PARAM_ETA, PARAM_SPLITTING_FACTOR, PARAM_T},
+    subroutines::marshalling::Marshalling,
 };
 
 type BroadcastValue = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];
 
 /// Struct for holding the broadcast values
-#[derive(Clone, Default)]
+#[derive(Clone, Default, PartialEq, Eq)]
 pub struct Broadcast {
     /// Broadcast value alpha
     pub alpha: BroadcastValue,
@@ -29,9 +30,9 @@ const BROADCAST_VALUE_PLAIN_SIZE: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_
 /// Size of the plain value of the broadcast values
 pub const BROADCAST_PLAIN_SIZE: usize = PARAM_ETA * PARAM_T * PARAM_SPLITTING_FACTOR * 2;
 
-impl Broadcast {
+impl Marshalling<[u8; BROADCAST_PLAIN_SIZE]> for Broadcast {
     /// Serialise the broadcast values into a byte array
-    pub fn serialise(&self) -> [u8; BROADCAST_PLAIN_SIZE] {
+    fn serialise(&self) -> [u8; BROADCAST_PLAIN_SIZE] {
         let mut result = [0u8; BROADCAST_PLAIN_SIZE];
 
         for (n, v) in [self.alpha, self.beta].iter().enumerate() {
@@ -42,7 +43,7 @@ impl Broadcast {
     }
 
     /// Parse the broadcast values from a byte array
-    pub fn parse(broadcast_plain: [u8; BROADCAST_PLAIN_SIZE]) -> Self {
+    fn parse(broadcast_plain: &[u8; BROADCAST_PLAIN_SIZE]) -> Result<Self, String> {
         let alpha: BroadcastValue = deserialise_broadcast_value(
             broadcast_plain[..BROADCAST_VALUE_PLAIN_SIZE]
                 .try_into()
@@ -54,7 +55,7 @@ impl Broadcast {
                 .unwrap(),
         );
 
-        Self { alpha, beta }
+        Ok(Self { alpha, beta })
     }
 }
 
@@ -92,7 +93,7 @@ impl std::fmt::Debug for Broadcast {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Clone)]
 /// Broadcast share struct
 pub struct BroadcastShare {
     /// Broadcast value alpha
@@ -113,9 +114,9 @@ const BROADCAST_SHARE_PLAIN_SIZE_V: usize = PARAM_ETA * PARAM_T;
 pub const BROADCAST_SHARE_PLAIN_SIZE: usize =
     BROADCAST_SHARE_PLAIN_SIZE_AB + BROADCAST_SHARE_PLAIN_SIZE_V;
 
-impl BroadcastShare {
+impl Marshalling<[u8; BROADCAST_SHARE_PLAIN_SIZE]> for BroadcastShare {
     /// Serialise the broadcast share into a byte array
-    pub fn serialise(&self) -> [u8; BROADCAST_SHARE_PLAIN_SIZE] {
+    fn serialise(&self) -> [u8; BROADCAST_SHARE_PLAIN_SIZE] {
         let mut result = [0u8; BROADCAST_SHARE_PLAIN_SIZE];
 
         for (n, v) in [self.alpha, self.beta].iter().enumerate() {
@@ -132,7 +133,7 @@ impl BroadcastShare {
     }
 
     /// Parse the broadcast share from a byte array
-    pub fn parse(broadcast_share_plain: [u8; BROADCAST_SHARE_PLAIN_SIZE]) -> Self {
+    fn parse(broadcast_share_plain: &[u8; BROADCAST_SHARE_PLAIN_SIZE]) -> Result<Self, String> {
         let alpha: BroadcastValue = deserialise_broadcast_value(
             broadcast_share_plain[..BROADCAST_VALUE_PLAIN_SIZE]
                 .try_into()
@@ -153,7 +154,7 @@ impl BroadcastShare {
             offset += PARAM_ETA;
         });
 
-        Self { alpha, beta, v }
+        Ok(Self { alpha, beta, v })
     }
 }
 
@@ -220,32 +221,48 @@ mod broadcast_tests {
         assert_eq!(serialised.len(), BROADCAST_PLAIN_SIZE);
         assert_ne!(serialised, [0u8; BROADCAST_PLAIN_SIZE]);
 
-        let deserialised = Broadcast::parse(serialised);
+        let deserialised = Broadcast::parse(&serialised).unwrap();
 
         assert_eq!(broadcast.alpha, deserialised.alpha);
         assert_eq!(broadcast.beta, deserialised.beta);
     }
 
-    #[test]
-    fn test_serialise_deserialise_broadcast_share() {
-        let mut broadcast_share = BroadcastShare {
-            alpha: [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR],
-            beta: [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR],
-            v: [FPoint::default(); PARAM_T],
-        };
+    fn gen_random_broadcast_share(prg: &mut PRG) -> BroadcastShare {
+        let mut broadcast_share = BroadcastShare::default();
 
-        let mut prg = PRG::init_base(&[1, 2, 3]);
         for d in 0..PARAM_SPLITTING_FACTOR {
             prg.sample_field_fpoint_elements(&mut broadcast_share.alpha[d]);
             prg.sample_field_fpoint_elements(&mut broadcast_share.beta[d]);
         }
         prg.sample_field_fpoint_elements(&mut broadcast_share.v);
 
-        let serialised = broadcast_share.serialise();
-        let deserialised = BroadcastShare::parse(serialised);
+        broadcast_share
+    }
 
-        assert_eq!(broadcast_share.alpha, deserialised.alpha);
-        assert_eq!(broadcast_share.beta, deserialised.beta);
-        assert_eq!(broadcast_share.v, deserialised.v);
+    #[test]
+    fn test_marhalling_broadcast_share() {
+        let bs1 = gen_random_broadcast_share(&mut PRG::init_base(&[1]));
+        let bs2 = gen_random_broadcast_share(&mut PRG::init_base(&[2]));
+
+        crate::subroutines::marshalling::_test_marhalling(bs1, bs2);
+    }
+
+    fn gen_random_broadcast(prg: &mut PRG) -> Broadcast {
+        let mut broadcast = Broadcast::default();
+
+        for d in 0..PARAM_SPLITTING_FACTOR {
+            prg.sample_field_fpoint_elements(&mut broadcast.alpha[d]);
+            prg.sample_field_fpoint_elements(&mut broadcast.beta[d]);
+        }
+
+        broadcast
+    }
+
+    #[test]
+    fn test_marhalling_broadcast() {
+        let bc1 = gen_random_broadcast(&mut PRG::init_base(&[1]));
+        let bc2 = gen_random_broadcast(&mut PRG::init_base(&[2]));
+
+        crate::subroutines::marshalling::_test_marhalling(bc1, bc2);
     }
 }

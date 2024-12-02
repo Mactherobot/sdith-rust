@@ -100,16 +100,16 @@ mod keygen_tests {
     use crate::constants::params::PARAM_SEED_SIZE;
 
     #[test]
-    fn test_marhalling() {
+    fn test_marhalling_keygen() {
         let seed1 = [0u8; PARAM_SEED_SIZE];
         let seed2 = [1u8; PARAM_SEED_SIZE];
         let keys1 = super::keygen(seed1);
         let keys2 = super::keygen(seed2);
 
         // Test marshalling for PublicKey
-        crate::subroutines::marshalling::test_marhalling(*keys1.0, *keys2.0);
+        crate::subroutines::marshalling::_test_marhalling(*keys1.0, *keys2.0);
 
         // Test marshalling for SecretKey
-        crate::subroutines::marshalling::test_marhalling(*keys1.1, *keys2.1);
+        crate::subroutines::marshalling::_test_marhalling(*keys1.1, *keys2.1);
     }
 }

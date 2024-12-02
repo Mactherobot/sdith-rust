@@ -1,6 +1,7 @@
 use crate::arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::constants::params::PARAM_DIGEST_SIZE;
 use crate::keygen::PublicKey;
+use crate::mpc::beaver::BeaverTriples;
 use crate::mpc::broadcast::{Broadcast, BroadcastShare, BROADCAST_SHARE_PLAIN_SIZE_AB};
 use crate::mpc::{compute_share, inverse_party_computation};
 use crate::subroutines::marshalling::Marshalling;
@@ -36,7 +37,7 @@ impl Signature {
         // First challenge (MPC challenge) Only generate one in the case of threshold variant
         let chal = Challenge::new(h1);
 
-        let broadcast = Broadcast::parse(broad_plain);
+        let broadcast = Broadcast::parse(&broad_plain)?;
         let mut sh_broadcast = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
         let mut commitments: [Hash; PARAM_TAU] = [[0u8; PARAM_DIGEST_SIZE]; PARAM_TAU];
 
@@ -55,7 +56,7 @@ impl Signature {
                 sh_broadcast[e][li] = compute_share(&plain, &broadcast_shares[e], f_i, *i == 0u16);
 
                 // Verify the Merkle path
-                let broadcast_share = BroadcastShare::parse(sh_broadcast[e][li]);
+                let broadcast_share = BroadcastShare::parse(&sh_broadcast[e][li])?;
                 let beaver_triples = inverse_party_computation(
                     wit_share[e][li],
                     &broadcast_share,
@@ -66,7 +67,10 @@ impl Signature {
                     with_offset,
                 );
 
-                let input_share = Input::append_beaver_triples(wit_share[e][li], beaver_triples);
+                let input_share = Input::append_beaver_triples(
+                    wit_share[e][li],
+                    BeaverTriples::new(beaver_triples.0, beaver_triples.1, beaver_triples.2),
+                );
 
                 // Commit to the shares
                 commitments_prime[li] = commit_share(&salt, e as u16, *i, &input_share);
