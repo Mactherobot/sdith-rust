@@ -155,7 +155,9 @@ pub fn polynomial_evaluation(poly_d: &[u8], powers_of_r: &[FPoint]) -> FPoint {
 }
 
 /// Computes the publicly recomputed values of the MPC protocol (i.e. the plain
-/// values corresponding to the broadcasted shares). It takes as input the plain input of the MPC
+/// values corresponding to the broadcasted shares).
+///
+/// It takes as input the plain input of the MPC
 /// protocol, made of the witness (sA , Q' , P ) and the Beaver triples (a, b, c), the syndrome decoding
 /// instance (H' , y), and the MPC challenge (r, ε). From these inputs, it computes and returns the
 /// plain broadcast values (α, β). Note that the subroutine does not recompute v which is always
@@ -187,8 +189,11 @@ pub fn compute_broadcast(
     })
 }
 
-/// Compute the shares broadcast by a party. It takes the input shares of the party `(sA, Q', P )_i` and `(a, b, c)_i`,
-/// the syndrome decoding instance `(H', y)`, the MPC challenge `(r, ε)` and the recomputed values `(α, β)` and returns the broadcast shares
+/// Compute the shares broadcast by a party.
+///
+/// It takes the input shares of the party `(sA, Q', P )_i` and `(a, b, c)_i`,
+/// the syndrome decoding instance `(H', y)`, the MPC challenge `(r, ε)`
+/// and the recomputed values `(α, β)` and returns the broadcast shares
 /// `(α, β, v)_i` of the party.
 pub fn party_computation(
     input_share_plain: InputSharePlain,
@@ -369,7 +374,7 @@ pub fn inverse_party_computation(
             }
         }
     }
-    return (a, b, c);
+    (a, b, c)
 }
 
 #[cfg(test)]
@@ -413,17 +418,14 @@ mod mpc_tests {
             p_poly: p,
         };
 
-        let input = Input {
-            solution: solution.clone(),
-            beaver,
-        };
+        let input = Input { solution, beaver };
 
         let broadcast = compute_broadcast(input.clone(), &chal, witness.h_prime, witness.y);
         if broadcast.is_err() {
             panic!("Failed to compute broadcast");
         } else {
             let broadcast = broadcast.unwrap();
-            return (input, broadcast, chal, witness.h_prime, witness.y);
+            (input, broadcast, chal, witness.h_prime, witness.y)
         }
     }
 

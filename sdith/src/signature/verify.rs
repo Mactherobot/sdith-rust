@@ -1,6 +1,11 @@
-//! # Verification implementation
-//! 
-//! This module contains the implementation of the verification of the signature.
+//! # Verification
+//!
+//! Verifies a signature using the message and the public key.
+//!
+//! The verification process involves:
+//! 1. Computing the commitments_prime by running the [inverse_party_computation].
+//! 2. Computing the Merkle root from the computed commitments_prime and the authentication path using [get_merkle_root_from_auth].
+//! 3. Verifying the signature using the Merkle root.
 
 use crate::arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::constants::params::PARAM_DIGEST_SIZE;

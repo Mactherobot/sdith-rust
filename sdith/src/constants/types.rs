@@ -19,4 +19,4 @@ pub type Seed = [u8; PARAM_SEED_SIZE];
 pub type Salt = [u8; PARAM_SALT_SIZE];
 
 /// Commitments array of size [`PARAM_N`]
-pub type CommitmentsArray = [Hash; PARAM_N as usize];
+pub type CommitmentsArray = [Hash; PARAM_N];

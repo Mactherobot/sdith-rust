@@ -12,18 +12,21 @@ use crate::{
     subroutines::{marshalling::Marshalling, prg::PRG},
 };
 
-/// Beaver triple a
+/// Beaver triple a sized array type
 pub type BeaverA = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];
-/// Beaver triple b
+/// Beaver triple b sized array type
 pub type BeaverB = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];
-/// Beaver triple c = a * b
+/// Beaver triple c = a * b sized array type
 pub type BeaverC = [FPoint; PARAM_T];
 
 /// Beaver triples struct
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BeaverTriples {
+    /// Beaver triple a
     pub a: BeaverA,
+    /// Beaver triple b
     pub b: BeaverB,
+    /// Beaver triple c = a * b
     pub c: BeaverC,
 }
 
