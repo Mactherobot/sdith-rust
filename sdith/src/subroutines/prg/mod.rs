@@ -15,6 +15,10 @@ use crate::{
     },
 };
 
+/// Pseudo Random Generator (PRG) struct
+/// Generates random values in the fields F_q and F_q^\eta
+/// 
+/// 
 pub struct PRG {
     #[cfg(not(feature = "xof_blake3"))]
     xof: SDitHXOF<tiny_keccak::Shake>,

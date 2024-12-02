@@ -1,7 +1,10 @@
 use const_gen::*;
 use std::{env, fs, path::Path};
+use rustc_version::{version_meta, Channel};
 
 fn main() {
+    setup_doc_nightly();
+
     // Load the environment variables from the .env file
     let cat = get_category();
 
@@ -30,6 +33,20 @@ fn main() {
     println!("cargo::rerun-if-env-changed=SDITH_CATEGORY");
 }
 
+/// Based on https://stackoverflow.com/a/70914430
+/// Set cfg flags depending on the release channel
+/// As doc is always built on nightly, we can set the cfg flag enabling the nightly feature `doc-auto-cfg`
+fn setup_doc_nightly() {
+    // Set cfg flags depending on release channel
+    let channel = match version_meta().unwrap().channel {
+        Channel::Stable => "CHANNEL_STABLE",
+        Channel::Beta => "CHANNEL_BETA",
+        Channel::Nightly => "CHANNEL_NIGHTLY",
+        Channel::Dev => "CHANNEL_DEV",
+    };
+    println!("cargo:rustc-cfg={}", channel)
+}
+
 fn get_feature_flag_category() -> Result<Category, String> {
     if cfg!(feature = "category_one") {
         Ok(CATEGORY_ONE)
@@ -42,9 +59,7 @@ fn get_feature_flag_category() -> Result<Category, String> {
     }
 }
 
-
 fn get_category() -> Category {
-
     // Check feature flags
     match get_feature_flag_category() {
         Ok(cat) => return cat,
