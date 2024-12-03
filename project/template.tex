@@ -1056,18 +1056,20 @@ compiling constants for categories
 can we use other hashes that still provide the same security assumption from \autoref{sec:assumptions} as post-quantum security (Xoodyak, KangarooTwelve, Haraka v2)
 
 
-\section{Rust}
-\cite{nistsaferlanguages}
+\section{The Rust Programming language}
 
-Why is Rust a good choice for our implementation?
+Before delving into the specifics of our implementation, we need to answer the question: ``Why is Rust a good choice for our implementation?''.
 
-Before diving into the details of our implementation, it is important to first explore the various aspects of the Rust programming language that we leverage to optimize, test, and refine our code.
+In 2024, the government of the United States of America took a stance on the future of cyber secure programming languages~\cite{whitehouse2024memorysafe}. In their report, they underline the need for secure building blocks when developing secure software. They point to the fact that \textit{Common Weakness Enumeration} (CWE) data highlights \textit{memory safety vulnerabilities} (MSV) as one of the most pervasive classes of vulnerabilities. MSV's exploit how memory can be accessed, written, allocated, or deallocated in ways that are beyond the scope of the program. Common examples of programming languages that are vulnerable include C and C++, which are widely used due to their high performance. To prevent such vulnerabilities, the report emphasizes the importance of using programming languages that inherently provide memory safety and does not require the developers to manually ensure security.
 
-Introduce the rust lang books: Main book, Effective rust, Performance Book
+The Rust programming language addresses memory safety through its unique \textit{borrow checker}~\autoref{sec:rustborrow}, which enforces strict rules on how memory is accessed and managed. In the same year as the White House's report, NIST also released their recommendations on \textit{Safer Languages}~\cite{nistsaferlanguages}, which highlighted Rust as a leading choice. Together, these endorsements underscore that Rust is well-suited for implementing a protocol that adheres to modern security standards.
 
-% https://nnethercote.github.io/perf-book/inlining.html
-\subsection{Borrow checker} % mut references
-To ensure memory safety, Rust uses a borrow checker to prevent data races and memory leaks. We will now dive into the different aspects of the borrow checker and how it works in Rust. 
+In addition to its focus on safety, Rust benefits from an extensive library of community-maintained documentation and resources~\cite{rustlangRustProgramming,rustlangPerformanceBook,lurklurkEffectiveRust}. These resources provide invaluable support for developers, enabling them to better understand the language's features and effectively utilize its capabilities.
+
+In this section we will give an overview of the key features of the Rust programming language that make it an ideal choice for this project as we aimed to build a robust by leveraging Rust's safety mechanisms, performance optimization capabilities, dynamic language features, and strong testing infrastructure.
+
+\subsection{Borrow checker}\label{sec:rustborrow} % mut references
+To ensure memory safety, Rust uses a borrow checker to prevent data races and memory leaks. We will now dive into the different aspects of the borrow checker and how it works in Rust.
 
 \subsubsection{The Stack and Heap}
 To understand how the borrow checker works in Rust, it is crucial to first grasp the distinction between the stack and the heap -- two memory management systems available in Rust~\cite[ch.4]{rustlangRustProgramming}, each with unique characteristics and use cases.
@@ -1076,7 +1078,7 @@ The \textbf{stack} stores values in a last-in-first-out (LIFO) order, meaning th
 
 The \textbf{heap}, in contrast, is more flexible. When you allocate memory for a value on the heap, you request a specific amount of memory, and the heap manager finds a suitable location for it. It then returns a pointer to the allocated memory. A helpful analogy for the heap is dining at a restaurant: you tell the waiter the size of your party, and they find a table that fits your group, noting which table you've been assigned.
 
-As you might have guessed, the stack is faster than the heap. This is because the stack is a fixed-size structure, while the heap is a variable-sized structure. However, the stack has a fixed size, which means that it can only store a limited number of values. If you try to allocate more memory than the stack can hold, you will get an error. The heap, on the other hand, can store an unlimited number of values, as it is able to dynamically allocate memory as needed. 
+As you might have guessed, the stack is faster than the heap. This is because the stack is a fixed-size structure, while the heap is a variable-sized structure. However, the stack has a fixed size, which means that it can only store a limited number of values. If you try to allocate more memory than the stack can hold, you will get an error. The heap, on the other hand, can store an unlimited number of values, as it is able to dynamically allocate memory as needed.
 
 \subsubsection{Ownership}
 
@@ -1197,6 +1199,39 @@ In order to verify and debug our own code we tried to setup our implementation t
 Here we found a bug in the way the view-opening challenges was calculated, they had forgotten to finalize the Shake before squeezing, which was a problem because in the tiny keccak rust library this was always done when initializing a hash or xof.
 Furthermore we found that in order to generate the same output from the xof we needed to first rotate the permutation once by supplying an empty vector before actually using the function.
 We also found that the merkle tree was not using the salt.
+
+\section{Package publication}
+
+\subsection{CLI}
+
+\begin{minted}{bash}
+  $ sdith keygen --output .
+  Generating SDitH key pair.
+  Seed: buuDCI/Bi7/ME+/LInazUA==
+  Public key saved to "./sdith.pub"
+  Secret key saved to "./sdith"
+\end{minted}
+
+\begin{minted}{bash}
+  $ sdith sign --sk ./sdith --message ./way_of_the_sith_doctrine.txt
+  Signing message.
+  Reading secret key from file: ./sdith
+  Seed: U6ICDuJIQp3/lOM5s/B0Yg==
+  Salt: lT48FshXu05R1L9IAOgv3J1nLO4qkbNTnSeJKMM2XoU=
+
+  GCgAAGhlbGxvIHdvcmxklT48FshXu05R1L9IAOgv3J1nLO4qkbNTnSeJKMM2...
+\end{minted}
+
+\begin{minted}{bash}
+  $ sdith verify --pk sdith.pub --signature signed_sith_doctrine.txt
+  Verifying message.
+  Reading Public Key from file: sdith.pub
+  Reading Signature from file: signed_sith_doctrine.txt
+  Signature is valid: false
+\end{minted}
+
+
+\subsection{Library}
 
 \section{Benchmarking}\label{sub:benchmarking} % (fold)
 We utilized Criterion.rs~\cite{criterion} for initial benchmarking. Criterion.rs is a statistics-driven benchmarking library for Rust, offering robust tools to measure and analyze performance reliably.
