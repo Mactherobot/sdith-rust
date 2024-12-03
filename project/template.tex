@@ -1067,11 +1067,20 @@ Introduce the rust lang books: Main book, Effective rust, Performance Book
 
 % https://nnethercote.github.io/perf-book/inlining.html
 \subsection{Borrow checker} % mut references
-To ensure memory safety, Rust uses a borrow checker to prevent data races and memory leaks. This system ensures that references to data are valid and do not outlive the data they refer to. By enforcing strict ownership rules, Rust helps prevent common programming errors such as double-free or use-after-free. 
+To ensure memory safety, Rust uses a borrow checker to prevent data races and memory leaks. We will now dive into the different aspects of the borrow checker and how it works in Rust. 
+
+\subsubsection{The Stack and Heap}
+To understand how the borrow checker works in Rust, it is crucial to first grasp the distinction between the stack and the heap -— two memory management systems available in Rust \cite[ch.4]{rustlangRustProgramming}, each with unique characteristics and use cases.
+
+The \textbf{stack} stores values in a last-in-first-out (LIFO) order, meaning the last value added is the first to be removed. You can think of it like a stack of plates: the last plate placed on the stack is the first one to be taken off. All data stored on the stack must have a fixed, known size at compile time.
+
+The \textbf{heap}, in contrast, is more flexible. When you allocate memory for a value on the heap, you request a specific amount of memory, and the heap manager finds a suitable location for it. It then returns a pointer to the allocated memory. A helpful analogy for the heap is dining at a restaurant: you tell the waiter the size of your party, and they find a table that fits your group, noting which table you've been assigned.
+
+As you might have guessed, the stack is faster than the heap. This is because the stack is a fixed-size structure, while the heap is a variable-sized structure. However, the stack has a fixed size, which means that it can only store a limited number of values. If you try to allocate more memory than the stack can hold, you will get an error. The heap, on the other hand, can store an unlimited number of values, as it is able to dynamically allocate memory as needed. 
 
 \subsubsection{Ownership}
 
-\subsubsection{The Stack and Heap}
+\subsubsection{Borrowing & references}
 
 \subsubsection{Lifetime}
 
