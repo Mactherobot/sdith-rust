@@ -1,6 +1,14 @@
 //! # Signing a message
 //!
 //! Implemtation of the signature for a message by using the SDitH protocol
+//!
+//! The signing process is as follows
+//! 1. Expansion of the parity-check matrix H'
+//! 2. Generation of randomness for the Beaver triples and the shares
+//! 3. Creation of the input shares and the Fiat-shamir hash1 (MPC challenge)
+//! 4. Computation of the broadcast shares and the Fiat-shamir hash2(View opening challenges)
+//! 5. Based on the view opening challenges, compute merkle trees from the commitments
+//! 5. Build the signature, with the message, salt, h1 and the broadcast plain, broadcast shares, solution shares and auth paths
 
 use crate::arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix};
 use crate::mpc::beaver::BeaverTriples;
