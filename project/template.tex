@@ -1081,8 +1081,43 @@ The \textbf{heap}, in contrast, is more flexible. When you allocate memory for a
 As you might have guessed, the stack is faster than the heap. This is because the stack is a fixed-size structure, while the heap is a variable-sized structure. However, the stack has a fixed size, which means that it can only store a limited number of values. If you try to allocate more memory than the stack can hold, you will get an error. The heap, on the other hand, can store an unlimited number of values, as it is able to dynamically allocate memory as needed.
 
 \subsubsection{Ownership}
+Now that we have given a brief introduction to the how the stack and the heap work, we can delve into the ownership system in Rust. The ownership system is a crucial aspect of Rust's memory management, as it ensures that memory is allocated and deallocated correctly. In Rust, every value has a unique owner, and there can only be one owner at a time. When a value is created, it is assigned to the current scope, and when the scope ends, the value is dropped. This process is known as \textbf{ownership transfer}. 
+A simple example of how the scope works is as follows:
+\begin{minted}{rust}
+{
+  // d can not be accessed yet because it has not been assigned to the current scope
+  let d = "Peace is a lie";
 
-\subsubsection{Borrowing \& References}
+  // Now we can use d
+ 
+} // d is dropped here
+\end{minted}
+In this example, we used a string literal to initialize the variable \texttt{d}. A string literal is a statically allocated string that is stored in the binary. 
+Now to illustrate the ownership, we need a data type that is more complex than a string literal. The string literal is of known size and is allocated on the stack, meaning that it can be easily copied on stack and popped when the current scope ends. This however means that we can not mutate the string literal by some user input. Instead, we will use a \texttt{String} type, which is a dynamically allocated string that can be mutated:
+\begin{minted}{rust}
+  let d = String::from("Peace is a lie");
+
+  d.pust_str(", there is only passion.");
+  
+  println!("{d}"); // Will print `Peace is a lie, there is only passion.`
+\end{minted}
+Here the idea is that because a string literal is off a known size at compile time it can be allocated on the stack. Whereas the type \textit{String} is dynamically allocated we would have to predict every size string in order to allocate a large enough space on the stack. This is the reason it is allocated on the heap, and a \textit{pointer} is instead saved on the stack. 
+Now comes the problem of what happens in the following cases:
+\begin{minted}{rust}
+  // Case 1: Stack allocated types
+  let d = "Through passion, I gain strength"
+  let v = d;
+
+  // Case 2: Heap allocated types
+  let d = String::from("Through strength, I gain power");
+  let v = d;
+\end{minted}
+\begin{itemize}
+  \item Case 1: The string literal \texttt{d} has the \textit{copy} trait and is copied on the stack.
+  \item Case 2: $d$ is now a pointer to the heap allocation of the String.
+\end{itemize}
+
+\subsubsection{Borrowing & references}
 
 \subsubsection{Lifetime}
 
@@ -1120,20 +1155,17 @@ To restrict access to code within specific modules, we use the \textit{pub(crate
 Additionally, we selectively mark certain modules and functions with the \textit{pub} visibility modifier to export them for use in other crates. This approach is particularly useful when creating a library file that can be accessed by benchmarking files, as these files reside outside the main crate.
 
 \subsection{Testing} % unit tests
-When writing code, it is crucial to ensure its correctness and reliability. Rust provides a robust testing framework~\cite{rustlangRustProgramming} that allows developers to write tests for their code. We utilized this to create unit tests for our subroutines and functions, to make it intrinsically clear that our code is functioning as expected, and later when doing optimisations we can ensure that the code still works as intended.
+When writing code, it is crucial to ensure its correctness and reliability. Rust provides a robust testing framework \cite{rustlangRustProgramming} that allows developers to write tests for their code. We utilized this to create unit tests for our subroutines and functions, to make it intrinsically clear that our code is functioning as expected, and later when doing optimisations we can ensure that the code still works as intended.
 
 \subsection{Traits}
 
 \subsection{Constants} % Compile time
-
-const generics vs inline mutability (benchmarking?, nightly?)
 
 \subsection{Build script}
 
 \subsection{Error handling with Result type} % https://www.lurklurk.org/effective-rust/panic.html
 \subsection{Inlining}
 \subsection{Feature flags}
-Tooling and language feaures (rust, criterion, rayon)
 \subsection{Parallelisation}
 \subsection{SIMD}
 
@@ -1141,7 +1173,7 @@ Tooling and language feaures (rust, criterion, rayon)
 We started out by implementing the different subroutines that are used in the SD-in-the-Head protocol. We will describe the implementation of each subroutine in detail.
 
 \subsection{PRG}
-First we implemented a pseudo random generator (PRG) based on a extendable output hash function (XOF). We used a library called \textit{tiny\-keccak}~\cite{tinykeccak}, which contains implementations of Keccak derived functions specified in the NIST FIPS 202 standard, SP800-185 and KangarooTwelve.
+First we implemented a pseudo random generator (PRG) based on a extendable output hash function (XOF). We used a library called \textit{tiny-keccak} \cite{tiny-keccak}, which contains implementations of Keccak derived functions specified in the NIST FIPS 202 standard, SP800-185 and KangarooTwelve.
 
 Our initial implementation focused on the NIST category one, which requires a security level of 128 bits. For this we used the SHAKE-128 implementation. But when we later had to adhere to the NIST category tree and five, we had to be able to switch between different implementations of the underlying XOF. For this we implemented a generic trait for the XOF:
 \inputminted[firstline=18, lastline=23]{rust}{../sdith/src/subroutines/prg/xof.rs}
@@ -1199,39 +1231,6 @@ In order to verify and debug our own code we tried to setup our implementation t
 Here we found a bug in the way the view-opening challenges was calculated, they had forgotten to finalize the Shake before squeezing, which was a problem because in the tiny keccak rust library this was always done when initializing a hash or xof.
 Furthermore we found that in order to generate the same output from the xof we needed to first rotate the permutation once by supplying an empty vector before actually using the function.
 We also found that the merkle tree was not using the salt.
-
-\section{Package publication}
-
-\subsection{CLI}
-
-\begin{minted}{bash}
-  $ sdith keygen --output .
-  Generating SDitH key pair.
-  Seed: buuDCI/Bi7/ME+/LInazUA==
-  Public key saved to "./sdith.pub"
-  Secret key saved to "./sdith"
-\end{minted}
-
-\begin{minted}{bash}
-  $ sdith sign --sk ./sdith --message ./way_of_the_sith_doctrine.txt
-  Signing message.
-  Reading secret key from file: ./sdith
-  Seed: U6ICDuJIQp3/lOM5s/B0Yg==
-  Salt: lT48FshXu05R1L9IAOgv3J1nLO4qkbNTnSeJKMM2XoU=
-
-  GCgAAGhlbGxvIHdvcmxklT48FshXu05R1L9IAOgv3J1nLO4qkbNTnSeJKMM2...
-\end{minted}
-
-\begin{minted}{bash}
-  $ sdith verify --pk sdith.pub --signature signed_sith_doctrine.txt
-  Verifying message.
-  Reading Public Key from file: sdith.pub
-  Reading Signature from file: signed_sith_doctrine.txt
-  Signature is valid: false
-\end{minted}
-
-
-\subsection{Library}
 
 \section{Benchmarking}\label{sub:benchmarking} % (fold)
 We utilized Criterion.rs~\cite{criterion} for initial benchmarking. Criterion.rs is a statistics-driven benchmarking library for Rust, offering robust tools to measure and analyze performance reliably.
