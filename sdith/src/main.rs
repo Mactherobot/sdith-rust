@@ -1,5 +1,6 @@
 use clap::{Error, Parser};
 use cli::Commands;
+use colored::Colorize as _;
 
 pub mod cli;
 
@@ -17,7 +18,7 @@ fn main() {
     };
 
     if res.is_err() {
-        eprintln!("Error: {}", res.unwrap_err());
+        eprintln!("{}", res.unwrap_err().to_string().red());
         std::process::exit(1);
     }
 

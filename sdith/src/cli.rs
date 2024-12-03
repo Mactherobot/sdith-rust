@@ -2,6 +2,7 @@ use base64::{engine::general_purpose::STANDARD, Engine as _};
 use std::path::{Path, PathBuf};
 
 use clap::{ArgAction, Error, Parser, Subcommand};
+use colored::Colorize;
 use rand::{rngs::StdRng, RngCore, SeedableRng};
 
 use sdith::{
@@ -112,7 +113,7 @@ impl Keygen {
             let pk_path = path.with_extension("pub");
             std::fs::File::create(&pk_path)?;
             std::fs::write(&pk_path, STANDARD.encode(pk.serialise()))?;
-            eprintln!("Public key saved to {:?}", pk_path.display());
+            eprintln!("{} {:?}", "Public key saved to".blue(), pk_path.display());
         }
 
         // Save secret key to output file
@@ -120,18 +121,15 @@ impl Keygen {
             let sk_path = path.with_extension("");
             std::fs::File::create(&sk_path)?;
             std::fs::write(&sk_path, STANDARD.encode(sk.serialise()))?;
-            eprintln!("Secret key saved to {:?}", sk_path.display());
+            eprintln!("{} {:?}", "Secret key saved to".blue(), sk_path.display());
         }
 
         return Ok(true);
     }
 
     pub fn generate_keys(&self) -> Result<(), Error> {
-        eprintln!("Generating SDitH key pair.");
-        let (is_random_seed, seed) = get_seed(self.seed.as_ref())?;
-        if is_random_seed {
-            eprintln!("Seed: {}", STANDARD.encode(seed));
-        }
+        print_title("Generating SDitH key pair.");
+        let seed = get_seed(self.seed.as_ref())?;
 
         let (pk, sk) = keygen::keygen(seed);
 
@@ -163,7 +161,10 @@ pub struct Signing {
 
 impl Signing {
     fn get_secret_key(&self) -> Result<SecretKey, Error> {
-        let decoded_secret_key = get_decoded_string_from_file_or_string(self.secret_key.clone())?;
+        let decoded_secret_key = get_decoded_string_from_file_or_string(
+            self.secret_key.clone(),
+            Some("Secret Key".to_string()),
+        )?;
         clap_err_result_msg!(
             SecretKey::parse(&decoded_secret_key),
             "Could not parse secret key"
@@ -183,19 +184,14 @@ impl Signing {
     }
 
     pub fn sign_message(&self) -> Result<(), Error> {
-        eprintln!("Signing message.");
+        print_title("Signing message.");
         let secret_key = self.get_secret_key()?;
         let msg = self.get_msg()?;
-        let (is_random_seed, seed) = get_seed(self.seed.as_ref())?;
-        if is_random_seed {
-            eprintln!("Seed: {}", STANDARD.encode(seed));
-        }
-        let (is_random_salt, salt) = get_salt(self.salt.as_ref())?;
-        if is_random_salt {
-            eprintln!("Salt: {}", STANDARD.encode(salt));
-        }
+        let seed = get_seed(self.seed.as_ref())?;
+        let salt = get_salt(self.salt.as_ref())?;
         let signature = clap_err_result!(Signature::sign_message((seed, salt), &secret_key, &msg))?;
 
+        eprintln!("");
         println!("{}", STANDARD.encode(signature.serialise()));
         Ok(())
     }
@@ -215,7 +211,10 @@ pub struct Verifying {
 
 impl Verifying {
     fn get_public_key(&self) -> Result<PublicKey, Error> {
-        let decoded_public_key = get_decoded_string_from_file_or_string(self.pub_key.clone())?;
+        let decoded_public_key = get_decoded_string_from_file_or_string(
+            self.pub_key.clone(),
+            Some("Public Key".to_string()),
+        )?;
         clap_err_result_msg!(
             PublicKey::parse(&decoded_public_key),
             "Could not parse public key"
@@ -223,14 +222,25 @@ impl Verifying {
     }
 
     pub fn verify_signature(&self) -> Result<(), Error> {
-        eprintln!("Verifying message.");
+        print_title("Verifying message.");
         let pk = self.get_public_key()?;
-        let signature = get_decoded_string_from_file_or_string(self.signature.clone())?;
+        let signature = get_decoded_string_from_file_or_string(
+            self.signature.clone(),
+            Some("Signature".to_string()),
+        )?;
 
         let is_valid = match Signature::verify_signature(&pk, &signature) {
             Ok(is_valid) => is_valid,
             Err(_) => false,
         };
+
+        eprint!(
+            "{}",
+            match is_valid {
+                true => "Signature is valid: ".green(),
+                false => "Signature is valid: ".red(),
+            }
+        );
 
         println!("{}", is_valid);
 
@@ -240,8 +250,12 @@ impl Verifying {
 
 // Utility functions
 
+fn print_title(title: &str) {
+    eprintln!("{}", title.green().bold());
+}
+
 /// Returns a seed. If no seed is provided, a random seed is generated. Returns true if seed is random.
-fn get_seed(_seed: Option<&String>) -> Result<(bool, Seed), Error> {
+fn get_seed(_seed: Option<&String>) -> Result<Seed, Error> {
     let seed = if _seed.is_none() {
         // Generate a random seed using StdRng
         let mut rng = StdRng::from_entropy();
@@ -265,10 +279,14 @@ fn get_seed(_seed: Option<&String>) -> Result<(bool, Seed), Error> {
         seed
     };
 
-    Ok((_seed.is_none(), seed))
+    if _seed.is_none() {
+        eprintln!("{}: {}", "Seed".blue(), STANDARD.encode(seed));
+    }
+
+    Ok(seed)
 }
 
-fn get_salt(_salt: Option<&String>) -> Result<(bool, Salt), Error> {
+fn get_salt(_salt: Option<&String>) -> Result<Salt, Error> {
     let salt = if _salt.is_none() {
         // Generate a random salt using StdRng
         let mut rng = StdRng::from_entropy();
@@ -295,14 +313,26 @@ fn get_salt(_salt: Option<&String>) -> Result<(bool, Salt), Error> {
         salt
     };
 
-    Ok((_salt.is_none(), salt))
+    if _salt.is_none() {
+        eprintln!("{}: {}", "Salt".blue(), STANDARD.encode(salt));
+    }
+
+    Ok(salt)
 }
 
 /// Checks if the input is a file or a string. Returns the decoded string from the file or the input string.
-fn get_decoded_string_from_file_or_string(file_or_string: String) -> Result<Vec<u8>, Error> {
+fn get_decoded_string_from_file_or_string(
+    file_or_string: String,
+    title: Option<String>,
+) -> Result<Vec<u8>, Error> {
     let path = Path::new(&file_or_string);
+    let read_title = match &title {
+        Some(title) => format!("Reading {} from file", title).blue(),
+        None => "Reading from file".blue(),
+    };
+
     let encoded = if path.exists() {
-        eprintln!("Reading from file: {}", path.display());
+        eprintln!("{}: {}", read_title, path.display());
         std::fs::read_to_string(path)?.trim().to_string()
     } else {
         file_or_string.clone()
@@ -310,6 +340,12 @@ fn get_decoded_string_from_file_or_string(file_or_string: String) -> Result<Vec<
 
     clap_err_result_msg!(
         STANDARD.decode(encoded),
-        format!("Could not decode {} from base64", file_or_string)
+        format!(
+            "Could not decode {} from base64",
+            match title {
+                Some(title) => title,
+                None => "input".to_string(),
+            }
+        )
     )
 }
