@@ -21,7 +21,15 @@
 \usepackage{ctable} % for \specialrule command
 \usepackage{enumitem}
 \usepackage{stmaryrd}
- 
+ \usepackage{listings}
+ \lstdefinestyle{tree}{
+    literate=
+    {├}{{\smash{\raisebox{-1ex}{\rule{1pt}{\baselineskip}}}\raisebox{0.5ex}{\rule{1ex}{1pt}}}}1 
+    {─}{{\raisebox{0.5ex}{\rule{1.5ex}{1pt}}}}1 
+    { }{~}1
+    {└}{{\smash{\raisebox{0.5ex}{\rule{1pt}{\dimexpr\baselineskip-1.5ex}}}\raisebox{0.5ex}{\rule{1ex}{1pt}}}}1 
+    {│}{{\smash{\raisebox{-1ex}{\rule{1pt}{\baselineskip}}}\raisebox{0.5ex}{\rule{1ex}{0pt}}}}1 
+  }
 \setlength{\parindent}{10pt} % indentation
 
 \usepackage{amsthm}
@@ -1053,20 +1061,51 @@ can we use other hashes that still provide the same security assumption from \au
 
 Why is Rust a good choice for our implementation?
 
-Before going into details about our implementation, it stands to reason to explain the different facets of the Rust programming language that we use to optimise, test and "beautify" our code.
+Before diving into the details of our implementation, it is important to first explore the various aspects of the Rust programming language that we leverage to optimize, test, and refine our code.
 
 % https://nnethercote.github.io/perf-book/inlining.html
-\subsection{Borrow checker} % mut references
+\subsection{Borrow checker (Ownership)} % mut references
+
 \subsection{Stack arrays and heap arrays}
+
+
 % Reusing collections: https://nnethercote.github.io/perf-book/heap-allocations.html#reusing-collections
 % Bounds Checks: https://nnethercote.github.io/perf-book/bounds-checks.html
 % Alternative allocators: https://nnethercote.github.io/perf-book/build-configuration.html#alternative-allocators
 \subsection{Modules} 
+Rust provides a module system that allow you to organize your code into logical units. Making it it easier to understand and maintain the codebase. A module is a collection of related items, such as functions, structs, and constants, that are grouped together. Modules can be nested, allowing for a hierarchical structure of code. 
+We utilized these features to organize our logic effectively, such as encapsulating field arithmetic within a module and separating components into subfolders and subroutines related to the main signature algorithm. 
+We have outlined the structure of the code below:
+\begin{lstlisting}[style=tree][h]
+.
+├── api.rs
+├── arith
+│   ├── gf256
+│   │   └── mod.rs
+│   └── mod.rs
+├── mpc
+│   └── mod.rs
+├── signature
+│   └── mod.rs
+├── subroutines
+│   ├── mod.rs
+└── utils
+    └── mod.rs
+\end{lstlisting}
 \subsubsection{Visibility} %pub(crate)
+To restrict access to code within specific modules, we use the \textit{pub(crate)} visibility modifier. This ensures that the code is accessible only to modules within the same crate, helping to prevent unintended access to private or internal functionality.
+
+Additionally, we selectively mark certain modules and functions with the \textit{pub} visibility modifier to export them for use in other crates. This approach is particularly useful when creating a library file that can be accessed by benchmarking files, as these files reside outside the main crate.
+
 \subsection{Testing} % unit tests
+When writing code, it is crucial to ensure its correctness and reliability. Rust provides a robust testing framework \cite{rustlangRustProgramming} that allows developers to write tests for their code. We utilized this to create unit tests for our subroutines and functions, to make it intrinsically clear that our code is functioning as expected, and later when doing optimisations we can ensure that the code still works as intended. 
+
 \subsection{Traits}
+
 \subsection{Constants} % Compile time
+
 \subsection{Build script}
+
 \subsection{Error handling with Result type} % https://www.lurklurk.org/effective-rust/panic.html
 \subsection{Inlining}
 \subsection{Feature flags}
