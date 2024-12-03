@@ -994,7 +994,7 @@ The SD-in-the-Head signature scheme upholds the \textbf{E}xistential \textbf{U}n
 
 \begin{enumerate}
   \item The challenger generates seeds $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$.a key pair $(pk, sk)$ and sends $pk$ to the adversary.
-  \item The adversary is then allowed to query a signing oracle for signatures of chosen messages $(m_1, ..., m_r)$ and receives valid signatures $(\sigma_1, ..., \sigma_r)$. For the NIST evaluation it is assumed that the adversary can query the signing oracle for up to $2^{64}$ chosen messages according to the adversary's running time. However, there is no requirement on the timing of the queries.
+  \item The adversary is then allowed to query a signing oracle for signatures of chosen messages $(m_1, \dots, m_r)$ and receives valid signatures $(\sigma_1, \dots, \sigma_r)$. For the NIST evaluation it is assumed that the adversary can query the signing oracle for up to $2^{64}$ chosen messages according to the adversary's running time. However, there is no requirement on the timing of the queries.
   \item The adversary then outputs a pair $(m^*, \sigma^*)$. The adversary wins if the following holds
         \begin{enumerate}
           \item $m^*$ has not been queried to the signing oracle.
@@ -1042,15 +1042,15 @@ Recall the definition of the syndrome detection problem from \autoref{def:syndro
 
 \chapter{Implementation}\label{ch:impl}
 
+We set out to implement the SD-in-the-Head Protocol using a modern, well-maintained language that provides the necessary performance and security for a post-quantum secure signature scheme. To achieve this, we selected Rust~\cite{rustlangRustProgramming,nistsaferlanguages,lurklurkEffectiveRust,rustlangPerformanceBook} as the programming language. As a principle and to give ourselves the ability to manage the protocol effectively, we aimed to develop as much of the project's code as possible independently, minimizing reliance on pre-existing packages. This approach included implementing subroutines for the Galois Finite Field and Merkle Tree Commitment Scheme. However, for cryptographic primitives such as hash functions~\cite{blakethree,tinykeccak}, we utilized external libraries. This reliance is common, as developing such primitives securely often requires an entire dedicated effort and a whole project in itself.
+
+This section provides a detailed overview of our implementation. We begin with an introduction to the Rust programming language, explaining our rationale for choosing it and highlighting specific features that are relevant to the subsequent sections. Following this, we present a brief walkthrough of each module in our implementation, detailing how the code aligns with the SD-in-the-Head specification. Additionally, we describe the methods used to test and optimize these modules and discuss the challenges encountered during their development.
+
 \todo{FOr each section of code add following: What is it for (reference to spec section. What issues did we run into. Which Rust specific patterns are we utilizing. How are we testing it. )}
 
-We set out to manually develop as many of the subroutines and primitives ourselves, including GF256 and merkle trees. However, hashing and XOF where made using pre-existing Rust libraries.
-
-Tooling and language feaures (rust, criterion, rayon)
 code sections
 code re-usability with traits for categories.
 
-const generics vs inline mutability (benchmarking?, nightly?)
 compiling constants for categories
 
 can we use other hashes that still provide the same security assumption from \autoref{sec:assumptions} as post-quantum security (Xoodyak, KangarooTwelve, Haraka v2)
@@ -1070,7 +1070,7 @@ Introduce the rust lang books: Main book, Effective rust, Performance Book
 To ensure memory safety, Rust uses a borrow checker to prevent data races and memory leaks. We will now dive into the different aspects of the borrow checker and how it works in Rust. 
 
 \subsubsection{The Stack and Heap}
-To understand how the borrow checker works in Rust, it is crucial to first grasp the distinction between the stack and the heap -— two memory management systems available in Rust \cite[ch.4]{rustlangRustProgramming}, each with unique characteristics and use cases.
+To understand how the borrow checker works in Rust, it is crucial to first grasp the distinction between the stack and the heap -- two memory management systems available in Rust~\cite[ch.4]{rustlangRustProgramming}, each with unique characteristics and use cases.
 
 The \textbf{stack} stores values in a last-in-first-out (LIFO) order, meaning the last value added is the first to be removed. You can think of it like a stack of plates: the last plate placed on the stack is the first one to be taken off. All data stored on the stack must have a fixed, known size at compile time.
 
@@ -1080,7 +1080,7 @@ As you might have guessed, the stack is faster than the heap. This is because th
 
 \subsubsection{Ownership}
 
-\subsubsection{Borrowing & references}
+\subsubsection{Borrowing \& References}
 
 \subsubsection{Lifetime}
 
@@ -1118,17 +1118,20 @@ To restrict access to code within specific modules, we use the \textit{pub(crate
 Additionally, we selectively mark certain modules and functions with the \textit{pub} visibility modifier to export them for use in other crates. This approach is particularly useful when creating a library file that can be accessed by benchmarking files, as these files reside outside the main crate.
 
 \subsection{Testing} % unit tests
-When writing code, it is crucial to ensure its correctness and reliability. Rust provides a robust testing framework \cite{rustlangRustProgramming} that allows developers to write tests for their code. We utilized this to create unit tests for our subroutines and functions, to make it intrinsically clear that our code is functioning as expected, and later when doing optimisations we can ensure that the code still works as intended.
+When writing code, it is crucial to ensure its correctness and reliability. Rust provides a robust testing framework~\cite{rustlangRustProgramming} that allows developers to write tests for their code. We utilized this to create unit tests for our subroutines and functions, to make it intrinsically clear that our code is functioning as expected, and later when doing optimisations we can ensure that the code still works as intended.
 
 \subsection{Traits}
 
 \subsection{Constants} % Compile time
+
+const generics vs inline mutability (benchmarking?, nightly?)
 
 \subsection{Build script}
 
 \subsection{Error handling with Result type} % https://www.lurklurk.org/effective-rust/panic.html
 \subsection{Inlining}
 \subsection{Feature flags}
+Tooling and language feaures (rust, criterion, rayon)
 \subsection{Parallelisation}
 \subsection{SIMD}
 
@@ -1136,7 +1139,7 @@ When writing code, it is crucial to ensure its correctness and reliability. Rust
 We started out by implementing the different subroutines that are used in the SD-in-the-Head protocol. We will describe the implementation of each subroutine in detail.
 
 \subsection{PRG}
-First we implemented a pseudo random generator (PRG) based on a extendable output hash function (XOF). We used a library called \textit{tiny-keccak} \cite{tiny-keccak}, which contains implementations of Keccak derived functions specified in the NIST FIPS 202 standard, SP800-185 and KangarooTwelve.
+First we implemented a pseudo random generator (PRG) based on a extendable output hash function (XOF). We used a library called \textit{tiny\-keccak}~\cite{tinykeccak}, which contains implementations of Keccak derived functions specified in the NIST FIPS 202 standard, SP800-185 and KangarooTwelve.
 
 Our initial implementation focused on the NIST category one, which requires a security level of 128 bits. For this we used the SHAKE-128 implementation. But when we later had to adhere to the NIST category tree and five, we had to be able to switch between different implementations of the underlying XOF. For this we implemented a generic trait for the XOF:
 \inputminted[firstline=18, lastline=23]{rust}{../sdith/src/subroutines/prg/xof.rs}
