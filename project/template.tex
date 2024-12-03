@@ -21,15 +21,18 @@
 \usepackage{ctable} % for \specialrule command
 \usepackage{enumitem}
 \usepackage{stmaryrd}
- \usepackage{listings}
- \lstdefinestyle{tree}{
-    literate=
-    {├}{{\smash{\raisebox{-1ex}{\rule{1pt}{\baselineskip}}}\raisebox{0.5ex}{\rule{1ex}{1pt}}}}1 
-    {─}{{\raisebox{0.5ex}{\rule{1.5ex}{1pt}}}}1 
-    { }{~}1
-    {└}{{\smash{\raisebox{0.5ex}{\rule{1pt}{\dimexpr\baselineskip-1.5ex}}}\raisebox{0.5ex}{\rule{1ex}{1pt}}}}1 
-    {│}{{\smash{\raisebox{-1ex}{\rule{1pt}{\baselineskip}}}\raisebox{0.5ex}{\rule{1ex}{0pt}}}}1 
-  }
+% \usepackage{emoji}
+\usepackage{wasysym}
+
+\usepackage{listings}
+\lstdefinestyle{tree}{
+  literate=
+  {├}{{\smash{\raisebox{-1ex}{\rule{1pt}{\baselineskip}}}\raisebox{0.5ex}{\rule{1ex}{1pt}}}}1 
+  {─}{{\raisebox{0.5ex}{\rule{1.5ex}{1pt}}}}1 
+  { }{~}1
+  {└}{{\smash{\raisebox{0.5ex}{\rule{1pt}{\dimexpr\baselineskip-1.5ex}}}\raisebox{0.5ex}{\rule{1ex}{1pt}}}}1 
+  {│}{{\smash{\raisebox{-1ex}{\rule{1pt}{\baselineskip}}}\raisebox{0.5ex}{\rule{1ex}{0pt}}}}1 
+}
 \setlength{\parindent}{10pt} % indentation
 
 \usepackage{amsthm}
@@ -1074,14 +1077,14 @@ To ensure memory safety, Rust uses a borrow checker to prevent data races and me
 \subsubsection{The Stack and Heap}
 To understand how the borrow checker works in Rust, it is crucial to first grasp the distinction between the stack and the heap -- two memory management systems available in Rust~\cite[ch.4]{rustlangRustProgramming}, each with unique characteristics and use cases.
 
-The \textbf{stack} stores values in a last-in-first-out (LIFO) order, meaning the last value added is the first to be removed. You can think of it like a stack of plates: the last plate placed on the stack is the first one to be taken off. All data stored on the stack must have a fixed, known size at compile time.
+The \textbf{stack} stores values in a last-in-first-out (LIFO) order, meaning the last value added is the first to be removed. You can think of it like a stack of thermal detonators in a crate: the last detonator placed in the crate is the first one you grab when you need it. All data stored on the stack must have a fixed, known size at compile time.
 
-The \textbf{heap}, in contrast, is more flexible. When you allocate memory for a value on the heap, you request a specific amount of memory, and the heap manager finds a suitable location for it. It then returns a pointer to the allocated memory. A helpful analogy for the heap is dining at a restaurant: you tell the waiter the size of your party, and they find a table that fits your group, noting which table you've been assigned.
+The \textbf{heap}, in contrast, is more flexible. When you allocate memory for a value on the heap, you request a specific amount of memory, and the heap manager finds a suitable location for it. A helpful analogy for the heap is docking a spaceship on Coruscant: you tell the spaceport how large your ship is, and they assign you to a landing pad that fits your ship's dimensions, noting where you've been docked.
 
 As you might have guessed, the stack is faster than the heap. This is because the stack is a fixed-size structure, while the heap is a variable-sized structure. However, the stack has a fixed size, which means that it can only store a limited number of values. If you try to allocate more memory than the stack can hold, you will get an error. The heap, on the other hand, can store an unlimited number of values, as it is able to dynamically allocate memory as needed.
 
 \subsubsection{Ownership}
-Now that we have given a brief introduction to the how the stack and the heap work, we can delve into the ownership system in Rust. The ownership system is a crucial aspect of Rust's memory management, as it ensures that memory is allocated and deallocated correctly. In Rust, every value has a unique owner, and there can only be one owner at a time. When a value is created, it is assigned to the current scope, and when the scope ends, the value is dropped. This process is known as \textbf{ownership transfer}. 
+Now that we have given a brief introduction to the how the stack and the heap work, we can delve into the ownership system in Rust. The ownership system is a crucial aspect of Rust's memory management, as it ensures that memory is allocated and deallocated correctly. In Rust, every value has a unique owner, and there can only be one owner at a time. When a value is created, it is assigned to the current scope, and when the scope ends, the value is dropped. This process is known as \textbf{ownership transfer}.
 A simple example of how the scope works is as follows:
 \begin{minted}{rust}
 {
@@ -1092,7 +1095,7 @@ A simple example of how the scope works is as follows:
  
 } // d is dropped here
 \end{minted}
-In this example, we used a string literal to initialize the variable \texttt{d}. A string literal is a statically allocated string that is stored in the binary. 
+In this example, we used a string literal to initialize the variable \texttt{d}. A string literal is a statically allocated string that is stored in the binary.
 Now to illustrate the ownership, we need a data type that is more complex than a string literal. The string literal is of known size and is allocated on the stack, meaning that it can be easily copied on stack and popped when the current scope ends. This however means that we can not mutate the string literal by some user input. Instead, we will use a \texttt{String} type, which is a dynamically allocated string that can be mutated:
 \begin{minted}{rust}
   let d = String::from("Peace is a lie");
@@ -1101,7 +1104,7 @@ Now to illustrate the ownership, we need a data type that is more complex than a
   
   println!("{d}"); // Will print `Peace is a lie, there is only passion.`
 \end{minted}
-Here the idea is that because a string literal is off a known size at compile time it can be allocated on the stack. Whereas the type \textit{String} is dynamically allocated we would have to predict every size string in order to allocate a large enough space on the stack. This is the reason it is allocated on the heap, and a \textit{pointer} is instead saved on the stack. 
+Here the idea is that because a string literal is off a known size at compile time it can be allocated on the stack. Whereas the type \textit{String} is dynamically allocated we would have to predict every size string in order to allocate a large enough space on the stack. This is the reason it is allocated on the heap, and a \textit{pointer} is instead saved on the stack.
 Now comes the problem of what happens in the following cases:
 \begin{minted}{rust}
   // Case 1: Stack allocated types
@@ -1117,7 +1120,7 @@ Now comes the problem of what happens in the following cases:
   \item Case 2: $d$ is now a pointer to the heap allocation of the String.
 \end{itemize}
 
-\subsubsection{Borrowing & references}
+\subsubsection{Borrowing and references}
 
 \subsubsection{Lifetime}
 
@@ -1164,10 +1167,13 @@ When writing code, it is crucial to ensure its correctness and reliability. Rust
 \subsection{Build script}
 
 \subsection{Error handling with Result type} % https://www.lurklurk.org/effective-rust/panic.html
-\subsection{Inlining}
+
 \subsection{Feature flags}
-\subsection{Parallelisation}
-\subsection{SIMD}
+
+\subsection{Optimisation}
+\subsubsection{Inlining}
+\subsubsection{Parallelisation}
+\subsubsection{SIMD}
 
 \section{Subroutines}\label{sub:subroutines}
 We started out by implementing the different subroutines that are used in the SD-in-the-Head protocol. We will describe the implementation of each subroutine in detail.
