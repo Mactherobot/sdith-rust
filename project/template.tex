@@ -8,6 +8,7 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage[outputdir=out]{minted}
+\setminted[rust]{breaklines}
 \usepackage[]{amsmath}
 \usepackage{epsfig}
 \usepackage[T1]{fontenc}
@@ -21,7 +22,6 @@
 \usepackage{ctable} % for \specialrule command
 \usepackage{enumitem}
 \usepackage{stmaryrd}
-% \usepackage{emoji}
 \usepackage{wasysym}
 
 \usepackage{listings}
@@ -93,7 +93,9 @@
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
 
+
 \begin{document}
+\newcommand{\rust}[1]{{\mintinline{rust}|#1|}}\
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1157,8 +1159,49 @@ To restrict access to code within specific modules, we use the \textit{pub(crate
 
 Additionally, we selectively mark certain modules and functions with the \textit{pub} visibility modifier to export them for use in other crates. This approach is particularly useful when creating a library file that can be accessed by benchmarking files, as these files reside outside the main crate.
 
-\subsection{Testing} % unit tests
-When writing code, it is crucial to ensure its correctness and reliability. Rust provides a robust testing framework \cite{rustlangRustProgramming} that allows developers to write tests for their code. We utilized this to create unit tests for our subroutines and functions, to make it intrinsically clear that our code is functioning as expected, and later when doing optimisations we can ensure that the code still works as intended.
+\subsection{Correctness (Types and Testing)}
+When creating and iterating on software, it is crucial that you develop in a way that you can continually deliver functional and correct code. There are many patterns that help ensuring this. Rust provides several. in this section we will describe two -- Types and Automated tests.
+
+\subsubsection{The Type System}
+Every value in Rust has a \textit{data type}. Programs written in Rust are \textit{statically typed}, meaning the type of each value must be determined at compile time. The type informs the compiler about what operations the value supports and helps catch errors before they reach runtime~\cite[ch.3.2]{rustlangRustProgramming}. Rust's compiler often infers types automatically, but if it cannot, you must explicitly annotate the type of the value. Consider the following example:
+
+\begin{minted}{rust} 
+  let guess: u32 = "42".parse().expect("Not a number!"); 
+\end{minted}
+
+Here, the \texttt{parse} function requires the annotation of the variable \texttt{guess} to determine how the string should be parsed. Additionally, if you annotate \texttt{guess} with a type that does not implement the \texttt{parse} function for strings, the compiler will produce an error. This strict type system ensures that Rust minimizes the possibility of writing incorrect code -- at least in terms of the bounds of the language. While Rust enforces correctness in type usage, ensuring that a program operates semantically as intended, such as adhering to a protocol specification, often requires additional validation methods.
+
+\subsubsection{Automated Testing}
+Say that you are implementing an arithmetic field -- \textit{funny enough, we needed to to exactly that!} -- you would want your impletation to follow the properties that define the field. For example \textit{associativity over addition}
+\begin{align}
+  a + (b + c) = (a + b) + c
+\end{align}
+Such a property is hard to enforce using the type system. However, it is possible to enforce it using \textit{automated testing}. Consider the following examples
+\begin{minted}{rust}
+  fn gf256_add(a: u8, b: u8) -> u8 {
+    a ^ b
+  }
+
+  #[cfg(test)]
+  mod arithmetic_tests {
+    use super::*
+    
+    #[test]
+    fn test_add_associativity() {
+      let a = 3;
+      let b = 4;
+      let c = 5;
+
+      assert_eq!(
+        gf256_add(gf256_add(a, b), c), 
+        gf256_add(a, gf256_add(b, c))
+      );
+    }
+  }
+\end{minted}
+This is a simple example of the features that Rust provides that to support automated testing. First we create an internal module \rust{mod arithmetic_tests}. Note the annotation, \rust{#[cfg(test)]}. This ensures that the module is only included when running tests and not in the final production code. 
+
+Individual tests are made using the \mintinline{rust}|code|
 
 \subsection{Traits}
 
@@ -1179,7 +1222,7 @@ When writing code, it is crucial to ensure its correctness and reliability. Rust
 We started out by implementing the different subroutines that are used in the SD-in-the-Head protocol. We will describe the implementation of each subroutine in detail.
 
 \subsection{PRG}
-First we implemented a pseudo random generator (PRG) based on a extendable output hash function (XOF). We used a library called \textit{tiny-keccak} \cite{tiny-keccak}, which contains implementations of Keccak derived functions specified in the NIST FIPS 202 standard, SP800-185 and KangarooTwelve.
+First we implemented a pseudo random generator (PRG) based on a extendable output hash function (XOF). We used a library called \textit{tiny-keccak}~\cite{tiny-keccak}, which contains implementations of Keccak derived functions specified in the NIST FIPS 202 standard, SP800-185 and KangarooTwelve.
 
 Our initial implementation focused on the NIST category one, which requires a security level of 128 bits. For this we used the SHAKE-128 implementation. But when we later had to adhere to the NIST category tree and five, we had to be able to switch between different implementations of the underlying XOF. For this we implemented a generic trait for the XOF:
 \inputminted[firstline=18, lastline=23]{rust}{../sdith/src/subroutines/prg/xof.rs}
