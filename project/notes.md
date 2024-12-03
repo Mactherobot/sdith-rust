@@ -103,6 +103,14 @@ Finally, we wanted to ask if you have any optimisations that are not mentioned i
 
 Greetings Benjamin and Magnus
 
-### Notes from meeting
+# TODOs from code:
 
--
+- [] Small benchmarking of different multiplication methods
+- [] Lookup carryless multiplication
+- [] Removal of tests in gf256 arith
+- [] Rermove weird params
+- [] Error handling in the signing
+- [] Merkle tree salt
+- [] Optimize merkle tree with batching
+- [] Polynomial eval test
+- [] API
