@@ -1065,9 +1065,9 @@ Before diving into the details of our implementation, it is important to first e
 
 % https://nnethercote.github.io/perf-book/inlining.html
 \subsection{Borrow checker (Ownership)} % mut references
+To ensure memory safety, Rust uses a borrow checker to prevent data races and memory leaks. This system ensures that references to data are valid and do not outlive the data they refer to. By enforcing strict ownership rules, Rust helps prevent common programming errors such as double-free or use-after-free. 
 
 \subsection{Stack arrays and heap arrays}
-
 
 % Reusing collections: https://nnethercote.github.io/perf-book/heap-allocations.html#reusing-collections
 % Bounds Checks: https://nnethercote.github.io/perf-book/bounds-checks.html
@@ -1081,15 +1081,20 @@ We have outlined the structure of the code below:
 ├── api.rs
 ├── arith
 │   ├── gf256
+│   │   ├── ...
 │   │   └── mod.rs
 │   └── mod.rs
 ├── mpc
+│   ├── ...
 │   └── mod.rs
 ├── signature
+│   ├── ...
 │   └── mod.rs
 ├── subroutines
-│   ├── mod.rs
+│   ├── ...
+│   └── mod.rs
 └── utils
+    ├── ...
     └── mod.rs
 \end{lstlisting}
 \subsubsection{Visibility} %pub(crate)
