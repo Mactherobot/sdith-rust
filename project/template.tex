@@ -1215,7 +1215,7 @@ To restrict access to code within specific modules, we use the \textit{pub(crate
 
 Additionally, we selectively mark certain modules and functions with the \textit{pub} visibility modifier to export them for use in other crates. This approach is particularly useful when creating a library file that can be accessed by benchmarking files, as these files reside outside the main crate.
 
-\subsection{Correctness (Types and Testing)}
+\subsection{Correctness (Types, Testing and Errors)}
 When creating and iterating on software, it is crucial that you develop in a way that you can continually deliver functional and correct code. There are many patterns that help ensuring this. Rust provides several. In this section we will describe two -- Types and Automated tests.
 
 \subsubsection{The Type System}
@@ -1282,6 +1282,17 @@ Testing that functions return the correct values based on \textit{correct} input
 
 So when is it appropriate to use a panic? The Rust book~\cite[ch.9.3]{rustlangRustProgramming} provides a good guideline for when to use panic. 
 The general rule is that, if your code would end up in a bad state from which it can not recover it should panic. Everywhere else, you should return a \textit{Result}.
+An example of using the \textit{Result} type is shown below:
+\begin{minted}{rust}
+  fn sign(message: &[u8], secret_key: &[u8]) -> Result<Vec<u8>, Error> {
+  if something_went_wrong {
+    return Err(Error::SigningError);
+  }
+  ... code that signs the message ...
+  Ok(signature)
+  }
+\end{minted}
+There might be a number of reasons why a signature could not be generated, but a simple one that we want to relay to a potential use is that the secret key is invalid. In this case, we would return an error with the \textit{SigningError} variant. If a panic was used the caller of the sign function would not be able to recover from the error.
 In our implementation we have used the \textit{Result} type to handle errors. This functionality is similar to exceptions in other languages, allowing you to handle errors gracefully and provide meaningful error messages. As well as making our code reliable in the face of inevitable problems.
 
 \subsection{Traits}
