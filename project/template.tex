@@ -667,7 +667,7 @@ Otherwise, the parties will accept with probability $\frac{1}{|\mathbb{F}|}$ fol
 Building upon the MPC protocol above, \autoref{def:cut-and-choose} outlines the fundamental concept of the cut-and-choose technique. For a more comprehensive protocol, refer to the \textit{HVZKAoK Protocol using Cut and Choose} discussed in~\cite{baum2020concretely}. Note
 
 \begin{definition}[ZK from Cut-and-Choose (Multiplication)]\label{def:cut-and-choose}
-  Denote the security parameters $M$ the number of evaluations, $N$ the number of parties, $\tau$ the security parameter, a secure hash function \autoref{sec:prelim_hash} and a \textit{Random Oracle-based commitment scheme}. Given a $(N-1)$-private MPC protocol $\Pi_C$ for a circuit $C$ and an ideal functionality $\mathcal{F}$. Furthermore, we also denote $\mathcal{P}$ to be the prover and $\mathcal{V}$ as the verifier. \textit{Note} that we assume that there is only one multiplication gate in the circuit, to align with our purposes.
+  Denote the security parameters $M$ the number of pre-processing executions, $N$ the number of parties, $\tau$ the security parameter, a secure hash function \autoref{sec:prelim_hash} and a \textit{Random Oracle-based commitment scheme}. Given a $(N-1)$-private MPC protocol $\Pi_C$ for a circuit $C$ and an ideal functionality $\mathcal{F}$. Furthermore, we also denote $\mathcal{P}$ to be the prover and $\mathcal{V}$ as the verifier. \textit{Note} that we assume that there is only one multiplication gate in the circuit, to align with our purposes.
   \begin{enumerate}[itemsep=0pt, parsep=0pt]
     \item\label{itm:cut-choose-r1} For each $e \in [M]$ and for each party $P_i \in [N]$:
     \begin{enumerate}[nolistsep]
