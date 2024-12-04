@@ -23,6 +23,7 @@
 \usepackage{enumitem}
 \usepackage{stmaryrd}
 \usepackage{wasysym}
+\usepackage{dirtree}
 
 \usepackage{listings}
 \lstdefinestyle{tree}{
@@ -1296,37 +1297,6 @@ In this way, the compiler can determine that the lifetime of the output referenc
 \subsubsection{Conclusions on Memory Safety in Rust}
 This overview only scratches the surface of the power and features that Rust offers. However, it provides a brief introduction to the core features that make Rust a powerful programming language for developing secure and high-performance software. As mentioned, Rust comes with a steep learning curve, but it is supported by a large and active community that offers extensive documentation and resources. We suggest that the reader explore the official Rust Book~\cite{rustlangRustProgramming} or its community made books, like \textit{Effective Rust}~\cite{lurklurkEffectiveRust} and \textit{The Rust Performance book}~\cite{rustlangPerformanceBook}.
 
-
-\subsection{Modules}
-Rust provides a module system that allow you to organize your code into logical units. Making it it easier to understand and maintain the codebase. A module is a collection of related items, such as functions, structs, and constants, that are grouped together. Modules can be nested, allowing for a hierarchical structure of code.
-We utilized these features to organize our logic effectively, such as encapsulating field arithmetic within a module and separating components into subfolders and subroutines related to the main signature algorithm.
-We have outlined the structure of the code below:
-\begin{lstlisting}[style=tree][ht]
-.
-├── api.rs
-├── arith
-│   ├── gf256
-│   │   ├── ...
-│   │   └── mod.rs
-│   └── mod.rs
-├── mpc
-│   ├── ...
-│   └── mod.rs
-├── signature
-│   ├── ...
-│   └── mod.rs
-├── subroutines
-│   ├── ...
-│   └── mod.rs
-└── utils
-    ├── ...
-    └── mod.rs
-\end{lstlisting}
-\subsubsection{Visibility} %pub(crate)
-To restrict access to code within specific modules, we use the \textit{pub(crate)} visibility modifier. This ensures that the code is accessible only to modules within the same crate, helping to prevent unintended access to private or internal functionality.
-
-Additionally, we selectively mark certain modules and functions with the \textit{pub} visibility modifier to export them for use in other crates. This approach is particularly useful when creating a library file that can be accessed by benchmarking files, as these files reside outside the main crate.
-
 \subsection{Correctness (Types, Testing and Errors)}
 When creating and iterating on software, it is crucial that you develop in a way that you can continually deliver functional and correct code. There are many patterns that help ensuring this. Rust provides several. In this section we will describe two -- Types and Automated tests.
 
@@ -1420,13 +1390,81 @@ The general rule is that, if your code would end up in a bad state from which it
 There might be a number of reasons why a signature could not be generated, but a simple one that we want to relay to a potential user is that the secret key is invalid. In this case, we would return an error with the \textit{SigningError} variant. If a panic was used the caller of the sign function would not be able to recover from the error.
 
 \subsection{Maintainable and readable code}
+One of the reasons for choosing Rust is that it provides several tools and features that make it easier to write maintainable and readable code. In this section, we will discuss some of the features that we utilized in our implementation to achieve this goal.
+
+\subsubsection{Modules}
+Rust provides a module system that allow you to organize your code into logical units. Making it it easier to understand and maintain the codebase. A module is a collection of related items, such as functions, structs, and constants, that are grouped together.
+
+Modules can be nested, allowing for a hierarchical structure of code.
+If utilized correctly, this can help organize the logic of a program effectively for readability and reuse. For example, encapsulating field arithmetic within a module and separating components into subfolders and subroutines related to the main signature algorithm.
+
+Rust structures modules either directly in the code or through the file system. There are two files that provides the entry points to your code.
+\begin{enumerate}
+  \item \texttt{main.rs}: This is the main entry point of the program. It is the first file that is executed when the program is run. You can quickly run the program by running \texttt{cargo run}.
+  \item \texttt{lib.rs}: In the case that you are building code that you want to provide for other developers to use in their own Rust code -- named a \textit{crate} -- this is the entry point for such a library.
+\end{enumerate}
+We do not utilize internal modules except for tests so we will only describe the file system module system. Consider a simple example structure below
+\begin{minted}{rust}
+  // main.rs
+  use crate::arith::gf256::add;
+
+  mod arith
+
+  fn main() {
+    println!("{}", add(3, 4));
+  }
+
+  // arith/mod.rs
+  pub mod gf256;
+
+  // arith/gf256.rs
+  pub fn add(a: u8, b: u8) -> u8 {
+    a ^ b
+  }
+
+  #[cfg(test)]
+  mod tests {
+    ...
+  }
+\end{minted}
+The example shows a structure with the main entry file which first declares a module \rust{mod arith}. The compiler then looks for the code of the module in three places
+\begin{itemize}[parsep=0pt, itemsep=0pt]
+  \item Inline with curly braces (e.g. like the \rust{mod tests {}})
+  \item In the file \texttt{arith.rs}
+  \item In the file \texttt{arith/mod.rs}
+\end{itemize}
+In this case, the module \rust{arith} is declared in the file \texttt{arith/mod.rs}. A nested submodule \rust{gf256} is then declared and found in the same recursive way. This structure allows for a clear \textit{separation of concerns} and makes it easier to understand the codebase and reuse code as modules.
+
+\subsubsection*{Visibility} %pub(crate)
+Code from modules can then be accessed using the path from the crate root using the \rust{use crate::arith::gf256::add} statement. However, Rust has a strict visibility system that restricts access to code based on the visibility of the item. By default, items are private to the module they are declared in. It is then possible to control the visibility of the code using the \textit{visibility modifier} \rust{pub}.
+\begin{itemize}[parsep=0pt, itemsep=0pt]
+  \item \rust{pub}: The item is fully accessible from outside the module.
+  \item \rust{pub(crate)}: The item is accessible only within the same crate.
+  \item \rust{pub(super)}: The item is accessible only within the parent module.
+  \item \rust{pub(in path)}: The item is accessible only within the specified path.
+\end{itemize}
+This system provides fine-grained control over the visibility of code, making the codebase easier to understand and maintain. Furthermore, it simplifies the process of restricting unwanted access to internal functionality. For instance, consider a scenario where a function conditionally selects between two different implementations based on a program configuration. In such cases, you would want to restrict access to the individual implementation functions, exposing only the function responsible for making the choice. This ensures that the internal functions cannot be accessed accidentally, thereby reducing the likelihood of bugs.
+\begin{minted}{rust}
+  pub fn functionality_handler() {
+    if cfg!(feature = "functionality_one") {
+      functionality_one();
+    } else {
+      functionality_two();
+    }
+  }
+
+  fn functionality_one() // private function
+  fn functionality_two() // private function
+\end{minted}
 
 \subsubsection{Generics}
 \subsubsection{Traits}
-
+\subsubsection{Linting and Documentation}
+\todo{mention the \rust{#![warn(missing_docs)]} linting rule and how to document code with \rust{///} and \rust{//!}} 
 \subsection{Dynamic compilation}
 \todo{describe constants as a lead in to build script and feature flags}
 
+\subsubsection{Configuration conditional checks \texttt{\#[cfg(...)]}}
 \subsubsection{Build script}
 
 \subsubsection{Feature flags}
@@ -1445,7 +1483,42 @@ A subtle but effective way to improve performance is to inline functions that ar
 
 \subsubsection{SIMD}
 
+\section{Structure}
+\todo{describe the structure in detail}
+\begin{figure}[H]
+  \dirtree{%
+    .1 \color{orange}Cargo.toml.
+    .1 \color{orange}build.rs.
+    .1 ./benches/.
+    .1 ./src/.
+    .2 \color{orange}main.rs.
+    .2 \color{orange}lib.rs.
+    .2 \color{teal}api.rs.
+    .2 \color{teal}cli.rs.
+    .2 \color{teal}keygen.rs.
+    .2 \color{teal}witness.rs.
+    .2 arith/\dots.
+    .3 gf256/\dots.
+    .2 constants/.
+    .3 \color{teal}params.rs.
+    .3 \color{teal}precomputed.rs.
+    .3 \color{teal}types.rs.
+    .2 kat/\dots.
+    .2 mpc/\dots.
+    .2 signature/\dots.
+    .2 subroutines/\dots.
+    .3 prg/\dots.
+    .3 \color{teal}commitments.rs.
+    .3 \color{teal}hashing.rs.
+    .3 \color{teal}merkle\_tree.rs.
+    .2 utils/.
+    .3 \color{teal}iterator.rs.
+  }
+  \caption{The directory structure of the project. \texttt{mod.rs} files are omitted for brevity.}
+\end{figure}
+
 \section{Subroutines}\label{sub:subroutines}
+
 We started out by implementing the different subroutines that are used in the SD-in-the-Head protocol. We will describe the implementation of each subroutine in detail.
 
 \subsection{PRG}
