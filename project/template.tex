@@ -1274,7 +1274,24 @@ The \textit{lifetime} of an value on the stack is the duration that an value is 
   //                          ^^^^^^^^^^ borrow later used here
   // error[E0597]: `item` does not live long enough
 \end{minted}
-The Rust compiler can
+While the Rust compiler, most often can infer the lifetime of a value it can sometimes be necessary to explicitly define the lifetime of a value. This is done by using the \textit{lifetime annotation} \rust{'a}. This is most often used when working with references in structs or functions.
+\begin{minted}{rust}
+  pub fn find(haystack: &[u8], needle: &[u8]) -> Option<&[u8]> {
+    //                  -----          -----            ^ expected named lifetime parameter
+    // ...
+  } // error[E0106]: missing lifetime specifier
+\end{minted}
+In this example, there are two choices for the output lifetime for the reference returned by the function. The compiler cannot infer which lifetime to use, so it requires the developer to specify it. This is done by adding the lifetime annotation to the function signature.
+\begin{minted}{rust}
+  pub fn find<'a, 'b>(haystack: &'a[u8], needle: &'b[u8]) -> Option<&'a[u8]> {
+    // ...
+  }
+\end{minted}
+In this way, the compiler can determine that the lifetime of the output reference is the same as the input reference \rust{haystack}. 
+
+\subsubsection{Conclusions on Memory Safety in Rust}
+This overview only scratches the surface of the power and features that Rust offers. However, it provides a brief introduction to the core features that make Rust a powerful programming language for developing secure and high-performance software. As mentioned, Rust comes with a steep learning curve, but it is supported by a large and active community that offers extensive documentation and resources. We suggest that the reader explore the official Rust Book~\cite{rustlangRustProgramming} or its community made books, like \textit{Effective Rust}~\cite{lurklurkEffectiveRust} and \textit{The Rust Performance book}~\cite{rustlangPerformanceBook}.
+
 
 \subsection{Modules}
 Rust provides a module system that allow you to organize your code into logical units. Making it it easier to understand and maintain the codebase. A module is a collection of related items, such as functions, structs, and constants, that are grouped together. Modules can be nested, allowing for a hierarchical structure of code.
