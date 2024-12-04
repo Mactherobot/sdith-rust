@@ -196,11 +196,15 @@ Additionally, the authors supply a detailed and well-crafted specification, alon
 
 
 \subsection{Choosing Rust}
-We chose to implement the SD-in-the-Head protocol in Rust for several compelling reasons. Rust, as a modern systems programming language, offers inherent memory and thread safety without compromising performance. Its strong safety guarantees are a key reason why Rust is included in the NIST list of safer programming languages~\cite{nistsaferlanguages}. These properties are particularly critical when implementing cryptographic primitives, where memory safety and robustness against concurrency issues are foundational to secure software development. Additionally, Rust provides fine-grained control over hardware resources, enabling the optimization of performance -- an essential consideration in cryptographic implementations.
+We chose to implement the SD-in-the-Head protocol in Rust for several compelling reasons. Rust, as a modern systems programming language, offers inherent memory and thread safety without compromising performance. Its strong safety guarantees\cite{jung2017rustbelt} are a key reason why Rust is included in the NIST list of safer programming languages~\cite{nistsaferlanguages}. These properties are particularly critical when implementing cryptographic primitives, where memory safety and robustness against concurrency issues are foundational to secure software development. Additionally, Rust provides fine-grained control over hardware resources, enabling the optimization of performance -- an essential consideration in cryptographic implementations
 
-Our choice of Rust was also driven by a desire to investigate its strengths and limitations in the context of implementing and optimizing cryptographic protocols. To this end, we prioritized code readability and maintainability. For maintainability, we incorporated rigorous testing frameworks and benchmarking tools to validate the correctness and efficiency of the implementation. These measures also facilitate meaningful comparisons with alternative signature schemes. For readability, we emphasized clear, well-documented, and logically structured code.
+Furthermore, our choice of Rust was driven by a desire to investigate its strengths and limitations in the context of implementing and optimizing cryptographic protocols. To this end, our report will include an overview of the features that Rust provides (\autoref{sec:rust}).
 
-Given the inherent flexibility and modular nature of the SD-in-the-Head protocol, our implementation leverages Rust's feature flags to enhance modularity and interchangeability. This approach not only supports a high degree of configurability but also ensures that the implementation remains adaptable to future changes and extensions.
+We prioritized code readability and maintainability in which Rust offers a string advantage. We incorporated its included testing framework and benchmarking tools to validate the correctness and efficiency of the implementation. These measures also facilitate meaningful comparisons with alternative signature schemes.
+
+For readability, we emphasized clear, well-documented, and logically structured code supported by Rust's documentation and modular structure.
+
+Given the inherent flexibility and variants of the SD-in-the-Head protocol, our implementation leverages Rust's feature flags and build time scripts to enhance modularity and interchangeability. This approach not only supports a high degree of configurability but also ensures that the implementation remains adaptable to future changes and extensions.
 
 \todo{Other signature schemes. How many signatures can be generated per second.}
 
@@ -682,7 +686,7 @@ Building upon the MPC protocol above, \autoref{def:cut-and-choose} outlines the 
       \item $\mathcal{P}$ generates random sharings $w_i$ of the input $w$ using $sd_{e,i}$.
     \end{enumerate}
     \item $\mathcal{P}$ commits to the triples (including $\Delta_e$) and a sharing of the input $w$ along with the seeds $sd_{e,i}$\footnote{In order to further reduce communication all commitments can be hashed together to one hash.}
-    \item $\mathcal{V}$ chooses a random challenge $E \subset [M]$ such that $|E| = \tau$ and sends it to $\mathcal{P}$. Set $\bar{E} = [M] \setminus E$ 
+    \item $\mathcal{V}$ chooses a random challenge $E \subset [M]$ such that $|E| = \tau$ and sends it to $\mathcal{P}$. Set $\bar{E} = [M] \setminus E$
           \item\label{itm:cut-choose-r3} $\mathcal{P}$ sends the seeds $sd_e$ to $\mathcal{V}$ who verifies that the triples are correctly generated per step~\ref{itm:cut-choose-r1}
     \item $\mathcal{P}$ runs the MPC protocol $\Pi_C$ on the remaining $M-\tau$ pre-computed triples with different randomness $r_e$ resulting in shares $\alpha_e, \beta_e$.
     \item $\mathcal{P}$ commits to the views (\autoref{def:mpc-view}) of $\Pi_C$.
@@ -1061,7 +1065,7 @@ compiling constants for categories
 can we use other hashes that still provide the same security assumption from \autoref{sec:assumptions} as post-quantum security (Xoodyak, KangarooTwelve, Haraka v2)
 
 
-\section{The Rust Programming language}
+\section{The Rust Programming language}\label{sec:rust}
 
 Before delving into the specifics of our implementation, we need to answer the question: ``Why is Rust a good choice for our implementation?''.
 
@@ -1113,7 +1117,7 @@ However, the vector type is far more dynamic. For instance, using the \rust{push
 
 Additionally, the stack, due to its fixed-size structure, can only hold a limited amount of data. Attempting to allocate more memory than the stack can accommodate results in a \textit{stack overflow} error. In contrast, the heap offers virtually unlimited storage, as it can dynamically allocate memory as required.
 
-\subsubsection{Ownership}
+\subsubsection{Ownership and Variable scope}
 Now that we have given a brief introduction to the memory allocation, we can delve into the \textit{ownership system}. This system is a crucial aspect of Rust's memory management, as it ensures that memory is allocated and deallocated correctly. Ownership in Rust follows three rules
 \begin{enumerate}[parsep=0pt, itemsep=0pt]
   \item Each value has an \textit{owner}
@@ -1261,7 +1265,7 @@ The compiler eases these restrictions as it can determine the lifetime of the re
 The last borrow is valid because the previous borrows are no longer in scope. The compiler can determine that the borrows will not be used after the last borrow.
 
 \subsubsection{Lifetimes}
-The \textit{lifetime} of a value on the stack refers to the period during which the value is guaranteed to remain valid within its scope. In most cases, developers don’t need to actively manage lifetimes, as the compiler can infer them automatically. A value's lifetime begins when it is assigned ownership and ends either when it is dropped or when its ownership is transferred.
+The \textit{lifetime} of a value on the stack refers to the period during which the value is guaranteed to remain valid within its scope. In most cases, developers do not need to actively manage lifetimes, as the compiler can infer them automatically. A value's lifetime begins when it is assigned ownership and ends either when it is dropped or when its ownership is transferred.
 \begin{minted}{rust}
   let r: &Item;
   {
@@ -1287,7 +1291,7 @@ In this example, there are two choices for the output lifetime for the reference
     // ...
   }
 \end{minted}
-In this way, the compiler can determine that the lifetime of the output reference is the same as the input reference \rust{haystack}. 
+In this way, the compiler can determine that the lifetime of the output reference is the same as the input reference \rust{haystack}.
 
 \subsubsection{Conclusions on Memory Safety in Rust}
 This overview only scratches the surface of the power and features that Rust offers. However, it provides a brief introduction to the core features that make Rust a powerful programming language for developing secure and high-performance software. As mentioned, Rust comes with a steep learning curve, but it is supported by a large and active community that offers extensive documentation and resources. We suggest that the reader explore the official Rust Book~\cite{rustlangRustProgramming} or its community made books, like \textit{Effective Rust}~\cite{lurklurkEffectiveRust} and \textit{The Rust Performance book}~\cite{rustlangPerformanceBook}.
@@ -1413,7 +1417,9 @@ In our implementation we have used the \textit{Result} type to handle errors. Th
 \subsection{Feature flags}
 
 \subsection{Rust optimizations}
-Blazingly fast code does not come for free. But in Rust there are several ways to optimize code. In this section we will introduce the ways that we have used. First we will look at simple ways to improve performance. Then go into more advanced techniques, such as parallelisation and SIMD.
+Blazingly fast code does not come without a cost. However, Rust offers several ways to optimize performance. In this section, we will introduce the techniques we employed. We will first explore simple methods to enhance performance, followed by more advanced techniques such as parallelization and SIMD.
+
+\subsection{Benchmarking}
 
 \subsubsection{Inlining}
 A subtle but effective way to improve performance is to inline functions that are called many times, this removes the overhead of the function call. The Rust compiler will automatically inline functions if they are small enough. But there are some cases where this is not enough and the compiler does not inline. In this case we can use the \texttt{inline} attribute to force the compiler to inline a function. Cachegrind is a good profiling tool to check if a function is inlined by the compiler.
