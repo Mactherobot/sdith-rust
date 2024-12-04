@@ -1292,7 +1292,7 @@ An example of using the \textit{Result} type is shown below:
   Ok(signature)
   }
 \end{minted}
-There might be a number of reasons why a signature could not be generated, but a simple one that we want to relay to a potential use is that the secret key is invalid. In this case, we would return an error with the \textit{SigningError} variant. If a panic was used the caller of the sign function would not be able to recover from the error.
+There might be a number of reasons why a signature could not be generated, but a simple one that we want to relay to a potential user is that the secret key is invalid. In this case, we would return an error with the \textit{SigningError} variant. If a panic was used the caller of the sign function would not be able to recover from the error.
 In our implementation we have used the \textit{Result} type to handle errors. This functionality is similar to exceptions in other languages, allowing you to handle errors gracefully and provide meaningful error messages. As well as making our code reliable in the face of inevitable problems.
 
 \subsection{Traits}
@@ -1304,9 +1304,13 @@ In our implementation we have used the \textit{Result} type to handle errors. Th
 
 \subsection{Feature flags}
 
-\subsection{Optimisation}
+\subsection{Rust optimizations}
+
 \subsubsection{Inlining}
+
+
 \subsubsection{Parallelisation}
+
 \subsubsection{SIMD}
 
 \section{Subroutines}\label{sub:subroutines}
@@ -1332,7 +1336,7 @@ This was done by creating a generic trait for the hash function:
 %
 \subsection{commitments}
 
-\subsection{Merkle Tree impl}\label{sub:merkle_tree_impl}
+\subsubsection{Merkle Tree impl}\label{sub:merkle_tree_impl}
 Our merkle tree implementation was done using a sized array as data structure. Meaning that we save all the leafs of the tree in the last 256 values of the array.
 \inputminted[firstline=18, lastline=23]{rust}{../sdith/src/subroutines/merkle_tree.rs}
 We then build the tree buttom up by hashing the left and right children of the current node and storing the result in the next position in the array. We do this until we reach the root node, which we then return as our global commitment.
