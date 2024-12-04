@@ -1383,38 +1383,53 @@ Crucially, this test allows us to continue developing or optimising the finite f
 
 Writing good tests is a subject extensive enough to warrant its own discussion, and delving into the theory behind it is beyond the scope of this report. From the outset, we designed our implementation with testing in mind. This approach ensures that we can iteratively develop each module and confirm that it adheres to theoretical expectations and the given specification.
 
-\todo{finish this segment}
-
-\subsubsection{Error handling} % https://www.lurklurk.org/effective-rust/panic.html
-Testing that functions return the correct values based on \textit{correct} inputs are a crucial part of ensuring correctness. But what happens if you have unexpected inputs, maybe from the user of a CLI? This can lead to errors. So how do Rust allow us to deal with errors? There are two ways:
+\subsubsection{Error handling}\label{sec:rusterror} % https://www.lurklurk.org/effective-rust/panic.html
+Testing that functions return the correct values based on \textit{correct} inputs are a crucial part of ensuring correctness. But what happens if you have unexpected inputs? For example on the inputs a user to a CLI\@? This can lead to errors. So how do Rust allow us to deal with errors? There are two ways:
 \begin{itemize}
   \item Using a \rust{panic}: Stopping the execution of the program.
   \item Returning a \rust{Result<T, Err>}: A type that wraps the return value with an error value allowing the caller to handle the error.
 \end{itemize}
-
 So when is it appropriate to use a panic? The Rust book~\cite[ch.9.3]{rustlangRustProgramming} provides a good guideline for when to use panic.
-The general rule is that, if your code would end up in a bad state from which it can not recover it should panic. Everywhere else, you should return a \textit{Result}.
-An example of using the \rust{Result} type is shown below:
+The general rule is that, if your code would end up in a bad state from which it can not recover it should panic. Everywhere else, you should return a \rust{Result} type. In this way the caller can handle the error in the appropriate way for their use case.
 \begin{minted}{rust}
   fn sign(message: &[u8], secret_key: &[u8]) -> Result<Vec<u8>, Error> {
-  if secret_key.len() == 0 {
-    return Err(Error::SigningError);
+    if secret_key.len() == 0 {
+      return Err(Error::SigningError);
+    }
+    ... code that signs the message ...
+    Ok(signature)
   }
-  ... code that signs the message ...
-  Ok(signature)
+
+  fn main() {
+    let message = b"Hello, World!";
+    let sk = b"...";
+    let signature = sign(&message, &sk);
+
+    // You can match on the result to handle the error
+    match signature {
+      Ok(signature) => println!("Signature: {:?}", signature),
+      Err(e) => eprintln!("Error: {:?}", e),
+    }
+
+    // or you can use the methods supplied by the Result type
+    if (signature.is_ok()) {
+      println!("Signature: {:?}", signature.unwrap());
+    } 
   }
 \end{minted}
 There might be a number of reasons why a signature could not be generated, but a simple one that we want to relay to a potential user is that the secret key is invalid. In this case, we would return an error with the \textit{SigningError} variant. If a panic was used the caller of the sign function would not be able to recover from the error.
-In our implementation we have used the \textit{Result} type to handle errors. This functionality is similar to exceptions in other languages, allowing you to handle errors gracefully and provide meaningful error messages. As well as making our code reliable in the face of inevitable problems.
 
-\subsection{Traits}
+\subsection{Maintainable and readable code}
 
-\subsection{Constants} % Compile time
+\subsubsection{Generics}
+\subsubsection{Traits}
 
-\subsection{Build script}
+\subsection{Dynamic compilation}
+\todo{describe constants as a lead in to build script and feature flags}
 
+\subsubsection{Build script}
 
-\subsection{Feature flags}
+\subsubsection{Feature flags}
 
 \subsection{Rust optimizations}
 Blazingly fast code does not come without a cost. However, Rust offers several ways to optimize performance. In this section, we will introduce the techniques we employed. We will first explore simple methods to enhance performance, followed by more advanced techniques such as parallelization and SIMD.
