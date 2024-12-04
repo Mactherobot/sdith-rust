@@ -1051,7 +1051,7 @@ We set out to implement the SD-in-the-Head Protocol using a modern, well-maintai
 
 This section provides a detailed overview of our implementation. We begin with an introduction to the Rust programming language, explaining our rationale for choosing it and highlighting specific features that are relevant to the subsequent sections. Following this, we present a brief walkthrough of each module in our implementation, detailing how the code aligns with the SD-in-the-Head specification. Additionally, we describe the methods used to test and optimize these modules and discuss the challenges encountered during their development.
 
-\todo{FOr each section of code add following: What is it for (reference to spec section. What issues did we run into. Which Rust specific patterns are we utilizing. How are we testing it. )}
+\todo{For each section of code add following: What is it for (reference to spec section. What issues did we run into. Which Rust specific patterns are we utilizing. How are we testing it. )}
 
 code sections
 code re-usability with traits for categories.
@@ -1071,10 +1071,10 @@ The Rust programming language addresses memory safety through its unique \textit
 
 In addition to its focus on safety, Rust benefits from an extensive library of community-maintained documentation and resources~\cite{rustlangRustProgramming,rustlangPerformanceBook,lurklurkEffectiveRust}. These resources provide invaluable support for developers, enabling them to better understand the language's features and effectively utilize its capabilities.
 
-In this section we will give an overview of the key features of the Rust programming language that make it an ideal choice for this project as we aimed to build a robust by leveraging Rust's safety mechanisms, performance optimization capabilities, dynamic language features, and strong testing infrastructure.
+In this section we will give an overview of the key features of the Rust programming language that make it an ideal choice for this project as we aimed to build it robust by leveraging Rust's safety mechanisms, performance optimization capabilities, dynamic language features, and strong testing infrastructure.
 
 \subsection{Borrow checker}\label{sec:rustborrow} % mut references
-To ensure memory safety, Rust uses a borrow checker to prevent data races and memory leaks. We will now dive into the different aspects of the borrow checker and how it works in Rust.
+To ensure memory safety, Rust uses a borrow checker to prevent data races and memory leaks. We will now dive into the different aspects of how the borrow checker works in Rust. We will only cover the most important aspects off the borrow checker. More in depth information can be found in the official documentation~\cite{rustlangRustProgramming}.
 
 \subsubsection{The Stack and Heap}
 To understand how the borrow checker works in Rust, it is crucial to first grasp the distinction between the stack and the heap -- two memory management systems available in Rust~\cite[ch.4]{rustlangRustProgramming}, each with unique characteristics and use cases.
@@ -1117,14 +1117,70 @@ Now comes the problem of what happens in the following cases:
   let d = String::from("Through strength, I gain power");
   let v = d;
 \end{minted}
+\subsubsection*{Behavior of the String Literal \(d\)}
+
 \begin{itemize}
-  \item Case 1: The string literal \texttt{d} has the \textit{copy} trait and is copied on the stack.
-  \item Case 2: $d$ is now a pointer to the heap allocation of the String.
+  \item \textbf{Case 1:} If the string literal \(d\) implements the \textit{Copy} trait, its value is simply copied onto the stack. This means \(d\) remains accessible after being used or assigned elsewhere because its data was duplicated.
+
+  \item \textbf{Case 2:} If \(d\) is instead a \textit{pointer} to a heap-allocated string, it resides on the stack but points to data stored on the heap. When \(d\) is moved to another variable (e.g., \texttt{v}), the pointer itself is transferred to \texttt{v}. The heap-allocated data remains unchanged, but the ownership of the pointer shifts to \texttt{v}.
 \end{itemize}
 
-\subsubsection{Borrowing and references}
+\subsubsection*{What Happens After a Move?}
 
-\subsubsection{Lifetime}
+\begin{itemize}
+  \item \textbf{In Case 1:} Since \(d\) implements the \textit{Copy} trait, it is unaffected by the move. Copies of \(d\) exist independently on the stack, so using \(d\) after the move is perfectly safe.
+
+  \item \textbf{In Case 2:} Here, the pointer in \(d\) is moved to \texttt{v}. After this, \(d\) is no longer valid. Any attempt to use \(d\) would result in a compile-time error because \(d\)'s ownership has been transferred. This ensures \textit{memory safety} and prevents \textit{data races}.
+\end{itemize}
+
+\subsubsection*{Why the Restriction?}
+
+Allowing \(d\) to be used after the move would lead to undefined behavior. For instance, if multiple pointers were allowed to simultaneously access or modify the heap-allocated data, it could result in \textit{data races}. To avoid such risks, Rust enforces strict ownership rules. If you need to continue using \(d\) after a move, you must explicitly \textit{clone} the heap data before transferring ownership. This approach encourages developers to carefully manage how data is accessed and modified, promoting safe and predictable memory usage.
+
+\subsubsection{Ownership and Functions}\label{sec:ownership_and_functions} % (fold)
+Now that we have covered the basics of ownership, let's explore how it interacts with functions. When passing a value to a function, the function takes ownership of the value. This means that the function will manage the lifetime of the value, ensuring that it is not used after the function call, unless copied. A function can also return ownership of a value, allowing the caller to manage the lifetime of the returned value. Here's an example:
+\begin{minted}{rust}
+  fn take_and_give(d: String) -> String {
+    d
+  }
+\end{minted}
+In this example, the function \texttt{take\_and\_give} takes ownership of the \texttt{String} value \texttt{d} and returns ownership of the same value. But having to return ownership of values can be cumbersome, and gives a lot of boiler plate code:
+\begin{minted}{rust}
+  fn main() {
+    let v1 = vec![1, 2, 3];
+
+    let (v2, sum) = sum_vector(v1);
+    println!("The sum of the vector is: {}", sum);
+  }
+  
+  fn sum_vector(v1: Vec<i32>) -> (Vec<i32>, i32) {
+    let mut result = v1.iter().sum();
+    (v1, result)
+  }
+\end{minted}
+So how can we avoid this boilerplate of returning ownership? Rust provides a way of avoiding this transfor of ownership by using \textit{references}. 
+% subsubsection Ownership and Functions (end)
+
+\subsubsection{Borrowing and references}
+We saw how ownership works in the previous section, ensuring memory safety. However, there were some caviats for functions. In the previous example, the function \texttt{take\_and\_give} took ownership of the \texttt{String} value \texttt{d} and then returned ownership of the same value. This is fine, but it can be cumbersome to write functions that take ownership of values. To avoid this, Rust provides a feature called \textit{references}. A reference is a pointer to a value that does not own the value. Instead, it borrows the value for the duration of the reference. Here's an example:
+\begin{minted}{rust}
+  fn main() {
+    let v1 = vec![1, 2, 3];
+
+    let sum = sum_vector(&v1);
+    // v1 is now still valied because we borrowed it
+    println!("The sum of the vector is: {}", sum);
+  }
+  
+  fn sum_vector(v1: &Vec<i32>) -> i32 {
+    let mut result = v1.iter().sum();
+    result
+  }
+\end{minted}
+If we however, also wanted to mutate the vector, we could have done so by using the \texttt{mut} keyword to borrow a mutable reference. This would allow the function \textit{sum\_vector} to modify the vector.
+
+We have used this extensively in our implementation to ensure memory safety, but also to ensure that we optimize the code for performance and memory usage. We will go more into how we have used this when describing our architecture.
+
 
 % Reusing collections: https://nnethercote.github.io/perf-book/heap-allocations.html#reusing-collections
 % Bounds Checks: https://nnethercote.github.io/perf-book/bounds-checks.html
@@ -1160,7 +1216,7 @@ To restrict access to code within specific modules, we use the \textit{pub(crate
 Additionally, we selectively mark certain modules and functions with the \textit{pub} visibility modifier to export them for use in other crates. This approach is particularly useful when creating a library file that can be accessed by benchmarking files, as these files reside outside the main crate.
 
 \subsection{Correctness (Types and Testing)}
-When creating and iterating on software, it is crucial that you develop in a way that you can continually deliver functional and correct code. There are many patterns that help ensuring this. Rust provides several. in this section we will describe two -- Types and Automated tests.
+When creating and iterating on software, it is crucial that you develop in a way that you can continually deliver functional and correct code. There are many patterns that help ensuring this. Rust provides several. In this section we will describe two -- Types and Automated tests.
 
 \subsubsection{The Type System}
 Every value in Rust has a \textit{data type}. Programs written in Rust are \textit{statically typed}, meaning the type of each value must be determined at compile time. The type informs the compiler about what operations the value supports and helps catch errors before they reach runtime~\cite[ch.3.2]{rustlangRustProgramming}. Rust's compiler often infers types automatically, but if it cannot, you must explicitly annotate the type of the value. Consider the following example:
