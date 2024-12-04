@@ -1285,7 +1285,7 @@ The general rule is that, if your code would end up in a bad state from which it
 An example of using the \textit{Result} type is shown below:
 \begin{minted}{rust}
   fn sign(message: &[u8], secret_key: &[u8]) -> Result<Vec<u8>, Error> {
-  if something_went_wrong {
+  if secret_key.len() == 0 {
     return Err(Error::SigningError);
   }
   ... code that signs the message ...
