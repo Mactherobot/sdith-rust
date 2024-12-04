@@ -95,8 +95,14 @@ impl Keygen {
                 println!("{}", STANDARD.encode(sk.serialise()));
             }
 
+            let mut d = String::from("Peace is a lie");
+            d.push_str(", there is only passion.");
+            println!("{d}"); // Will print `Peace is a lie, there is only passion.`
+
             return Ok(false);
         }
+        let a: Vec<u8> = vec![1, 2, 3];
+        let b: [u8; 3] = [1, 2, 3];
 
         let path_arg = self.output.as_ref().unwrap();
         let mut path_buf = path_arg.clone();

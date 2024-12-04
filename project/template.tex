@@ -1073,69 +1073,90 @@ In addition to its focus on safety, Rust benefits from an extensive library of c
 
 In this section we will give an overview of the key features of the Rust programming language that make it an ideal choice for this project as we aimed to build it robust by leveraging Rust's safety mechanisms, performance optimization capabilities, dynamic language features, and strong testing infrastructure.
 
-\subsection{Borrow checker}\label{sec:rustborrow} % mut references
-To ensure memory safety, Rust uses a borrow checker to prevent data races and memory leaks. We will now dive into the different aspects of how the borrow checker works in Rust. We will only cover the most important aspects off the borrow checker. More in depth information can be found in the official documentation~\cite{rustlangRustProgramming}.
+\subsection{Memory safety}\label{sec:rustborrow} % mut references
+Rust guarantees both type safety (\autoref{sec:rusttypes}) and memory safety. While we will not delve into the details, significant progress has been made toward formal proofs of these guarantees~\cite{jung2017rustbelt}. Unlike many other languages that rely on sophisticated garbage collection mechanisms to ensure memory safety, Rust avoids the associated performance overhead through two key features: the \textit{borrow checker} and \textit{lifetimes}.
+
+In this section, we will explore the fundamental aspects of how the borrow checker and lifetimes work. Only the most critical aspects will be discussed, as more comprehensive information is available in the official documentation~\cite{rustlangRustProgramming}.
+
 
 \subsubsection{The Stack and Heap}
-To understand how the borrow checker works in Rust, it is crucial to first grasp the distinction between the stack and the heap -- two memory management systems available in Rust~\cite[ch.4]{rustlangRustProgramming}, each with unique characteristics and use cases.
+First, it is crucial to first grasp the distinction between the stack and the heap. These are two memory management systems available at runtime~\cite[ch.4]{rustlangRustProgramming}, each with unique characteristics and use cases.
 
-The \textbf{stack} stores values in a last-in-first-out (LIFO) order, meaning the last value added is the first to be removed. You can think of it like a stack of thermal detonators in a crate: the last detonator placed in the crate is the first one you grab when you need it. All data stored on the stack must have a fixed, known size at compile time.
+\begin{definition}[The Stack]
+  The stack stores values in a last-in-first-out (LIFO) order, meaning the last value added is the first to be removed. You can think of it like a stack of thermal detonators in a crate: the last detonator placed in the crate is the first one you grab when you need it. All data stored on the stack must have a fixed, known size at compile time. This gives the stack its \textit{fixed-sized} structure.
+\end{definition}
 
-The \textbf{heap}, in contrast, is more flexible. When you allocate memory for a value on the heap, you request a specific amount of memory, and the heap manager finds a suitable location for it. A helpful analogy for the heap is docking a spaceship on Coruscant: you tell the spaceport how large your ship is, and they assign you to a landing pad that fits your ship's dimensions, noting where you've been docked.
+\begin{definition}[The Heap]
+  The heap, in contrast, is more flexible. When you allocate memory for a value on the heap, you request a specific amount of memory, and the heap manager finds a suitable location for it. A helpful analogy for the heap is docking a spaceship on Coruscant: you tell the spaceport how large your ship is, and they assign you to a landing pad that fits your ship's dimensions, noting where you've been docked.
+\end{definition}
 
-As you might have guessed, the stack is faster than the heap. This is because the stack is a fixed-size structure, while the heap is a variable-sized structure. However, the stack has a fixed size, which means that it can only store a limited number of values. If you try to allocate more memory than the stack can hold, you will get an error. The heap, on the other hand, can store an unlimited number of values, as it is able to dynamically allocate memory as needed.
+\subsubsection*{Performance versus Dynamism}
+
+Between the two systems, there exists a \textit{performance versus dynamism} trade-off. Consider the following code example:
+
+\begin{minted}{rust}
+  let a: Vec<u8> = vec![1, 2, 3];
+  let b: [u8; 3] = [1, 2, 3];
+\end{minted}
+
+This code demonstrates two data types being allocated. The first, \rust{a}, is a vector type, while the second, \rust{b}, is a fixed-size array type. The vector type is always allocated on the heap, whereas the fixed array is allocated on the stack. Pushing  and accessing the stack is faster than for on the heap. Therefore, keeping values on the stack tends to outperform heap allocations. This is because heap allocation involves searching for a suitable location in memory to store the data. Accessing data on the heap is also slower as you have to follow a pointer. Note that there are several optimisations you can do when allocating to the heap, like changing the allocator for specific use cases, instantiating the vector with a capacity or the \rust{SmallVec} that dynamically changes from the stack to the heap when allocation surpasses its defined capacity. See~\cite{rustlangPerformanceBook} for more.
+
+However, the vector type is far more dynamic. For instance, using the \rust{push} method, you can add more elements to a vector, and the allocator will automatically find additional space on the heap if needed. Conversely, stack allocations in Rust require that the size of the data be known at compile time, which imposes significant restrictions on how dynamic your code can be. This limitation became particularly evident when designing around the different category variants in \autoref{sub:categories}. However, this also ensures at compile time that you cannot access memory outside of the stack, a common vulnerability exposed in C and C++.
+
+Additionally, the stack, due to its fixed-size structure, can only hold a limited amount of data. Attempting to allocate more memory than the stack can accommodate results in a \textit{stack overflow} error. In contrast, the heap offers virtually unlimited storage, as it can dynamically allocate memory as required.
 
 \subsubsection{Ownership}
-Now that we have given a brief introduction to the how the stack and the heap work, we can delve into the ownership system in Rust. The ownership system is a crucial aspect of Rust's memory management, as it ensures that memory is allocated and deallocated correctly. In Rust, every value has a unique owner, and there can only be one owner at a time. When a value is created, it is assigned to the current scope, and when the scope ends, the value is dropped. This process is known as \textbf{ownership transfer}.
-A simple example of how the scope works is as follows:
+Now that we have given a brief introduction to the memory allocation, we can delve into the \textit{ownership system}. This system is a crucial aspect of Rust's memory management, as it ensures that memory is allocated and deallocated correctly. Ownership in Rust follows three rules
+\begin{enumerate}[parsep=0pt, itemsep=0pt]
+  \item Each value has an \textit{owner}
+  \item There can only be one owner at one time
+  \item When a owner goes out of scope, the value will be \textit{dropped}.
+\end{enumerate}
+First, we consider the \textit{variable scope} in the following example
 \begin{minted}{rust}
 {
   // d can not be accessed yet because it has not been assigned to the current scope
   let d = "Peace is a lie";
-
-  // Now we can use d
- 
+  println!("{d}") // Now we can use d
 } // d is dropped here
 \end{minted}
-In this example, we used a string literal to initialize the variable \texttt{d}. A string literal is a statically allocated string that is stored in the binary.
-Now to illustrate the ownership, we need a data type that is more complex than a string literal. The string literal is of known size and is allocated on the stack, meaning that it can be easily copied on stack and popped when the current scope ends. This however means that we can not mutate the string literal by some user input. Instead, we will use a \texttt{String} type, which is a dynamically allocated string that can be mutated:
-\begin{minted}{rust}
-  let d = String::from("Peace is a lie");
+In this example, the variable \rust{d} comes into the scope and remains valid until the scope is closed. This is similar to most other programming languages. This works because the string literal \rust{"Peace is a lie"} is of known size and is allocated on the stack, meaning that it can be easily copied on stack and popped when the current scope ends. It also means that while it is efficient and fast, the variable \rust{d} cannot be mutated after the fact.
 
-  d.pust_str(", there is only passion.");
-  
-  println!("{d}"); // Will print `Peace is a lie, there is only passion.`
-\end{minted}
-Here the idea is that because a string literal is off a known size at compile time it can be allocated on the stack. Whereas the type \textit{String} is dynamically allocated we would have to predict every size string in order to allocate a large enough space on the stack. This is the reason it is allocated on the heap, and a \textit{pointer} is instead saved on the stack.
-Now comes the problem of what happens in the following cases:
+\subsubsection*{Variable and data interaction with \textit{Move}}
+
+To illustrate where Rust differs, we need a data type that is more complex and stored on the heap instead. We will change the example to use a \rust{String} type
 \begin{minted}{rust}
-  // Case 1: Stack allocated types
+  let mut d = String::from("Peace is a lie");
+  d.pust_str(", there is only passion."); // We can mutate d
+  println!("{d}"); // prints "Peace is a lie, there is only passion."
+\end{minted}
+A variable instantiated with the \rust{String} type is dynamically allocated on the heap, and a \textit{pointer} is instead saved on the stack. Now consider both types of assignments with a \textit{re-assignment}
+\begin{minted}{rust}
+  // Case 1: Stack allocated type
   let d = "Through passion, I gain strength"
   let v = d;
 
-  // Case 2: Heap allocated types
+  // Case 2: Heap allocated type
   let d = String::from("Through strength, I gain power");
   let v = d;
 \end{minted}
-\subsubsection*{Behavior of the String Literal \(d\)}
 
-\begin{itemize}
-  \item \textbf{Case 1:} If the string literal \(d\) implements the \textit{Copy} trait, its value is simply copied onto the stack. This means \(d\) remains accessible after being used or assigned elsewhere because its data was duplicated.
+For Case 1, if the string literal \rust{d} implements the \textit{Copy} trait. This means that when we assign \rust{let v = d}, its value can copied onto the stack with a negligent performance hit. This means \rust{d} remains accessible after being used or assigned elsewhere because its data was duplicated.
 
-  \item \textbf{Case 2:} If \(d\) is instead a \textit{pointer} to a heap-allocated string, it resides on the stack but points to data stored on the heap. When \(d\) is moved to another variable (e.g., \texttt{v}), the pointer itself is transferred to \texttt{v}. The heap-allocated data remains unchanged, but the ownership of the pointer shifts to \texttt{v}.
-\end{itemize}
-
-\subsubsection*{What Happens After a Move?}
-
-\begin{itemize}
-  \item \textbf{In Case 1:} Since \(d\) implements the \textit{Copy} trait, it is unaffected by the move. Copies of \(d\) exist independently on the stack, so using \(d\) after the move is perfectly safe.
-
-  \item \textbf{In Case 2:} Here, the pointer in \(d\) is moved to \texttt{v}. After this, \(d\) is no longer valid. Any attempt to use \(d\) would result in a compile-time error because \(d\)'s ownership has been transferred. This ensures \textit{memory safety} and prevents \textit{data races}.
-\end{itemize}
+However, for Case 2; The variable \rust{d} is instead a \textit{pointer} to a heap-allocated string, it resides on the stack but points to data stored on the heap. When \rust{d} is moved to another variable (e.g., \texttt{v}), the pointer itself is transferred to \texttt{v}. The heap-allocated data remains unchanged, but the ownership of the pointer shifts to \texttt{v}. This is called a \textit{move} as ownership is transferred from one owner \rust{d} to another, \rust{v}. After the move, \rust{d} is no longer valid, and any attempt to use it would result in a compile-time error.
+\begin{minted}{rust}
+  let d = String::from("Through strength, I gain power");
+  //  ^ move occurs because `d` has type `String`, which does not implement the `Copy` trait
+  let v = d;
+  //      ^ value moved here
+  println!("{d}"); 
+  //        ^^^ value borrowed here after move
+  // error[E0382]: borrow of moved value: `d`
+\end{minted}
 
 \subsubsection*{Why the Restriction?}
 
-Allowing \(d\) to be used after the move would lead to undefined behavior. For instance, if multiple pointers were allowed to simultaneously access or modify the heap-allocated data, it could result in \textit{data races}. To avoid such risks, Rust enforces strict ownership rules. If you need to continue using \(d\) after a move, you must explicitly \textit{clone} the heap data before transferring ownership. This approach encourages developers to carefully manage how data is accessed and modified, promoting safe and predictable memory usage.
+Allowing \rust{d} to be used after the move could lead to undefined behavior. For one, due to the variable scoping, the runtime would drop the data for both \rust{d} and \rust{v}. As these would be pointing to the same data, this would case a \textit{double free} memory safety bug. Furthermore, if multiple pointers were allowed to simultaneously access or modify the heap-allocated data, it could result in \textit{data races}. To avoid such risks and ensure memory safety, Rust enforces its ownership rules. If you need to continue using \rust{d} after a move, you must explicitly \textit{clone} the heap data before transferring ownership. This approach encourages developers to carefully manage how data is accessed and modified, promoting safe and predictable memory usage.
 
 \subsubsection{Ownership and Functions}\label{sec:ownership_and_functions} % (fold)
 Now that we have covered the basics of ownership, let's explore how it interacts with functions. When passing a value to a function, the function takes ownership of the value. This means that the function will manage the lifetime of the value, ensuring that it is not used after the function call, unless copied. A function can also return ownership of a value, allowing the caller to manage the lifetime of the returned value. Here's an example:
@@ -1158,7 +1179,7 @@ In this example, the function \texttt{take\_and\_give} takes ownership of the \t
     (v1, result)
   }
 \end{minted}
-So how can we avoid this boilerplate of returning ownership? Rust provides a way of avoiding this transfor of ownership by using \textit{references}. 
+So how can we avoid this boilerplate of returning ownership? Rust provides a way of avoiding this transfor of ownership by using \textit{references}.
 % subsubsection Ownership and Functions (end)
 
 \subsubsection{Borrowing and references}
@@ -1180,6 +1201,8 @@ We saw how ownership works in the previous section, ensuring memory safety. Howe
 If we however, also wanted to mutate the vector, we could have done so by using the \texttt{mut} keyword to borrow a mutable reference. This would allow the function \textit{sum\_vector} to modify the vector.
 
 We have used this extensively in our implementation to ensure memory safety, but also to ensure that we optimize the code for performance and memory usage. We will go more into how we have used this when describing our architecture.
+
+\subsubsection{Lifetimes}
 
 
 % Reusing collections: https://nnethercote.github.io/perf-book/heap-allocations.html#reusing-collections
@@ -1218,7 +1241,7 @@ Additionally, we selectively mark certain modules and functions with the \textit
 \subsection{Correctness (Types, Testing and Errors)}
 When creating and iterating on software, it is crucial that you develop in a way that you can continually deliver functional and correct code. There are many patterns that help ensuring this. Rust provides several. In this section we will describe two -- Types and Automated tests.
 
-\subsubsection{The Type System}
+\subsubsection{The Type System}\label{sec:rusttypes}
 Every value in Rust has a \textit{data type}. Programs written in Rust are \textit{statically typed}, meaning the type of each value must be determined at compile time. The type informs the compiler about what operations the value supports and helps catch errors before they reach runtime~\cite[ch.3.2]{rustlangRustProgramming}. Rust's compiler often infers types automatically, but if it cannot, you must explicitly annotate the type of the value. Consider the following example:
 
 \begin{minted}{rust} 
@@ -1267,7 +1290,7 @@ To run the tests in our implementation you simply run the following
   running 1 test
   test gf256::arithmetic_tests::test_add_associativity ... ok
 \end{minted}
-Crucially, this test allows us to continue developing or optimising the finite field while rerunning the tests to verify that the property remains valid. The more rigourous we test our function, the easier we can debug issues or bugs that may arise. 
+Crucially, this test allows us to continue developing or optimising the finite field while rerunning the tests to verify that the property remains valid. The more rigourous we test our function, the easier we can debug issues or bugs that may arise.
 
 Writing good tests is a subject extensive enough to warrant its own discussion, and delving into the theory behind it is beyond the scope of this report. From the outset, we designed our implementation with testing in mind. This approach ensures that we can iteratively develop each module and confirm that it adheres to theoretical expectations and the given specification.
 
