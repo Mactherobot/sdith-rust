@@ -667,7 +667,7 @@ Otherwise, the parties will accept with probability $\frac{1}{|\mathbb{F}|}$ fol
 Building upon the MPC protocol above, \autoref{def:cut-and-choose} outlines the fundamental concept of the cut-and-choose technique. For a more comprehensive protocol, refer to the \textit{HVZKAoK Protocol using Cut and Choose} discussed in~\cite{baum2020concretely}. Note
 
 \begin{definition}[ZK from Cut-and-Choose (Multiplication)]\label{def:cut-and-choose}
-  Denote the security parameters $M, N, \tau$ a secure hash function \autoref{sec:prelim_hash} and a \textit{Random Oracle-based commitment scheme}. Given a $(N-1)$-private MPC protocol $\Pi_C$ for a circuit $C$ and an ideal functionality $\mathcal{F}$. \textit{Note} that we assume that there is only one multiplication gate in the circuit, to align with our purposes.
+  Denote the security parameters $M$ the number of evaluations, $N$ the number of parties, $\tau$ the security parameter, a secure hash function \autoref{sec:prelim_hash} and a \textit{Random Oracle-based commitment scheme}. Given a $(N-1)$-private MPC protocol $\Pi_C$ for a circuit $C$ and an ideal functionality $\mathcal{F}$. \textit{Note} that we assume that there is only one multiplication gate in the circuit, to align with our purposes.
   \begin{enumerate}[itemsep=0pt, parsep=0pt]
     \item\label{itm:cut-choose-r1} For each $e \in [M]$ and for each party $P_i \in [N]$:
     \begin{enumerate}[nolistsep]
@@ -682,7 +682,7 @@ Building upon the MPC protocol above, \autoref{def:cut-and-choose} outlines the 
       \item $\mathcal{P}$ generates random sharings $w_i$ of the input $w$ using $sd_{e,i}$.
     \end{enumerate}
     \item $\mathcal{P}$ commits to the triples (including $\Delta_e$) and a sharing of the input $w$ along with the seeds $sd_{e,i}$\footnote{In order to further reduce communication all commitments can be hashed together to one hash.}
-    \item $\mathcal{V}$ chooses a random challenge $E \subset [M]$ such that $|E| = \tau$ and sends it to $\mathcal{P}$. Set $\bar{E} = [M] \ E$
+    \item $\mathcal{V}$ chooses a random challenge $E \subset [M]$ such that $|E| = \tau$ and sends it to $\mathcal{P}$. Set $\bar{E} = [M] \setminus E$ 
           \item\label{itm:cut-choose-r3} $\mathcal{P}$ sends the seeds $sd_e$ to $\mathcal{V}$ who verifies that the triples are correctly generated per step~\ref{itm:cut-choose-r1}
     \item $\mathcal{P}$ runs the MPC protocol $\Pi_C$ on the remaining $M-\tau$ pre-computed triples with different randomness $r_e$ resulting in shares $\alpha_e, \beta_e$.
     \item $\mathcal{P}$ commits to the views (\autoref{def:mpc-view}) of $\Pi_C$.
