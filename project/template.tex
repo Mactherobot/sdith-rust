@@ -8,7 +8,7 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage[outputdir=out]{minted}
-\setminted[rust]{breaklines}
+\setminted[rust]{breaklines,autogobble}
 \usepackage[]{amsmath}
 \usepackage{epsfig}
 \usepackage[T1]{fontenc}
@@ -1074,10 +1074,18 @@ In addition to its focus on safety, Rust benefits from an extensive library of c
 In this section we will give an overview of the key features of the Rust programming language that make it an ideal choice for this project as we aimed to build it robust by leveraging Rust's safety mechanisms, performance optimization capabilities, dynamic language features, and strong testing infrastructure.
 
 \subsection{Memory safety}\label{sec:rustborrow} % mut references
-Rust guarantees both type safety (\autoref{sec:rusttypes}) and memory safety. While we will not delve into the details, significant progress has been made toward formal proofs of these guarantees~\cite{jung2017rustbelt}. Unlike many other languages that rely on sophisticated garbage collection mechanisms to ensure memory safety, Rust avoids the associated performance overhead through two key features: the \textit{borrow checker} and \textit{lifetimes}.
+Rust guarantees both type safety (\autoref{sec:rusttypes}) and memory safety. While we will not delve into the details, significant progress has been made toward formal proofs of these guarantees~\cite{jung2017rustbelt}. Unlike many other languages that rely on sophisticated garbage collection mechanisms to ensure memory safety, Rust avoids the associated performance overhead through two key features: the \textit{ownership} and \textit{lifetimes}. Along with a compile time functionality called the \textit{borrow checker}, these features ensure the memory safety of Rust programs. While the borrow checker is often the biggest hurdle for new Rust developers, it is also the feature that makes Rust so powerful.
 
-In this section, we will explore the fundamental aspects of how the borrow checker and lifetimes work. Only the most critical aspects will be discussed, as more comprehensive information is available in the official documentation~\cite{rustlangRustProgramming}.
+In this section, we will explore the fundamental aspects of how the borrow checker and ownership work. Only the most critical aspects will be discussed, as more comprehensive information is available in the official documentation~\cite{rustlangRustProgramming}.
 
+\subsubsection{Data races vulnerability}
+In the section, we consider the problem of \textit{data races}. These are similar to a race condition and cause undefined behavior that in the end can lead to security vulnerabilities. They occur when
+\begin{enumerate}[parsep=0pt, itemsep=0pt]
+  \item Two or more pointers access the same memory location concurrently.
+  \item At least one of the pointers is being used to write to the memory location.
+  \item The is no mechanism to synchronize the data access
+\end{enumerate}
+In Rust, the borrow checker ensures that no data races can occur and it diagnoses them at compile time.
 
 \subsubsection{The Stack and Heap}
 First, it is crucial to first grasp the distinction between the stack and the heap. These are two memory management systems available at runtime~\cite[ch.4]{rustlangRustProgramming}, each with unique characteristics and use cases.
@@ -1141,9 +1149,9 @@ A variable instantiated with the \rust{String} type is dynamically allocated on 
   let v = d;
 \end{minted}
 
-For Case 1, if the string literal \rust{d} implements the \textit{Copy} trait. This means that when we assign \rust{let v = d}, its value can copied onto the stack with a negligent performance hit. This means \rust{d} remains accessible after being used or assigned elsewhere because its data was duplicated.
+For Case 1, if the string literal \rust{d} implements the \textit{Copy} trait. This means that when we assign \rust{let v = d}, its value can copied onto the stack with a negligent performance hit. This means \rust{d} remains accessible after being used or assigned elsewhere because its data was duplicated. Due to the immutability and fixed size of the string literal, this operation is also memory safe.
 
-However, for Case 2; The variable \rust{d} is instead a \textit{pointer} to a heap-allocated string, it resides on the stack but points to data stored on the heap. When \rust{d} is moved to another variable (e.g., \texttt{v}), the pointer itself is transferred to \texttt{v}. The heap-allocated data remains unchanged, but the ownership of the pointer shifts to \texttt{v}. This is called a \textit{move} as ownership is transferred from one owner \rust{d} to another, \rust{v}. After the move, \rust{d} is no longer valid, and any attempt to use it would result in a compile-time error.
+However, for Case 2; The variable \rust{d} is instead a \textit{pointer} to a heap-allocated string, it resides on the stack but points to data stored on the heap. When \rust{d} is moved to another variable (e.g., \texttt{v}), the pointer itself is transferred to \texttt{v} and the heap-allocated data remains unchanged. Ownership of the pointer is moved to \texttt{v}. This is called a \textit{move}. After the move, \rust{d} is no longer valid, and any attempt to use it would result in a compile-time error.
 \begin{minted}{rust}
   let d = String::from("Through strength, I gain power");
   //  ^ move occurs because `d` has type `String`, which does not implement the `Copy` trait
@@ -1156,58 +1164,118 @@ However, for Case 2; The variable \rust{d} is instead a \textit{pointer} to a he
 
 \subsubsection*{Why the Restriction?}
 
-Allowing \rust{d} to be used after the move could lead to undefined behavior. For one, due to the variable scoping, the runtime would drop the data for both \rust{d} and \rust{v}. As these would be pointing to the same data, this would case a \textit{double free} memory safety bug. Furthermore, if multiple pointers were allowed to simultaneously access or modify the heap-allocated data, it could result in \textit{data races}. To avoid such risks and ensure memory safety, Rust enforces its ownership rules. If you need to continue using \rust{d} after a move, you must explicitly \textit{clone} the heap data before transferring ownership. This approach encourages developers to carefully manage how data is accessed and modified, promoting safe and predictable memory usage.
+Allowing \rust{d} to be used after the move could lead to undefined behavior. For one, due to the variable scoping, the runtime would drop the data for both \rust{d} and \rust{v}. As these would be pointing to the same data, this would case a \textit{double free} memory safety bug. Furthermore, if multiple pointers were allowed to simultaneously access or modify the heap-allocated data, it could result in data races. To avoid such risks and ensure memory safety, Rust enforces its ownership rules. If you need to continue using \rust{d} after a move, you must explicitly \textit{clone} the heap data before transferring ownership. This approach encourages developers to carefully manage how data is accessed and modified, promoting safe and predictable memory usage.
 
-\subsubsection{Ownership and Functions}\label{sec:ownership_and_functions} % (fold)
-Now that we have covered the basics of ownership, let's explore how it interacts with functions. When passing a value to a function, the function takes ownership of the value. This means that the function will manage the lifetime of the value, ensuring that it is not used after the function call, unless copied. A function can also return ownership of a value, allowing the caller to manage the lifetime of the returned value. Here's an example:
+\subsubsection{Functions and ownership}\label{sec:rustlifetimes} % (fold)
+Now that we have covered the basics of ownership, we explore how it interacts with functions. When passing a value to a function, the function takes ownership of the value. This means that the function takes over managing the \textit{lifetime} of the value, ensuring that it is not used after the function call, unless it is copied.
 \begin{minted}{rust}
-  fn take_and_give(d: String) -> String {
-    d
-  }
-\end{minted}
-In this example, the function \texttt{take\_and\_give} takes ownership of the \texttt{String} value \texttt{d} and returns ownership of the same value. But having to return ownership of values can be cumbersome, and gives a lot of boiler plate code:
-\begin{minted}{rust}
-  fn main() {
-    let v1 = vec![1, 2, 3];
+  // Case 1: Stack allocated type
+  fn makes_copy(some_integer: i32) { // some_integer comes into scope
+    println!("{some_integer}");
+  } // Here, some_integer goes out of scope. Nothing special happens.
 
-    let (v2, sum) = sum_vector(v1);
-    println!("The sum of the vector is: {}", sum);
-  }
-  
-  fn sum_vector(v1: Vec<i32>) -> (Vec<i32>, i32) {
-    let mut result = v1.iter().sum();
-    (v1, result)
-  }
+  // Case 2: Heap allocated type
+  fn takes_ownership(some_string: String) { // some_string comes into scope
+    println!("{some_string}");
+  } // Here, some_string goes out of scope and `drop` is called.
+    // The memory on the heap is freed.
 \end{minted}
-So how can we avoid this boilerplate of returning ownership? Rust provides a way of avoiding this transfor of ownership by using \textit{references}.
-% subsubsection Ownership and Functions (end)
 
-\subsubsection{Borrowing and references}
-We saw how ownership works in the previous section, ensuring memory safety. However, there were some caviats for functions. In the previous example, the function \texttt{take\_and\_give} took ownership of the \texttt{String} value \texttt{d} and then returned ownership of the same value. This is fine, but it can be cumbersome to write functions that take ownership of values. To avoid this, Rust provides a feature called \textit{references}. A reference is a pointer to a value that does not own the value. Instead, it borrows the value for the duration of the reference. Here's an example:
+In Case 1, again the structure of the stack and known compile time size, nothing special needs to happen. However, in Case 2, the function \rust{takes_ownership} takes ownership of the \rust{String} value \rust{some_string}. When the function ends, the \rust{String} value is dropped, and the memory on the heap is freed. This is because the function takes ownership of the value, and the value is no longer valid after the function call.
+
+However, a function can also take ownership of a value. Here's an example:
 \begin{minted}{rust}
   fn main() {
-    let v1 = vec![1, 2, 3];
-
-    let sum = sum_vector(&v1);
-    // v1 is now still valied because we borrowed it
-    println!("The sum of the vector is: {}", sum);
+    let d = String::from("hello");
+    let (v, len) = calculate_length(d);
+    println!("The length of '{v}' is {len}."); // v is valid
+    println!("The length of '{d}' is {len}."); // d is not valid
+    //                        ^ value borrowed here after move
+    // error[E0382]: borrow of moved value: `d`
   }
-  
-  fn sum_vector(v1: &Vec<i32>) -> i32 {
-    let mut result = v1.iter().sum();
-    result
+
+  fn calculate_length(s: String) -> (String, usize) {
+    let length = s.len();
+    (s, length)
   }
 \end{minted}
-If we however, also wanted to mutate the vector, we could have done so by using the \texttt{mut} keyword to borrow a mutable reference. This would allow the function \textit{sum\_vector} to modify the vector.
+The function \rust{fn calculate_length()} takes a pointer and the ownership of the \rust{String} value \rust{d}. It returns the same pointer and ownership of the value along with the computed value. Notice that the ownership of the value works the same as it did before with variable assignment. The function \rust{calculate_length} takes ownership of the value, and \rust{d} is no longer valid after the function call.
 
-We have used this extensively in our implementation to ensure memory safety, but also to ensure that we optimize the code for performance and memory usage. We will go more into how we have used this when describing our architecture.
+
+\subsubsection{Borrowing with references}
+However, often it is tedious to keep transferring ownership of values, whenever they need to be used in a function. So how can we avoid this boilerplate of returning ownership? Rust provides a way of avoiding this transfor of ownership by using \textit{references}. References allow you to \textit{borrow} the value without taking ownership of it. This is done by using the \rust{&} symbol. Consider the example
+\begin{minted}{rust}
+  fn main() {
+    let d = String::from("hello");
+    let len = calculate_length(&d);
+    println!("The length of '{d}' is {len}."); // d is valid
+  }
+
+  fn calculate_length(s: &String) -> (String, usize) {
+    //                   ^ the function takes a reference to a String with the `&` symbol
+    s.len()
+  }
+\end{minted}
+
+In this way, the function variables \rust{s} never takes ownership of \rust{d}, meaning that it is not dropped when the function call ends. We call the action of creating a reference \textit{borrowing}.
+
+\subsubsection{Mutable references}
+However references have their limitations. The reference is immutable, meaning that we cannot modify \rust{s}. If we wanted to modify the value, we would need to use a \textit{mutable reference}.
+
+\begin{minted}{rust}
+  fn main() {
+    let mut d = String::from("hello");
+    modify(&mut d);
+  }
+  
+  fn modify(s: &mut String) {
+      s.push_str(", world");
+  }
+ \end{minted}
+
+With the \rust{&mut} annotation we tell the compiler that we want to modify the value. This is a powerful feature, but it comes with restrictions. If you have a mutable reference to a value, you can have no other references to that value to prevent data races.
+\begin{minted}{rust}
+  let mut s = String::from("hello");
+
+  let r1 = &s;
+  //       ^^^^^^ immutable borrow occurs here
+  let r2 = &mut s;
+  //       ^^^^^^ mutable borrow occurs here
+
+  println!("{}, {}", r1, r2);
+  //                 ^^ immutable borrow later used here
+  // error[E0502]: cannot borrow `s` as mutable because it is also borrowed as immutable
+\end{minted}
+The compiler eases these restrictions as it can determine the lifetime of the references. Consider the following example
+\begin{minted}{rust}
+  let mut s = String::from("hello");
+
+  let r1 = &s; // no problem
+  let r2 = &s; // no problem
+  println!("{r1} and {r2}");
+  // variables r1 and r2 will not be used after this point
+
+  let r3 = &mut s; // no problem
+  println!("{r3}");
+\end{minted}
+The last borrow is valid because the previous borrows are no longer in scope. The compiler can determine that the borrows will not be used after the last borrow.
 
 \subsubsection{Lifetimes}
+The \textit{lifetime} of an value on the stack is the duration that an value is guaranteed to be valid in the scope. Most often, the developer will not have to ever worry about the lifetime as the compiler will infer it. Lifetimes of a value starts when it is assigned ownership and ends when it gets dropped or the ownership is moved.
+\begin{minted}{rust}
+  let r: &Item;
+  {
+    let item = Item { contents: 42 };
+    //  ^^^^ binding `item` is declared here
+    r = &item;
+    //  ^^^^^ borrowed value does not live long enough
+  }
+  println!("r.contents = {}", r.contents);
+  //                          ^^^^^^^^^^ borrow later used here
+  // error[E0597]: `item` does not live long enough
+\end{minted}
+The Rust compiler can
 
-
-% Reusing collections: https://nnethercote.github.io/perf-book/heap-allocations.html#reusing-collections
-% Bounds Checks: https://nnethercote.github.io/perf-book/bounds-checks.html
-% Alternative allocators: https://nnethercote.github.io/perf-book/build-configuration.html#alternative-allocators
 \subsection{Modules}
 Rust provides a module system that allow you to organize your code into logical units. Making it it easier to understand and maintain the codebase. A module is a collection of related items, such as functions, structs, and constants, that are grouped together. Modules can be nested, allowing for a hierarchical structure of code.
 We utilized these features to organize our logic effectively, such as encapsulating field arithmetic within a module and separating components into subfolders and subroutines related to the main signature algorithm.
@@ -1297,15 +1365,15 @@ Writing good tests is a subject extensive enough to warrant its own discussion, 
 \todo{finish this segment}
 
 \subsubsection{Error handling} % https://www.lurklurk.org/effective-rust/panic.html
-Testing that functions return the correct values based on \textit{correct} inputs are a crucial part of ensuring correctness. But what happens if you have unexpected inputs, maybe from the user of a CLI? This can lead to errors. So how do Rust allow us to deal with errors? There are two ways: 
+Testing that functions return the correct values based on \textit{correct} inputs are a crucial part of ensuring correctness. But what happens if you have unexpected inputs, maybe from the user of a CLI? This can lead to errors. So how do Rust allow us to deal with errors? There are two ways:
 \begin{itemize}
-  \item Using a \textbf{panic}: Stopping the execution of the program. 
-  \item Returning a \textbf{Result}: A type that wraps the return value with an error value allowing the caller to handle the error.
+  \item Using a \rust{panic}: Stopping the execution of the program.
+  \item Returning a \rust{Result<T, Err>}: A type that wraps the return value with an error value allowing the caller to handle the error.
 \end{itemize}
 
-So when is it appropriate to use a panic? The Rust book~\cite[ch.9.3]{rustlangRustProgramming} provides a good guideline for when to use panic. 
+So when is it appropriate to use a panic? The Rust book~\cite[ch.9.3]{rustlangRustProgramming} provides a good guideline for when to use panic.
 The general rule is that, if your code would end up in a bad state from which it can not recover it should panic. Everywhere else, you should return a \textit{Result}.
-An example of using the \textit{Result} type is shown below:
+An example of using the \rust{Result} type is shown below:
 \begin{minted}{rust}
   fn sign(message: &[u8], secret_key: &[u8]) -> Result<Vec<u8>, Error> {
   if secret_key.len() == 0 {
@@ -1432,7 +1500,7 @@ This setup provided a diverse testing environment, ensuring our benchmarks accou
 \subsection{Feature flags}\label{sub:feature_flags} % (fold)
 To maintain a baseline implementation while enabling flexibility to switch between different NIST categories, we utilized Rust's feature flags. These flags support conditional compilation, allowing multiple implementations of the same function to coexist in the codebase. Only the specific implementation required is compiled, based on the flag provided to the compiler. This approach made it possible to test individual optimizations in isolation, rather than applying all optimizations simultaneously.
 
-The way we implemented this was by using the \texttt{cfg} attribute. This attribute allows us to specify a feature flag, which can be used to conditionally compile code. For example, we can use the following code to conditionally compile a function:
+The way we implemented this was by using the \rust{cfg} attribute. This attribute allows us to specify a feature flag, which can be used to conditionally compile code. For example, we can use the following code to conditionally compile a function:
 \begin{minted}{rust}
 #[cfg(not(feature = "simd"))]
 pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {

@@ -95,10 +95,6 @@ impl Keygen {
                 println!("{}", STANDARD.encode(sk.serialise()));
             }
 
-            let mut d = String::from("Peace is a lie");
-            d.push_str(", there is only passion.");
-            println!("{d}"); // Will print `Peace is a lie, there is only passion.`
-
             return Ok(false);
         }
         let a: Vec<u8> = vec![1, 2, 3];
