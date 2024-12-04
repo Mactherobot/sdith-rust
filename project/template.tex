@@ -1328,11 +1328,14 @@ In our implementation we have used the \textit{Result} type to handle errors. Th
 \subsection{Feature flags}
 
 \subsection{Rust optimizations}
+Blazingly fast code does not come for free. But in Rust there are several ways to optimize code. In this section we will introduce the ways that we have used. First we will look at simple ways to improve performance. Then go into more advanced techniques, such as parallelisation and SIMD.
 
 \subsubsection{Inlining}
-
+A subtle but effective way to improve performance is to inline functions that are called many times, this removes the overhead of the function call. The Rust compiler will automatically inline functions if they are small enough. But there are some cases where this is not enough and the compiler does not inline. In this case we can use the \texttt{inline} attribute to force the compiler to inline a function. Cachegrind is a good profiling tool to check if a function is inlined by the compiler.
+\todo{Maybe revise this}
 
 \subsubsection{Parallelisation}
+
 
 \subsubsection{SIMD}
 
