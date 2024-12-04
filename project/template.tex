@@ -1228,7 +1228,7 @@ Every value in Rust has a \textit{data type}. Programs written in Rust are \text
 Here, the \rust{parse} function requires the annotation of the variable \rust{guess} to determine how the string should be parsed. Additionally, if you annotate \rust{guess} with a type that does not implement the \rust{parse} function for strings, the compiler will produce an error. This strict type system ensures that Rust minimizes the possibility of writing incorrect code -- at least in terms of the bounds of the language. While Rust enforces correctness in type usage, ensuring that a program operates semantically as intended, such as adhering to a protocol specification, often requires additional validation methods.
 
 \subsubsection{Automated Testing}
-Say that you are implementing an arithmetic field -- \textit{funny enough, we needed to to exactly that!} -- you would want your impletation to follow the properties that define the field. For example \textit{associativity over addition}
+Say that you are implementing an arithmetic field -- \textit{funny enough, we needed to do exactly that!} -- you would want your impletation to follow the properties that define the field. For example \textit{associativity over addition}
 \begin{align}
   a + (b + c) = (a + b) + c
 \end{align}
@@ -1274,6 +1274,15 @@ Writing good tests is a subject extensive enough to warrant its own discussion, 
 \todo{finish this segment}
 
 \subsubsection{Error handling} % https://www.lurklurk.org/effective-rust/panic.html
+Testing that functions return the correct values based on \textit{correct} inputs are a crucial part of ensuring correctness. But what happens if you have unexpected inputs, maybe from the user of a CLI? This can lead to errors. So how do Rust allow us to deal with errors? There are two ways: 
+\begin{itemize}
+  \item Using a \textbf{panic}: Stopping the execution of the program. 
+  \item Returning a \textbf{Result}: A type that wraps the return value with an error value allowing the caller to handle the error.
+\end{itemize}
+
+So when is it appropriate to use a panic? The Rust book~\cite[ch.9.3]{rustlangRustProgramming} provides a good guideline for when to use panic. 
+The general rule is that, if your code would end up in a bad state from which it can not recover it should panic. Everywhere else, you should return a \textit{Result}.
+In our implementation we have used the \textit{Result} type to handle errors. This functionality is similar to exceptions in other languages, allowing you to handle errors gracefully and provide meaningful error messages. As well as making our code reliable in the face of inevitable problems.
 
 \subsection{Traits}
 
