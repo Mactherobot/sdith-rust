@@ -1203,7 +1203,7 @@ The function \rust{fn calculate_length()} takes a pointer and the ownership of t
 
 
 \subsubsection{Borrowing with references}
-However, often it is tedious to keep transferring ownership of values, whenever they need to be used in a function. So how can we avoid this boilerplate of returning ownership? Rust provides a way of avoiding this transfor of ownership by using \textit{references}. References allow you to \textit{borrow} the value without taking ownership of it. This is done by using the \rust{&} symbol. Consider the example
+However, often it is tedious to keep transferring ownership of values, whenever they need to be used in a function. So how can we avoid this boilerplate of returning ownership? Rust provides a way of avoiding this transfer of ownership by using \textit{references}. References allow you to \textit{borrow} the value without taking ownership of it. This is done by using the \rust{&} symbol. Consider the example
 \begin{minted}{rust}
   fn main() {
     let d = String::from("hello");
@@ -1261,7 +1261,7 @@ The compiler eases these restrictions as it can determine the lifetime of the re
 The last borrow is valid because the previous borrows are no longer in scope. The compiler can determine that the borrows will not be used after the last borrow.
 
 \subsubsection{Lifetimes}
-The \textit{lifetime} of an value on the stack is the duration that an value is guaranteed to be valid in the scope. Most often, the developer will not have to ever worry about the lifetime as the compiler will infer it. Lifetimes of a value starts when it is assigned ownership and ends when it gets dropped or the ownership is moved.
+The \textit{lifetime} of a value on the stack refers to the period during which the value is guaranteed to remain valid within its scope. In most cases, developers don’t need to actively manage lifetimes, as the compiler can infer them automatically. A value's lifetime begins when it is assigned ownership and ends either when it is dropped or when its ownership is transferred.
 \begin{minted}{rust}
   let r: &Item;
   {
@@ -1274,7 +1274,7 @@ The \textit{lifetime} of an value on the stack is the duration that an value is 
   //                          ^^^^^^^^^^ borrow later used here
   // error[E0597]: `item` does not live long enough
 \end{minted}
-While the Rust compiler, most often can infer the lifetime of a value it can sometimes be necessary to explicitly define the lifetime of a value. This is done by using the \textit{lifetime annotation} \rust{'a}. This is most often used when working with references in structs or functions.
+While the Rust compiler, most often can infer the lifetime of a value it can sometimes be necessary to explicitly define the lifetime. This is done by using the \textit{lifetime annotation} \rust{'a}. This is most often used when working with references in structs or functions.
 \begin{minted}{rust}
   pub fn find(haystack: &[u8], needle: &[u8]) -> Option<&[u8]> {
     //                  -----          -----            ^ expected named lifetime parameter
