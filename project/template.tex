@@ -1457,8 +1457,34 @@ This system provides fine-grained control over the visibility of code, making th
   fn functionality_two() // private function
 \end{minted}
 
-\subsubsection{Generics}
-\subsubsection{Traits}
+\subsubsection{Generics and Traits}
+
+Often when implementing a program you end up creating functionality that you want to reuse. However, due to the type system or the structure of the program, you might end up writing the same code multiple times. Rust provides two features that help with this: \textit{Generics} and \textit{Traits}.
+
+Consider the following example
+
+\begin{minted}{rust}
+  fn add(a: u8, b: u8) -> u8 {
+    a ^ b
+  }
+
+  fn main() {
+    let a = 3u8;
+    let b = 4u8;
+    println!("{}", add(a, b));
+
+    let c = 3u16;
+    let d = 4u16;
+    println!("{}", add(c, d)); // We get an error here
+  }
+\end{minted}
+Due to the type system, you cannot call the same function for different types. So would  have to resort to duplicating the code for \rust{u16} and splitting it into two functions, \rust{add_u8} and \rust{add_u16}. This leads to several issues, especially when maintaining a large codebase. For example, if we update one function, we manually have to update the other. As a solution, Rust allows us to define generic functions.
+\begin{minted}{rust}
+  fn add<T>(a: T, b: T) -> T where T: Xor {
+    a ^ b
+  }
+\end{minted}
+
 \subsubsection{Linting and Documentation}
 \todo{mention the \rust{#![warn(missing_docs)]} linting rule and how to document code with \rust{///} and \rust{//!}} 
 \subsection{Dynamic compilation}
@@ -1472,6 +1498,8 @@ This system provides fine-grained control over the visibility of code, making th
 \subsection{Rust optimizations}
 Blazingly fast code does not come without a cost. However, Rust offers several ways to optimize performance. In this section, we will introduce the techniques we employed. We will first explore simple methods to enhance performance, followed by more advanced techniques such as parallelization and SIMD.
 
+\subsection{Build Configuration}
+% https://nnethercote.github.io/perf-book/build-configuration.html#alternative-allocators
 \subsection{Benchmarking}
 
 \subsubsection{Inlining}
