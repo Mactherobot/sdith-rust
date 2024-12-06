@@ -38,7 +38,7 @@ impl Signature {
     pub fn commit_shares(
         input_shares: &[[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU],
         salt: Salt,
-    ) -> ([[u8; 32]; 6], Vec<MerkleTree>) {
+    ) -> ([[u8; PARAM_DIGEST_SIZE]; PARAM_TAU], Vec<MerkleTree>) {
         let mut commitments: [Hash; PARAM_TAU] = [[0u8; PARAM_DIGEST_SIZE]; PARAM_TAU];
         let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
         let mut commitments_prime = [[0u8; PARAM_DIGEST_SIZE]; PARAM_N];

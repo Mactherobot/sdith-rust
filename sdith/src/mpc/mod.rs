@@ -386,8 +386,10 @@ mod mpc_tests {
     use crate::{
         arith::gf256::gf256_vector::{gf256_add_vector, gf256_add_vector_with_padding},
         constants::{
-            params::{PARAM_DIGEST_SIZE, PARAM_M, PARAM_N, PARAM_SALT_SIZE, PARAM_SEED_SIZE},
-            precomputed::PRECOMPUTED_F_POLY,
+            params::{
+                PARAM_DIGEST_SIZE, PARAM_M, PARAM_N, PARAM_SALT_SIZE, PARAM_SEED_SIZE,
+                PRECOMPUTED_F_POLY,
+            },
             types::{hash_default, Seed},
         },
         mpc::{broadcast::BroadcastShare, challenge::get_powers},

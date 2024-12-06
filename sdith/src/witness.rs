@@ -19,9 +19,9 @@ use crate::{
     constants::{
         params::{
             PARAM_CHUNK_M, PARAM_CHUNK_W, PARAM_K, PARAM_M, PARAM_M_SUB_K, PARAM_SALT_SIZE,
-            PARAM_SEED_SIZE, PARAM_SPLITTING_FACTOR,
+            PARAM_SEED_SIZE, PARAM_SPLITTING_FACTOR, PRECOMPUTED_F_POLY,
+            PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S,
         },
-        precomputed::{PRECOMPUTED_F_POLY, PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S},
         types::Seed,
     },
     subroutines::{marshalling::Marshalling, prg::PRG},

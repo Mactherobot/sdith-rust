@@ -3,9 +3,6 @@
 use crate::subroutines::prg::PRG;
 
 pub mod gf256;
-mod gf251;
-
-
 
 /// Trait for field arithmetic operations
 pub trait FieldArith

@@ -11,8 +11,7 @@ use std::fmt::Formatter;
 use crate::{
     arith::{gf256::gf256_ext::FPoint, FieldArith as _},
     constants::{
-        params::{PARAM_CHUNK_M, PARAM_SPLITTING_FACTOR, PARAM_T},
-        precomputed::PRECOMPUTED_F_POLY,
+        params::{PARAM_CHUNK_M, PARAM_SPLITTING_FACTOR, PARAM_T, PRECOMPUTED_F_POLY},
         types::{hash_default, Hash},
     },
     subroutines::prg::PRG,

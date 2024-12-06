@@ -2,6 +2,13 @@
 name = "sdith"
 version = "0.0.0"
 edition = "2021"
+resolver = "2"
+
+# TODO: Move library into workspace to ensure that lib only compiles what it needs. 
+# Then we can use the package as a dependency for the cli binary in main.rs
+# https://stackoverflow.com/a/47113822
+[lib]
+name = "sdith"
 
 [dependencies]
 tiny-keccak = { version = "2.0.2", features = ["shake", "sha3"] }
@@ -10,7 +17,6 @@ clap = { version = "4.5.20", features = ["derive"] }
 colored = "2"
 rand = "0.8.5"
 base64 = "0.22.1"
-num-traits = "0.2.19"
 rayon = { version = "1.10.0", optional = true }
 blake3 = { version = "1.5.4", optional = true }
 hex = { version = "0.4.3", optional = true }
@@ -26,7 +32,6 @@ name = "benchmark"
 harness = false
 
 [build-dependencies]
-const-gen = "1.6.5"
 dotenv_codegen = "0.15.0"
 rustc_version = "0.4.1"
 
@@ -40,10 +45,10 @@ debug = 1 # TODO: remove this
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(CHANNEL_NIGHTLY)'] }
 
 [features]
-default = ["category_one", "optimized"]
+default = ["optimized"]
 
 # Categories
-category_one = []
+category_one = [] # This is the default category.
 category_three = []
 category_five = []
 

@@ -13,7 +13,6 @@
 //!
 //! The structure allows for the Treshold variant of the signature scheme to only open the commitments to a subset of the parties.
 
-use num_traits::ToPrimitive;
 use queues::Queue;
 
 use crate::constants::{
@@ -35,7 +34,7 @@ pub const HASH_PREFIX_MERKLE_TREE: u8 = 3;
 /// Merkle tree struct
 pub struct MerkleTree {
     /// The height of the Merkle tree
-    pub height: i32,
+    pub height: u32,
     /// The number of nodes in the Merkle tree
     pub n_nodes: usize,
     /// The number of leaves in the Merkle tree
@@ -50,11 +49,7 @@ impl MerkleTree {
     /// The `salt` is optionally added to the hashing of parent nodes.
     pub fn new(commitments: CommitmentsArray, salt: Option<Hash>) -> Self {
         let nb_leaves = commitments.len();
-        let height: i32 = nb_leaves
-            .to_f32()
-            .expect("could not convert to f32")
-            .log2()
-            .ceil() as i32;
+        let height: u32 = nb_leaves.ilog2();
         let mut tree = Self {
             height,
             n_nodes: (1 << (height)) + nb_leaves - 1,
@@ -109,7 +104,7 @@ impl MerkleTree {
     /// Returns a leaf from the tree from the flat structure.
     pub fn get_leaf(&self, n: usize) -> Hash {
         assert!(n <= self.n_leaves, "Invalid leaf index: {}", n);
-        self.nodes[(self.n_leaves + (n)).to_usize().unwrap()]
+        self.nodes[self.n_leaves + (n) as usize]
     }
 
     /// Return non-zero based index of the leaf in the tree
@@ -387,7 +382,7 @@ mod test {
     fn test_merkle_tree() {
         let commitments = setup();
         let tree = MerkleTree::new(commitments, None);
-        assert_eq!(tree.height, PARAM_MERKLE_TREE_HEIGHT as i32);
+        assert_eq!(tree.height, PARAM_MERKLE_TREE_HEIGHT as u32);
         assert_eq!(tree.n_nodes, PARAM_MERKLE_TREE_NODES - 1);
         assert_eq!(tree.n_leaves, { PARAM_N });
 

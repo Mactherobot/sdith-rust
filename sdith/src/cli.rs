@@ -97,8 +97,6 @@ impl Keygen {
 
             return Ok(false);
         }
-        let a: Vec<u8> = vec![1, 2, 3];
-        let b: [u8; 3] = [1, 2, 3];
 
         let path_arg = self.output.as_ref().unwrap();
         let mut path_buf = path_arg.clone();
