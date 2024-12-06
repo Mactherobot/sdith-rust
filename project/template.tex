@@ -1621,8 +1621,8 @@ A good example is building and linking C code into a rust package:
 This approach can be particularly useful when incorporating parts of a reference implementation in C or C++. In our case, due to time constraints, we opted to consider using portions of the reference implementation. Additionally, another important use case for our build script is verifying that the selected features during package compilation are correct. This need arose while benchmarking against another hash function with a lower security level.
 
 \subsubsection{Feature flags}
-Rust has a crisp feature flag system that allows for conditional compilation. This allows for a lot of flexibility when it comes to writing code that is optimized or configured for different use cases. A good example is different computer architectures, this stems from the fact that different architectures does not share the same instruction sets, making code for one architecture unusable on another. 
-Another great example is the one mentioned before about different sets of arithmetic fields. To solve the issue posed about having to create a struct in order to hold functionality for the same type we can instead use feature flags to conditionally compile the code to the specific field that is needed. This is done by adding the following to the \texttt{Cargo.toml} file:
+Rust offers a robust feature flag system that enables conditional compilation, providing significant flexibility for writing code optimized or configured for various use cases. 
+A practical example, as previously mentioned, involves handling different sets of arithmetic fields. To address the challenge of creating a struct to manage functionality for the same type across different fields, we can leverage feature flags. These allow us to conditionally compile code tailored to the specific field required. This is achieved by adding the following configuration to the Cargo.toml file:
 \begin{minted}{toml}
 [features]
   default = ["gf256"]
@@ -1634,7 +1634,6 @@ Or by giving it when running cargo:
   $ cargo build --features "gf251"
 \end{minted}
 Now we can use the feature flags in the code:
-
 \begin{minted}{rust}
 // arith.rs
 pub trait FieldArith {
@@ -1667,12 +1666,7 @@ fn main() {
     println!("Field 256: {:?}", polynomial(&coeffs256));
 }
 \end{minted}
-
-\subsubsection{Configuration conditional checks \texttt{\#[cfg(...)]}}
-Show how you can dynamically tell the compiler which code to add to the binary. You can pose the simple example of tests.
-
-You can mention the \texttt{cfg!} macro for inlining if statements.
-
+In the example above we use the feature flag to change which trait is implemented for the \rust{u8} type. This means that when we build the binary it only compiles the code that has been specified. 
 
 \subsection{Rust optimizations}
 Blazingly fast code does not come without a cost. However, Rust offers several ways to optimize performance. In this section, we will introduce the techniques we employed. We will first explore simple methods to enhance performance, followed by more advanced techniques such as parallelization and SIMD.
