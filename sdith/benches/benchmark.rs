@@ -109,33 +109,34 @@ fn simd_benchmark(c: &mut Criterion) {
     });
 }
 
+/// This is just to show that SIMD is faster than scalar operations
 fn simd_simple(c: &mut Criterion) {
+    fn simple_vector_addition() -> [f32; 4] {
+        let mut x = [1.0, 2.0, 3.0, 4.0];
+        let y = [4.0, 3.0, 2.0, 1.0];
+        for i in 0..4 {
+            x[i] += y[i];
+        }
+
+        x
+    }
+
+    fn simple_simd_vector_addition() -> [f32; 4] {
+        // create SIMD vectors
+        let x: f32x4 = f32x4::from_array([1.0, 2.0, 3.0, 4.0]);
+        let y: f32x4 = f32x4::from_array([4.0, 3.0, 2.0, 1.0]);
+
+        // SIMD operation
+        let z = x + y; // z = [5.0, 5.0, 5.0, 5.0]
+                       //
+                       // convert back to array
+        z.to_array()
+    }
+
     c.bench_function("Simple addition", |b| b.iter(|| simple_vector_addition()));
     c.bench_function("SIMD addition", |b| {
         b.iter(|| simple_simd_vector_addition())
     });
-}
-
-fn simple_vector_addition() -> [f32; 4] {
-    let mut x = [1.0, 2.0, 3.0, 4.0];
-    let y = [4.0, 3.0, 2.0, 1.0];
-    for i in 0..4 {
-        x[i] += y[i];
-    }
-
-    x
-}
-
-fn simple_simd_vector_addition() -> [f32; 4] {
-    // create SIMD vectors
-    let x: f32x4 = f32x4::from_array([1.0, 2.0, 3.0, 4.0]);
-    let y: f32x4 = f32x4::from_array([4.0, 3.0, 2.0, 1.0]);
-
-    // SIMD operation
-    let z = x + y; // z = [5.0, 5.0, 5.0, 5.0]
-                   //
-                   // convert back to array
-    z.to_array()
 }
 
 /// Benchmarking functions that use parallel operations: commit shares, compute input shares
