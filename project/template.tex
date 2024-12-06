@@ -1576,17 +1576,61 @@ Rust offers a range of features that make it easier to write maintainable and re
 However, while these features support good coding practices, they can be further enhanced by leveraging Rust's dynamic compilation features. In the next section, we will explore how these features were utilized to develop a more dynamic and optimizable implementation of the SD-in-the-Head protocol.
 
 \subsection{Dynamic compilation}
-\todo{describe constants as a lead in to build script and feature flags}
-
-Introduce the issue: Changing constants. Maybe state it as a general problem first, then turn to our specific problem.
-
-Second: opt-in optimisations. We use it to allow bench marking.
+In many applications, it is beneficial to have dynamic compilation of the code. This allows for code generation, linking and configuring the package before building the actual binary. As a good example, when creating a submission to NIST you need to have different security levels for each category. This poses a problem of having to change the code based on specific parameters. This is where Cargo build scripts and Rust's feature flags come in handy. 
 
 \subsubsection{Build script}
-A script that runs before compile. Give use cases: We have our own of generating constants. Mention the \texttt{build.rs} file. Show we use it to generate constants. Point: It is a neat way of generating constants. Maybe see of they mention more use cases.
+Build scripts are Rust files executed before the package is compiled, offering significant flexibility in the build process. By putting a build.rs file in the root folder of the package cargo will automatically execute this file before building. Enabling you to generate code, link libraries, or configure the build based on environment variables. 
+
+A good example is wanting to build and link some C code:
+\begin{minted}{rust}
+  fn main() {
+    // Tell cargo to rerun the build script if the file changes
+    println!("cargo:rerun-if-changed=src/foo.c");
+    // `cc` is a create to build and link C code
+    cc::Build::new()
+      .file("src/foo.c")
+      .compile("foo");
+  }
+\end{minted}
+This could allow the use of C code in the Rust project. This can be especially useful when trying to use parts of a reference implementation in C or C++. If parts are already heavily optimized.  
 
 \subsubsection{Feature flags}
-Describe how you can parse feature flags in Cargo.toml (how to set them for packages and how to set our own.). Point: Its a neat way of defining build configurability.
+Rust has a crisp feature flag system that allows for conditional compilation. This allows for a lot of flexibility when it comes to writing code that is optimized or configured for different use cases. A good example is different computer architectures, this stems from the fact that different architectures does not share the same instruction sets, making code for one architecture unusable on another. 
+Another great example is the one mentioned before about different sets of arithmetic fields. To solve the issue posed about having to create a struct in order to hold functionality for the same type we can instead use feature flags to conditionally compile the code to the specific field that is needed. This is done by adding the following to the \texttt{Cargo.toml} file:
+\begin{minted}{toml}
+[features]
+  default = ["gf256"]
+  gf256 = []
+  gf251 = []
+\end{minted}
+Or by giving it when running cargo:
+\begin{minted}{bash}
+  $ cargo build --features "gf251"
+\end{minted}
+Now we can use the feature flags in the code:
+
+\begin{minted}{rust}
+// arith.rs
+pub trait FieldArith {
+    // Trait functions
+}
+
+#[cfg(feature = "gf256")]
+impl FieldArith for u8 {
+    // implementation ...
+}
+
+#[cfg(feature = "gf251")]
+impl FieldArith for u8 {
+    // implementation ...
+}
+
+// main.rs
+fn main() {
+    let coeffs256 = vec![1u8, 2u8, 3u8];
+    println!("Field 256: {:?}", polynomial(&coeffs256));
+}
+\end{minted}
 
 \subsubsection{Configuration conditional checks \texttt{\#[cfg(...)]}}
 Show how you can dynamically tell the compiler which code to add to the binary. You can pose the simple example of tests.
