@@ -1593,6 +1593,7 @@ A good example is wanting to build and link some C code:
   }
 \end{minted}
 This could allow the use of C code in the Rust project. This can be especially useful when trying to use parts of a reference implementation in C or C++. If parts are already heavily optimized.  
+\todo{Write about generating consts}
 
 \subsubsection{Feature flags}
 Rust has a crisp feature flag system that allows for conditional compilation. This allows for a lot of flexibility when it comes to writing code that is optimized or configured for different use cases. A good example is different computer architectures, this stems from the fact that different architectures does not share the same instruction sets, making code for one architecture unusable on another. 
