@@ -1078,6 +1078,12 @@ In addition to its focus on safety, Rust benefits from an extensive library of c
 
 In this section we will give an overview of the key features of the Rust programming language that make it an ideal choice for this project as we aimed to build it robust by leveraging Rust's safety mechanisms, performance optimization capabilities, dynamic language features, and strong testing infrastructure.
 
+\subsection{Cargo - Rust package manager}\label{sec:cargo}
+A Rust program, often referred to as a \textit{crate}, is typically compiled using the Rust Compiler with a command such as \texttt{rustc hello.rs}. However, manually managing versions and dependencies can be tedious and error-prone. To simplify this process, Rust provides a \textit{package manager} called Cargo~\cite{rustlangCargo}. 
+
+Cargo is a command-line tool -- run through \texttt{cargo} -- that facilitates the management of dependencies, building, testing, and benchmarking of your crate, as well as generating documentation. It is the officially recommended method for managing and building Rust projects.
+
+
 \subsection{Memory safety}\label{sec:rustborrow} % mut references
 Rust guarantees both type safety (\autoref{sec:rusttypes}) and memory safety. While we will not delve into the details, significant progress has been made toward formal proofs of these guarantees~\cite{jung2017rustbelt}. Unlike many other languages that rely on sophisticated garbage collection mechanisms to ensure memory safety, Rust avoids the associated performance overhead through two key features: the \textit{ownership} and \textit{lifetimes}. Along with a compile time functionality called the \textit{borrow checker}, these features ensure the memory safety of Rust programs. While the borrow checker is often the biggest hurdle for new Rust developers, it is also the feature that makes Rust so powerful.
 
@@ -1390,10 +1396,30 @@ The general rule is that, if your code would end up in a bad state from which it
 There might be a number of reasons why a signature could not be generated, but a simple one that we want to relay to a potential user is that the secret key is invalid. In this case, we would return an error with the \textit{SigningError} variant. If a panic was used the caller of the sign function would not be able to recover from the error.
 
 \subsection{Maintainable and readable code}
-One of the reasons for choosing Rust is that it provides several tools and features that make it easier to write maintainable and readable code. In this section, we will discuss some of the features that we utilized in our implementation to achieve this goal.
+One of the reasons for choosing Rust is that it provides several tools and features that make it easier to write code that is both maintainable and readable. In this section, we will discuss some of the features that we utilized in our implementation to achieve this goal.
 
-\subsubsection{Linting and Documentation}
-\todo{mention the \rust{#![warn(missing_docs)]} linting rule and how to document code with \rust{///} and \rust{//!}} 
+\subsubsection{Code Documentation}\label{sec:code-documentation} 
+First things first, good written should either written in a way so that it is self-explanatory or supply the necessary documentation in order for the reader to quickly grasp the concepts and functionality of the code. Often times you would want to supply documentation in the form of comments in the code, above functions and values to explain what they do and how they work. Furthermore, you would want to supply the user with a \textit{manual} where the user can read about the exposed library.
+
+It can be hard to maintain both of these aspects separately. Luckily, Rust enables the developer to write both at the same time. Consider the following code in a module
+
+\begin{minted}{rust}
+  //! This module exposes two functions: add and double
+
+  /// Adds two functions together
+  pub fn add(a: u8, b: u8) -> u8 { 
+    a + b
+  }
+
+  /// Doubles a number using [`add`]
+  pub fn double(a: u8) -> u8 {
+    add(a, a)
+  }
+\end{minted}
+
+Adding a triple slash \rust{///} above a function or struct generates documentation for it. Hovering over the function in most Rust-compatible editors, such as \href{https://code.visualstudio.com/docs/languages/rust}{Visual Studio Code}, displays the documentation. Similarly, using \rust{//!} creates top-level documentation for the module.
+
+While these comments enable developers to access documentation directly within the code, Rust also provides a powerful feature to automatically generate comprehensive documentation. By running \href{https://doc.rust-lang.org/cargo/commands/cargo-doc.html}{\texttt{cargo doc}}, you can create a webpage with detailed documentation for the project. The generated documentation for our implementation can be viewed here: \todo{link to the documentation}.
 
 \subsubsection{Modules}
 Rust provides a module system that allow you to organize your code into logical units. Making it it easier to understand and maintain the codebase. A module is a collection of related items, such as functions, structs, and constants, that are grouped together.
