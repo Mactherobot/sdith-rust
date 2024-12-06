@@ -13,7 +13,7 @@ cargo test
 For Category 5, you might have to increase the stack size. To do so, execute the following command:
 
 ```bash
-SDITH_CATEGORY=5 RUST_MIN_STACK=8388608 cargo test
+RUST_MIN_STACK=8388608 cargo test --features category_five
 ```
 
 ### Specification tests
@@ -21,7 +21,7 @@ SDITH_CATEGORY=5 RUST_MIN_STACK=8388608 cargo test
 The folder `src/spec_tests` contains tests that compare inputs and outputs of the implementation to the SDitH c++ implementation. To run these tests, include the feature flag `spec_tests`:
 
 ```bash
-SDITH_CATEGORY=1 cargo test --features spec_tests
+cargo test --features spec_tests
 ```
 
 Note that these tests are only available for category 1.
@@ -36,11 +36,9 @@ The protocol has three proposed instances which support different security level
 
 Rust compiles the protocol with the constants needed for each category. The default category is "ONE".
 
-You can set the category by setting the environment variable `SDITH_CATEGORY` or through the feature flag `category_#`.
+You can set the category by the feature flag `category_#`.
 
 ```bash
-# Set the category through the environment variable
-SDITH_CATEGORY=THREE cargo build
 # Set the category through the feature flag
 cargo build --features category_three
 ```
