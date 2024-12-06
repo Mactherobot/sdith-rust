@@ -1392,6 +1392,9 @@ There might be a number of reasons why a signature could not be generated, but a
 \subsection{Maintainable and readable code}
 One of the reasons for choosing Rust is that it provides several tools and features that make it easier to write maintainable and readable code. In this section, we will discuss some of the features that we utilized in our implementation to achieve this goal.
 
+\subsubsection{Linting and Documentation}
+\todo{mention the \rust{#![warn(missing_docs)]} linting rule and how to document code with \rust{///} and \rust{//!}} 
+
 \subsubsection{Modules}
 Rust provides a module system that allow you to organize your code into logical units. Making it it easier to understand and maintain the codebase. A module is a collection of related items, such as functions, structs, and constants, that are grouped together.
 
@@ -1459,16 +1462,28 @@ This system provides fine-grained control over the visibility of code, making th
 
 \subsubsection{Generics and Traits}
 
-Often when implementing a program you end up creating functionality that you want to reuse. However, due to the type system or the structure of the program, you might end up writing the same code multiple times. Rust provides two features that help with this: \textit{Generics} and \textit{Traits}.
+When implementing a program, it is common to encounter functionality that you want to reuse. However, due to the type system or the program's structure, you may end up duplicating code. For example, the authors of the SD-in-the-Head protocol define their implementation with two field variants -- \rust{GF(256)} and \rust{GF(251)} -- as well as three NIST categories. In their NIST submission, they create separate codebases for each variant, resulting in multiple copies of the protocol. This duplication is compounded by an additional $2\times$ copies for the hypercube variant:
 
-Consider the following example
+\begin{minted}{bash}
+$ cd ~/Repos/datalogi/sdith/Reference_Implementation/Threshold_Variant 
+$ ls
+sdith_threshold_cat1_gf256/  sdith_threshold_cat3_p251/
+sdith_threshold_cat1_p251/   sdith_threshold_cat5_gf256/
+sdith_threshold_cat3_gf256/  sdith_threshold_cat5_p251/
+\end{minted}
+
+Each codebase contains significant shared code. However, to switch between the variants and arithmetic fields, copies of the code with necessary modifications are maintained. While it is unclear whether the authors utilize an automated system to ensure consistency across these instances, such duplication is a common issue in programming and indicates that the codebase may not be as maintainable as it could be.
+
+Rust addresses this problem with two powerful features: \textit{Generics} and \textit{Traits}.
+
+Consider the following example:
 
 \begin{minted}{rust}
-  fn add(a: u8, b: u8) -> u8 {
-    a ^ b
-  }
+fn add(a: u8, b: u8) -> u8 {
+    a + b
+}
 
-  fn main() {
+fn main() {
     let a = 3u8;
     let b = 4u8;
     println!("{}", add(a, b));
@@ -1476,17 +1491,89 @@ Consider the following example
     let c = 3u16;
     let d = 4u16;
     println!("{}", add(c, d)); // We get an error here
-  }
-\end{minted}
-Due to the type system, you cannot call the same function for different types. So would  have to resort to duplicating the code for \rust{u16} and splitting it into two functions, \rust{add_u8} and \rust{add_u16}. This leads to several issues, especially when maintaining a large codebase. For example, if we update one function, we manually have to update the other. As a solution, Rust allows us to define generic functions.
-\begin{minted}{rust}
-  fn add<T>(a: T, b: T) -> T where T: Xor {
-    a ^ b
-  }
+}
 \end{minted}
 
-\subsubsection{Linting and Documentation}
-\todo{mention the \rust{#![warn(missing_docs)]} linting rule and how to document code with \rust{///} and \rust{//!}} 
+In this example, the type system prevents calling the same function with different types. To handle \rust{u16}, you would need to duplicate the function, creating \rust{add_u8} and \rust{add_u16}, leading to issues such as increased maintenance complexity. For instance, if one function is updated, all others must be updated manually.
+
+Rust solves this problem with \textit{Generics}. Generics enable defining functionality that is agnostic to the input type while maintaining Rust's strong type safety. The function \rust{add} can be rewritten as:
+
+\begin{minted}{rust}
+fn add<T>(a: T, b: T) -> T {
+    a + b
+}
+\end{minted}
+
+Here, the function \rust{add<T>} includes the type parameter \rust{T}, allowing the compiler to infer the type based on the inputs. This enables calling the function with different types. However, the rewritten function would still produce an error, as the compiler cannot guarantee that the input types support the \rust{+} operator. This is where \textit{Traits} come into play.
+
+\subsubsection*{Traits}
+Traits provide a way to define shared behavior in an abstract manner, similar to interfaces in other programming languages -- e.g TypeScript. They allow you to specify a set of methods that a type must implement. For example, in Rust, we can restrict a generic type \rust{T} to only those types that implement the \rust{std::ops::Add} trait, which defines the \rust{+} operator. Consider the following function definition:
+
+\begin{minted}{rust}
+use std::ops::Add;
+
+fn add<T: Add<Output = T>>(a: T, b: T) -> T {
+    a + b
+}
+\end{minted}
+
+This function can now be called with any type that implements the \rust{Add} trait. For instance, both \rust{u8} and \rust{u16} implement the \rust{Add} trait by default, enabling the creation of generic, reusable code.
+
+Traits also allow you to define custom reusable behavior. For example, consider defining arithmetic operations over finite fields $GF(256)$ and $GF(251)$. Suppose we want a function that calculates a polynomial over a field and works dynamically for both fields, as well as others in the future. We can achieve this by defining a trait to encapsulate the behavior of a field and then implementing the trait for each specific field. Here's an example:
+
+\begin{minted}{rust}
+// arith.rs
+pub trait FieldArith {
+    fn add(a: Self, b: Self) -> Self;
+    fn mul(a: Self, b: Self) -> Self;
+    fn pow(mut a: Self, b: u8) -> Self { // default implementation
+        for _ in 0..b {
+            a = Self::mul(a, a);
+        }
+        a
+    }
+}
+
+// arith/gf256.rs
+struct GF256(u8);
+impl FieldArith for GF256 {
+    fn add(a: Self, b: Self) -> Self {
+        GF256(a.0 ^ b.0)
+    }
+    fn mul(a: Self, b: Self) -> Self {
+        // implementation ...
+    }
+}
+
+// arith/gf251.rs
+struct GF251(u8);
+impl FieldArith for GF251 {
+    // implementation ...
+}
+
+// main.rs
+fn polynomial<T: FieldArith + Default>(coeffs: &[T]) -> T {
+    let mut result = T::default(); // The `Default` trait
+    for (i, coeff) in coeffs.iter().enumerate() {
+        result = T::add(result, T::mul(*coeff, T::pow(T::default(), i as u8)));
+    }
+    result
+}
+
+fn main() {
+    let coeffs256 = vec![GF256(3), GF256(4), GF256(5)];
+    println!("Field 256: {:?}", polynomial(&coeffs256));
+    let coeffs251 = vec![GF251(3), GF251(4), GF251(5)];
+    println!("Field 251: {:?}", polynomial(&coeffs251));
+}
+\end{minted}
+
+Note that with Traits we can define default implementations for functions. For example, the \rust{pow} function is defined in the trait directly. This makes it so that we only need to implement the function for the fields that have a different implementation. With the trait implemented, the \texttt{polynomial} function only has to be defined once and can be used for both fields. This approach promotes code reuse and simplifies future program expansions. To add support for a new field, you only need to implement the \rust{FieldArith} trait for that field, allowing the existing functions to handle it seamlessly.
+
+\subsubsection*{Conclusions on Maintainability and Readability}
+Rust offers a range of features that make it easier to write maintainable and readable code. In-built linting and documentation facilitate the creation of well-documented code. The module system enables developers to organize code into logical units while controlling visibility between them. Generics and Traits are powerful tools for writing more agnostic and reusable code across different parts of a program. 
+
+However, while these features support good coding practices, they can be further enhanced by leveraging Rust's dynamic compilation features. In the next section, we will explore how these features were utilized to develop a more dynamic and optimizable implementation of the SD-in-the-Head protocol.
 
 \subsection{Dynamic compilation}
 \todo{describe constants as a lead in to build script and feature flags}
@@ -1575,7 +1662,8 @@ We could now call the squeeze funtion to get the random bytes necessary for the 
 \subsubsection{Hashing}\label{sec:hashing} % (fold)
 As mentioned in the spec, we need a collision-resistant hash function. For this we also used the tiny-keccak library. And again due to the different security levels, we had to be able to switch between different implementations of the underlying hash function. These being the SHA3-256, SHA3-384 and SHA3-512.
 This was done by creating a generic trait for the hash function:
-\inputminted[firstline=11, lastline=17]{rust}{../sdith/src/subroutines/prg/hashing.rs}
+
+\todo{link to the hashing code}
 
 % subsubsection Hashing (end)
 %
@@ -1583,7 +1671,9 @@ This was done by creating a generic trait for the hash function:
 
 \subsubsection{Merkle Tree impl}\label{sub:merkle_tree_impl}
 Our merkle tree implementation was done using a sized array as data structure. Meaning that we save all the leafs of the tree in the last 256 values of the array.
-\inputminted[firstline=18, lastline=23]{rust}{../sdith/src/subroutines/merkle_tree.rs}
+
+\todo{link to the merkle tree code}
+
 We then build the tree buttom up by hashing the left and right children of the current node and storing the result in the next position in the array. We do this until we reach the root node, which we then return as our global commitment.
 
 
@@ -1592,7 +1682,9 @@ We then build the tree buttom up by hashing the left and right children of the c
 \subsubsection{Galois field arithmetic}\label{sub:gf256_arith}
 As stated earlier, we wanted to implement the underlying arithmetic our selves and not rely on there being a library for the arithmetic of the field. This led us to implement the galois field arithmetic.
 We did this by creating a trait for field arithmetic:
-\inputminted[firstline=10, lastline=66]{rust}{../sdith/src/arith/gf256/mod.rs}
+
+\todo{link to FieldArith trait}
+
 This allows us to implement the field arithmetic for different types:
 \begin{minted}{rust}
 pub type FPoint = [u8; 4];
@@ -1606,10 +1698,10 @@ impl FieldArith for FPoint {
 }
 \end{minted}
 And we can now use the field arithmetic in our code to for example generate beaver triples:
-\inputminted[firstline=152, lastline=152]{rust}{../sdith/src/mpc/beaver.rs}
+\todo{link to the beaver triple code}
 
 Furthermore, all our arithmetic can be tested individually, as we can see in the following test:
-\inputminted[firstline=68, lastline=96]{rust}{../sdith/src/arith/gf256/mod.rs}
+\todo{link to the arith test}
 \section{Key generation}
 
 \section{MPC}\label{sub:mpc_algo}

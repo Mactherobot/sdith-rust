@@ -2,9 +2,7 @@
 //!
 //! An element of the field is represented as a pair of bytes `(a,b)` corresponding to `a + bX`
 
-use crate::subroutines::prg::PRG;
-
-use super::FieldArith;
+use crate::{arith::FieldArith, subroutines::prg::PRG};
 
 const _GF256_16_ONE: [u8; 2] = [1, 0];
 const GF256_32_ONE: [u8; 4] = [1, 0, 0, 0];
@@ -29,11 +27,11 @@ fn gf256_ext16_add(a: [u8; 2], b: [u8; 2]) -> [u8; 2] {
 /// `(a + bX) * (c + dX) = ac + (ad + bc) * X + bd * X^2`
 ///
 /// `                    = ac + (ad + bc) * X + bd * (X + 32)`
-/// 
+///
 /// `                    = (ac + bd * 32) + (ad + bc + bd)X`
-/// 
+///
 /// `                    = (ac + bd * 32) + ((a + b) * (c + d) - ac)X`
-/// 
+///
 /// `                    = c0 + c1X`
 #[inline(always)]
 fn gf256_ext16_mul(_a: [u8; 2], _b: [u8; 2]) -> [u8; 2] {
@@ -54,7 +52,7 @@ fn gf256_ext16_mul(_a: [u8; 2], _b: [u8; 2]) -> [u8; 2] {
 ///   32 in F_256^2 = 0 + 32X
 ///
 ///`   (0, 32X) * (a + bX) = (0a + 32b * 32) + (0b + 32a + 32b)X`
-/// 
+///
 ///`                       = (32^2)b + 32(a + b)X`
 #[inline(always)]
 fn gf256_ext16_mul32(_a: [u8; 2]) -> [u8; 2] {
@@ -168,8 +166,7 @@ mod ext32_tests {
     use super::*;
 
     use crate::{
-        arith::gf256::test_field_definitions, constants::params::PARAM_SEED_SIZE,
-        subroutines::prg::PRG,
+        arith::test_field_definitions, constants::params::PARAM_SEED_SIZE, subroutines::prg::PRG,
     };
 
     #[test]

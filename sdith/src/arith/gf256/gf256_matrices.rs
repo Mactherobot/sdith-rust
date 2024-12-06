@@ -60,7 +60,8 @@ pub fn gen_hmatrix(seed: Seed) -> HPrimeMatrix {
 
 #[cfg(test)]
 mod tests {
-    use crate::arith::gf256::FieldArith as _;
+
+    use crate::arith::FieldArith as _;
 
     use super::*;
 

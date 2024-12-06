@@ -2,7 +2,8 @@
 //!
 //! Implementations use Horner's method for polynomial evaluation for efficiency.
 
-use crate::arith::gf256::FieldArith;
+use crate::arith::FieldArith as _;
+
 
 /// Evaluate a polynomial at a point using Horner's method.
 /// coeffs: Coefficients of the polynomial in increasing order of degree. e.g. [1, 2, 3] represents p(x) = 3x^2 + 2x + 1

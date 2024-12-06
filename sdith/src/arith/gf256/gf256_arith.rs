@@ -1,7 +1,6 @@
 //! # Rijndaels Galois Field `F_2^8` for [`u8`].
 
-use super::FieldArith;
-use crate::subroutines::prg::PRG;
+use crate::{arith::FieldArith, subroutines::prg::PRG};
 use std::num::Wrapping;
 
 /// The primitive polynomial x^4 + x^3 + x + 1 (0b0001_1011)
@@ -14,14 +13,14 @@ const ORDER: u16 = 0xff;
 
 impl FieldArith for u8 {
     /// Field addition operation
-    /// 
+    ///
     /// Addition in GF(2^8) is the same as XOR operation
     fn field_add(&self, rhs: u8) -> Self {
         gf256_add(*self, rhs)
     }
 
     /// Field subtraction operation
-    /// 
+    ///
     /// Subtraction in GF(2^8) is the same as addition
     fn field_sub(&self, rhs: u8) -> Self {
         gf256_add(*self, rhs)
@@ -212,8 +211,7 @@ fn gf256_mul_inverse_lookup(a: u8) -> u8 {
 mod tests {
     use super::*;
     use crate::{
-        arith::gf256::test_field_definitions, constants::params::PARAM_SEED_SIZE,
-        subroutines::prg::PRG,
+        arith::test_field_definitions, constants::params::PARAM_SEED_SIZE, subroutines::prg::PRG
     };
 
     /// TODO: remove these tests when we have used the proper test vectors

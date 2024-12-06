@@ -7,11 +7,13 @@ pub mod broadcast;
 pub mod challenge;
 
 use crate::{
-    arith::gf256::{
-        gf256_ext::FPoint,
-        gf256_matrices::HPrimeMatrix,
-        gf256_vector::{gf256_mul_scalar_add_vector, gf256_mul_vector_by_scalar},
-        FieldArith,
+    arith::{
+        gf256::{
+            gf256_ext::FPoint,
+            gf256_matrices::HPrimeMatrix,
+            gf256_vector::{gf256_mul_scalar_add_vector, gf256_mul_vector_by_scalar},
+        },
+        FieldArith as _,
     },
     constants::{
         params::{

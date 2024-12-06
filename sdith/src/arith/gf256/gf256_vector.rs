@@ -6,13 +6,13 @@
 
 #[cfg(feature = "simd")]
 use std::simd::{num::SimdUint, u8x32};
-
-use super::FieldArith;
+use crate::arith::FieldArith as _;
 
 #[cfg(not(feature = "simd"))]
 #[inline(always)]
 /// vz'[] = vz[] + vx[]
 pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
+
     assert!(vx.len() >= vz.len());
     let bytes = vz.len();
     for i in 0..bytes {

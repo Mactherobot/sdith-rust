@@ -8,11 +8,13 @@
 //! The instance is split into [`PARAM_SPLITTING_FACTOR`] according to a variant of the SD problem in the _d-split syndrome decoding problem_.
 
 use crate::{
-    arith::gf256::{
-        gf256_matrices::{gen_hmatrix, mul_hmatrix_vector, HPrimeMatrix},
-        gf256_poly::gf256_remove_one_degree_factor_monic,
-        gf256_vector::{gf256_add_vector, gf256_mul_vector_by_scalar},
-        FieldArith,
+    arith::{
+        gf256::{
+            gf256_matrices::{gen_hmatrix, mul_hmatrix_vector, HPrimeMatrix},
+            gf256_poly::gf256_remove_one_degree_factor_monic,
+            gf256_vector::{gf256_add_vector, gf256_mul_vector_by_scalar},
+        },
+        FieldArith as _,
     },
     constants::{
         params::{
@@ -302,9 +304,8 @@ mod test_witness {
         x.iter().fold(0, |a, b| a + (*b != 0) as u64)
     }
 
-    use crate::arith::gf256::{
-        gf256_poly::{gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic},
-        FieldArith,
+    use crate::arith::gf256::gf256_poly::{
+        gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
     };
 
     use super::*;

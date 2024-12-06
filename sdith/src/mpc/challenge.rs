@@ -9,7 +9,7 @@ use core::fmt;
 use std::fmt::Formatter;
 
 use crate::{
-    arith::gf256::{gf256_ext::FPoint, FieldArith},
+    arith::{gf256::gf256_ext::FPoint, FieldArith as _},
     constants::{
         params::{PARAM_CHUNK_M, PARAM_SPLITTING_FACTOR, PARAM_T},
         precomputed::PRECOMPUTED_F_POLY,
