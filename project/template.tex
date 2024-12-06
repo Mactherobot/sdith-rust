@@ -1487,13 +1487,25 @@ Due to the type system, you cannot call the same function for different types. S
 
 \subsubsection{Linting and Documentation}
 \todo{mention the \rust{#![warn(missing_docs)]} linting rule and how to document code with \rust{///} and \rust{//!}} 
+
 \subsection{Dynamic compilation}
 \todo{describe constants as a lead in to build script and feature flags}
 
-\subsubsection{Configuration conditional checks \texttt{\#[cfg(...)]}}
+Introduce the issue: Changing constants. Maybe state it as a general problem first, then turn to our specific problem.
+
+Second: opt-in optimisations. We use it to allow bench marking.
+
 \subsubsection{Build script}
+A script that runs before compile. Give use cases: We have our own of generating constants. Mention the \texttt{build.rs} file. Show we use it to generate constants. Point: It is a neat way of generating constants. Maybe see of they mention more use cases.
 
 \subsubsection{Feature flags}
+Describe how you can parse feature flags in Cargo.toml (how to set them for packages and how to set our own.). Point: Its a neat way of defining build configurability.
+
+\subsubsection{Configuration conditional checks \texttt{\#[cfg(...)]}}
+Show how you can dynamically tell the compiler which code to add to the binary. You can pose the simple example of tests.
+
+You can mention the \texttt{cfg!} macro for inlining if statements.
+
 
 \subsection{Rust optimizations}
 Blazingly fast code does not come without a cost. However, Rust offers several ways to optimize performance. In this section, we will introduce the techniques we employed. We will first explore simple methods to enhance performance, followed by more advanced techniques such as parallelization and SIMD.
@@ -1743,6 +1755,8 @@ wrap up and pose future work
 what should people continue with
 point to round 2 NIST
 work in context of timeline
+
+Idea: We could add subroutines as parameters to the API. Then the developer could just add their own subroutines defined by our traits.
 
 \todo{conclude on the problem statement from the introduction}
 
