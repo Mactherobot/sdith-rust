@@ -1079,7 +1079,7 @@ In addition to its focus on safety, Rust benefits from an extensive library of c
 In this section we will give an overview of the key features of the Rust programming language that make it an ideal choice for this project as we aimed to build it robust by leveraging Rust's safety mechanisms, performance optimization capabilities, dynamic language features, and strong testing infrastructure.
 
 \subsection{Cargo - Rust package manager}\label{sec:cargo}
-A Rust program, often referred to as a \textit{crate}, is typically compiled using the Rust Compiler with a command such as \texttt{rustc hello.rs}. However, manually managing versions and dependencies can be tedious and error-prone. To simplify this process, Rust provides a \textit{package manager} called Cargo~\cite{rustlangCargo}. 
+A Rust program, often referred to as a \textit{crate}, is typically compiled using the Rust Compiler with a command such as \texttt{rustc hello.rs}. However, manually managing versions and dependencies can be tedious and error-prone. To simplify this process, Rust provides a \textit{package manager} called Cargo~\cite{rustlangCargo}.
 
 Cargo is a command-line tool -- run through \texttt{cargo} -- that facilitates the management of dependencies, building, testing, and benchmarking of your crate, as well as generating documentation. It is the officially recommended method for managing and building Rust projects.
 
@@ -1398,7 +1398,7 @@ There might be a number of reasons why a signature could not be generated, but a
 \subsection{Maintainable and readable code}
 One of the reasons for choosing Rust is that it provides several tools and features that make it easier to write code that is both maintainable and readable. In this section, we will discuss some of the features that we utilized in our implementation to achieve this goal.
 
-\subsubsection{Code Documentation}\label{sec:code-documentation} 
+\subsubsection{Code Documentation}\label{sec:code-documentation}
 First things first, good written should either written in a way so that it is self-explanatory or supply the necessary documentation in order for the reader to quickly grasp the concepts and functionality of the code. Often times you would want to supply documentation in the form of comments in the code, above functions and values to explain what they do and how they work. Furthermore, you would want to supply the user with a \textit{manual} where the user can read about the exposed library.
 
 It can be hard to maintain both of these aspects separately. Luckily, Rust enables the developer to write both at the same time. Consider the following code in a module
@@ -1597,15 +1597,15 @@ fn main() {
 Note that with Traits we can define default implementations for functions. For example, the \rust{pow} function is defined in the trait directly. This makes it so that we only need to implement the function for the fields that have a different implementation. With the trait implemented, the \texttt{polynomial} function only has to be defined once and can be used for both fields. This approach promotes code reuse and simplifies future program expansions. To add support for a new field, you only need to implement the \rust{FieldArith} trait for that field, allowing the existing functions to handle it seamlessly.
 
 \subsubsection*{Conclusions on Maintainability and Readability}
-Rust offers a range of features that make it easier to write maintainable and readable code. In-built linting and documentation facilitate the creation of well-documented code. The module system enables developers to organize code into logical units while controlling visibility between them. Generics and Traits are powerful tools for writing more agnostic and reusable code across different parts of a program. 
+Rust offers a range of features that make it easier to write maintainable and readable code. In-built linting and documentation facilitate the creation of well-documented code. The module system enables developers to organize code into logical units while controlling visibility between them. Generics and Traits are powerful tools for writing more agnostic and reusable code across different parts of a program.
 
 However, while these features support good coding practices, they can be further enhanced by leveraging Rust's dynamic compilation features. In the next section, we will explore how these features were utilized to develop a more dynamic and optimizable implementation of the SD-in-the-Head protocol.
 
 \subsection{Dynamic compilation}
-In many applications, it is beneficial to have dynamic compilation of the code. This allows for code generation, linking and configuring the package before building the actual binary. As a good example, when creating a submission to NIST you need to have different security levels for each category. This poses a problem of having to change the code based on specific parameters. This is where Cargo build scripts and Rust's feature flags come in handy. 
+In many applications, it is beneficial to have dynamic compilation of the code. This allows for code generation, linking and configuring the package before building the actual binary. As a good example, when creating a submission to NIST you need to have different security levels for each category. This poses a problem of having to change the code based on specific parameters. This is where Cargo build scripts and Rust's feature flags come in handy.
 
 \subsubsection{Build script}
-Build scripts are Rust files executed before the package is compiled, offering significant flexibility in the build process. By putting a build.rs file in the root folder of the package cargo will automatically execute this file before building. Enabling you to generate code, link libraries, or configure the build based on environment variables. 
+Build scripts are Rust files executed before the package is compiled, offering significant flexibility in the build process. By putting a build.rs file in the root folder of the package cargo will automatically execute this file before building. Enabling you to generate code, link libraries, or configure the build based on environment variables.
 
 A good example is building and linking C code into a rust package:
 \begin{minted}{rust}
@@ -1654,35 +1654,46 @@ impl FieldArith for u8 {
 
 // main.rs
 fn polynomial<T: FieldArith + Default>(coeffs: &[T]) -> T {
-    let mut result = T::default(); // The `Default` trait
-    for (i, coeff) in coeffs.iter().enumerate() {
-        result = T::add(result, T::mul(*coeff, T::pow(T::default(), i as u8)));
-    }
-    result
+    // implementation ...
 }
 
 fn main() {
-    let coeffs256 = vec![1u8, 2u8, 3u8];
-    println!("Field 256: {:?}", polynomial(&coeffs256));
+    let coeffs = vec![1u8, 2u8, 3u8];
+    println!("Field evaluation: {:?}", polynomial(&coeffs256));
 }
 \end{minted}
 In the example above we use the feature flag to change which trait is implemented for the \rust{u8} type. This means that when we build the binary it only compiles the code that has been specified. 
 As our implementation is a reference implementation for the SD-in-the-Head protocol, we have used feature flags to switch between different categories and optimizations. This allows us to easily test and compare different configurations without having to manually change the code or have duplicates.
 
 \subsection{Rust optimizations}
-Blazingly fast code does not come without a cost. However, Rust offers several ways to optimize performance. In this section, we will introduce the techniques we employed. We will first explore simple methods to enhance performance, followed by more advanced techniques such as parallelization and SIMD.
+Blazingly fast code does not come without a cost. However, Rust offers several ways to optimize performance. In this section, we will first introduce how to quantify the performance of a program in \textit{benchmarking}. Next, we will first explore simple methods to enhance performance, followed by more advanced techniques such as parallelization and SIMD.
+
+
+\subsection*{Benchmarking}
+Benchmarking is an important part of software development. It is a technique that allows us to measure the performance of a program and crucially it allows us to analyse the performance increases achieved by different optimizations. Benchmarking in native Rust is still in early stages. However, the package \textit{criterion}~\cite{criterion} supply a statistics driven benchmarking framework that is easy to use and integrates well with Rust.
 
 \subsection{Build Configuration}
 % https://nnethercote.github.io/perf-book/build-configuration.html#alternative-allocators
-\subsection{Benchmarking}
+
 
 \subsubsection{Inlining}
 A subtle but effective way to improve performance is to inline functions that are called many times, this removes the overhead of the function call. The Rust compiler will automatically inline functions if they are small enough. But there are some cases where this is not enough and the compiler does not inline. In this case we can use the \texttt{inline} attribute to force the compiler to inline a function. Cachegrind is a good profiling tool to check if a function is inlined by the compiler.
 \todo{Maybe revise this}
 
 \subsubsection{Parallelisation}
+A common optimization technique in modern programming is to leverage the multi-core architecture of modern CPUs by employing \textit{parallelization} or \textit{multi-threading}. This approach allows programs to execute multiple tasks concurrently, significantly improving performance for computationally intensive operations.
 
+In many programming languages, multi-threading support is either limited or not guaranteed, often requiring developers to rely on external libraries or frameworks. However, Rust provides robust and native support for \textit{thread-safe} parallelization. With Rust's ownership system and built-in concurrency primitives, developers can write highly performant parallel code while minimizing risks of common concurrency issues such as data races or deadlocks.
 
+The \textit{rayon}~\cite{rayon} package implements easy-to-use and lightweight data-parallelisation through their parallel iterators
+\begin{minted}{rust}
+  use rayon::prelude::*;
+  fn sum_of_squares(input: &[i32]) -> i32 {
+      input.par_iter() // <-- just change that!
+          .map(|&i| i * i)
+          .sum()
+  }
+\end{minted}
 \subsubsection{SIMD}
 
 \section{Structure}
