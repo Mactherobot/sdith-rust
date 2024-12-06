@@ -8,12 +8,14 @@ use sdith::arith::gf256::gf256_vector::{gf256_add_vector, gf256_mul_scalar_add_v
 use sdith::constants::params::{
     PARAM_DIGEST_SIZE, PARAM_K, PARAM_M_SUB_K, PARAM_N, PARAM_SALT_SIZE, PARAM_SEED_SIZE, PARAM_TAU,
 };
+use sdith::constants::types::Hash;
 use sdith::keygen::keygen;
 use sdith::keygen::{PublicKey, SecretKey};
 use sdith::mpc;
 use sdith::signature::input::INPUT_SIZE;
 use sdith::signature::Signature;
 use sdith::subroutines::marshalling::Marshalling as _;
+use sdith::subroutines::merkle_tree::{MerkleTree, MerkleTreeTrait as _};
 use sdith::subroutines::prg::PRG;
 use std::simd::f32x4;
 
@@ -107,6 +109,35 @@ fn simd_benchmark(c: &mut Criterion) {
     });
 }
 
+fn simd_simple(c: &mut Criterion) {
+    c.bench_function("Simple addition", |b| b.iter(|| simple_vector_addition()));
+    c.bench_function("SIMD addition", |b| {
+        b.iter(|| simple_simd_vector_addition())
+    });
+}
+
+fn simple_vector_addition() -> [f32; 4] {
+    let mut x = [1.0, 2.0, 3.0, 4.0];
+    let y = [4.0, 3.0, 2.0, 1.0];
+    for i in 0..4 {
+        x[i] += y[i];
+    }
+
+    x
+}
+
+fn simple_simd_vector_addition() -> [f32; 4] {
+    // create SIMD vectors
+    let x: f32x4 = f32x4::from_array([1.0, 2.0, 3.0, 4.0]);
+    let y: f32x4 = f32x4::from_array([4.0, 3.0, 2.0, 1.0]);
+
+    // SIMD operation
+    let z = x + y; // z = [5.0, 5.0, 5.0, 5.0]
+                   //
+                   // convert back to array
+    z.to_array()
+}
+
 /// Benchmarking functions that use parallel operations: commit shares, compute input shares
 fn parallel_benchmark(c: &mut Criterion) {
     let mut rng = NistPqcAes256CtrRng::from_seed(Seed::default());
@@ -137,33 +168,26 @@ fn parallel_benchmark(c: &mut Criterion) {
     });
 }
 
-fn simd_simple(c: &mut Criterion) {
-    c.bench_function("Simple addition", |b| b.iter(|| simple_vector_addition()));
-    c.bench_function("SIMD addition", |b| {
-        b.iter(|| simple_simd_vector_addition())
+fn merkle_benchmark(c: &mut Criterion) {
+    // Benchmark the Merkle tree create.
+    let mut rng = rand::thread_rng();
+    let commitments: [Hash; 256] = (0..PARAM_N)
+        .map(|_| {
+            let mut input_share = [0u8; PARAM_DIGEST_SIZE];
+            rng.fill_bytes(&mut input_share);
+            input_share
+        })
+        .collect::<Vec<_>>()
+        .as_slice()
+        .try_into()
+        .unwrap();
+
+    let mut salt = [0u8; PARAM_SALT_SIZE];
+    rng.fill_bytes(&mut salt);
+
+    c.bench_function("merkle_tree", |b| {
+        b.iter(|| MerkleTree::new(commitments, Some(salt)));
     });
-}
-
-fn simple_vector_addition() -> [f32; 4] {
-    let mut x = [1.0, 2.0, 3.0, 4.0];
-    let y = [4.0, 3.0, 2.0, 1.0];
-    for i in 0..4 {
-        x[i] += y[i];
-    }
-
-    x
-}
-
-fn simple_simd_vector_addition() -> [f32; 4] {
-    // create SIMD vectors
-    let x: f32x4 = f32x4::from_array([1.0, 2.0, 3.0, 4.0]);
-    let y: f32x4 = f32x4::from_array([4.0, 3.0, 2.0, 1.0]);
-
-    // SIMD operation
-    let z = x + y; // z = [5.0, 5.0, 5.0, 5.0]
-                   //
-                   // convert back to array
-    z.to_array()
 }
 
 #[cfg(all(target_os = "linux", feature = "cycles_per_byte"))]
@@ -178,8 +202,9 @@ criterion_group!(
     benches,
     criterion_benchmark,
     simd_benchmark,
+    simd_simple,
     parallel_benchmark,
-    simd_simple
+    merkle_benchmark
 );
 
 criterion_main!(benches);

@@ -14,7 +14,7 @@ use crate::mpc::beaver::BeaverTriples;
 use crate::mpc::broadcast::{Broadcast, BroadcastShare, BROADCAST_SHARE_PLAIN_SIZE_AB};
 use crate::mpc::{compute_share, inverse_party_computation};
 use crate::subroutines::marshalling::Marshalling;
-use crate::subroutines::merkle_tree::get_merkle_root_from_auth;
+use crate::subroutines::merkle_tree::{MerkleTree, MerkleTreeTrait};
 use crate::{
     constants::{
         params::{PARAM_L, PARAM_TAU},
@@ -86,7 +86,7 @@ impl Signature {
                 commitments_prime[li] = commit_share(&salt, e as u16, *i, &input_share);
             }
 
-            let Ok(root) = get_merkle_root_from_auth(
+            let Ok(root) = MerkleTree::get_root_from_auth_path(
                 &mut auth[e],
                 &commitments_prime,
                 &view_opening_challenges[e],

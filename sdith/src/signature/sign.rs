@@ -17,6 +17,7 @@ use crate::mpc::{
     ComputeInputSharesResult,
 };
 use crate::subroutines::marshalling::Marshalling;
+use crate::subroutines::merkle_tree::MerkleTreeTrait as _;
 use crate::utils::iterator::*;
 use crate::witness::SOLUTION_PLAIN_SIZE;
 use crate::{
@@ -50,7 +51,7 @@ impl Signature {
                 });
 
             let merkle_tree = MerkleTree::new(commitments_prime, None); // TODO: I spec there is a salt here. In implementation there is not.
-            commitments[e] = merkle_tree.get_root();
+            commitments[e] = merkle_tree.root();
             merkle_trees.push(merkle_tree);
         }
 
@@ -130,7 +131,7 @@ impl Signature {
         let mut solution_share = [[[0u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
         let mut auth: [Vec<Hash>; PARAM_TAU] = Default::default();
         for e in 0..PARAM_TAU {
-            auth[e] = merkle_trees[e].get_merkle_path(&view_opening_challenges[e]);
+            auth[e] = merkle_trees[e].auth_path(&view_opening_challenges[e]);
             for (li, i) in view_opening_challenges[e].iter().enumerate() {
                 // Truncate witness share by removing beaver triples from the plain value
                 solution_share[e][li] =

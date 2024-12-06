@@ -19,6 +19,14 @@ fn main() {
     if (cfg!(feature = "xof_blake3") || cfg!(feature = "hash_blake3")) && cat != "one" {
         panic!("Blake3 only supports 128 bit security. 256 is required for categories above 1.")
     }
+
+    // Notify the developer about optimisations
+    if cfg!(feature = "simd") {
+        println!("cargo:warning=SIMD enabled");
+    }
+    if cfg!(feature = "parallel") {
+        println!("cargo:warning=Parallel enabled");
+    }
 }
 
 /// Based on https://stackoverflow.com/a/70914430
