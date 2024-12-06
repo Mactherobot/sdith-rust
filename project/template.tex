@@ -1667,6 +1667,7 @@ fn main() {
 }
 \end{minted}
 In the example above we use the feature flag to change which trait is implemented for the \rust{u8} type. This means that when we build the binary it only compiles the code that has been specified. 
+As our implementation is a reference implementation for the SD-in-the-Head protocol, we have used feature flags to switch between different categories and optimizations. This allows us to easily test and compare different configurations without having to manually change the code or have duplicates.
 
 \subsection{Rust optimizations}
 Blazingly fast code does not come without a cost. However, Rust offers several ways to optimize performance. In this section, we will introduce the techniques we employed. We will first explore simple methods to enhance performance, followed by more advanced techniques such as parallelization and SIMD.
