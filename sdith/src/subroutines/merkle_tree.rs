@@ -14,6 +14,7 @@
 //! The structure allows for the Treshold variant of the signature scheme to only open the commitments to a subset of the parties.
 
 pub mod array_based;
+mod node_based;
 
 use crate::constants::{
     params::{PARAM_DIGEST_SIZE, PARAM_LOG_N, PARAM_N},
