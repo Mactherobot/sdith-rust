@@ -9,6 +9,7 @@
 \usepackage{algpseudocode}
 \usepackage[outputdir=out]{minted}
 \setminted[rust]{breaklines,autogobble}
+\setminted[toml]{breaklines,autogobble}
 \usepackage[]{amsmath}
 \usepackage{epsfig}
 \usepackage[T1]{fontenc}
@@ -1621,7 +1622,7 @@ A good example is building and linking C code into a rust package:
 This approach can be particularly useful when incorporating parts of a reference implementation in C or C++. In our case, due to time constraints, we opted to consider using portions of the reference implementation. Additionally, another important use case for our build script is verifying that the selected features during package compilation are correct. This need arose while benchmarking against another hash function with a lower security level.
 
 \subsubsection{Feature flags}
-Rust offers a robust feature flag system that enables conditional compilation, providing significant flexibility for writing code optimized or configured for various use cases. 
+Rust offers a robust feature flag system that enables conditional compilation, providing significant flexibility for writing code optimized or configured for various use cases.
 A practical example, as previously mentioned, involves handling different sets of arithmetic fields. To address the challenge of creating a struct to manage functionality for the same type across different fields, we can leverage feature flags. These allow us to conditionally compile code tailored to the specific field required. This is achieved by adding the following configuration to the Cargo.toml file:
 \begin{minted}{toml}
 [features]
@@ -1662,10 +1663,10 @@ fn main() {
     println!("Field evaluation: {:?}", polynomial(&coeffs256));
 }
 \end{minted}
-In the example above we use the feature flag to change which trait is implemented for the \rust{u8} type. This means that when we build the binary it only compiles the code that has been specified. 
+In the example above we use the feature flag to change which trait is implemented for the \rust{u8} type. This means that when we build the binary it only compiles the code that has been specified.
 As our implementation is a reference implementation for the SD-in-the-Head protocol, we have used feature flags to switch between different categories and optimizations. This allows us to easily test and compare different configurations without having to manually change the code or have duplicates.
 
-\subsection{Rust optimizations}
+\subsection{Rust optimizations}\label{sub:rust_optimizations}
 Blazingly fast code does not come without a cost. However, Rust offers several ways to optimize performance. In this section, we will first introduce how to quantify the performance of a program in \textit{benchmarking}. Next, we will first explore simple methods to enhance performance, followed by more advanced techniques such as parallelization and SIMD.
 
 
@@ -1696,7 +1697,7 @@ The \textit{rayon}~\cite{rayon} package implements easy-to-use and lightweight d
 \end{minted}
 
 \subsubsection{Single Instruction Multiple Data (SIMD)}
-Single Instruction Multiple Data or SIMD for short, is a way to better utilize a CPU when dealing with data in the form of Vectors. It is a way for the CPU to do a single instruction but on multiple data points at the same time by splitting the data into chunks that fit into a single register. This can greatly improve performance when dealing with large amounts of data. Rust has support for SIMD through the \texttt{std::simd} module. This module provides access to a portable abstraction for SIMD operations that is not bound to any particular hardware architecture. 
+Single Instruction Multiple Data or SIMD for short, is a way to better utilize a CPU when dealing with data in the form of Vectors. It is a way for the CPU to do a single instruction but on multiple data points at the same time by splitting the data into chunks that fit into a single register. This can greatly improve performance when dealing with large amounts of data. Rust has support for SIMD through the \texttt{std::simd} module. This module provides access to a portable abstraction for SIMD operations that is not bound to any particular hardware architecture.
 
 A simple example could be adding two vectors together:
 \begin{minted}{rust}
@@ -1728,8 +1729,8 @@ We can now use the before mentioned criterion package to benchmark the different
 Simple addition         time:   [421.31 ps 425.66 ps 434.68 ps]
 SIMD addition           time:   [420.70 ps 421.12 ps 421.58 ps]
 \end{minted}
-So we see that the SIMD addition is significantly faster than the simple addition. Even more when the data size increases. 
-However, we were still able to utilize this to gain a performance increase in our implementation. 
+So we see that the SIMD addition is significantly faster than the simple addition. Even more when the data size increases.
+However, we were still able to utilize this to gain a performance increase in our implementation.
 
 \section{Structure}
 \todo{describe the structure in detail}
@@ -1773,11 +1774,11 @@ We started out by implementing the different subroutines that are used in the SD
 First we implemented a pseudo random generator (PRG) based on a extendable output hash function (XOF). We used a library called \textit{tiny-keccak}~\cite{tiny-keccak}, which contains implementations of Keccak derived functions specified in the NIST FIPS 202 standard, SP800-185 and KangarooTwelve.
 
 Our initial implementation focused on the NIST category one, which requires a security level of 128 bits. For this we used the SHAKE-128 implementation. But when we later had to adhere to the NIST category tree and five, we had to be able to switch between different implementations of the underlying XOF. For this we implemented a generic trait for the XOF:
-\inputminted[firstline=18, lastline=23]{rust}{../sdith/src/subroutines/prg/xof.rs}
+\todo{link to the xof code}
 This allows us to create a struct that will contain a generic XOF and allow for interchangeability between different XOF implementations:
-\inputminted[firstline=25, lastline=27]{rust}{../sdith/src/subroutines/prg/xof.rs}
+\todo{link to the xof code}
 Now in order to use the correct XOF based on the security level needed for each category, we used a constant to swithc between the different implementations of the SHAKE XOF -- we will discuss how this constant was defined for each category in \autoref{sub:categories}:
-\inputminted[firstline=37, lastline=43]{rust}{../sdith/src/subroutines/prg/xof.rs}
+\todo{link to the xof code}
 We could now call the squeeze funtion to get the random bytes necessary for the seed, salt and key generation.
 
 \subsubsection{Hashing}\label{sec:hashing} % (fold)
@@ -1839,27 +1840,6 @@ We utilized Criterion.rs~\cite{criterion} for initial benchmarking. Criterion.rs
 
 \subsection{Benchmark setup}
 Benchmarking functions are organized in a separate folder named bench. Within this folder, we create files dedicated to specific benchmarking tasks. To enable benchmarking, the target functions must be declared as pub (public) and exported through a lib.rs file. This structure creates a package that can be accessed and invoked by the benchmarking files.
-
-\subsection{Test Environment}
-Benchmarks were conducted on two machines: a Dell XPS 15 9510 and a MacBook Pro with an M2 Pro chip. These machines represent different architectures, allowing us to observe subtle variations in runtime performance based on hardware differences. The specifications of the machines are as follows:
-
-\begin{itemize}
-  \item \textbf{Dell XPS 15 9510}:
-        \begin{itemize}
-          \item \textbf{CPU}: 11th Gen Intel Core i7-11800H @ 2.30GHz x 16
-          \item \textbf{GPU}: GeForce RTX 3050 Ti Mobile
-          \item \textbf{RAM}: 32GB DDR4 3200MHz
-          \item \textbf{OS}: Ubuntu 22.04.5 LTS, 64-bit
-        \end{itemize}
-  \item \textbf{MacBook Pro (M2 Pro)}:
-        \begin{itemize}
-          \item \textbf{CPU}: Apple M2 Pro (10-core CPU: 6 performance cores, 4 efficiency cores)
-          \item \textbf{RAM}: 32GB LPDDR5
-          \item \textbf{OS}: macOS Sequoia 15.1.1 (24B91)
-        \end{itemize}
-\end{itemize}
-This setup provided a diverse testing environment, ensuring our benchmarks accounted for both x86\_64 and ARM architectures.
-% subsection Benchmarking (end)
 
 \subsection{Feature flags}\label{sub:feature_flags} % (fold)
 To maintain a baseline implementation while enabling flexibility to switch between different NIST categories, we utilized Rust's feature flags. These flags support conditional compilation, allowing multiple implementations of the same function to coexist in the codebase. Only the specific implementation required is compiled, based on the flag provided to the compiler. This approach made it possible to test individual optimizations in isolation, rather than applying all optimizations simultaneously.
@@ -1946,6 +1926,136 @@ Blake3, Haraka v2, KangarooTwelve, Xoodyak
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \chapter{Benchmarks}\label{ch:bench}
+
+\section{Testing setup}\label{sub:testing_setup}
+
+\subsection{Test Environment}\label{sub:test_env}
+Benchmarks were conducted on two machines: a Dell XPS 15 9510 and a MacBook Pro with an M2 Pro chip. These machines represent different architectures, allowing us to observe subtle variations in runtime performance based on hardware differences. The specifications of the machines are as follows:
+
+\begin{itemize}
+  \item \textbf{Setup 1: Dell XPS 15 9510}:
+        \begin{itemize}
+          \item \textbf{CPU}: 11th Gen Intel Core i7-11800H @ 2.30GHz x 16
+          \item \textbf{GPU}: GeForce RTX 3050 Ti Mobile
+          \item \textbf{RAM}: 32GB DDR4 3200MHz
+          \item \textbf{OS}: Ubuntu 22.04.5 LTS, 64-bit
+        \end{itemize}
+  \item \textbf{Setup 2: MacBook Pro (M2 Pro)}:
+        \begin{itemize}
+          \item \textbf{CPU}: Apple M2 Pro (10-core CPU: 6 performance cores, 4 efficiency cores)
+          \item \textbf{RAM}: 32GB LPDDR5
+          \item \textbf{OS}: macOS Sequoia 15.1.1 (24B91)
+        \end{itemize}
+\end{itemize}
+This setup provided a diverse testing environment, ensuring our benchmarks accounted for both x86\_64 and ARM architectures. We ran all tests without turbo boost to ensure a fair comparison between tests.
+
+\subsection{Build Configurations}\label{sub:build_config}
+
+The \texttt{cargo} package manager allows you to setup different build profiles. These are configured from the \texttt{Cargo.toml} file. We utilized this to create two different test build configurations. One, the baseline, was configured to disable all optimizations and the other, the release, was configured to enable aggressive optimizations. We ran all benchmarks on both configurations to ensure we had a fair comparison between optimisation steps.
+
+\subsubsection*{Baseline}
+\begin{minted}{toml}
+  [profile.dev]
+  debug = 1
+  opt-level = 3
+
+  [profile.baseline]
+  inherits = "dev"
+  opt-level = 0 # Disables all optimizations
+  lto = "off"   # Disables link time optimizations
+\end{minted}
+
+To get the widest picture of the different optimizations we ran benchmarks on a baseline build which focused on disabling all optimizations run by the compiler. Specifically, we set the optimisation level to 0, removing all optimizations run by the compiler. Furthermore, we disabled the the LLVM link time optimization (LTO) by setting the \texttt{lto} flag to \mintinline{toml}{"off"}.
+
+\subsubsection*{Release}
+\begin{minted}{toml}
+  [profile.release]
+  strip = "debuginfo"
+  codegen-units = 1  
+  lto = "fat"        
+  opt-level = 3      
+  panic = "abort"
+\end{minted}
+
+The release profile was configured to maximize optimization during the compilation process. Specifically, the following settings were applied:
+
+\begin{itemize}
+  \item \mintinline{toml}{strip = "debuginfo"}: This strips debug information from the binary, reducing its size and improving performance.
+
+  \item \mintinline{toml}{codegen-units = 1}: This disables parallel code compilation, resulting in slower compilation times. However, it often provides increased runtime performance and reduces the binary size by allowing the compiler to optimize more effectively.
+
+  \item \mintinline{toml}{lto = "fat"}: This enables ``fat'' Link Time Optimization (LTO), which attempts to optimize across all crates within the dependency graph, enhancing overall performance by analyzing and optimizing the entire codebase.
+
+  \item \mintinline{toml}{opt-level = 3/"z"}: This applies the highest level of performance optimizations offered by the compiler, enabling aggressive optimizations for runtime efficiency. To test the difference between optimising for binary size and performance, we ran the \textit{release} profile with both level 3 and \mintinline{toml}{"z"}, which optimises for binary size as opposed to performance.
+
+
+  \item \mintinline{toml}{panic = "abort"}: This setting ensures that the program aborts immediately on a panic, without performing unwinding. If unwinding (e.g., via the \rust{catch_unwind} macro) is not required, setting \texttt{panic} to \texttt{"abort"} reduces binary size and often provides a slight performance boost.
+\end{itemize}
+
+
+\subsubsection{Benchmarking test areas}\label{sub:bench_test_areas}
+
+We ran benchmarking tests for different areas of the codebase -- based on the api when they were specifically relevant to optimizations from \autoref{sub:rust_optimizations}. Furthermore, we ran benchmarks for different configurations, run through feature flags. We ran all benchmarks for both the baseline and release profiles and ran them on both Setup 1 and Setup 2 \autoref{sub:testing_setup}.
+
+\begin{figure}
+  \begin{itemize}
+    \item API
+          \begin{itemize}
+            \item Key generation
+            \item Signing a message \rust{vec![1,2,3,4]}
+            \item Verifying a signature
+          \end{itemize}
+    \item SIMD
+          \begin{itemize}
+            \item Matrix multiplication
+            \item Vector addition
+            \item Vector addition times a scalar
+          \end{itemize}
+    \item Parallelisation
+          \begin{itemize}
+            \item Computing input share commitments.
+            \item Committing to shares
+          \end{itemize}
+    \item Merkle tree creation \todo{Might not be relevant}
+  \end{itemize}
+  \caption{Benchmark test functions -- Grouped by optimization interest}\label{fig:bench_test_functions}
+\end{figure}
+
+\begin{figure}
+  \begin{itemize}
+    \item Categories -- Only run with and without all optimizations
+          \begin{itemize}
+            \item Category one (143 bits)
+            \item Category three (207 bits)
+            \item Category five (272 bits)
+          \end{itemize}
+    \item Configurations -- Only run with and without all optimizations
+          \begin{itemize}
+            \item Baseline
+            \item Release
+          \end{itemize}
+    \item Optimizations
+          \begin{itemize}
+            \item Parallelisation
+            \item SIMD
+            \item Allocators: \texttt{jemalloc} and \texttt{mimalloc}
+            \item Al optimizations: Parallelisation, SIMD \todo{allocation}
+          \end{itemize}
+  \end{itemize}
+  \caption{Benchmark test variants -- Categories, Configurations, Optimizations}
+\end{figure}
+
+\subsection{Benchmark measurements}\label{sub:bench_measurements}
+We measured performance in both cycles per byte and time. Furthermore we measured the binary size for each benchmark using \texttt{cargo size}. We compared our implementation to the optimised NIST submissions.
+
+\section{Results}\label{sub:results}
+
+\begin{figure}
+  \centering
+\caption{API benchmarks over Categories, Configurations, With/Without Optimizations}\label{fig:api_benchmarks}
+\end{figure}
+
+
 diaries of benchmarks.
 discussion of results
 
