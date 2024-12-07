@@ -76,6 +76,7 @@ mimalloc = ["dep:mimalloc"]
 benchmarks = ["dep:nist-pqc-seeded-rng"]
 cycles_per_byte = ["dep:criterion-cycles-per-byte"] # Benchmarking feature
 kat = ["dep:hex", "dep:nist-pqc-seeded-rng"]        # Include Known Answer Tests
+flat_sampling = []
 
 # Experimental features
 blake3 = ["xof_blake3", "hash_blake3"]
