@@ -45,12 +45,19 @@ cargo build --features category_three
 
 ## Feature flags
 
-### Parallel
+### Optimisations
 
-You can use the `parallel` feature flag to enable parallelism in the protocol. By default, the implementation uses a single thread.
+The package provides several optimisations that can be enabled through feature flags.
+
+- `parallel`: A common bottleneck in the protocsimdol is when you have to compute input shares or commitments as they rely on hashing
+- `simd`: The protocol uses SIMD instructions to speed up matrix multiplication and vector operations
+- `jemalloc` and `mimalloc`: Change the allocator used by the Rust runtime
+
+The most performant configuration can be set with the `optimized` feature flag.
 
 ```bash
-cargo build --features parallel
+cargo build --features simd,parallel,jemalloc
+cargo build --features optimized
 ```
 
 ### Blake3
@@ -61,7 +68,7 @@ Note that Blake3 increases performance, but only supports category 1 due to the 
 
 ```bash
 cargo build --features xof_blake3,hash_blake3
-```
+````
 
 ## Benchmarking
 

@@ -10,22 +10,24 @@ use sdith::constants::params::{
 };
 use sdith::constants::types::Hash;
 use sdith::keygen::keygen;
-use sdith::keygen::{PublicKey, SecretKey};
 use sdith::mpc;
 use sdith::signature::input::INPUT_SIZE;
 use sdith::signature::Signature;
 use sdith::subroutines::marshalling::Marshalling as _;
 use sdith::subroutines::merkle_tree::{MerkleTree, MerkleTreeTrait as _};
 use sdith::subroutines::prg::PRG;
-use std::simd::f32x4;
 
-fn criterion_benchmark(c: &mut Criterion) {
+/// Benchmarking api functions, i.e. keygen, signing and verification
+fn api_benchmark(c: &mut Criterion) {
     let mut rng = NistPqcAes256CtrRng::from_seed(Seed::default());
     // First create master seed
     let mut keygen_seed = [0u8; PARAM_SEED_SIZE];
     rng.fill_bytes(&mut keygen_seed);
-    c.bench_function("keygen", |b| b.iter(|| keygen_bench(&mut rng)));
 
+    // Benchmark keygen
+    c.bench_function("api: `keygen`", |b| b.iter(|| keygen(keygen_seed)));
+
+    // Benchmark signing
     let (pk, sk) = keygen(keygen_seed);
 
     let mut sign_seed = [0u8; PARAM_SEED_SIZE];
@@ -35,34 +37,17 @@ fn criterion_benchmark(c: &mut Criterion) {
     let entropy = (sign_seed, sign_salt);
 
     let message: Vec<u8> = vec![1, 2, 3, 4];
-    c.bench_function("signing", |b| {
-        b.iter(|| signing_bench(entropy, *sk, message.clone()))
+    c.bench_function("api: `Signature::sign_message`", |b| {
+        b.iter(|| Signature::sign_message(entropy, &sk, &message))
     });
 
+    // Benchmark verification
     let signature: Vec<u8> = Signature::sign_message(entropy, &sk, &message)
         .unwrap()
         .serialise();
-    c.bench_function("verification", |b| {
-        b.iter(|| verification_bench(*pk, &signature))
+    c.bench_function("api: `Signature::verify_signature`", |b| {
+        b.iter(|| Signature::verify_signature(&pk, &signature))
     });
-}
-
-fn keygen_bench(rng: &mut NistPqcAes256CtrRng) {
-    let mut keygen_seed = [0u8; PARAM_SEED_SIZE];
-    rng.fill_bytes(&mut keygen_seed);
-    keygen(keygen_seed);
-}
-
-fn signing_bench(
-    entropy: ([u8; PARAM_SEED_SIZE], [u8; PARAM_DIGEST_SIZE]),
-    sk: SecretKey,
-    message: Vec<u8>,
-) {
-    let _signature = Signature::sign_message(entropy, &sk, &message.to_vec());
-}
-
-fn verification_bench(pk: PublicKey, signature: &Vec<u8>) {
-    let _verification = Signature::verify_signature(&pk, signature);
 }
 
 /// Benchmarking functions that use SIMD operations: Matrix multiplication, Vector operations
@@ -81,7 +66,7 @@ fn simd_benchmark(c: &mut Criterion) {
 
     let mut out: [u8; PARAM_M_SUB_K] = [0u8; PARAM_M_SUB_K];
 
-    c.bench_function("simd_matrix_mul", |b| {
+    c.bench_function("simd: `field_mul_matrix_vector`", |b| {
         b.iter(|| {
             field_mul_matrix_vector::<PARAM_M_SUB_K, PARAM_K>(
                 &mut out,
@@ -96,7 +81,7 @@ fn simd_benchmark(c: &mut Criterion) {
     // Benchmarking vector addition
     let vx = [1u8; PARAM_M_SUB_K];
     let mut vz = [0u8; PARAM_M_SUB_K];
-    c.bench_function("simd_vector_add", |b| {
+    c.bench_function("simd: `gf256_add_vector`", |b| {
         b.iter(|| gf256_add_vector(&mut vz, &vx))
     });
 
@@ -104,38 +89,8 @@ fn simd_benchmark(c: &mut Criterion) {
     let vx = [1u8; PARAM_M_SUB_K];
     let mut vz = [0u8; PARAM_M_SUB_K];
     let scalar = 2u8;
-    c.bench_function("simd_vector_add_times_scalar", |b| {
+    c.bench_function("simd: `gf256_mul_scalar_add_vector`", |b| {
         b.iter(|| gf256_mul_scalar_add_vector(&mut vz, &vx, scalar))
-    });
-}
-
-/// This is just to show that SIMD is faster than scalar operations
-fn simd_simple(c: &mut Criterion) {
-    fn simple_vector_addition() -> [f32; 4] {
-        let mut x = [1.0, 2.0, 3.0, 4.0];
-        let y = [4.0, 3.0, 2.0, 1.0];
-        for i in 0..4 {
-            x[i] += y[i];
-        }
-
-        x
-    }
-
-    fn simple_simd_vector_addition() -> [f32; 4] {
-        // create SIMD vectors
-        let x: f32x4 = f32x4::from_array([1.0, 2.0, 3.0, 4.0]);
-        let y: f32x4 = f32x4::from_array([4.0, 3.0, 2.0, 1.0]);
-
-        // SIMD operation
-        let z = x + y; // z = [5.0, 5.0, 5.0, 5.0]
-                       //
-                       // convert back to array
-        z.to_array()
-    }
-
-    c.bench_function("Simple addition", |b| b.iter(|| simple_vector_addition()));
-    c.bench_function("SIMD addition", |b| {
-        b.iter(|| simple_simd_vector_addition())
     });
 }
 
@@ -150,7 +105,7 @@ fn parallel_benchmark(c: &mut Criterion) {
     let mut input_plain = [0u8; INPUT_SIZE];
     prg.sample_field_fq_elements(&mut input_plain);
 
-    c.bench_function("parallel_compute_input_shares", |b| {
+    c.bench_function("parallel: `mpc::compute_input_shares`", |b| {
         b.iter(|| mpc::compute_input_shares(&input_plain, &mut prg))
     });
 
@@ -164,7 +119,7 @@ fn parallel_benchmark(c: &mut Criterion) {
     let mut salt = [0u8; PARAM_SALT_SIZE];
     prg.sample_field_fq_elements(&mut salt);
 
-    c.bench_function("parallel_commit_shares", |b| {
+    c.bench_function("parallel: `Signature::commit_shares`", |b| {
         b.iter(|| Signature::commit_shares(&input_shares, salt))
     });
 }
@@ -186,7 +141,7 @@ fn merkle_benchmark(c: &mut Criterion) {
     let mut salt = [0u8; PARAM_SALT_SIZE];
     rng.fill_bytes(&mut salt);
 
-    c.bench_function("merkle_tree", |b| {
+    c.bench_function("MerkleTree::new", |b| {
         b.iter(|| MerkleTree::new(commitments, Some(salt)));
     });
 }
@@ -195,15 +150,14 @@ fn merkle_benchmark(c: &mut Criterion) {
 criterion_group! {
     name = benches;
     config = Criterion::default().with_measurement(CyclesPerByte);
-    targets = criterion_benchmark, simd_benchmark
+    targets = api_benchmark, simd_benchmark
 }
 
 #[cfg(not(all(target_os = "linux", feature = "cycles_per_byte")))]
 criterion_group!(
     benches,
-    criterion_benchmark,
+    api_benchmark,
     simd_benchmark,
-    simd_simple,
     parallel_benchmark,
     merkle_benchmark
 );

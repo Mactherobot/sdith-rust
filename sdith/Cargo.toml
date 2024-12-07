@@ -22,6 +22,8 @@ blake3 = { version = "1.5.4", optional = true }
 hex = { version = "0.4.3", optional = true }
 criterion-cycles-per-byte = { version = "0.6.1", optional = true }
 nist-pqc-seeded-rng = { version = "0.2.0", optional = true }
+tikv-jemallocator = { version = "0.5.0", optional = true }
+mimalloc = { version = "*", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
@@ -35,11 +37,22 @@ harness = false
 dotenv_codegen = "0.15.0"
 rustc_version = "0.4.1"
 
+# Build profiles
 [profile.dev]
+# debug = 1
 opt-level = 3
 
+[profile.baseline]
+inherits = "dev"
+opt-level = 0 # Disables all optimizations
+lto = "off"   # Disables link time optimizations
+
 [profile.release]
-debug = 1 # TODO: remove this
+strip = "debuginfo" # Strips debug information from the binary
+codegen-units = 1   # Removes parallel code compilation for slower compilation times, but sometimes increases performance and reduces binary size.
+lto = "fat"         # Performs “fat” LTO which attempts to perform optimizations across all crates within the dependency graph.
+opt-level = 3       # Optimizes 0: no optimizations, 1: some optimizations, 2: all optimizations, 3: all optimizations, "s": optimize for binary size, "z": optimize for binary size, but also turn off loop vectorization.
+panic = "abort"     # https://nnethercote.github.io/perf-book/build-configuration.html#abort-on-panic
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(CHANNEL_NIGHTLY)'] }
@@ -48,7 +61,7 @@ unexpected_cfgs = { level = "warn", check-cfg = ['cfg(CHANNEL_NIGHTLY)'] }
 default = ["optimized"]
 
 # Categories
-category_one = [] # This is the default category.
+category_one = []   # This is the default category.
 category_three = []
 category_five = []
 
@@ -56,6 +69,8 @@ category_five = []
 optimized = ["simd", "parallel"]
 parallel = ["dep:rayon"]
 simd = []
+jemalloc = ["dep:tikv-jemallocator"]
+mimalloc = ["dep:mimalloc"]
 
 # Testing and Benchmarking features
 benchmarks = ["dep:nist-pqc-seeded-rng"]

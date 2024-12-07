@@ -9,6 +9,15 @@
 //! By applying the MPC-in-the-Head paradigm, this protocol is turned into a zero-knowledge proof
 //! of knowledge for the syndrome decoding problem that is then transformed into a signature scheme using the Fiat-Shamir heuristic.
 
+// Allocator features
+#[cfg_attr(feature = "jemalloc", global_allocator)]
+#[cfg(feature = "jemalloc")]
+static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
+#[cfg_attr(feature = "mimalloc", global_allocator)]
+#[cfg(feature = "mimalloc")]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 pub mod api;
 pub mod arith;
 pub mod constants;
