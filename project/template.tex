@@ -1059,13 +1059,7 @@ This section provides a detailed overview of our implementation. We begin with a
 
 \todo{For each section of code add following: What is it for (reference to spec section. What issues did we run into. Which Rust specific patterns are we utilizing. How are we testing it. )}
 
-code sections
-code re-usability with traits for categories.
-
-compiling constants for categories
-
 can we use other hashes that still provide the same security assumption from \autoref{sec:assumptions} as post-quantum security (Xoodyak, KangarooTwelve, Haraka v2)
-
 
 \section{The Rust Programming language}\label{sec:rust}
 
@@ -1711,7 +1705,7 @@ fn simple_vector_addition() -> [f32; 4] {
 }
 
 \end{minted}
-Instead of looping through the date we can use SIMD to do the operation in one go:
+Instead of looping through the data we can use SIMD to do the operation in one go:
 \begin{minted}{rust}
 fn simple_simd_vector_addition() -> [f32; 4] {
     // create SIMD vectors
@@ -1734,10 +1728,39 @@ However, we were still able to utilize this to gain a performance increase in ou
 
 \section{Structure}
 \todo{describe the structure in detail}
+To maintain a clear separation of concerns, we have structured the codebase using Rust modules, ensuring that each component of the protocol is well-organized. As illustrated in \autoref{fig:structure}, the root directory of our project contains several key files:
+
+\begin{itemize}
+  \item \texttt{Cargo.toml}: Defines the package metadata and its dependencies.
+  \item \texttt{build.rs}: Specifies build steps that are executed before compiling the binary.
+  \item \texttt{README}: Provides instructions and information for running the project. 
+\end{itemize}
+
+In addition to these files, the directory includes several subdirectories:
+
+\begin{itemize} 
+  \item \texttt{benches}: Contains functionality for benchmarking the code.
+  \item \texttt{src}: Hosts the main codebase, structured into several submodules for modularity and clarity. 
+\end{itemize}
+
+Within the \texttt{src} directory, the code is further divided into submodules, each serving a distinct purpose:
+
+\begin{itemize} 
+  \item \texttt{arith}: Implements arithmetic operations, including a \texttt{gf256} submodule for operations in the $GF(256)$ field.
+  \item \texttt{constants}: Defines parameters and types used throughout the protocol.
+  \item \texttt{kat}: Contains Known Answer Tests (KAT) for verifying implementation correctness.
+  \item \texttt{mpc}: Manages multi-party computation functionalities.
+  \item \texttt{signature}: Implements the signature protocol.
+  \item \texttt{subroutines}: Provides helper functions supporting various components of the protocol.
+  \item \texttt{utils}: Offers utility functions used across the codebase. 
+\end{itemize}
+
+This modular design ensures that each aspect of the protocol is encapsulated within its respective submodule, making the codebase easier to understand, maintain, and extend.
 \begin{figure}[H]
   \dirtree{%
     .1 \color{orange}Cargo.toml.
     .1 \color{orange}build.rs.
+    .1 \color{orange}README.md.
     .1 ./benches/.
     .1 ./src/.
     .2 \color{orange}main.rs.
@@ -1763,6 +1786,7 @@ However, we were still able to utilize this to gain a performance increase in ou
     .2 utils/.
     .3 \color{teal}iterator.rs.
   }
+  \label{fig:structure}
   \caption{The directory structure of the project. \texttt{mod.rs} files are omitted for brevity.}
 \end{figure}
 
