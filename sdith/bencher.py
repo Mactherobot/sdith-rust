@@ -16,6 +16,8 @@ parser.add_argument("--categories", type=str, default="one,three,five")
 parser.add_argument("--profiles", type=str, default="release")
 parser.add_argument("--test", type=str, default="api")
 parser.add_argument("--rest", nargs=ap.REMAINDER, default="")
+parser.add_argument("--out", type=str)
+parser.add_argument("--cycles", type=bool, default=False)
 
 args = parser.parse_args()
 
@@ -50,7 +52,7 @@ def save_results(runUiid, cmd, results, features, category, profile):
     # Get json file
     data = {}
 
-    filename = f"bench_{runUiid}.json"
+    filename =  args.out if args.out else f"bench_{runUiid}.json"
 
     # Check if file exists
     if os.path.exists(filename):
@@ -74,7 +76,7 @@ def save_results(runUiid, cmd, results, features, category, profile):
 
 
 def get_command(features, category, profile, test):
-    return f"cargo bench --no-default-features --features {','.join(features)},category_{category} --profile={profile} {test}"
+    return f"cargo bench --no-default-features --features {','.join(features)},category_{category}{',cycles_per_byte' if args.cycles else ''} --profile={profile} {test}"
 
 
 def run_benchmark(features, category, profile, test):
