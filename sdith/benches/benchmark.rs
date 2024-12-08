@@ -1,4 +1,6 @@
 #![feature(portable_simd)]
+use std::time::Duration;
+
 use criterion::{criterion_group, criterion_main, Criterion};
 #[cfg(all(target_os = "linux", feature = "cycles_per_byte"))]
 use criterion_cycles_per_byte::CyclesPerByte;
@@ -21,15 +23,16 @@ use sdith::subroutines::prg::PRG;
 fn api_benchmark(c: &mut Criterion) {
     let mut rng = NistPqcAes256CtrRng::from_seed(Seed::default());
     let mut group = c.benchmark_group("api");
-    if cfg!(feature = "category_five") || cfg!(feature = "flat_sampling") {
+    if cfg!(feature = "flat_sampling") {
         group.sampling_mode(criterion::SamplingMode::Flat);
     }
+
     // First create master seed
     let mut keygen_seed = [0u8; PARAM_SEED_SIZE];
     rng.fill_bytes(&mut keygen_seed);
 
     // Benchmark keygen
-    group.bench_function("`keygen`", |b| b.iter(|| keygen(keygen_seed)));
+    group.bench_function("keygen", |b| b.iter(|| keygen(keygen_seed)));
 
     // Benchmark signing
     let (pk, sk) = keygen(keygen_seed);
@@ -41,7 +44,7 @@ fn api_benchmark(c: &mut Criterion) {
     let entropy = (sign_seed, sign_salt);
 
     let message: Vec<u8> = vec![1, 2, 3, 4];
-    group.bench_function("`Signature::sign_message`", |b| {
+    group.bench_function("Signature::sign_message", |b| {
         b.iter(|| Signature::sign_message(entropy, &sk, &message))
     });
 
@@ -49,7 +52,7 @@ fn api_benchmark(c: &mut Criterion) {
     let signature: Vec<u8> = Signature::sign_message(entropy, &sk, &message)
         .unwrap()
         .serialise();
-    group.bench_function("`Signature::verify_signature`", |b| {
+    group.bench_function("Signature::verify_signature", |b| {
         b.iter(|| Signature::verify_signature(&pk, &signature))
     });
 }
@@ -71,7 +74,7 @@ fn simd_benchmark(c: &mut Criterion) {
 
     let mut out: [u8; PARAM_M_SUB_K] = [0u8; PARAM_M_SUB_K];
 
-    group.bench_function("`field_mul_matrix_vector`", |b| {
+    group.bench_function("field_mul_matrix_vector", |b| {
         b.iter(|| {
             field_mul_matrix_vector::<PARAM_M_SUB_K, PARAM_K>(
                 &mut out,
@@ -86,7 +89,7 @@ fn simd_benchmark(c: &mut Criterion) {
     // Benchmarking vector addition
     let vx = [1u8; PARAM_M_SUB_K];
     let mut vz = [0u8; PARAM_M_SUB_K];
-    group.bench_function("`gf256_add_vector`", |b| {
+    group.bench_function("gf256_add_vector", |b| {
         b.iter(|| gf256_add_vector(&mut vz, &vx))
     });
 
@@ -94,9 +97,11 @@ fn simd_benchmark(c: &mut Criterion) {
     let vx = [1u8; PARAM_M_SUB_K];
     let mut vz = [0u8; PARAM_M_SUB_K];
     let scalar = 2u8;
-    group.bench_function("`gf256_mul_scalar_add_vector`", |b| {
+    group.bench_function("gf256_mul_scalar_add_vector", |b| {
         b.iter(|| gf256_mul_scalar_add_vector(&mut vz, &vx, scalar))
     });
+
+    group.finish();
 }
 
 /// Benchmarking functions that use parallel operations: commit shares, compute input shares
@@ -111,7 +116,7 @@ fn parallel_benchmark(c: &mut Criterion) {
     let mut input_plain = [0u8; INPUT_SIZE];
     prg.sample_field_fq_elements(&mut input_plain);
 
-    group.bench_function("`mpc::compute_input_shares`", |b| {
+    group.bench_function("mpc::compute_input_shares", |b| {
         b.iter(|| mpc::compute_input_shares(&input_plain, &mut prg))
     });
 
@@ -125,9 +130,10 @@ fn parallel_benchmark(c: &mut Criterion) {
     let mut salt = [0u8; PARAM_SALT_SIZE];
     prg.sample_field_fq_elements(&mut salt);
 
-    group.bench_function("`Signature::commit_shares`", |b| {
+    group.bench_function("Signature::commit_shares", |b| {
         b.iter(|| Signature::commit_shares(&input_shares, salt))
     });
+    group.finish();
 }
 
 fn merkle_benchmark(c: &mut Criterion) {
@@ -148,25 +154,24 @@ fn merkle_benchmark(c: &mut Criterion) {
     let mut salt = [0u8; PARAM_SALT_SIZE];
     rng.fill_bytes(&mut salt);
 
-    group.bench_function("`MerkleTree::new`", |b| {
+    group.bench_function("MerkleTree::new", |b| {
         b.iter(|| MerkleTree::new(commitments, Some(salt)));
     });
+    group.finish();
 }
 
 #[cfg(all(target_os = "linux", feature = "cycles_per_byte"))]
 criterion_group! {
     name = benches;
-    config = Criterion::default().with_measurement(CyclesPerByte);
-    targets = api_benchmark, simd_benchmark
+    config = Criterion::default().with_measurement(CyclesPerByte).significance_level(0.1).sample_size(250).without_plots().measurement_time(Duration::from_secs(10));
+    targets = api_benchmark, simd_benchmark, parallel_benchmark, merkle_benchmark
 }
 
 #[cfg(not(all(target_os = "linux", feature = "cycles_per_byte")))]
 criterion_group!(
-    benches,
-    api_benchmark,
-    simd_benchmark,
-    parallel_benchmark,
-    merkle_benchmark
+    name = benches;
+    config = Criterion::default().significance_level(0.1).sample_size(250).without_plots().measurement_time(Duration::from_secs(20));
+    targets = api_benchmark, simd_benchmark, parallel_benchmark, merkle_benchmark
 );
 
 criterion_main!(benches);

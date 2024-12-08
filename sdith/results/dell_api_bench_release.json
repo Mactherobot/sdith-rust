@@ -1,0 +1,638 @@
+{
+  "cargo bench --no-default-features --features ,category_one --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "302.59 \u00b5s",
+      "api/Signature::sign_message": "4.3968 ms",
+      "api/Signature::verify_signature": "479.89 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features simd,category_one --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "simd"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "318.44 \u00b5s",
+      "api/Signature::sign_message": "3.5400 ms",
+      "api/Signature::verify_signature": "417.61 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features parallel,category_one --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "parallel"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "364.72 \u00b5s",
+      "api/Signature::sign_message": "2.1811 ms",
+      "api/Signature::verify_signature": "519.25 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features jemalloc,category_one --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "jemalloc"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "301.50 \u00b5s",
+      "api/Signature::sign_message": "4.2789 ms",
+      "api/Signature::verify_signature": "461.88 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features ,simd,category_one --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "simd"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "307.78 \u00b5s",
+      "api/Signature::sign_message": "3.4665 ms",
+      "api/Signature::verify_signature": "395.52 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features ,parallel,category_one --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "parallel"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "362.63 \u00b5s",
+      "api/Signature::sign_message": "2.0301 ms",
+      "api/Signature::verify_signature": "476.65 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features ,jemalloc,category_one --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "jemalloc"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "303.41 \u00b5s",
+      "api/Signature::sign_message": "4.3047 ms",
+      "api/Signature::verify_signature": "457.20 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features simd,parallel,category_one --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "simd",
+      "parallel"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "306.84 \u00b5s",
+      "api/Signature::sign_message": "1.8090 ms",
+      "api/Signature::verify_signature": "393.58 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features simd,jemalloc,category_one --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "simd",
+      "jemalloc"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "307.53 \u00b5s",
+      "api/Signature::sign_message": "3.4728 ms",
+      "api/Signature::verify_signature": "404.82 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features parallel,jemalloc,category_one --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "parallel",
+      "jemalloc"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "361.81 \u00b5s",
+      "api/Signature::sign_message": "2.0436 ms",
+      "api/Signature::verify_signature": "493.52 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features ,simd,parallel,category_one --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "simd",
+      "parallel"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "306.30 \u00b5s",
+      "api/Signature::sign_message": "1.8292 ms",
+      "api/Signature::verify_signature": "405.87 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features ,simd,jemalloc,category_one --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "simd",
+      "jemalloc"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "307.07 \u00b5s",
+      "api/Signature::sign_message": "3.3805 ms",
+      "api/Signature::verify_signature": "392.98 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features ,parallel,jemalloc,category_one --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "parallel",
+      "jemalloc"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "363.29 \u00b5s",
+      "api/Signature::sign_message": "2.0712 ms",
+      "api/Signature::verify_signature": "478.07 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features simd,parallel,jemalloc,category_one --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "simd",
+      "parallel",
+      "jemalloc"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "307.14 \u00b5s",
+      "api/Signature::sign_message": "1.8509 ms",
+      "api/Signature::verify_signature": "418.40 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features ,simd,parallel,jemalloc,category_one --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "simd",
+      "parallel",
+      "jemalloc"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "306.29 \u00b5s",
+      "api/Signature::sign_message": "1.8521 ms",
+      "api/Signature::verify_signature": "403.81 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features ,category_three --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "474.28 \u00b5s",
+      "api/Signature::sign_message": "11.226 ms",
+      "api/Signature::verify_signature": "1.3923 ms"
+    }
+  },
+  "cargo bench --no-default-features --features simd,category_three --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "simd"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "410.97 \u00b5s",
+      "api/Signature::sign_message": "8.5718 ms",
+      "api/Signature::verify_signature": "1.1414 ms"
+    }
+  },
+  "cargo bench --no-default-features --features parallel,category_three --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "parallel"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "476.45 \u00b5s",
+      "api/Signature::sign_message": "4.4874 ms",
+      "api/Signature::verify_signature": "1.4803 ms"
+    }
+  },
+  "cargo bench --no-default-features --features jemalloc,category_three --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "jemalloc"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "487.43 \u00b5s",
+      "api/Signature::sign_message": "10.651 ms",
+      "api/Signature::verify_signature": "1.3780 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,simd,category_three --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "simd"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "411.46 \u00b5s",
+      "api/Signature::sign_message": "8.5638 ms",
+      "api/Signature::verify_signature": "1.1627 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,parallel,category_three --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "parallel"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "477.57 \u00b5s",
+      "api/Signature::sign_message": "4.3814 ms",
+      "api/Signature::verify_signature": "1.4411 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,jemalloc,category_three --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "jemalloc"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "481.10 \u00b5s",
+      "api/Signature::sign_message": "10.795 ms",
+      "api/Signature::verify_signature": "1.4048 ms"
+    }
+  },
+  "cargo bench --no-default-features --features simd,parallel,category_three --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "simd",
+      "parallel"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "414.48 \u00b5s",
+      "api/Signature::sign_message": "3.8691 ms",
+      "api/Signature::verify_signature": "1.1624 ms"
+    }
+  },
+  "cargo bench --no-default-features --features simd,jemalloc,category_three --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "simd",
+      "jemalloc"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "410.28 \u00b5s",
+      "api/Signature::sign_message": "8.4725 ms",
+      "api/Signature::verify_signature": "1.1905 ms"
+    }
+  },
+  "cargo bench --no-default-features --features parallel,jemalloc,category_three --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "parallel",
+      "jemalloc"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "475.46 \u00b5s",
+      "api/Signature::sign_message": "4.3662 ms",
+      "api/Signature::verify_signature": "1.4507 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,simd,parallel,category_three --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "simd",
+      "parallel"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "409.81 \u00b5s",
+      "api/Signature::sign_message": "3.8642 ms",
+      "api/Signature::verify_signature": "1.1619 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,simd,jemalloc,category_three --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "simd",
+      "jemalloc"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "410.12 \u00b5s",
+      "api/Signature::sign_message": "8.1748 ms",
+      "api/Signature::verify_signature": "1.1901 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,parallel,jemalloc,category_three --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "parallel",
+      "jemalloc"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "486.53 \u00b5s",
+      "api/Signature::sign_message": "4.3661 ms",
+      "api/Signature::verify_signature": "1.5034 ms"
+    }
+  },
+  "cargo bench --no-default-features --features simd,parallel,jemalloc,category_three --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "simd",
+      "parallel",
+      "jemalloc"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "410.99 \u00b5s",
+      "api/Signature::sign_message": "3.8431 ms",
+      "api/Signature::verify_signature": "1.1627 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,simd,parallel,jemalloc,category_three --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "simd",
+      "parallel",
+      "jemalloc"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "412.97 \u00b5s",
+      "api/Signature::sign_message": "3.8396 ms",
+      "api/Signature::verify_signature": "1.1691 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,category_five --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "850.71 \u00b5s",
+      "api/Signature::sign_message": "24.701 ms",
+      "api/Signature::verify_signature": "3.0532 ms"
+    }
+  },
+  "cargo bench --no-default-features --features simd,category_five --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "simd"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "710.98 \u00b5s",
+      "api/Signature::sign_message": "18.825 ms",
+      "api/Signature::verify_signature": "2.3951 ms"
+    }
+  },
+  "cargo bench --no-default-features --features parallel,category_five --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "parallel"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "844.96 \u00b5s",
+      "api/Signature::sign_message": "9.2652 ms",
+      "api/Signature::verify_signature": "3.1904 ms"
+    }
+  },
+  "cargo bench --no-default-features --features jemalloc,category_five --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "jemalloc"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "833.25 \u00b5s",
+      "api/Signature::sign_message": "23.453 ms",
+      "api/Signature::verify_signature": "3.0936 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,simd,category_five --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "simd"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "710.30 \u00b5s",
+      "api/Signature::sign_message": "19.051 ms",
+      "api/Signature::verify_signature": "2.4108 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,parallel,category_five --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "parallel"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "833.54 \u00b5s",
+      "api/Signature::sign_message": "9.2280 ms",
+      "api/Signature::verify_signature": "3.1323 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,jemalloc,category_five --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "jemalloc"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "849.64 \u00b5s",
+      "api/Signature::sign_message": "24.633 ms",
+      "api/Signature::verify_signature": "3.0776 ms"
+    }
+  },
+  "cargo bench --no-default-features --features simd,parallel,category_five --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "simd",
+      "parallel"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "709.64 \u00b5s",
+      "api/Signature::sign_message": "8.0287 ms",
+      "api/Signature::verify_signature": "2.4355 ms"
+    }
+  },
+  "cargo bench --no-default-features --features simd,jemalloc,category_five --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "simd",
+      "jemalloc"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "710.45 \u00b5s",
+      "api/Signature::sign_message": "19.023 ms",
+      "api/Signature::verify_signature": "2.3922 ms"
+    }
+  },
+  "cargo bench --no-default-features --features parallel,jemalloc,category_five --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "parallel",
+      "jemalloc"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "829.59 \u00b5s",
+      "api/Signature::sign_message": "9.2910 ms",
+      "api/Signature::verify_signature": "3.1531 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,simd,parallel,category_five --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "simd",
+      "parallel"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "710.31 \u00b5s",
+      "api/Signature::sign_message": "7.9975 ms",
+      "api/Signature::verify_signature": "2.4300 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,simd,jemalloc,category_five --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "simd",
+      "jemalloc"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "711.16 \u00b5s",
+      "api/Signature::sign_message": "19.482 ms",
+      "api/Signature::verify_signature": "2.4035 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,parallel,jemalloc,category_five --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "parallel",
+      "jemalloc"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "829.77 \u00b5s",
+      "api/Signature::sign_message": "9.2594 ms",
+      "api/Signature::verify_signature": "3.2555 ms"
+    }
+  },
+  "cargo bench --no-default-features --features simd,parallel,jemalloc,category_five --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "simd",
+      "parallel",
+      "jemalloc"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "712.83 \u00b5s",
+      "api/Signature::sign_message": "8.0373 ms",
+      "api/Signature::verify_signature": "2.4321 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,simd,parallel,jemalloc,category_five --profile=release api": {
+    "runUiid": 9148,
+    "features": [
+      "none",
+      "simd",
+      "parallel",
+      "jemalloc"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "711.83 \u00b5s",
+      "api/Signature::sign_message": "8.0974 ms",
+      "api/Signature::verify_signature": "2.5119 ms"
+    }
+  }
+}

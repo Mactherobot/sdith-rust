@@ -27,6 +27,12 @@ fn main() {
     if cfg!(feature = "parallel") {
         println!("cargo:warning=Parallel enabled");
     }
+    if cfg!(feature = "jemalloc") {
+        println!("cargo:warning=Jemalloc enabled");
+    }
+    if cfg!(feature = "mimalloc") {
+        println!("cargo:warning=Mimalloc enabled");
+    }
 }
 
 /// Based on https://stackoverflow.com/a/70914430
