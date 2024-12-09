@@ -57,6 +57,9 @@ pub trait MerkleTreeTrait {
     /// Returns the root of the Merkle tree.
     fn root(&self) -> Hash;
 
+    /// Returns the node at the given index.
+    fn node(&self, index: usize) -> Hash;
+
     /// Returns the leaf at the given index.
     fn leaf(&self, index: usize) -> Hash;
 
@@ -163,16 +166,7 @@ pub trait MerkleTreeTrait {
                 let parent_index = index >> 1;
 
                 // Generate the parent hash from current node and next node
-                let parent = merkle_hash(
-                    parent_index,
-                    node,
-                    if _next_node != [0_u8; PARAM_DIGEST_SIZE] {
-                        Some(_next_node)
-                    } else {
-                        None
-                    },
-                    salt,
-                );
+                let parent = merkle_hash(parent_index, &node, &_next_node, salt);
 
                 let add = q.add((parent, parent_index));
                 if add.is_err() {
@@ -254,10 +248,11 @@ pub trait MerkleTreeTrait {
 }
 
 /// Calculates the merkle hash from the left and right children and the parent index.
+#[inline(always)]
 pub(self) fn merkle_hash(
     parent_index: usize,
-    left: Hash,
-    right: Option<Hash>,
+    left: &Hash,
+    right: &Hash,
     salt: Option<Salt>,
 ) -> Hash {
     let mut hasher = SDitHHash::init_with_prefix(&[HASH_PREFIX_MERKLE_TREE]);
@@ -270,63 +265,10 @@ pub(self) fn merkle_hash(
     hasher.update(&(parent_index as u16).to_le_bytes());
 
     // Hash the left and right children
-    hasher.update(&left);
-    if let Some(right) = right {
-        hasher.update(&right);
-    }
+    hasher.update(left);
+    hasher.update(right);
 
     hasher.finalize()
-}
-
-pub(self) fn merkle_hash_x4(
-    parent_index: [usize; 4],
-    left: [Hash; 4],
-    right: [Option<Hash>; 4],
-    salt: Option<Salt>,
-) -> (Hash, Hash, Hash, Hash) {
-    let mut hasher = SDitHHash::init_with_prefix(&[HASH_PREFIX_MERKLE_TREE]);
-    let mut hasher_1 = SDitHHash::init_with_prefix(&[HASH_PREFIX_MERKLE_TREE]);
-    let mut hasher_2 = SDitHHash::init_with_prefix(&[HASH_PREFIX_MERKLE_TREE]);
-    let mut hasher_3 = SDitHHash::init_with_prefix(&[HASH_PREFIX_MERKLE_TREE]);
-
-    if let Some(salt) = salt {
-        hasher.update(&salt);
-        hasher_1.update(&salt);
-        hasher_2.update(&salt);
-        hasher_3.update(&salt);
-    }
-
-    // Hash the parent_index
-    hasher.update(&(parent_index[0] as u16).to_le_bytes());
-    hasher_1.update(&(parent_index[1] as u16).to_le_bytes());
-    hasher_2.update(&(parent_index[2] as u16).to_le_bytes());
-    hasher_3.update(&(parent_index[3] as u16).to_le_bytes());
-
-    // Hash the left and right children
-    hasher.update(&left[0]);
-    hasher_1.update(&left[1]);
-    hasher_2.update(&left[2]);
-    hasher_3.update(&left[3]);
-
-    if let Some(right) = right[0] {
-        hasher.update(&right);
-    }
-    if let Some(right) = right[1] {
-        hasher_1.update(&right);
-    }
-    if let Some(right) = right[2] {
-        hasher_2.update(&right);
-    }
-    if let Some(right) = right[3] {
-        hasher_3.update(&right);
-    }
-
-    (
-        hasher.finalize(),
-        hasher_1.finalize(),
-        hasher_2.finalize(),
-        hasher_3.finalize(),
-    )
 }
 
 #[cfg(test)]
@@ -334,16 +276,13 @@ mod test {
     use core::panic;
 
     use crate::{
-        constants::{
-            params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_N},
-            types::hash_default,
-        },
+        constants::params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_N},
         subroutines::prg::PRG,
     };
 
     use super::*;
 
-    fn setup_test_commitments() -> CommitmentsArray {
+    pub fn setup_test_commitments() -> CommitmentsArray {
         let mut commitments = [[0_u8; PARAM_DIGEST_SIZE]; PARAM_N];
         for i in 0..PARAM_N {
             commitments[i] = [i as u8; PARAM_DIGEST_SIZE];
@@ -355,29 +294,38 @@ mod test {
     fn test_new_merkle_tree() {
         let commitments = setup_test_commitments();
         let tree = MerkleTree::new(commitments, None);
-        assert_eq!(tree.height, PARAM_MERKLE_TREE_HEIGHT as u32);
-        assert_eq!(tree.n_nodes, PARAM_MERKLE_TREE_NODES - 1);
-        assert_eq!(tree.n_leaves, { PARAM_N });
-
-        // First node is empty as the tree is not zero indexed
-        assert_eq!(tree.nodes[0], hash_default());
 
         // Get the correct leaves.
         for i in 0..PARAM_N {
-            assert_eq!(tree.leaf(i), commitments[i]);
+            assert_eq!(tree.leaf(i), commitments[i], "Leaf does not match");
         }
-
-        assert_eq!(tree.nodes[256], commitments[0]);
-        assert_eq!(tree.nodes.last(), Some(&commitments[255]));
-        assert_eq!(tree.nodes.len(), PARAM_MERKLE_TREE_NODES);
-        assert_eq!(tree.root(), tree.nodes[1]);
 
         // We are not zero index, so start from 1
-        for i in 1..=255 {
-            let left = tree.nodes[i * 2];
-            let right = tree.nodes[i * 2 + 1];
-            assert_eq!(tree.nodes[i], merkle_hash(i, left, Some(right), None));
+        for i in 1..=(tree.n_nodes() - tree.n_leaves()) {
+
+            let left = tree.node(i * 2);
+            let right = tree.node(i * 2 + 1);
+            assert_eq!(
+                tree.node(i),
+                merkle_hash(i, &left, &right, None),
+                "Failed at index {}",
+                i
+            );
         }
+
+        // Check root
+        assert_eq!(
+            tree.root(),
+            [
+                199, 131, 242, 88, 170, 201, 178, 129, 245, 242, 187, 134, 115, 97, 225, 3, 107, 3,
+                181, 38, 31, 251, 54, 70, 65, 75, 186, 229, 200, 5, 128, 60
+            ],
+            "Root does not match"
+        );
+
+        assert_eq!(tree.height, PARAM_MERKLE_TREE_HEIGHT as u32);
+        assert_eq!(tree.n_leaves(), { PARAM_N });
+        assert_eq!(tree.n_nodes(), PARAM_MERKLE_TREE_NODES - 1);
     }
 
     #[test]
@@ -429,13 +377,13 @@ mod test {
             auth,
             vec![
                 tree.leaf(0),
-                tree.nodes[129],
-                tree.nodes[65],
-                tree.nodes[33],
-                tree.nodes[17],
-                tree.nodes[9],
-                tree.nodes[5],
-                tree.nodes[3],
+                tree.node(129),
+                tree.node(65),
+                tree.node(33),
+                tree.node(17),
+                tree.node(9),
+                tree.node(5),
+                tree.node(3),
             ]
         );
     }
@@ -452,13 +400,13 @@ mod test {
         assert_eq!(
             auth,
             vec![
-                tree.nodes[129],
-                tree.nodes[65],
-                tree.nodes[33],
-                tree.nodes[17],
-                tree.nodes[9],
-                tree.nodes[5],
-                tree.nodes[3],
+                tree.node(129),
+                tree.node(65),
+                tree.node(33),
+                tree.node(17),
+                tree.node(9),
+                tree.node(5),
+                tree.node(3),
             ]
         );
     }
@@ -477,18 +425,18 @@ mod test {
             vec![
                 tree.leaf(1),
                 tree.leaf(254),
-                tree.nodes[129],
-                tree.nodes[254],
-                tree.nodes[65],
-                tree.nodes[126],
-                tree.nodes[33],
-                tree.nodes[62],
-                tree.nodes[17],
-                tree.nodes[30],
-                tree.nodes[9],
-                tree.nodes[14],
-                tree.nodes[5],
-                tree.nodes[6],
+                tree.node(129),
+                tree.node(254),
+                tree.node(65),
+                tree.node(126),
+                tree.node(33),
+                tree.node(62),
+                tree.node(17),
+                tree.node(30),
+                tree.node(9),
+                tree.node(14),
+                tree.node(5),
+                tree.node(6),
             ]
         );
 
@@ -499,12 +447,12 @@ mod test {
             vec![
                 tree.leaf(0),
                 tree.leaf(2),
-                tree.nodes[65],
-                tree.nodes[33],
-                tree.nodes[17],
-                tree.nodes[9],
-                tree.nodes[5],
-                tree.nodes[3],
+                tree.node(65),
+                tree.node(33),
+                tree.node(17),
+                tree.node(9),
+                tree.node(5),
+                tree.node(3),
             ]
         );
     }
@@ -522,12 +470,12 @@ mod test {
             auth,
             vec![
                 tree.leaf(0),
-                tree.nodes[65],
-                tree.nodes[33],
-                tree.nodes[17],
-                tree.nodes[9],
-                tree.nodes[5],
-                tree.nodes[3],
+                tree.node(65),
+                tree.node(33),
+                tree.node(17),
+                tree.node(9),
+                tree.node(5),
+                tree.node(3),
             ]
         );
     }

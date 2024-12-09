@@ -33,6 +33,9 @@ fn main() {
     if cfg!(feature = "mimalloc") {
         println!("cargo:warning=Mimalloc enabled");
     }
+    if cfg!(feature = "merkle_batching") {
+        println!("cargo:warning=Merkle tree batching enabled");
+    }
 }
 
 /// Based on https://stackoverflow.com/a/70914430

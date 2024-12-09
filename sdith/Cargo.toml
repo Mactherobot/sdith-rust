@@ -39,10 +39,8 @@ rustc_version = "0.4.1"
 
 # Build profiles
 [profile.dev]
-# debug = 1
-lto = "fat"         # Performs “fat” LTO which attempts to perform optimizations across all crates within the dependency graph.
+debug = 1
 opt-level = 3
-panic = "abort"     # https://nnethercote.github.io/perf-book/build-configuration.html#abort-on-panic
 
 [profile.baseline]
 inherits = "dev"
@@ -60,7 +58,7 @@ panic = "abort"     # https://nnethercote.github.io/perf-book/build-configuratio
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(CHANNEL_NIGHTLY)'] }
 
 [features]
-default = ["optimized"]
+default = ["optimized", "merkle_batching"]
 
 # Categories
 category_one = []   # This is the default category.
@@ -75,7 +73,7 @@ jemalloc = ["dep:tikv-jemallocator"]
 mimalloc = ["dep:mimalloc"]
 merkle_base = []
 merkle_batching = []
-merkle_parallel = []
+merkle_parallel = ["dep:rayon"]
 
 # Testing and Benchmarking features
 benchmarks = ["dep:nist-pqc-seeded-rng"]

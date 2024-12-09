@@ -8,6 +8,8 @@ use crate::constants::{
     types::{CommitmentsArray, Hash},
 };
 
+use std::time::Instant;
+
 use super::{merkle_hash, MerkleTreeTrait, PARAM_MERKLE_TREE_NODES};
 
 /// Merkle tree struct
@@ -43,7 +45,7 @@ impl MerkleTreeTrait for BaseMerkleTree {
 
         for _h in (0..height).rev() {
             // Indicates if the last node is isolated
-            let last_is_isolated = 1 - (last_index & 0x1);
+            // let last_is_isolated = 1 - (last_index & 0x1);
 
             first_index >>= 1;
             last_index >>= 1;
@@ -57,12 +59,8 @@ impl MerkleTreeTrait for BaseMerkleTree {
                 // Finalize the hash and add it to the parent node
                 tree.nodes[parent_index] = merkle_hash(
                     parent_index,
-                    tree.nodes[left_child_index],
-                    if (parent_index < last_index) || last_is_isolated == 0 {
-                        Some(tree.nodes[right_child_index])
-                    } else {
-                        None
-                    },
+                    &tree.nodes[left_child_index],
+                    &tree.nodes[right_child_index],
                     salt,
                 );
 
@@ -79,6 +77,11 @@ impl MerkleTreeTrait for BaseMerkleTree {
     fn leaf(&self, n: usize) -> Hash {
         assert!(n <= self.n_leaves, "Invalid leaf index: {}", n);
         self.nodes[self.n_leaves + (n) as usize]
+    }
+
+    #[inline(always)]
+    fn node(&self, index: usize) -> Hash {
+        self.nodes[index]
     }
 
     fn auth_path(&self, selected_leaves: &[u16]) -> Vec<Hash> {

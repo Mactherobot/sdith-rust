@@ -1,4 +1,4 @@
-\documentclass[twoside,11pt]{report}
+\documentclass[11pt]{report}
 
 \usepackage[latin1]{inputenc}
 \usepackage[american]{babel}
@@ -1057,7 +1057,7 @@ Recall the definition of the syndrome detection problem from \autoref{def:syndro
 
 We set out to implement the SD-in-the-Head Protocol using a modern, well-maintained language that provides the necessary performance and security for a post-quantum secure signature scheme. To achieve this, we selected Rust~\cite{rustlangRustProgramming,nistsaferlanguages,lurklurkEffectiveRust,rustlangPerformanceBook} as the programming language. As a principle and to give ourselves the ability to manage the protocol effectively, we aimed to develop as much of the project's code as possible independently, minimizing reliance on pre-existing packages. This approach included implementing subroutines for the Galois Finite Field and Merkle Tree Commitment Scheme. However, for cryptographic primitives such as hash functions~\cite{blakethree,tinykeccak}, we utilized external libraries. This reliance is common, as developing such primitives securely often requires an entire dedicated effort and a whole project in itself.
 
-This section provides a detailed overview of our implementation. We begin with an introduction to the Rust programming language, explaining our rationale for choosing it and highlighting specific features that are relevant to the subsequent sections. Following this, we present a brief walkthrough of each module in our implementation, detailing how the code aligns with the SD-in-the-Head specification. Additionally, we describe the methods used to test and optimize these modules and discuss the challenges encountered during their development.
+This section provides a detailed overview of our implementation. We begin with an introduction to the Rust programming language, explaining our rationale for choosing it and highlighting specific features that are relevant to the subsequent sections. Following this, we present a brief walkthrough of each module in our implementation, detailing how the code aligns with the SD-in-the-Head specification. Additionally, we describe the steps taken to test and optimize these modules and discuss the challenges encountered during their development.
 
 \todo{For each section of code add following: What is it for (reference to spec section. What issues did we run into. Which Rust specific patterns are we utilizing. How are we testing it. )}
 
@@ -1418,7 +1418,7 @@ Adding a triple slash \rust{///} above a function or struct generates documentat
 
 While these comments enable developers to access documentation directly within the code, Rust also provides a powerful feature to automatically generate comprehensive documentation. By running \href{https://doc.rust-lang.org/cargo/commands/cargo-doc.html}{\texttt{cargo doc}}, you can create a webpage with detailed documentation for the project. The generated documentation for our implementation can be viewed here: \todo{link to the documentation}.
 
-\subsubsection{Modules}
+\subsubsection{Modules}\label{sec:rust_modules}
 Rust provides a module system that allow you to organize your code into logical units. Making it it easier to understand and maintain the codebase. A module is a collection of related items, such as functions, structs, and constants, that are grouped together.
 
 Modules can be nested, allowing for a hierarchical structure of code.
@@ -1662,16 +1662,59 @@ fn main() {
 In the example above we use the feature flag to change which trait is implemented for the \rust{u8} type. This means that when we build the binary it only compiles the code that has been specified.
 As our implementation is a reference implementation for the SD-in-the-Head protocol, we have used feature flags to switch between different categories and optimizations. This allows us to easily test and compare different configurations without having to manually change the code or have duplicates.
 
-\subsection{Rust optimizations}\label{sub:rust_optimizations}
-Blazingly fast code does not come without a cost. However, Rust offers several ways to optimize performance. In this section, we will first introduce how to quantify the performance of a program in \textit{benchmarking}. Next, we will first explore simple methods to enhance performance, followed by more advanced techniques such as parallelization and SIMD.
+\subsection{Optimizations in Rust}\label{sub:rust_optimizations}
+Blazingly fast code does not come without a cost. However, Rust and its community offers several ways to optimize performance. In this section we describe the methods used to measure performance in our implementation. Next, we will explore techniques for Rust that allow us to enhance performance.
 
+\subsection*{Measuring performance}\label{sec:rust_benchmarking}
+There are two techniques that we used in order to investigate the performance of our implementation and  to guide the optimizations that were needed. These are \textit{benchmarking} and \textit{profiling}.
 
-\subsection*{Benchmarking}
-Benchmarking is an important part of software development. It is a technique that allows us to measure the performance of a program and crucially it allows us to analyse the performance increases achieved by different optimizations. Benchmarking in native Rust is still in early stages. However, the package \textit{criterion}~\cite{criterion} supply a statistics driven benchmarking framework that is easy to use and integrates well with Rust.
+\subsubsection*{Benchmarking}
+Benchmarking involves measuring the performance of a program or specific components of the software. It is commonly used to evaluate efficiency in terms of \textit{speed} and \textit{memory} usage. It often involves running the program multiple times under controlled and repeatable conditions and combining the results into a statistically driven benchmark.
+
+Benchmarking provides several benefits. It allows us to compare our implementation against the submission implementation and, when combined with feature flags and the modular structure of our code, makes it easy to observe how individual performance improvements impact the overall implementation.
+
+In native Rust, benchmarking is still in its early stages. However, the \textit{criterion} package~\cite{criterion} offers a statistically driven benchmarking framework that is user-friendly and integrates seamlessly with Rust.
+
+\subsubsection*{Profiling}
+As opposed to benchmarking, profiling is a process of collecting a detailed \textit{history} of one run of a program. It draws a picture of how much time is spent and how many resources are used during the execution of the program. This information can be used to identify bottlenecks or inefficiencies in the program.
+
+In order to profile our implementation, we used the \textit{Samply Commandline Profiler}~\cite{samply}. Running a \textit{debug} version of our program, we were able to collect a detailed profile of the execution. This allowed us to identify the most time-consuming parts of our code and to pinpoint areas that could be optimized \autoref{fig:samply}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/samply.png}
+  \caption{Samply Profiler HTML Output}
+  \label{fig:samply}
+\end{figure}
+
 
 \subsection{Build Configuration}
-% https://nnethercote.github.io/perf-book/build-configuration.html#alternative-allocators
 
+Rust has a number of configurations that you can apply to the compiler when building a project. These are easily configured using \textit{profiles} in the \texttt{Cargo.toml} file. We configured our optimised release profile as follows:
+
+\begin{minted}{toml}
+  [profile.release]
+  strip = "debuginfo"
+  codegen-units = 1  
+  lto = "fat"        
+  opt-level = 3      
+  panic = "abort"
+\end{minted}
+
+The release profile was configured to maximize optimization during the compilation process. Specifically, the following settings were applied:
+
+\begin{itemize}
+  \item \mintinline{toml}{strip = "debuginfo"}: This strips debug information from the binary, reducing its size and improving performance.
+
+  \item \mintinline{toml}{codegen-units = 1}: This disables parallel code compilation, resulting in slower compilation times. However, it often provides increased runtime performance and reduces the binary size by allowing the compiler to optimize more effectively.
+
+  \item \mintinline{toml}{lto = "fat"}: This enables ``fat'' Link Time Optimization (LTO), which attempts to optimize across all crates within the dependency graph, enhancing overall performance by analyzing and optimizing the entire codebase.
+
+  \item \mintinline{toml}{opt-level = 3/"z"}: This applies the highest level of performance optimizations offered by the compiler, enabling aggressive optimizations for runtime efficiency. To test the difference between optimising for binary size and performance, we ran the \textit{release} profile with both level 3 and \mintinline{toml}{"z"}, which optimises for binary size as opposed to performance.
+
+
+  \item \mintinline{toml}{panic = "abort"}: This setting ensures that the program aborts immediately on a panic, without performing unwinding. If unwinding (e.g., via the \rust{catch_unwind} macro) is not required, setting \texttt{panic} to \texttt{"abort"} reduces binary size and often provides a slight performance boost.
+\end{itemize}
 
 \subsubsection{Inlining}
 A subtle but effective way to improve performance is to inline functions that are called many times, this removes the overhead of the function call. The Rust compiler will automatically inline functions if they are small enough. But there are some cases where this is not enough and the compiler does not inline. In this case we can use the \texttt{inline} attribute to force the compiler to inline a function. Cachegrind is a good profiling tool to check if a function is inlined by the compiler.
@@ -1707,7 +1750,9 @@ fn simple_vector_addition() -> [f32; 4] {
 }
 
 \end{minted}
+
 Instead of looping through the data we can use SIMD to do the operation in one go:
+
 \begin{minted}{rust}
 fn simple_simd_vector_addition() -> [f32; 4] {
     // create SIMD vectors
@@ -1719,23 +1764,25 @@ fn simple_simd_vector_addition() -> [f32; 4] {
     z.to_array()
 }
 \end{minted}
-We can now use the before mentioned criterion package to benchmark the different implementations and see the performance difference:
-\begin{minted}{bash}
-  $ cargo bench
-Simple addition         time:   [421.31 ps 425.66 ps 434.68 ps]
-SIMD addition           time:   [420.70 ps 421.12 ps 421.58 ps]
-\end{minted}
-So we see that the SIMD addition is significantly faster than the simple addition. Even more when the data size increases.
-However, we were still able to utilize this to gain a performance increase in our implementation.
+
+% Talk about this in benchmarking chapter
+% We can now use the before mentioned criterion package to benchmark the different implementations and see the performance difference:
+
+% \begin{minted}{bash}
+%   $ cargo bench
+% Simple addition         time:   [421.31 ps 425.66 ps 434.68 ps]
+% SIMD addition           time:   [420.70 ps 421.12 ps 421.58 ps]
+% \end{minted}
+% So we see that the SIMD addition is significantly faster than the simple addition. Even more when the data size increases.
+% However, we were still able to utilize this to gain a performance increase in our implementation.
 
 \section{Structure}
-\todo{describe the structure in detail}
-To maintain a clear separation of concerns, we have structured the codebase using Rust modules, ensuring that each component of the protocol is well-organized. As illustrated in \autoref{fig:structure}, the root directory of our project contains several key files:
+To maintain a clear separation of concerns, we have structured the codebase using Rust modules (\autoref{sec:rust_modules}), ensuring that each component of the protocol is well-organized. As illustrated in \autoref{fig:structure}, the root directory of our project contains several key files:
 
 \begin{itemize}
   \item \texttt{Cargo.toml}: Defines the package metadata and its dependencies.
   \item \texttt{build.rs}: Specifies build steps that are executed before compiling the binary.
-  \item \texttt{README}: Provides instructions and information for running the project.
+  \item \texttt{README.md}: Provides instructions and information for running the project.
 \end{itemize}
 
 In addition to these files, the directory includes several subdirectories:
@@ -1788,13 +1835,13 @@ This modular design ensures that each aspect of the protocol is encapsulated wit
     .2 utils/.
     .3 \color{teal}iterator.rs.
   }
-  \label{fig:structure}
   \caption{The directory structure of the project. \texttt{mod.rs} files are omitted for brevity.}
+  \label{fig:structure}
 \end{figure}
 
 \section{Subroutines}\label{sub:subroutines}
 
-We started out by implementing the different subroutines that are used in the SD-in-the-Head protocol. We will describe the implementation of each subroutine in detail.
+Due to the modularity of the SD-in-the-Head protocol, we were able to set about implementing the initial parts of the protocol as a set of subroutines; \textit{Pseudo-random Generator}, \textit{Commitment}, \textit{Hashing}, and \textit{Merkle tree Commitment Scheme}.
 
 \subsection{PRG}
 First we implemented a pseudo random generator (PRG) based on a extendable output hash function (XOF). We used a library called \textit{tiny-keccak}~\cite{tiny-keccak}, which contains implementations of Keccak derived functions specified in the NIST FIPS 202 standard, SP800-185 and KangarooTwelve.
@@ -1815,7 +1862,7 @@ This was done by creating a generic trait for the hash function:
 
 % subsubsection Hashing (end)
 %
-\subsection{commitments}
+\subsection{Commitments}
 
 \subsubsection{Merkle Tree impl}\label{sub:merkle_tree_impl}
 Our merkle tree implementation was done using a sized array as data structure. Meaning that we save all the leafs of the tree in the last 256 values of the array.
@@ -1850,56 +1897,17 @@ And we can now use the field arithmetic in our code to for example generate beav
 
 Furthermore, all our arithmetic can be tested individually, as we can see in the following test:
 \todo{link to the arith test}
-\section{Key generation}
-
-\section{MPC}\label{sub:mpc_algo}
-After implementing all the subroutines, we could now do the MPC computations necessary for signing and verification.
-
-\section{Comparison with spec impl}\label{sub:comparison_with_spec_impl}
-In order to verify and debug our own code we tried to setup our implementation to fit with the specification implementation in C, meaning we had to run their code in order to get the intermediate data in order to compare the internal states.
-Here we found a bug in the way the view-opening challenges was calculated, they had forgotten to finalize the Shake before squeezing, which was a problem because in the tiny keccak rust library this was always done when initializing a hash or xof.
-Furthermore we found that in order to generate the same output from the xof we needed to first rotate the permutation once by supplying an empty vector before actually using the function.
-We also found that the merkle tree was not using the salt.
-
-\section{Benchmarking}\label{sub:benchmarking} % (fold)
-We utilized Criterion.rs~\cite{criterion} for initial benchmarking. Criterion.rs is a statistics-driven benchmarking library for Rust, offering robust tools to measure and analyze performance reliably.
-
-\subsection{Benchmark setup}
-Benchmarking functions are organized in a separate folder named bench. Within this folder, we create files dedicated to specific benchmarking tasks. To enable benchmarking, the target functions must be declared as pub (public) and exported through a lib.rs file. This structure creates a package that can be accessed and invoked by the benchmarking files.
-
-\subsection{Feature flags}\label{sub:feature_flags} % (fold)
-To maintain a baseline implementation while enabling flexibility to switch between different NIST categories, we utilized Rust's feature flags. These flags support conditional compilation, allowing multiple implementations of the same function to coexist in the codebase. Only the specific implementation required is compiled, based on the flag provided to the compiler. This approach made it possible to test individual optimizations in isolation, rather than applying all optimizations simultaneously.
-
-The way we implemented this was by using the \rust{cfg} attribute. This attribute allows us to specify a feature flag, which can be used to conditionally compile code. For example, we can use the following code to conditionally compile a function:
-\begin{minted}{rust}
-#[cfg(not(feature = "simd"))]
-pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
-... add vector the naive way ...
-}
-
-#[cfg(feature = "simd")]
-pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
-... add vector the simd way ...
-}
-\end{minted}
-This ensures that when the feature flag for $simd$ is set the compiled code will have the simd function only.
 
 \section{Categories}\label{sub:categories} % (fold)
 We tried reworking to use dynamically sized vectors instead of compile time sized arrays. Which proved to be a big rework and refactor. Benching showed slower running times. So instead we went with compile time script to set the constants.
 
-This allows us to change between categories in the following ways:
-\begin{itemize}
-  \item By environment variable
-  \item By Feature flag
-\end{itemize}
+% Removed after using feature flags instead
+% \subsubsection{Environment variables}\label{sub:env_vars}
+% Environment variables can be set in the command line or given to the compiler when invoking cargo. The following code snippet shows how you would pass the category to the compiler. Due to the fact that we went with
+% \begin{minted}{bash}
+% ~$ SDITH_CATEGORY=5 cargo bench
+% \end{minted}
 
-\subsubsection{Environment variables}\label{sub:env_vars}
-Environment variables can be set in the command line or given to the compiler when invoking cargo. The following code snippet shows how you would pass the category to the compiler. Due to the fact that we went with
-\begin{minted}{bash}
-~$ SDITH_CATEGORY=5 cargo bench
-\end{minted}
-
-\subsubsection{Feature flags categories}\label{sub:feature_flags_categories}
 After implementing the environment variables, we realised that we could also use feature flags to change the category. This is done by adding the following to the Cargo.toml file.
 \begin{minted}{rust}
 [features]
@@ -1908,6 +1916,7 @@ default = ["category_one", "optimized"]
 # Categories
 category_one = []
 category_three = []
+category_five= []
 \end{minted}
 Where we state the default category to be one, and the optimized flag to be enabled.
 Now in the build.rs file we can change the category based on the feature flag in the following way:
@@ -1929,9 +1938,19 @@ One can now invoke the benchmarking for category one by running the following co
   ~$ cargo bench --features category_one
 \end{minted}
 
+
+\section{Key generation}
+
+\section{MPC}\label{sub:mpc_algo}
+After implementing all the subroutines, we could now do the MPC computations necessary for signing and verification.
+
+\section{Comparison with spec impl}\label{sub:comparison_with_spec_impl}
+In order to verify and debug our own code we tried to setup our implementation to fit with the specification implementation in C, meaning we had to run their code in order to get the intermediate data in order to compare the internal states.
+Here we found a bug in the way the view-opening challenges was calculated, they had forgotten to finalize the Shake before squeezing, which was a problem because in the tiny keccak rust library this was always done when initializing a hash or xof.
+Furthermore we found that in order to generate the same output from the xof we needed to first rotate the permutation once by supplying an empty vector before actually using the function.
+We also found that the merkle tree was not using the salt.
+
 \section{Optimizations}
-In order to find optimizations we used the samply CPU profiler~\cite{Stange2024mstange}, to locate long running functions and loops. This was done by building the binary with cargo and supplying it to the samply CPU profiler. The profiler then generates seeds $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$. a call stack and a flamegraph from the binary, this shows how many cycles of the cpu were used in different sections of the code.
-\todo{Maybe a picture of how the base program looked in the call stack}
 
 
 \subsection{Parallelisation}\label{sub:rayon} % (fold)
@@ -1947,11 +1966,30 @@ Blake3, Haraka v2, KangarooTwelve, Xoodyak
 
 \section{Kat for NIST}\label{sub:kat_for_nist} % (fold)
 
-% subsection Kat for NIST (end)
+\chapter{Benchmarking}\label{ch:bench}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\chapter{Benchmarks}\label{ch:bench}
+We utilized the Criterion.rs~\cite{criterion} package benchmarking. Criterion.rs is a statistics-driven benchmarking library for Rust, offering robust tools to measure and analyze performance reliably.
+
+\subsection{Benchmark setup}
+Benchmarking functions are organized in a separate folder named bench. Within this folder, we create files dedicated to specific benchmarking tasks. To enable benchmarking, the target functions must be declared as pub (public) and exported through a lib.rs file. This structure creates a package that can be accessed and invoked by the benchmarking files.
+
+\subsection{Feature flags}\label{sub:feature_flags} % (fold)
+To maintain a baseline implementation while enabling flexibility to switch between different NIST categories, we utilized Rust's feature flags. These flags support conditional compilation, allowing multiple implementations of the same function to coexist in the codebase. Only the specific implementation required is compiled, based on the flag provided to the compiler. This approach made it possible to test individual optimizations in isolation, rather than applying all optimizations simultaneously.
+
+The way we implemented this was by using the \rust{cfg} attribute. This attribute allows us to specify a feature flag, which can be used to conditionally compile code. For example, we can use the following code to conditionally compile a function:
+\begin{minted}{rust}
+#[cfg(not(feature = "simd"))]
+pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
+... add vector the naive way ...
+}
+
+#[cfg(feature = "simd")]
+pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
+... add vector the simd way ...
+}
+\end{minted}
+This ensures that when the feature flag for $simd$ is set the compiled code will have the simd function only.
 
 \section{Testing setup}\label{sub:testing_setup}
 
@@ -1976,47 +2014,6 @@ Benchmarks were conducted on two machines: a Dell XPS 15 9510 and a MacBook Pro 
 This setup provided a diverse testing environment, ensuring our benchmarks accounted for both x86\_64 and ARM architectures. We ran all tests without turbo boost to ensure a fair comparison between tests.
 
 \subsection{Build Configurations}\label{sub:build_config}
-
-The \texttt{cargo} package manager allows you to setup different build profiles. These are configured from the \texttt{Cargo.toml} file. We utilized this to create two different test build configurations. One, the baseline, was configured to disable all optimizations and the other, the release, was configured to enable aggressive optimizations. We ran all benchmarks on both configurations to ensure we had a fair comparison between optimisation steps.
-
-\subsubsection*{Baseline}
-\begin{minted}{toml}
-  [profile.dev]
-  debug = 1
-  opt-level = 3
-
-  [profile.baseline]
-  inherits = "dev"
-  opt-level = 0 # Disables all optimizations
-  lto = "off"   # Disables link time optimizations
-\end{minted}
-
-To get the widest picture of the different optimizations we ran benchmarks on a baseline build which focused on disabling all optimizations run by the compiler. Specifically, we set the optimisation level to 0, removing all optimizations run by the compiler. Furthermore, we disabled the the LLVM link time optimization (LTO) by setting the \texttt{lto} flag to \mintinline{toml}{"off"}.
-
-\subsubsection*{Release}
-\begin{minted}{toml}
-  [profile.release]
-  strip = "debuginfo"
-  codegen-units = 1  
-  lto = "fat"        
-  opt-level = 3      
-  panic = "abort"
-\end{minted}
-
-The release profile was configured to maximize optimization during the compilation process. Specifically, the following settings were applied:
-
-\begin{itemize}
-  \item \mintinline{toml}{strip = "debuginfo"}: This strips debug information from the binary, reducing its size and improving performance.
-
-  \item \mintinline{toml}{codegen-units = 1}: This disables parallel code compilation, resulting in slower compilation times. However, it often provides increased runtime performance and reduces the binary size by allowing the compiler to optimize more effectively.
-
-  \item \mintinline{toml}{lto = "fat"}: This enables ``fat'' Link Time Optimization (LTO), which attempts to optimize across all crates within the dependency graph, enhancing overall performance by analyzing and optimizing the entire codebase.
-
-  \item \mintinline{toml}{opt-level = 3/"z"}: This applies the highest level of performance optimizations offered by the compiler, enabling aggressive optimizations for runtime efficiency. To test the difference between optimising for binary size and performance, we ran the \textit{release} profile with both level 3 and \mintinline{toml}{"z"}, which optimises for binary size as opposed to performance.
-
-
-  \item \mintinline{toml}{panic = "abort"}: This setting ensures that the program aborts immediately on a panic, without performing unwinding. If unwinding (e.g., via the \rust{catch_unwind} macro) is not required, setting \texttt{panic} to \texttt{"abort"} reduces binary size and often provides a slight performance boost.
-\end{itemize}
 
 
 \subsubsection{Benchmarking test areas}\label{sub:bench_test_areas}

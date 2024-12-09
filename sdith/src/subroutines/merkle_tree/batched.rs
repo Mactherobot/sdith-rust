@@ -3,12 +3,66 @@
 //! Nodes are stored in an array and the tree is constructed from the bottom up.
 //!
 
-use crate::constants::{
-    params::PARAM_DIGEST_SIZE,
-    types::{CommitmentsArray, Hash},
+use crate::{
+    constants::{
+        params::PARAM_DIGEST_SIZE,
+        types::{CommitmentsArray, Hash, Salt},
+    },
+    subroutines::prg::hashing::{SDitHHash, SDitHHashTrait as _},
 };
 
-use super::{merkle_hash, merkle_hash_x4, MerkleTreeTrait, PARAM_MERKLE_TREE_NODES};
+use super::{merkle_hash, MerkleTreeTrait, HASH_PREFIX_MERKLE_TREE, PARAM_MERKLE_TREE_NODES};
+
+pub(self) fn merkle_hash_x4(
+    parent_index: [usize; 4],
+    left: [Hash; 4],
+    right: [Option<Hash>; 4],
+    salt: Option<Salt>,
+) -> (Hash, Hash, Hash, Hash) {
+    let mut hasher = SDitHHash::init_with_prefix(&[HASH_PREFIX_MERKLE_TREE]);
+    let mut hasher_1 = SDitHHash::init_with_prefix(&[HASH_PREFIX_MERKLE_TREE]);
+    let mut hasher_2 = SDitHHash::init_with_prefix(&[HASH_PREFIX_MERKLE_TREE]);
+    let mut hasher_3 = SDitHHash::init_with_prefix(&[HASH_PREFIX_MERKLE_TREE]);
+
+    if let Some(salt) = salt {
+        hasher.update(&salt);
+        hasher_1.update(&salt);
+        hasher_2.update(&salt);
+        hasher_3.update(&salt);
+    }
+
+    // Hash the parent_index
+    hasher.update(&(parent_index[0] as u16).to_le_bytes());
+    hasher_1.update(&(parent_index[1] as u16).to_le_bytes());
+    hasher_2.update(&(parent_index[2] as u16).to_le_bytes());
+    hasher_3.update(&(parent_index[3] as u16).to_le_bytes());
+
+    // Hash the left and right children
+    hasher.update(&left[0]);
+    hasher_1.update(&left[1]);
+    hasher_2.update(&left[2]);
+    hasher_3.update(&left[3]);
+
+    if let Some(right) = right[0] {
+        hasher.update(&right);
+    }
+    if let Some(right) = right[1] {
+        hasher_1.update(&right);
+    }
+    if let Some(right) = right[2] {
+        hasher_2.update(&right);
+    }
+    if let Some(right) = right[3] {
+        hasher_3.update(&right);
+    }
+
+    (
+        hasher.finalize(),
+        hasher_1.finalize(),
+        hasher_2.finalize(),
+        hasher_3.finalize(),
+    )
+}
 
 /// Merkle tree struct
 pub struct BatchedMerkleTree {
@@ -81,7 +135,7 @@ impl MerkleTreeTrait for BatchedMerkleTree {
 
         for _h in (0..2).rev() {
             // Indicates if the last node is isolated
-            let last_is_isolated = 1 - (last_index & 0x1);
+            // let last_is_isolated = 1 - (last_index & 0x1);
 
             first_index >>= 1;
             last_index >>= 1;
@@ -95,12 +149,8 @@ impl MerkleTreeTrait for BatchedMerkleTree {
                 // Finalize the hash and add it to the parent node
                 tree.nodes[parent_index] = merkle_hash(
                     parent_index,
-                    tree.nodes[left_child_index],
-                    if (parent_index < last_index) || last_is_isolated == 0 {
-                        Some(tree.nodes[right_child_index])
-                    } else {
-                        None
-                    },
+                    &tree.node(left_child_index),
+                    &tree.node(right_child_index),
                     salt,
                 );
 
@@ -112,6 +162,11 @@ impl MerkleTreeTrait for BatchedMerkleTree {
 
     fn root(&self) -> Hash {
         self.nodes[1]
+    }
+
+    #[inline(always)]
+    fn node(&self, index: usize) -> Hash {
+        self.nodes[index]
     }
 
     fn leaf(&self, n: usize) -> Hash {
