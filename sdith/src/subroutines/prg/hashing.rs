@@ -62,6 +62,7 @@ impl SDitHHashTrait<Sha3> for SDitHHash<Sha3> {
         SDitHHash { hasher }
     }
 
+
     fn finalize(self) -> Hash {
         let mut output = [0u8; crate::constants::params::PARAM_DIGEST_SIZE];
         self.hasher.finalize(&mut output);

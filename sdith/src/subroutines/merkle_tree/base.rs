@@ -11,7 +11,7 @@ use crate::constants::{
 use super::{merkle_hash, MerkleTreeTrait, PARAM_MERKLE_TREE_NODES};
 
 /// Merkle tree struct
-pub struct ArrayBasedMerkleTree {
+pub struct BaseMerkleTree {
     /// The height of the Merkle tree
     pub height: u32,
     /// The number of nodes in the Merkle tree
@@ -22,7 +22,7 @@ pub struct ArrayBasedMerkleTree {
     pub nodes: [Hash; PARAM_MERKLE_TREE_NODES],
 }
 
-impl MerkleTreeTrait for ArrayBasedMerkleTree {
+impl MerkleTreeTrait for BaseMerkleTree {
     fn new(commitments: CommitmentsArray, salt: Option<Hash>) -> Self {
         let nb_leaves = commitments.len();
         let height: u32 = nb_leaves.ilog2();

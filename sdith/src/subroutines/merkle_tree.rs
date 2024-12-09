@@ -13,14 +13,21 @@
 //!
 //! The structure allows for the Treshold variant of the signature scheme to only open the commitments to a subset of the parties.
 
-pub mod array_based;
+#[cfg(not(feature = "merkle_batching"))]
+pub mod base;
+#[cfg(not(feature = "merkle_batching"))]
+pub use base::BaseMerkleTree as MerkleTree;
+
+#[cfg(feature = "merkle_batching")]
+pub mod batched;
+#[cfg(feature = "merkle_batching")]
+pub use batched::BatchedMerkleTree as MerkleTree;
 
 use crate::constants::{
     params::{PARAM_DIGEST_SIZE, PARAM_LOG_N, PARAM_N},
     types::{CommitmentsArray, Hash, Salt},
 };
 
-pub use array_based::ArrayBasedMerkleTree as MerkleTree;
 use queues::{queue, IsQueue as _, Queue};
 
 use super::prg::hashing::{SDitHHash, SDitHHashTrait as _};

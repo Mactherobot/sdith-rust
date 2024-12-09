@@ -40,7 +40,9 @@ rustc_version = "0.4.1"
 # Build profiles
 [profile.dev]
 # debug = 1
+lto = "fat"         # Performs “fat” LTO which attempts to perform optimizations across all crates within the dependency graph.
 opt-level = 3
+panic = "abort"     # https://nnethercote.github.io/perf-book/build-configuration.html#abort-on-panic
 
 [profile.baseline]
 inherits = "dev"
@@ -71,6 +73,7 @@ parallel = ["dep:rayon"]
 simd = []
 jemalloc = ["dep:tikv-jemallocator"]
 mimalloc = ["dep:mimalloc"]
+merkle_batching = []
 
 # Testing and Benchmarking features
 benchmarks = ["dep:nist-pqc-seeded-rng"]
