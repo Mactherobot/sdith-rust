@@ -1,0 +1,155 @@
+{
+  "cargo bench --no-default-features --features simd,category_one --profile=release api": {
+    "runUiid": 538,
+    "features": [
+      "simd"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "614.11 \u00b5s",
+      "api/Signature::sign_message": "6.4430 ms",
+      "api/Signature::verify_signature": "741.81 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features parallel,category_one --profile=release api": {
+    "runUiid": 538,
+    "features": [
+      "parallel"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "724.94 \u00b5s",
+      "api/Signature::sign_message": "3.6172 ms",
+      "api/Signature::verify_signature": "914.76 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features simd,parallel,category_one --profile=release api": {
+    "runUiid": 538,
+    "features": [
+      "simd",
+      "parallel"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "611.30 \u00b5s",
+      "api/Signature::sign_message": "3.2728 ms",
+      "api/Signature::verify_signature": "748.92 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features ,category_one --profile=release api": {
+    "runUiid": 538,
+    "features": "",
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "600.33 \u00b5s",
+      "api/Signature::sign_message": "8.1437 ms",
+      "api/Signature::verify_signature": "900.69 \u00b5s"
+    }
+  },
+  "cargo bench --no-default-features --features simd,category_three --profile=release api": {
+    "runUiid": 538,
+    "features": [
+      "simd"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "819.72 \u00b5s",
+      "api/Signature::sign_message": "15.679 ms",
+      "api/Signature::verify_signature": "2.1924 ms"
+    }
+  },
+  "cargo bench --no-default-features --features parallel,category_three --profile=release api": {
+    "runUiid": 538,
+    "features": [
+      "parallel"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "949.28 \u00b5s",
+      "api/Signature::sign_message": "7.8797 ms",
+      "api/Signature::verify_signature": "2.6408 ms"
+    }
+  },
+  "cargo bench --no-default-features --features simd,parallel,category_three --profile=release api": {
+    "runUiid": 538,
+    "features": [
+      "simd",
+      "parallel"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "824.77 \u00b5s",
+      "api/Signature::sign_message": "7.4546 ms",
+      "api/Signature::verify_signature": "2.2312 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,category_three --profile=release api": {
+    "runUiid": 538,
+    "features": "",
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "949.45 \u00b5s",
+      "api/Signature::sign_message": "20.497 ms",
+      "api/Signature::verify_signature": "2.6940 ms"
+    }
+  },
+  "cargo bench --no-default-features --features simd,category_five --profile=release api": {
+    "runUiid": 538,
+    "features": [
+      "simd"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "1.4173 ms",
+      "api/Signature::sign_message": "36.456 ms",
+      "api/Signature::verify_signature": "4.6432 ms"
+    }
+  },
+  "cargo bench --no-default-features --features parallel,category_five --profile=release api": {
+    "runUiid": 538,
+    "features": [
+      "parallel"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "1.6654 ms",
+      "api/Signature::sign_message": "17.375 ms",
+      "api/Signature::verify_signature": "5.8952 ms"
+    }
+  },
+  "cargo bench --no-default-features --features simd,parallel,category_five --profile=release api": {
+    "runUiid": 538,
+    "features": [
+      "simd",
+      "parallel"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "1.4233 ms",
+      "api/Signature::sign_message": "15.580 ms",
+      "api/Signature::verify_signature": "4.6541 ms"
+    }
+  },
+  "cargo bench --no-default-features --features ,category_five --profile=release api": {
+    "runUiid": 538,
+    "features": "",
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "1.6690 ms",
+      "api/Signature::sign_message": "45.471 ms",
+      "api/Signature::verify_signature": "5.9694 ms"
+    }
+  }
+}

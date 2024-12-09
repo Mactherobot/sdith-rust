@@ -1,6 +1,7 @@
 #![feature(portable_simd)]
 use std::time::Duration;
 
+use criterion::measurement::Measurement;
 use criterion::{criterion_group, criterion_main, Criterion};
 #[cfg(all(target_os = "linux", feature = "cycles_per_byte"))]
 use criterion_cycles_per_byte::CyclesPerByte;
@@ -20,7 +21,7 @@ use sdith::subroutines::merkle_tree::{MerkleTree, MerkleTreeTrait as _};
 use sdith::subroutines::prg::PRG;
 
 /// Benchmarking api functions, i.e. keygen, signing and verification
-fn api_benchmark(c: &mut Criterion) {
+fn api_benchmark<M: Measurement>(c: &mut Criterion<M>) {
     let mut rng = NistPqcAes256CtrRng::from_seed(Seed::default());
     let mut group = c.benchmark_group("api");
     if cfg!(feature = "flat_sampling") {
@@ -58,7 +59,7 @@ fn api_benchmark(c: &mut Criterion) {
 }
 
 /// Benchmarking functions that use SIMD operations: Matrix multiplication, Vector operations
-fn simd_benchmark(c: &mut Criterion) {
+fn simd_benchmark<M: Measurement>(c: &mut Criterion<M>) {
     let mut rng = NistPqcAes256CtrRng::from_seed(Seed::default());
     let mut seed = [0u8; PARAM_SEED_SIZE];
     rng.fill_bytes(&mut seed);
@@ -105,7 +106,7 @@ fn simd_benchmark(c: &mut Criterion) {
 }
 
 /// Benchmarking functions that use parallel operations: commit shares, compute input shares
-fn parallel_benchmark(c: &mut Criterion) {
+fn parallel_benchmark<M: Measurement>(c: &mut Criterion<M>) {
     let mut group = c.benchmark_group("parallel");
     let mut rng = NistPqcAes256CtrRng::from_seed(Seed::default());
     let mut seed = [0u8; PARAM_SEED_SIZE];
@@ -136,7 +137,7 @@ fn parallel_benchmark(c: &mut Criterion) {
     group.finish();
 }
 
-fn merkle_benchmark(c: &mut Criterion) {
+fn merkle_benchmark<M: Measurement>(c: &mut Criterion<M>) {
     let mut group = c.benchmark_group("merkle");
     // Benchmark the Merkle tree create.
     let mut rng = rand::thread_rng();

@@ -5,21 +5,119 @@ import random
 import re
 import subprocess
 import itertools
-from termcolor import colored, cprint
+from termcolor import cprint
+from tabulate import tabulate
+import collections
 
 
 parser = ap.ArgumentParser(
     description="Benchmark sdith-rust. Run a combination of combination of feature flags",
 )
-parser.add_argument("--features", type=str)
+parser.add_argument("--features", type=str, default="")
 parser.add_argument("--categories", type=str, default="one,three,five")
 parser.add_argument("--profiles", type=str, default="release")
 parser.add_argument("--test", type=str, default="api")
 parser.add_argument("--rest", nargs=ap.REMAINDER, default="")
 parser.add_argument("--out", type=str)
-parser.add_argument("--cycles", type=bool, default=False)
+parser.add_argument("--cycles", action="store_true")
+parser.add_argument("--print-result", nargs="*")
+parser.add_argument("--print-latex", action="store_true")
+parser.add_argument("--filter", nargs="*")
 
 args = parser.parse_args()
+
+
+# Printing
+
+
+def get_num(num_str):
+    match num_str:
+        case "one":
+            return 1
+        case "three":
+            return 3
+        case "five":
+            return 5
+
+
+def get_key(result):
+    return (
+        result["category"],
+        result["profile"],
+        ",".join(result["features"]) if len(result["features"]) else "base",
+    )
+
+
+def combine_results(results):
+    # Simplify results by turning categor,profile,features into keys'
+    results = [
+        {get_key(value): value["results"] for key, value in res_list.items()}
+        for res_list in results
+    ]
+
+    # Combine results
+    combined = results[0]
+    for res in results[1:]:
+        for key, value in res.items():
+            if key in combined:
+                for test in combined[key].keys():
+                    combined[key][test] += ", " + value[test]
+            else:
+                combined[key] = value
+
+    return combined
+
+
+if args.print_result:
+    if args.print_result is None:
+        print("Please specify a test to print results for")
+        exit(1)
+    files = args.print_result
+    results = [json.load(open(f, "r")) for f in files]
+    results = combine_results(results)
+    od = sorted(results.items())
+    # Filter if specified
+    if args.filter:
+        results = {
+            (category, profile, features): v
+            for (category, profile, features), v in od
+            if category not in args.filter
+            and profile not in args.filter
+            and not any(f in features.split(",") for f in args.filter)
+        }
+    results = collections.OrderedDict(sorted(results.items()))
+
+    # # Remove any profiles, categories or features in filter list
+    # if args.filter:
+    #     results =
+
+    # Header row
+    table = [
+        ["Category/Profile", "Features"]
+        + [test for test in next(iter(results.values()))]
+    ]
+
+    for (category, profile, features), res in results.items():
+        table.append(
+            [
+                f"{category}/{profile}",
+                features,
+            ]
+            + [v for v in res.values()]
+        )
+
+    print(f"Results for {', '.join(files)}")
+    print(
+        tabulate(
+            table,
+            headers="firstrow",
+            tablefmt="latex" if args.print_latex else "fancy_grid",
+        )
+    )
+    exit(0)
+
+
+# Benching
 
 features = args.features.split(",")
 
@@ -52,7 +150,7 @@ def save_results(runUiid, cmd, results, features, category, profile):
     # Get json file
     data = {}
 
-    filename =  args.out if args.out else f"bench_{runUiid}.json"
+    filename = args.out if args.out else f"bench_{runUiid}.json"
 
     # Check if file exists
     if os.path.exists(filename):
@@ -66,9 +164,9 @@ def save_results(runUiid, cmd, results, features, category, profile):
         "category": category,
         "profile": profile,
     }
-    data[cmd]['results'] = {}
+    data[cmd]["results"] = {}
     for res in results:
-        data[cmd]['results'][res[0]] = res[1]
+        data[cmd]["results"][res[0]] = res[1]
 
     # Save json file
     with open(filename, "w") as f:
@@ -146,5 +244,4 @@ for i, (profile, category) in enumerate(all_outer_combinations):
         )
         cmd, res = run_benchmark(features, category, profile, args.test)
         cprint(f"OUT: {res}", "green", attrs=["bold"])
-        save_results(runUiid,cmd, res, features, category, profile)
-        
+        save_results(runUiid, cmd, res, features, category, profile)

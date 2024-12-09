@@ -1,0 +1,308 @@
+{
+  "cargo bench --no-default-features --features simd,category_one,cycles_per_byte --profile=release api": {
+    "runUiid": 1620,
+    "features": [
+      "simd"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "709812.3759 cycles",
+      "api/Signature::sign_message": "7796071.6447 cycles",
+      "api/Signature::verify_signature": "923129.5815 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features parallel,category_one,cycles_per_byte --profile=release api": {
+    "runUiid": 1620,
+    "features": [
+      "parallel"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "832620.7424 cycles",
+      "api/Signature::sign_message": "4594826.2712 cycles",
+      "api/Signature::verify_signature": "1146725.2473 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features simd,parallel,category_one,cycles_per_byte --profile=release api": {
+    "runUiid": 1620,
+    "features": [
+      "simd",
+      "parallel"
+    ],
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "703023.3222 cycles",
+      "api/Signature::sign_message": "4173725.4567 cycles",
+      "api/Signature::verify_signature": "904370.9213 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features ,category_one,cycles_per_byte --profile=release api": {
+    "runUiid": 1620,
+    "features": "",
+    "category": "one",
+    "profile": "release",
+    "results": {
+      "api/keygen": "697415.4292 cycles",
+      "api/Signature::sign_message": "10337532.2480 cycles",
+      "api/Signature::verify_signature": "1096904.9767 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features simd,category_three,cycles_per_byte --profile=release api": {
+    "runUiid": 1620,
+    "features": [
+      "simd"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "944063.2414 cycles",
+      "api/Signature::sign_message": "18944872.1232 cycles",
+      "api/Signature::verify_signature": "2619076.8469 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features parallel,category_three,cycles_per_byte --profile=release api": {
+    "runUiid": 1620,
+    "features": [
+      "parallel"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "1092434.2201 cycles",
+      "api/Signature::sign_message": "10015929.5624 cycles",
+      "api/Signature::verify_signature": "3348221.1966 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features simd,parallel,category_three,cycles_per_byte --profile=release api": {
+    "runUiid": 1620,
+    "features": [
+      "simd",
+      "parallel"
+    ],
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "943845.0277 cycles",
+      "api/Signature::sign_message": "8785134.5302 cycles",
+      "api/Signature::verify_signature": "2787734.0463 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features ,category_three,cycles_per_byte --profile=release api": {
+    "runUiid": 1620,
+    "features": "",
+    "category": "three",
+    "profile": "release",
+    "results": {
+      "api/keygen": "1125694.5625 cycles",
+      "api/Signature::sign_message": "24587192.9740 cycles",
+      "api/Signature::verify_signature": "3387326.1946 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features simd,category_five,cycles_per_byte --profile=release api": {
+    "runUiid": 1620,
+    "features": [
+      "simd"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "1637687.3401 cycles",
+      "api/Signature::sign_message": "43930884.0747 cycles",
+      "api/Signature::verify_signature": "5525907.3558 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features parallel,category_five,cycles_per_byte --profile=release api": {
+    "runUiid": 1620,
+    "features": [
+      "parallel"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "1909140.1445 cycles",
+      "api/Signature::sign_message": "21160646.6464 cycles",
+      "api/Signature::verify_signature": "7433725.3631 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features simd,parallel,category_five,cycles_per_byte --profile=release api": {
+    "runUiid": 1620,
+    "features": [
+      "simd",
+      "parallel"
+    ],
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "1640271.7665 cycles",
+      "api/Signature::sign_message": "18232716.3293 cycles",
+      "api/Signature::verify_signature": "5645928.3713 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features ,category_five,cycles_per_byte --profile=release api": {
+    "runUiid": 1620,
+    "features": "",
+    "category": "five",
+    "profile": "release",
+    "results": {
+      "api/keygen": "1947204.2460 cycles",
+      "api/Signature::sign_message": "54061603.1160 cycles",
+      "api/Signature::verify_signature": "7057514.3926 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features simd,category_one,cycles_per_byte --profile=dev api": {
+    "runUiid": 1620,
+    "features": [
+      "simd"
+    ],
+    "category": "one",
+    "profile": "dev",
+    "results": {
+      "api/keygen": "742452.8770 cycles",
+      "api/Signature::sign_message": "8425082.6771 cycles",
+      "api/Signature::verify_signature": "1024554.5603 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features parallel,category_one,cycles_per_byte --profile=dev api": {
+    "runUiid": 1620,
+    "features": [
+      "parallel"
+    ],
+    "category": "one",
+    "profile": "dev",
+    "results": {
+      "api/keygen": "699899.4853 cycles",
+      "api/Signature::sign_message": "4659728.3291 cycles",
+      "api/Signature::verify_signature": "1168369.7701 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features simd,parallel,category_one,cycles_per_byte --profile=dev api": {
+    "runUiid": 1620,
+    "features": [
+      "simd",
+      "parallel"
+    ],
+    "category": "one",
+    "profile": "dev",
+    "results": {
+      "api/keygen": "760163.5511 cycles",
+      "api/Signature::sign_message": "4544937.4728 cycles",
+      "api/Signature::verify_signature": "1054229.1791 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features ,category_one,cycles_per_byte --profile=dev api": {
+    "runUiid": 1620,
+    "features": "",
+    "category": "one",
+    "profile": "dev",
+    "results": {
+      "api/keygen": "705403.3080 cycles",
+      "api/Signature::sign_message": "10095061.3032 cycles",
+      "api/Signature::verify_signature": "1133873.5780 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features simd,category_three,cycles_per_byte --profile=dev api": {
+    "runUiid": 1620,
+    "features": [
+      "simd"
+    ],
+    "category": "three",
+    "profile": "dev",
+    "results": {
+      "api/keygen": "1010317.6594 cycles",
+      "api/Signature::sign_message": "22562620.9440 cycles",
+      "api/Signature::verify_signature": "3290418.8900 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features parallel,category_three,cycles_per_byte --profile=dev api": {
+    "runUiid": 1620,
+    "features": [
+      "parallel"
+    ],
+    "category": "three",
+    "profile": "dev",
+    "results": {
+      "api/keygen": "918237.9046 cycles",
+      "api/Signature::sign_message": "10046552.4864 cycles",
+      "api/Signature::verify_signature": "3400715.2921 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features simd,parallel,category_three,cycles_per_byte --profile=dev api": {
+    "runUiid": 1620,
+    "features": [
+      "simd",
+      "parallel"
+    ],
+    "category": "three",
+    "profile": "dev",
+    "results": {
+      "api/keygen": "997624.7183 cycles",
+      "api/Signature::sign_message": "9486828.2232 cycles",
+      "api/Signature::verify_signature": "3217731.5851 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features ,category_three,cycles_per_byte --profile=dev api": {
+    "runUiid": 1620,
+    "features": "",
+    "category": "three",
+    "profile": "dev",
+    "results": {
+      "api/keygen": "912991.9712 cycles",
+      "api/Signature::sign_message": "25476806.2400 cycles",
+      "api/Signature::verify_signature": "3341072.1103 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features simd,category_five,cycles_per_byte --profile=dev api": {
+    "runUiid": 1620,
+    "features": [
+      "simd"
+    ],
+    "category": "five",
+    "profile": "dev",
+    "results": {
+      "api/keygen": "1740461.0078 cycles",
+      "api/Signature::sign_message": "48606975.7520 cycles",
+      "api/Signature::verify_signature": "6725293.3663 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features parallel,category_five,cycles_per_byte --profile=dev api": {
+    "runUiid": 1620,
+    "features": [
+      "parallel"
+    ],
+    "category": "five",
+    "profile": "dev",
+    "results": {
+      "api/keygen": "1615693.9660 cycles",
+      "api/Signature::sign_message": "21275160.2704 cycles",
+      "api/Signature::verify_signature": "7652379.0253 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features simd,parallel,category_five,cycles_per_byte --profile=dev api": {
+    "runUiid": 1620,
+    "features": [
+      "simd",
+      "parallel"
+    ],
+    "category": "five",
+    "profile": "dev",
+    "results": {
+      "api/keygen": "1738371.0367 cycles",
+      "api/Signature::sign_message": "19679635.9376 cycles",
+      "api/Signature::verify_signature": "6879551.0246 cycles"
+    }
+  },
+  "cargo bench --no-default-features --features ,category_five,cycles_per_byte --profile=dev api": {
+    "runUiid": 1620,
+    "features": "",
+    "category": "five",
+    "profile": "dev",
+    "results": {
+      "api/keygen": "1649039.6383 cycles",
+      "api/Signature::sign_message": "54047608.5040 cycles",
+      "api/Signature::verify_signature": "7525601.1292 cycles"
+    }
+  }
+}
