@@ -2,7 +2,7 @@
 use std::time::Duration;
 
 use criterion::measurement::Measurement;
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 #[cfg(all(target_os = "linux", feature = "cycles_per_byte"))]
 use criterion_cycles_per_byte::CyclesPerByte;
 use nist_pqc_seeded_rng::{NistPqcAes256CtrRng, RngCore, Seed, SeedableRng};
@@ -88,10 +88,12 @@ fn simd_benchmark<M: Measurement>(c: &mut Criterion<M>) {
     });
 
     // Benchmarking vector addition
-    let vx = [1u8; PARAM_M_SUB_K];
+    let mut vx = [1u8; PARAM_M_SUB_K];
+    rng.fill_bytes(&mut vx);
     let mut vz = [0u8; PARAM_M_SUB_K];
+    rng.fill_bytes(&mut vz);
     group.bench_function("gf256_add_vector", |b| {
-        b.iter(|| gf256_add_vector(&mut vz, &vx))
+        b.iter(|| gf256_add_vector(black_box(&mut vz), black_box(&vx)))
     });
 
     // Benchmarking vector addition times scalar

@@ -38,6 +38,8 @@ def get_num(num_str):
             return 3
         case "five":
             return 5
+        case _:
+            return 0
 
 
 def get_key(result):
@@ -75,21 +77,20 @@ if args.print_result:
     files = args.print_result
     results = [json.load(open(f, "r")) for f in files]
     results = combine_results(results)
-    od = sorted(results.items())
+
     # Filter if specified
     if args.filter:
         results = {
             (category, profile, features): v
-            for (category, profile, features), v in od
+            for (category, profile, features), v in results.items()
             if category not in args.filter
             and profile not in args.filter
             and not any(f in features.split(",") for f in args.filter)
         }
-    results = collections.OrderedDict(sorted(results.items()))
 
-    # # Remove any profiles, categories or features in filter list
-    # if args.filter:
-    #     results =
+    results = collections.OrderedDict(
+        sorted(results.items(), key=lambda x: (get_num(x[0][0]), x[0][2]))
+    )
 
     # Header row
     table = [

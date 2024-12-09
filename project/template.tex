@@ -1733,26 +1733,26 @@ To maintain a clear separation of concerns, we have structured the codebase usin
 \begin{itemize}
   \item \texttt{Cargo.toml}: Defines the package metadata and its dependencies.
   \item \texttt{build.rs}: Specifies build steps that are executed before compiling the binary.
-  \item \texttt{README}: Provides instructions and information for running the project. 
+  \item \texttt{README}: Provides instructions and information for running the project.
 \end{itemize}
 
 In addition to these files, the directory includes several subdirectories:
 
-\begin{itemize} 
+\begin{itemize}
   \item \texttt{benches}: Contains functionality for benchmarking the code.
-  \item \texttt{src}: Hosts the main codebase, structured into several submodules for modularity and clarity. 
+  \item \texttt{src}: Hosts the main codebase, structured into several submodules for modularity and clarity.
 \end{itemize}
 
 Within the \texttt{src} directory, the code is further divided into submodules, each serving a distinct purpose:
 
-\begin{itemize} 
+\begin{itemize}
   \item \texttt{arith}: Implements arithmetic operations, including a \texttt{gf256} submodule for operations in the $GF(256)$ field.
   \item \texttt{constants}: Defines parameters and types used throughout the protocol.
   \item \texttt{kat}: Contains Known Answer Tests (KAT) for verifying implementation correctness.
   \item \texttt{mpc}: Manages multi-party computation functionalities.
   \item \texttt{signature}: Implements the signature protocol.
   \item \texttt{subroutines}: Provides helper functions supporting various components of the protocol.
-  \item \texttt{utils}: Offers utility functions used across the codebase. 
+  \item \texttt{utils}: Offers utility functions used across the codebase.
 \end{itemize}
 
 This modular design ensures that each aspect of the protocol is encapsulated within its respective submodule, making the codebase easier to understand, maintain, and extend.
@@ -2076,7 +2076,25 @@ We measured performance in both cycles per byte and time. Furthermore we measure
 
 \begin{figure}
   \centering
-\caption{API benchmarks over Categories, Configurations, With/Without Optimizations}\label{fig:api_benchmarks}
+  \begin{tabular}{lllll}
+    \hline
+    Category/Profile & Features      & Keygen         & Sign        & Verify          \\
+    \hline
+    one/release      & base          & $301.37$ $\mu$s & $4.2804$ ms & $469.05$ $\mu$s \\
+    one/release      & parallel      & $363.07$ $\mu$s & $2.0137$ ms & $467.62$ $\mu$s \\
+    one/release      & simd          & $313.97$ $\mu$s & $3.5553$ ms & $398.15$ $\mu$s \\
+    one/release      & simd,parallel & $305.76$ $\mu$s & $1.8201$ ms & $392.03$ $\mu$s \\
+    three/release    & base          & $476.24$ $\mu$s & $10.594$ ms & $1.3668$ ms     \\
+    three/release    & parallel      & $482.23$ $\mu$s & $4.3479$ ms & $1.4328$ ms     \\
+    three/release    & simd          & $410.27$ $\mu$s & $8.3600$ ms & $1.1454$ ms     \\
+    three/release    & simd,parallel & $409.49$ $\mu$s & $3.8273$ ms & $1.1558$ ms     \\
+    five/release     & base          & $835.07$ $\mu$s & $24.017$ ms & $3.0376$ ms     \\
+    five/release     & parallel      & $832.74$ $\mu$s & $9.1615$ ms & $3.1524$ ms     \\
+    five/release     & simd          & $710.26$ $\mu$s & $18.796$ ms & $2.4786$ ms     \\
+    five/release     & simd,parallel & $710.66$ $\mu$s & $7.9276$ ms & $2.5273$ ms     \\
+    \hline
+  \end{tabular}
+  \caption{API benchmarks over each category and optimisation feature flag for setup 1}\label{fig:api_benchmarks}
 \end{figure}
 
 
