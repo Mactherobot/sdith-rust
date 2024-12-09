@@ -73,7 +73,9 @@ parallel = ["dep:rayon"]
 simd = []
 jemalloc = ["dep:tikv-jemallocator"]
 mimalloc = ["dep:mimalloc"]
+merkle_base = []
 merkle_batching = []
+merkle_parallel = []
 
 # Testing and Benchmarking features
 benchmarks = ["dep:nist-pqc-seeded-rng"]

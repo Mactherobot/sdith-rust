@@ -13,15 +13,20 @@
 //!
 //! The structure allows for the Treshold variant of the signature scheme to only open the commitments to a subset of the parties.
 
-#[cfg(not(feature = "merkle_batching"))]
+#[cfg(feature = "merkle_base")]
 pub mod base;
-#[cfg(not(feature = "merkle_batching"))]
+#[cfg(feature = "merkle_base")]
 pub use base::BaseMerkleTree as MerkleTree;
 
 #[cfg(feature = "merkle_batching")]
 pub mod batched;
 #[cfg(feature = "merkle_batching")]
 pub use batched::BatchedMerkleTree as MerkleTree;
+
+#[cfg(feature = "merkle_parallel")]
+pub mod parallel;
+#[cfg(feature = "merkle_parallel")]
+pub use parallel::ParallelMerkleTree as MerkleTree;
 
 use crate::constants::{
     params::{PARAM_DIGEST_SIZE, PARAM_LOG_N, PARAM_N},
