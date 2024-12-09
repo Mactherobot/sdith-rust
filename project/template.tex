@@ -2074,6 +2074,13 @@ We ran benchmarking tests for different areas of the codebase -- based on the ap
 \subsection{Benchmark measurements}\label{sub:bench_measurements}
 We measured performance in both cycles per byte and time. Furthermore we measured the binary size for each benchmark using \texttt{cargo size}. We compared our implementation to the optimised NIST submissions.
 
+\subsection{Benchmark of specification}
+To compare our implemementation to the one from the NIST submission, we ran the same benchmarks for both implementations. This had to be done for both the Dell and Macbook. On the Macbook we ran into problems with running the optimised version of the specification implementation, so we had to run against the reference implementation instead. It was built with the following cc:
+\begin{itemize}
+  \item Apple clang version 16.0.0 (clang-1600.0.26.4)
+  \item Target: arm64-apple-darwin24.1.0
+\end{itemize}
+
 \section{Results}\label{sub:results}
 
 \begin{figure}
