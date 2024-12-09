@@ -1,4 +1,4 @@
-//! # Merkle Tree Commitment Scheme implemented using an batched approach for performance
+//! # Merkle Tree Commitment Scheme implemented using an array based approach
 //!
 //! Nodes are stored in an array and the tree is constructed from the bottom up.
 //!
@@ -8,10 +8,10 @@ use crate::constants::{
     types::{CommitmentsArray, Hash},
 };
 
-use super::{merkle_hash, merkle_hash_x4, MerkleTreeTrait, PARAM_MERKLE_TREE_NODES};
+use super::{merkle_hash, MerkleTreeTrait, PARAM_MERKLE_TREE_NODES};
 
 /// Merkle tree struct
-pub struct BatchedMerkleTree {
+pub struct ArrayBasedMerkleTree {
     /// The height of the Merkle tree
     pub height: u32,
     /// The number of nodes in the Merkle tree
@@ -22,7 +22,7 @@ pub struct BatchedMerkleTree {
     pub nodes: [Hash; PARAM_MERKLE_TREE_NODES],
 }
 
-impl MerkleTreeTrait for BatchedMerkleTree {
+impl MerkleTreeTrait for ArrayBasedMerkleTree {
     fn new(commitments: CommitmentsArray, salt: Option<Hash>) -> Self {
         let nb_leaves = commitments.len();
         let height: u32 = nb_leaves.ilog2();
@@ -39,47 +39,9 @@ impl MerkleTreeTrait for BatchedMerkleTree {
         // Add leaves to the tree
         (0..nb_leaves).for_each(|i| {
             tree.nodes[first_index + i] = commitments[i];
-        });
+        }); // TODO: Optimize the loop below with batch processing https://github.com/sdith/sdith/blob/main/Optimized_Implementation/Threshold_Variant/sdith_threshold_cat1_gf256/merkle-tree.c
 
-        for _h in (2..height).rev() {
-            // Indicates if the last node is isolated
-            first_index >>= 1;
-            last_index >>= 1;
-
-            let mut parent_index = first_index;
-            while parent_index <= last_index {
-                let parent_indexes = [
-                    parent_index,
-                    parent_index + 1,
-                    parent_index + 2,
-                    parent_index + 3,
-                ];
-                let left_child_hashes = [
-                    tree.nodes[2 * parent_index],
-                    tree.nodes[2 * parent_index + 2],
-                    tree.nodes[2 * parent_index + 4],
-                    tree.nodes[2 * parent_index + 6],
-                ];
-
-                let right_child_hashes = [
-                    Some(tree.nodes[2 * parent_index + 1]),
-                    Some(tree.nodes[2 * parent_index + 3]),
-                    Some(tree.nodes[2 * parent_index + 5]),
-                    Some(tree.nodes[2 * parent_index + 7]),
-                ];
-                // Finalize the hash and add it to the parent node
-                (
-                    tree.nodes[parent_index],
-                    tree.nodes[parent_index + 1],
-                    tree.nodes[parent_index + 2],
-                    tree.nodes[parent_index + 3],
-                ) = merkle_hash_x4(parent_indexes, left_child_hashes, right_child_hashes, salt);
-
-                parent_index += 4;
-            }
-        }
-
-        for _h in (0..2).rev() {
+        for _h in (0..height).rev() {
             // Indicates if the last node is isolated
             let last_is_isolated = 1 - (last_index & 0x1);
 

@@ -273,6 +273,57 @@ pub(self) fn merkle_hash(
     hasher.finalize()
 }
 
+pub(self) fn merkle_hash_x4(
+    parent_index: [usize; 4],
+    left: [Hash; 4],
+    right: [Option<Hash>; 4],
+    salt: Option<Salt>,
+) -> (Hash, Hash, Hash, Hash) {
+    let mut hasher = SDitHHash::init_with_prefix(&[HASH_PREFIX_MERKLE_TREE]);
+    let mut hasher_1 = SDitHHash::init_with_prefix(&[HASH_PREFIX_MERKLE_TREE]);
+    let mut hasher_2 = SDitHHash::init_with_prefix(&[HASH_PREFIX_MERKLE_TREE]);
+    let mut hasher_3 = SDitHHash::init_with_prefix(&[HASH_PREFIX_MERKLE_TREE]);
+
+    if let Some(salt) = salt {
+        hasher.update(&salt);
+        hasher_1.update(&salt);
+        hasher_2.update(&salt);
+        hasher_3.update(&salt);
+    }
+
+    // Hash the parent_index
+    hasher.update(&(parent_index[0] as u16).to_le_bytes());
+    hasher_1.update(&(parent_index[1] as u16).to_le_bytes());
+    hasher_2.update(&(parent_index[2] as u16).to_le_bytes());
+    hasher_3.update(&(parent_index[3] as u16).to_le_bytes());
+
+    // Hash the left and right children
+    hasher.update(&left[0]);
+    hasher_1.update(&left[1]);
+    hasher_2.update(&left[2]);
+    hasher_3.update(&left[3]);
+
+    if let Some(right) = right[0] {
+        hasher.update(&right);
+    }
+    if let Some(right) = right[1] {
+        hasher_1.update(&right);
+    }
+    if let Some(right) = right[2] {
+        hasher_2.update(&right);
+    }
+    if let Some(right) = right[3] {
+        hasher_3.update(&right);
+    }
+
+    (
+        hasher.finalize(),
+        hasher_1.finalize(),
+        hasher_2.finalize(),
+        hasher_3.finalize(),
+    )
+}
+
 #[cfg(test)]
 mod test {
     use core::panic;
