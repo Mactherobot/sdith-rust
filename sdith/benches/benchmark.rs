@@ -163,17 +163,25 @@ fn merkle_benchmark<M: Measurement>(c: &mut Criterion<M>) {
     group.finish();
 }
 
+fn get_config() -> Criterion {
+    Criterion::default()
+        .significance_level(0.1)
+        .sample_size(250)
+        .without_plots()
+        .measurement_time(Duration::from_secs(20))
+}
+
 #[cfg(all(target_os = "linux", feature = "cycles_per_byte"))]
 criterion_group! {
     name = benches;
-    config = Criterion::default().with_measurement(CyclesPerByte).significance_level(0.1).sample_size(250).without_plots().measurement_time(Duration::from_secs(10));
+    config = get_config().with_measurement(CyclesPerByte);
     targets = api_benchmark, simd_benchmark, parallel_benchmark, merkle_benchmark
 }
 
 #[cfg(not(all(target_os = "linux", feature = "cycles_per_byte")))]
 criterion_group!(
     name = benches;
-    config = Criterion::default().significance_level(0.1).sample_size(250).without_plots().measurement_time(Duration::from_secs(20));
+    config = get_config();
     targets = api_benchmark, simd_benchmark, parallel_benchmark, merkle_benchmark
 );
 

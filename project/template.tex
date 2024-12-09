@@ -25,6 +25,8 @@
 \usepackage{stmaryrd}
 \usepackage{wasysym}
 \usepackage{dirtree}
+\usepackage{arydshln}
+\usepackage{colortbl}
 
 \usepackage{listings}
 \lstdefinestyle{tree}{
@@ -2080,24 +2082,33 @@ We measured performance in both cycles per byte and time. Furthermore we measure
     \hline
     Category              & Optimisation  & Keygen          & Sign        & Verify          \\
     \hline
-    One (Specification)   & optimized     & $1.02$ ms       & $9.47$ ms   & $0.57$ ms       \\
+    \hline
+    One (Specification)   & reference     & $1020.0$ $\mu$s & $12.30$ ms  & $1670.0$ $\mu$s \\
+    One (Specification)   & optimized     & $1020.0$ $\mu$s & $9.47$ ms   & $570.00$ $\mu$s \\
+    \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
     One                   & base          & $301.37$ $\mu$s & $4.2804$ ms & $469.05$ $\mu$s \\
     One                   & parallel      & $363.07$ $\mu$s & $2.0137$ ms & $467.62$ $\mu$s \\
     One                   & simd          & $313.97$ $\mu$s & $3.5553$ ms & $398.15$ $\mu$s \\
     One                   & simd,parallel & $305.76$ $\mu$s & $1.8201$ ms & $392.03$ $\mu$s \\
-    Three (Specification) & optimized     & $1.24$ ms       & $24.12$ ms  & $1.52$ ms       \\
+    \hline
+    Three (Specification) & reference     & $1230.0$ $\mu$s & $31.84$ ms  & $5.02$ ms       \\
+    Three (Specification) & optimized     & $1240.0$ $\mu$s & $24.12$ ms  & $1.52$ ms       \\
+    \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
     Three                 & base          & $476.24$ $\mu$s & $10.594$ ms & $1.3668$ ms     \\
     Three                 & parallel      & $482.23$ $\mu$s & $4.3479$ ms & $1.4328$ ms     \\
     Three                 & simd          & $410.27$ $\mu$s & $8.3600$ ms & $1.1454$ ms     \\
     Three                 & simd,parallel & $409.49$ $\mu$s & $3.8273$ ms & $1.1558$ ms     \\
-    Five (Specification)  & optimized     & $2.22$ ms       & $45.06$ ms  & $3.00$ ms       \\
+    \hline
+    Five (Specification)  & reference     & $2150.0$ $\mu$s & $61.93$ ms  & $11.14$ ms      \\
+    Five (Specification)  & optimized     & $2220.0$ $\mu$s & $45.06$ ms  & $3.00$ ms       \\
+    \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
     Five                  & base          & $835.07$ $\mu$s & $24.017$ ms & $3.0376$ ms     \\
     Five                  & parallel      & $832.74$ $\mu$s & $9.1615$ ms & $3.1524$ ms     \\
     Five                  & simd          & $710.26$ $\mu$s & $18.796$ ms & $2.4786$ ms     \\
     Five                  & simd,parallel & $710.66$ $\mu$s & $7.9276$ ms & $2.5273$ ms     \\
     \hline
   \end{tabular}
-  \caption{API benchmarks over each category and optimisation feature flag for setup 1}\label{fig:api_benchmarks_dell}
+  \caption{API benchmarks over each category and optimisation feature flag for setup 1. The table includes benchmarks for the specification implementations run on the same setup}\label{fig:api_benchmarks_dell}
 \end{figure}
 
 
@@ -2105,26 +2116,32 @@ We measured performance in both cycles per byte and time. Furthermore we measure
   \centering
   \begin{tabular}{l|l|lll}
     \hline
-    Category & Optimisation  & Keygen          & Sign        & Verify          \\
+    Category              & Optimisation  & Keygen          & Sign        & Verify          \\
     \hline
-    One      & Reference          & $1090$ $\mu$s & $2.65$ ms & $380$ $\mu$s \\
-    One      & base          & $308.03$ $\mu$s & $3.4506$ ms & $425.86$ $\mu$s \\
-    One      & parallel      & $345.09$ $\mu$s & $2.1825$ ms & $434.58$ $\mu$s \\
-    One      & simd          & $305.96$ $\mu$s & $2.5643$ ms & $307.97$ $\mu$s \\
-    One      & simd,parallel & $304.03$ $\mu$s & $1.9369$ ms & $308.99$ $\mu$s \\
-    Three   & Reference         & $1280$ ms & $6.37$ ms & $1.16$ ms \\
-    Three    & base          & $430.52$ $\mu$s & $8.6839$ ms & $1.2836$ ms     \\
-    Three    & parallel      & $441.66$ $\mu$s & $4.1697$ ms & $1.2896$ ms     \\
-    Three    & simd          & $384.20$ $\mu$s & $5.9972$ ms & $894.70$ $\mu$s \\
-    Three    & simd,parallel & $378.16$ $\mu$s & $3.4572$ ms & $895.01$ $\mu$s \\
-    Five   & Reference         & $2230$ $\mu$s & $13.71$ ms & $2.08$ ms \\
-    Five     & base          & $778.58$ $\mu$s & $18.850$ ms & $2.9469$ ms     \\
-    Five     & parallel      & $760.17$ $\mu$s & $8.4553$ ms & $2.9637$ ms     \\
-    Five     & simd          & $668.17$ $\mu$s & $13.694$ ms & $1.9529$ ms     \\
-    Five     & simd,parallel & $677.93$ $\mu$s & $7.0687$ ms & $1.8977$ ms     \\
+    \hline
+    One (Specification)   & reference     & $1090$ $\mu$s   & $2.65$ ms   & $380$ $\mu$s    \\
+    \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
+    One                   & base          & $308.03$ $\mu$s & $3.4506$ ms & $425.86$ $\mu$s \\
+    One                   & parallel      & $345.09$ $\mu$s & $2.1825$ ms & $434.58$ $\mu$s \\
+    One                   & simd          & $305.96$ $\mu$s & $2.5643$ ms & $307.97$ $\mu$s \\
+    One                   & simd,parallel & $304.03$ $\mu$s & $1.9369$ ms & $308.99$ $\mu$s \\
+    \hline
+    Three (Specification) & reference     & $1280$ ms       & $6.37$ ms   & $1.16$ ms       \\
+    \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
+    Three                 & base          & $430.52$ $\mu$s & $8.6839$ ms & $1.2836$ ms     \\
+    Three                 & parallel      & $441.66$ $\mu$s & $4.1697$ ms & $1.2896$ ms     \\
+    Three                 & simd          & $384.20$ $\mu$s & $5.9972$ ms & $894.70$ $\mu$s \\
+    Three                 & simd,parallel & $378.16$ $\mu$s & $3.4572$ ms & $895.01$ $\mu$s \\
+    \hline
+    Five (Specification)  & reference     & $2230$ $\mu$s   & $13.71$ ms  & $2.08$ ms       \\
+    \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
+    Five                  & base          & $778.58$ $\mu$s & $18.850$ ms & $2.9469$ ms     \\
+    Five                  & parallel      & $760.17$ $\mu$s & $8.4553$ ms & $2.9637$ ms     \\
+    Five                  & simd          & $668.17$ $\mu$s & $13.694$ ms & $1.9529$ ms     \\
+    Five                  & simd,parallel & $677.93$ $\mu$s & $7.0687$ ms & $1.8977$ ms     \\
     \hline
   \end{tabular}
-  \caption{API benchmarks over each category and optimisation feature flag for setup 2}\label{fig:api_benchmarks_mac}
+  \caption{API benchmarks over each category and optimisation feature flag for setup 2. The table includes benchmarks for the specification reference implementation (could not run optimised version on Mac) }\label{fig:api_benchmarks_mac}
 \end{figure}
 diaries of benchmarks.
 discussion of results
