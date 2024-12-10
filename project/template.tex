@@ -814,6 +814,8 @@ However, additional performance gains have recently been achieved by leveraging 
 
 \subsection{Linear Secret Sharing Schemes (LSSS)}\label{sec:lsss}
 
+This approach further builds upon the MPC pre-processing approach introduced by Katz et al~\cite{katz2018improved} and Baum and Nof~\cite{baum2020concretely}, but utilises threshhold secret sharing schemes to reduce the computations required by both the prover and the verifier.
+
 "Applying our approach with a low-threshold LSSS also boosts the performance of the proof system by making the MPC emulation cost independent of N for both the prover and the verifier. The gain is
 particularly significant for the verification time which becomes logarithmic in N (while the prover still
 has to generate and commit the N input shares)."
