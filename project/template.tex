@@ -636,20 +636,132 @@ The basic MPC-in-the-Head protocol serves as a foundation for constructing zero-
 
 \subsection{MPC preprocessing}
 
-Pre-processing in MPC is an optimization technique that leverages shares of correlated randomness, such as randomness derived from a shared seed, which remains independent of the inputs to the protocol. This independence allows the parties to accelerate computation and perform pre-computation in advance. Consequently, this approach enables the design of MPCitH protocols that can utilize any $N$-party MPC protocol during pre-processing with minimal impact on the proof size. This method was first introduced by~\cite{katz2018improved} as part of their \textit{cut-and-choose} approach.
+Pre-processing in MPC is an optimization technique that leverages shares of correlated randomness, such as randomness derived from a shared seed, which remains independent of the inputs to the protocol. This independence allows the parties to accelerate computation and perform pre-computation in advance. As a result, this approach allows the development of MPCitH protocols that can leverage greater soundness while having lesser impact on the size of the proof. Such a technique was introduced by~\cite{katz2018improved} as part of their \textit{cut-and-choose} approach. 
 
 \subsubsection{MPC over arithmetic circuits}\label{sec:zk-arithmetic-mpc-circuits}
+First we need to describe a basic MPC protocol that allows us to securely compute an arithmetic circuit. While addition is considered generally easy for a MPC protocol, multiplication is more challenging. 
 
-In order to form a ZK proof for the SD polynomial relation in \autoref{sec:polynomial_representation}, we need a MPC protocol that allows us to securely compute an arithmetic circuit. For this we use \textit{beaver triples}.
+In order to form a ZK proof for the SD polynomial relation in \autoref{sec:polynomial_representation}, we need a MPC protocol that allows us to securely compute multiplication circuits. For this we use \textit{beaver triples}.
 
 \begin{definition}[Beaver triple~\cite{beaver1992efficient}]\label{def:beaver}
   A beaver triple is a tuple $(a, b, c)$ where $a \cdot b = c$ and $a, b, c \in \mathbb{F}_q$.
 \end{definition}
 
-Consider the protocol for a single multiplication gate below by~\cite{baum2020concretely}, based on the MPC protocol described in~\cite{damgaard2012multiparty}. Note, that a similar technique can be applied to square relations. However, we focus here solely on multiplication, as it suffices for the SD relation.
+\begin{definition}[Multiplication circuit using beaver triples]\label{def:beaver-multiplication}
+  Given a preprocessed random beaver triple $\sh{a}, \sh{b}, \sh{c} $, the parties do the following:
+  \begin{enumerate}
+    \item The parties compute $ \sh{\alpha} = \sh{x} - \sh{a} $ and $ \sh{\beta} = \sh{y} - \sh{b} $.
+    \item The parties run $ \text{open}(\sh{\alpha}) $ and $ \text{open}(\sh{\beta}) $ to obtain $ \alpha $ and $ \beta $.
+    \item Each party computes $ \sh{z} = \sh{c} - \alpha \cdot \sh{b} - \beta \cdot \sh{a} + \alpha \cdot \beta $.
+  \end{enumerate}
+
+  The above is a well-known technique \cite{beaver1992efficient} and works because
+  \begin{align*}
+    \sh{z} & = \sh{c} - \alpha \cdot \sh{b} - \beta \cdot \sh{a} + \alpha \cdot \beta        \\
+           & = \sh{ab} - (x - a) \cdot \sh{b} - (y - b) \cdot \sh{a} + (x - a) \cdot (y - b) \\
+           & = \sh{xy}
+  \end{align*}
+\end{definition}
+
+\subsubsection{ZK from Cut-and-Choose}\label{sec:zk-cut-and-choose}
+
+Building upon the multiplication protocol above, Baum and Nof~\cite{baum2020concretely} outlines the fundamental concept of the cut-and-choose technique in their \textit{HVZKAoK Protocol using Cut and Choose}. For a detailed outline of the protocol see \cite[s3.2]{baum2020concretely}. Here we provide a high-level overview of the protocol.\\
+
+\noindent Input and Setup
+\begin{itemize}[parsep=0pt, itemsep=0pt]
+  \item Both the prover $\mathcal{P}$ and verifier $\mathcal{V}$ start with a shared output \( y \), a circuit description \( C \), and parameters:  $N$ the number of parties, $M$ the number of emulations nad $\tau < M$ the number of challenges.
+  \item The prover also holds the witness \( w \), which satisfies \( C(w) = y \).
+\end{itemize}
+
+\noindent \textit{Round 1}: Prover Prepares Commitments
+\begin{enumerate}[parsep=0pt, itemsep=0pt]
+  \item \textit{Salt and Seeds}: The prover picks a random salt and seeds $sd_e$ to initialize randomness for the protocol.
+  \item \textit{Random Shares}: For each gate in the circuit (multiplication and square gates), the prover generates random shares of valid triples.
+  \item \textit{Commitments}:
+        \begin{itemize}[parsep=0pt, itemsep=0pt]
+          \item The prover commits to random shared triples.
+          \item Linear random shares for input $w$ wires are also generated and committed.
+          \item The prover constructs hashes summarizing these commitments and sends them to the verifier.
+        \end{itemize}
+\end{enumerate}
+
+\noindent \textit{Round 2}: Verifier's Challenge\label{cac:round2}
+\begin{itemize}[parsep=0pt, itemsep=0pt]
+  \item The verifier picks a random subset \( E \in [M] \) for $|E| = \tau$ of computations (a challenge set) sends it to the prover.
+\end{itemize}
+
+\noindent \textit{Round 3}: Prover Simulates and Commits
+\begin{enumerate}[parsep=0pt, itemsep=0pt]
+  \item \textit{Subset Simulation}:
+        \begin{itemize}[parsep=0pt, itemsep=0pt]
+          \item For computations not in the challenge set (\( \bar{E} \)), the prover simulates the protocol as though running it honestly.
+          \item It prepares a "view" of how computations would occur using the pre-shared randomness.
+        \end{itemize}
+  \item \textit{Commitments}: The prover commits to these simulation views and computes a hash summarizing the result.
+  \item \textit{Sending Proofs}: The prover sends relevant commitments and hashes to the verifier.
+\end{enumerate}
+
+\noindent \textit{Round 4}: Verifier's Random Check
+\begin{itemize}[parsep=0pt, itemsep=0pt]
+  \item For computations in \( \bar{E} \), the verifier selects a random subset of secret shares to inspect for correctness.
+\end{itemize}
+
+\noindent \textit{Round 5}: Prover Sends Proof Details
+\begin{itemize}[parsep=0pt, itemsep=0pt]
+  \item The prover sends detailed information, including specific shares, corrections, and commitments, for the verifier to validate the protocol's correctness.
+\end{itemize}
+
+\noindent Verification by the Verifier
+
+The verifier checks the following:
+\begin{enumerate}[parsep=0pt, itemsep=0pt]
+  \item The integrity of the commitments and hashes matches the prover's claims.
+  \item The simulation views for computations in \( \bar{E} \) are consistent with the protocol rules and commitments.
+  \item The output shares add up correctly to the shared output \( y \).
+\end{enumerate}
+
+If all checks pass, the verifier accepts the proof. Otherwise, it rejects
+
+\subsubsection*{Zero-knowledge}
+
+Zero-Knowledge of the protocol is satisfied by the $N$-privacy of $\Pi_C$ (\autoref{def:mpc-ell-privacy}) as only $N-1$ views are shared, the witness $w$ is never revealed to the verifier.
+
+\subsubsection*{Soundness}
+
+We bound probability of $\mathcal{V}$ accepting a cheating outcome of  the cut and choose protocol -- i.e. that $C(w) \neq y$. First, we assume that $\mathcal{P}$ cheats by incorrectly generating the precomputed triples. Let $c$ be the number of pre-processing emulations that are tampered.
+
+The first challenge $E$ allows $\mathcal{V}$ to test $\tau$ triples. It's trivial to detect inconsistencies in the triples through the seed $sd_e$ by recomputing the triples and comparing them to the opened commitments. To reduce communication even more, the resulting computation from $\mathcal{P}$ is hashed into a single hash which $\mathcal{V}$ tries to recompute. The probability that cheating is not detected is
+
+\begin{align*}
+  \frac{\binom{M-c}{\tau}}{\binom{M}{\tau}}
+\end{align*}
+
+Next, we assume that $\mathcal{P}$ cheats by deviating from the MPC protocol. In order to make the output of the protocol $y$ -- remember that we assume $C(w) \neq y$ -- $\mathcal{P}$ must deviate in $M-\tau-c$ emulations. As $N-1$ views are opened and verified, $\mathcal{P}$ can only cheat in one view of \textbf{one} party. The probability that this is not detected is $\frac{1}{N^{M-\tau-c}}$.
+
+\begin{lemma}[Soundness of the Cut-and-Choose protocol]\label{lem:cut-and-choose-soundness}
+  Let $c$ be the number of pre-processing emulations where $\mathcal{P}$ cheats. The probability that $\mathcal{V}$ accepts the outcome of the protocol for $C(w) \neq y$ is bounded by
+  \begin{align*}
+    \xi_c(M, N, \tau) = \max_{0 \leq c \leq M-\tau} \left\{\frac{\binom{M-c}{\tau}}{\binom{M}{\tau} \cdot N^{M-\tau-c}} \right\}
+  \end{align*}
+\end{lemma}
+
+The soundness of the protocol follows from the security of secure hash functions \autoref{sec:prelim_hash} as the verification of the random triples, input and outputs of the protocol is done by hashing the random triples and comparing the resulting hash to the output of the protocol. A formal proof of the protocol can be found in~\cite[p9]{baum2020concretely}.
+
+Our primary objective was to mitigate the strict dependency of the communication complexity of the ZK MPCitH protocol on $N$. By leveraging the use of seeds and incorporating a pre-processing phase, we facilitate the transmission of a single seed and a hash, rather than the entirety of inputs to the protocol. This approach effectively constrains communication as a function of $N$, while simultaneously enhancing the soundness of the protocol. Importantly, this improvement in soundness comes with only a marginal increase in communication overhead.
+
+\begin{lemma}[Communication cost for \textit{Cut-and-Choose}]
+  \begin{align*}
+    |hash| \cdot 3 & + |sd| \cdot (\tau + 1 + \log(N) (M - \tau )) + |com| \cdot 2(M - \tau )      \\
+                   & + \log_2(|F|) \cdot (M - \tau )(3n_{mul} + 2n_{sq} + n_{in} + 1)\text{ bits.}
+  \end{align*}
+\end{lemma}
+
+\subsubsection{Zero-Knowledge from Sacrificing}\label{sec:zk-sacrifice}
+
+Building on the protocol outlined earlier, the authors propose a variant. In this variant, instead of simulating the computing of a value, the protocol instead simulates a \textit{verification} of the triple relation by sacrificing another triple. Consider the protocol below based on the MPC protocol described in~\cite{damgaard2012multiparty}.
 
 \begin{definition}[Verification of a multiplication triple by sacrificing another]\label{def:sacrifice}
-  Given an input triple $(x,y,z) \in \mathbb{F}$ random shared triple $(\sh{a}, \sh{b}, \sh{c}) \in \mathbb{F}$, it is possible to verify the correctness of the statement $z = x \cdot y$ without revealing any information on either of the input. Define \texttt{open} according to \autoref{def:ss-opening}.
+  Given an input triple $(x,y,z) \in \mathbb{F}$ random shared triple $(\sh{a}, \sh{b}, \sh{c}) \in \mathbb{F}$, it is possible to verify the correctness of the statement $z = x \cdot y$ without revealing any information on either of the input. Define \texttt{open} according to \autoref{def:ss-share}.
   \begin{enumerate}
     \item The parties generate a random $\epsilon \in \mathbb{F}$.
     \item The parties locally set $\sh{\alpha} = \epsilon\sh{x} + \sh{a}, \sh{\beta} = \sh{y} + \sh{b}$.
@@ -658,83 +770,47 @@ Consider the protocol for a single multiplication gate below by~\cite{baum2020co
     \item The parties run \texttt{open}$(\sh{v})$ to obtain $v$ and accept iff $v = 0$.
   \end{enumerate}
 \end{definition}
+
 Observe that if both triples are correct multiplication triples (i.e., $z = xy$ and $c = ab$) then the parties will always accept since
-\begin{align}
+
+\begin{align*}
   v & = \epsilon \cdot z - c + \alpha \cdot b + \beta \cdot a - \alpha \cdot \beta                                            \\
     & = \epsilon \cdot xy - ab + (\epsilon \cdot x + a)b + (y + b)a - (\epsilon \cdot x + a)(y + b)                           \\
     & = \epsilon \cdot xy - ab + \epsilon \cdot xb + ab + ya + ba - \epsilon \cdot xy - \epsilon \cdot xb - ay - ab           \\
     & = (\epsilon \cdot xy - \epsilon \cdot xy) + (ab - ab) + (\epsilon \cdot xb - \epsilon \cdot xb) + (ya - ay) + (ba - ab) \\
     & = 0
-\end{align}
-Otherwise, the parties will accept with probability $\frac{1}{|\mathbb{F}|}$ following from \autoref{lem:mpc-multiplication}.
+\end{align*}
 
-\begin{lemma}\label{lem:mpc-multiplication}
-  If $(\sh{a}, \sh{b}, \sh{c})$ or $(\sh{x}, \sh{y}, \sh{z})$ is an incorrect multiplication triple then the parties output \texttt{Accept} in the sub-protocol above with probability $\frac{1}{|\mathbb{F}|}$.\footnote{A full proof of this can be found in~\cite{baum2020concretely}.}
+\begin{lemma}\label{lem:sacrifice_soundness}
+  If $(\sh{a}, \sh{b}, \sh{c})$ or $(\sh{x}, \sh{y}, \sh{z})$ is an incorrect multiplication triple then the parties output \texttt{Accept} in the sub-protocol above with probability $\frac{1}{|\mathbb{F}|}$.
 \end{lemma}
 
-\subsubsection{ZK from Cut-and-Choose}\label{sec:zk-cut-and-choose}
+\textit{Proof}. Let $\Delta_z = z - x \cdot y$ and $\Delta_c = c - a \cdot b$. If the party accepts, then $v = 0$.
+\begin{align}
+  v & = \epsilon \cdot z - c + \alpha \cdot b + \beta \cdot a - \alpha \cdot \beta                           \nonumber          \\
+    & = \cdot (xy + \Delta_z ) - (ab + \Delta_c) + (\epsilon \cdot x + a)b + (y + b)a - (\epsilon \cdot x + a)(y + b) \nonumber \\
+    & = \epsilon\Delta_z - \Delta_c = 0 \label{eq:sacrifice-proof}
+\end{align}
 
-Building upon the MPC protocol above, \autoref{def:cut-and-choose} outlines the fundamental concept of the cut-and-choose technique. For a more comprehensive protocol, refer to the \textit{HVZKAoK Protocol using Cut and Choose} discussed in~\cite{baum2020concretely}. Note
+Consider the cause where one of $\Delta_z$ or $\Delta_c$ is zero and the other is non-zero. In this case the verifier will not accept from~\ref{eq:sacrifice-proof}. Otherwise, we require that $\epsilon = \Delta_c \cdot \Delta_z^{-1}$ which happens with probability $\frac{1}{|\mathbb{F}|}$. \qed
 
-\begin{definition}[ZK from Cut-and-Choose (Multiplication)]\label{def:cut-and-choose}
-  Denote the security parameters $M$ the number of pre-processing executions, $N$ the number of parties, $\tau$ the security parameter, a secure hash function \autoref{sec:prelim_hash} and a \textit{Random Oracle-based commitment scheme}. Given a $(N-1)$-private MPC protocol $\Pi_C$ for a circuit $C$ and an ideal functionality $\mathcal{F}$. Furthermore, we also denote $\mathcal{P}$ to be the prover and $\mathcal{V}$ as the verifier. \textit{Note} that for simplification we assume that there is only one multiplication gate in the circuit, to align with our purposes. The paper by~\cite{baum2020concretely} provides a more detailed protocol for multiple multiplication gates and square gates.
-  \begin{enumerate}[itemsep=0pt, parsep=0pt]
-    \item\label{itm:cut-choose-r1} For each $e \in [M]$ and for each party $P_i \in [N]$:
-    \begin{enumerate}[nolistsep]
-      \item $\mathcal{P}$ chooses a random $\texttt{salt} \leftarrow \{0,1\}^\lambda$ used for commitments.
-      \item $\mathcal{P}$ chooses a master seed $sd_e$ and  expands $sd_e$ to $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$.\footnote{If the seed is expanded in a correlated way, you can send just $sd_e$ and have the verifier recreate the expanded seeds accordingly}
-      \item $\mathcal{P}$ computes valid shares of beaver triples (\autoref{def:beaver}) $a_{e,i}$, $b_{e, i}$ and $c_{e,i}$ using $sd_{e,i}$
-            \begin{enumerate}
-              \item To fix the initial randomness of $\sh{c_e}$, recompute $a_e$ and $b_e$ from the shares and set $c_e = a_e \cdot b_e$.
-              \item Compute $\Delta_e = c_e - \sum_{i=1}^N c_{e,i}$.
-              \item Set the triple of the multiplication gate to ($\sh{a_e}, \sh{b_e}, \sh{c_e} + \Delta_e$).
-            \end{enumerate}
-      \item $\mathcal{P}$ generates random sharings $w_i$ of the input $w$ using $sd_{e,i}$.
-    \end{enumerate}
-    \item $\mathcal{P}$ commits to the triples (including $\Delta_e$) and a sharing of the input $w$ along with the seeds $sd_{e,i}$\footnote{In order to further reduce communication all commitments can be hashed together to one hash.}
-    \item $\mathcal{V}$ chooses a random challenge $E \subset [M]$ such that $|E| = \tau$ and sends it to $\mathcal{P}$. Set $\bar{E} = [M] \setminus E$
-          \item\label{itm:cut-choose-r3} $\mathcal{P}$ sends the seeds $sd_e$ to $\mathcal{V}$ who verifies that the triples are correctly generated per step~\ref{itm:cut-choose-r1}
-    \item $\mathcal{P}$ runs the MPC protocol $\Pi_C$ on the remaining $M-\tau$ pre-computed triples with different randomness $r_e$ resulting in shares $\alpha_e, \beta_e$.
-    \item $\mathcal{P}$ commits to the views (\autoref{def:mpc-view}) of $\Pi_C$.
-    \item For each $e \in \bar{E}$, $\mathcal{V}$ chooses a random $i \in [N]$ and sends it to $\mathcal{P}$.
-    \item For each $e \in \bar{E}$: Let $I_e = [N] \setminus \{i_e\}$, $\mathcal{P}$ opens the commitments of views of the MPC protocol for $i \in I_e$ and sends the openings to $\mathcal{V}$ along with the seed $sd_{\bar{E}}$ and \texttt{salt} to recompute randomness.
-    \item $\mathcal{V}$ outputs \texttt{Accept} if
-          \begin{enumerate}[nolistsep]
-            \item Step~\ref{itm:cut-choose-r3} was verified
-            \item $\mathcal{V}$ verifies the commitments and consistency \autoref{def:mpc-consistent-view} of the views by running $\Pi_C$ as an honest participant using the pseudo-randomness from the seed and \texttt{salt}.
-            \item $\mathcal{V}$ verifies for each $e \in \bar{E}$ that the recomputed output $\sh{y}$ of $\Pi_C$ is $y$
-          \end{enumerate}
-  \end{enumerate}
-\end{definition}
+\subsubsection*{The Sacrificing Protocol}
 
-Zero-Knowledge of the protocol is satisfied by the $N$-privacy of $\Pi_C$ (\autoref{def:mpc-ell-privacy}) as only $N-1$ views are shared, the witness $w$ is never revealed to the verifier.
+The Sacrificing Protocol starts as the previous protocol as $\mathcal{P}$ generates triples and input shares and commits to them. The primary modification from the Cut-and-Choose protocol is in \hyperref[cac:round2]{round 2}. Instead of challenging the triples generated by the prover, th protocol has $\mathcal{V}$ generate a random seed to produce random $\epsilon$ values to be used by the MPC protocol from \autoref{def:sacrifice}. The prover $\mathcal{P}$ uses to the seed to regenerate the $\epsilon$ values and commit to the verification of the multiplication gates in the MPC protocol. This adjustment enables the verifier to independently verify the correctness of the triples without relying on the prover to generate valid triples.
 
-We bound probability of $\mathcal{V}$ accepting a cheating outcome of \autoref{def:cut-and-choose}, i.e. that $C(w) \neq y$. First, we assume that $\mathcal{P}$ cheats in step~\ref{itm:cut-choose-r1} by incorrectly generating the precomputed values. The first challenge $E$ allows $\mathcal{V}$ to test $\tau$ triples. It's trivial to detect inconsistencies in the triples through the seed $sd_e$ by recomputing the triples and comparing them to the opened commitments. To reduce communication even more, the resulting computation from $\mathcal{P}$ can be hashed into a single hash which $\mathcal{V}$ tries to recompute. The probability that cheating is not detected is $\frac{\binom{M-c}{\tau}}{\binom{M}{\tau}}$. Next, we assume that $\mathcal{P}$ cheats by deviating from $\Pi_C$. In order to make the output of the protocol $y$, $\mathcal{P}$ must deviate in $M-\tau-c$ emulations. As $N-1$ views are opened and verified, $\mathcal{P}$ can only cheat in one view of \textbf{one} party. The probability that this is not detected is $\frac{1}{N^{M-\tau-c}}$. \todo{c Has not been introduced in this section, so maybe switch with next section}
+\subsubsection*{Soundness}
 
-\begin{lemma}[Soundness of the cut-and-choose approach]\label{lem:cut-and-choose-soundness}
-  Let $c$ be the number of pre-processing emulations where $\mathcal{P}$ cheats. The probability that $\mathcal{V}$ accepts the outcome of \autoref{def:cut-and-choose} for $C(w) \neq y$ is bounded by
+We bound probability that $\mathcal{V}$ accepts while $C(w) \neq y$. $\mathcal{P}$ can cheat by changing the shares of the output wire of a multiplication gate or adjusting the share on one of the input wires to make the output consistent with our assumption. The latter is similar to the Cut-and-Choose protocol and succeeds with $\frac{1}{N}$ probability. We saw from \autoref{lem:sacrifice_soundness} that the probability of tampering with the output wires of the multiplication gates is bounded by $\frac{1}{|\mathbb{F}|}$.
+
+\begin{lemma}[Sacrificing protocol cheating probability]\label{lem:sacrifice_soundness} Let $\xi_{sac}(M,N)$ be the probability that $\mathcal{V}$ accepts while $C(w) \neq y$. Then
   \begin{align*}
-    \xi_c(M, N, \tau) = \max_{0 \leq c \leq M-\tau} \left\{\frac{\binom{M-c}{\tau}}{\binom{M}{tau} \cdot N^{M-\tau-c}} \right\}
+    \xi_{sac} (M,N) = \left(\frac{N + | \mathbb{F}| -1}{|\mathbb{F}| \cdot N}\right)^M
   \end{align*}
 \end{lemma}
 
-To re-iterate, we set out to make it so that the communication complexity of the ZK MPCitH protocol was not bounded by $N$.
+The sacrifice protocol achieves a smaller cheating probability compared to the Cut-and-Choose protocol. This improvement allows the same soundness level for the entire protocol to be achieved with a lower value of \( M \), thereby reducing the overall communication complexity. Baum and Nof~\cite{baum2020concretely} demonstrate that their sacrifice protocol achieves the same bits of security while significantly lowering communication complexity compared to earlier MPCitH protocols like Stern~\cite{stern1996new}. Furthermore, it markedly decreases the prover's runtime compared to Ligero~\cite{ames2017ligero}.
 
-\todo{Explain how C\&C gives us the smaller proof in MPCitH}
-
-\subsubsection{Zero-Knowledge from Sacrificing}\label{sec:zk-sacrifice}
-
-Building on the protocol outlined earlier, the authors propose a method based on sacrificing multiplication triples, as described in \autoref{def:sacrifice}, to verify the correctness of multiplication gates. The following lemma establishes that the probability of successful cheating is bounded by $\frac{1}{|\mathbb{F}|}$:
-
-\begin{lemma}\label{lem:sacrifice}
-  If $\sh{a}, \sh{b}, \sh{c}$ or $\sh{x}, \sh{y}, \sh{z}$ is an incorrect multiplication triple, then the parties output \texttt{Accept} in the sub-protocol with probability at most $\frac{1}{|\mathbb{F}|}$.
-\end{lemma}
-\todo{Maybe insert proof? It is kinda simple.}
-This lemma provides a lower bound on the probability of a malicious party $\mathcal{P}$ successfully cheating. Consequently, the security parameters can be reduced without compromising security, thereby improving the efficiency of the protocol.
-
-The primary modification lies in Step 3, where the verifier $\mathcal{V}$ selects a random subset $E \subset [M]$ to verify the correctness of the multiplication triples generated by the prover $\mathcal{P}$. In contrast, the sacrificing protocol uses random $\epsilon$ values, chosen by $\mathcal{V}$, which the prover $\mathcal{P}$ uses to commit to the verification of the multiplication gates. This adjustment enables the verifier to independently verify the correctness of the triples without relying on the prover to generate valid triples.
-
-\todo{Explain changes from C\&C to this from Baum how it increases soundness for smaller $n$}
+However, additional performance gains have recently been achieved by leveraging threshold secret sharing schemes, as explored in~\cite{feneuil2023threshold}.
 
 \subsection{Linear Secret Sharing Schemes (LSSS)}\label{sec:lsss}
 
@@ -1852,7 +1928,7 @@ This modular design ensures that each aspect of the protocol is encapsulated wit
 \end{figure}
 
 \section{Contants}\label{sub:constants}
-The protocol requires a lot of constants -- e.g. the size of the syndrome decoding problem. Consider a simple example in the size of the Hash output \rust{PARAM_DIGEST_SIZE}. The type output of a hash function would be a and array of bytes. We would simply type it a follows 
+The protocol requires a lot of constants -- e.g. the size of the syndrome decoding problem. Consider a simple example in the size of the Hash output \rust{PARAM_DIGEST_SIZE}. The type output of a hash function would be a and array of bytes. We would simply type it a follows
 
 \begin{minted}{rust}
   const PARAM_DIGEST_SIZE: usize = 256 / 8;
