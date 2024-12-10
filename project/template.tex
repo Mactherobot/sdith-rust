@@ -1890,7 +1890,7 @@ We introduced three feature flags -- \texttt{category\_one}, \texttt{category\_t
 
 Due to the modularity of the SD-in-the-Head protocol, we were able to set about implementing the initial parts of the protocol as a set of subroutines; \textit{Pseudo-random Generator}, \textit{Commitment}, \textit{Hashing}, and \textit{Merkle tree Commitment Scheme}.
 
-\subsection{PRG}
+\subsection{PRG}\label{sub:prg}
 To begin our implementation, we started by developing a pseudo-random generator (PRG) using an extendable output function (XOF) as the underlying mechanism. Although building custom cryptographic components can be a complex effort in its own right -- and one that may limit certain manual optimizations -- we chose to rely on the \textit{tiny-keccak}~\cite{tinykeccak} crate for convenience and reliability. This library provides established implementations of Keccak-derived functions aligned with NIST FIPS 202, SP800-185, and KangarooTwelve standards, ensuring both proper compliance and a secure foundation for our PRG.
 
 The \texttt{PRG} struct was designed to produce random bytes and includes straightforward methods for generating vectors over the $F_q$ and $F_{q^4}$ fields. Instead of cloning data, it uses \emph{in-place mutation} through mutable references. This approach, relying on an underlying XOF as the randomness source, helps streamline the code and limit unnecessary data copies.
@@ -1913,7 +1913,7 @@ The \texttt{PRG} struct was designed to produce random bytes and includes straig
   }
 \end{minted}
 
-Our initial implementation targeted the NIST Category 1 requirements \cite{aguilarsyndrome11}, which made use of Shake128 \cite{aguilarsyndrome11} as the XOF. However, we needed a more flexible approach to support other variants, such as those used in Category 3 and Category 5. In addition, we wanted the option to substitute the XOF with alternative, potentially more efficient implementations -- like Blake3 \cite{blakethree} -- without having to rewrite large portions of the code.
+Our initial implementation targeted the NIST Category 1 requirements \cite{aguilarsyndrome11}, which made use of Shake128 \cite{aguilarsyndrome11} as the XOF. However, we needed a more flexible approach to support other variants, such as those used in Category 3 and Category 5. In addition, we wanted the option to substitute the XOF with alternative, potentially more efficient implementations without having to rewrite large portions of the code.
 
 To achieve this flexibility, we introduced a trait that defines a common interface for different XOF implementations. By applying generics, we can easily plug in any XOF that conforms to this trait, making it simple to switch between Shake128 and Blake3 (or any other compatible function) within the same PRG structure.
 
@@ -1993,24 +1993,36 @@ We only made simple tests for this module, as we trusted the underlying library 
 \end{minted}
 
 \subsubsection{Hashing}\label{sec:hashing} % (fold)
-As mentioned in the spec, we need a collision-resistant hash function. For this we also used the tiny-keccak library. And again due to the different security levels, we had to be able to switch between different implementations of the underlying hash function. These being the SHA3-256, SHA3-384 and SHA3-512.
-This was done by creating a generic trait for the hash function:
+As mentioned in the spec, we need a collision-resistant hash function. For this we also used the tiny-keccak crate. And again due to the different security categories, we had to be able to switch between different implementations of the underlying hash function. 
+First, as mentioned in the \autoref{sub:constants}, we defined a primitive type for the Hash which we used to define a generic trait:
+\begin{minted}{rust}
+pub trait SDitHHashTrait<T> {
+    /// Get the hasher for the hash primitive
+    fn get_hasher() -> T;
+    /// Initialize the hasher
+    fn init() -> Self;
+    /// Initialize the hasher with a prefix. 
+    fn init_with_prefix(prefix: &[u8]) -> Self;
+    /// Finalize the hash, returning the [`type@Hash`] value
+    fn finalize(self) -> Hash;
+    /// Update the hasher with data
+    fn update(&mut self, data: &[u8]);
+}
+\end{minted}
+We then implemented the trait, as was shown in \autoref{sub:prg}, for the following hash primitives SHA3-256, SHA3-384 and SHA3-512.
 
-\todo{link to the hashing code}
-
-% subsubsection Hashing (end)
-%
 \subsection{Commitments}
+The protocol requires the use of a commitment scheme to ensure that the right multiplication triples are used in the MPC-in-the-Head subroutines. For this we used the merkle tree as mentioned in the \autoref{spec:merkle_tree}.
 
 \subsubsection{Merkle Tree impl}\label{sub:merkle_tree_impl}
-Our merkle tree implementation was done using a sized array as data structure. Meaning that we save all the leafs of the tree in the last 256 values of the array.
+Our merkle tree implementation was done using a sized array as data structure. Meaning that we save all the leafs of the tree in the last 256 values of the array. Allowing the utilization of sized arrays. Here we again used feature flags to allow for different implementations of the merkle tree.
 
-\todo{link to the merkle tree code}
+\begin{minted}{rust}
+
+\end{minted}
 
 We then build the tree buttom up by hashing the left and right children of the current node and storing the result in the next position in the array. We do this until we reach the root node, which we then return as our global commitment.
 
-
-\subsubsection{Hashing, XOF, and Commitments}
 
 \subsubsection{Galois field arithmetic}\label{sub:gf256_arith}
 As stated earlier, we wanted to implement the underlying arithmetic our selves and not rely on there being a library for the arithmetic of the field. This led us to implement the galois field arithmetic.
