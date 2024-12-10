@@ -1,3 +1,10 @@
+# Note check that we run in constant time!
+
+- Use dudect-rs bencher
+- Check up on rust and constatnt time
+- Maybe look at sublte for types
+- Samply with a 1000 samples, warmup
+
 # Notes from development
 
 - Using Keccak and the same instantiated RBG as used in the reference implementation
