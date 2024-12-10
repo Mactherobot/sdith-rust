@@ -1859,7 +1859,7 @@ The protocol requires a lot of constants -- e.g. the size of the syndrome decodi
   type Hash = [u8; PARAM_DIGEST_SIZE];
 \end{minted}
 
-The \rust{[T; N]} array type in Rust ensures that the value is stored on the stack where \rust{N} is known at compile time. We can rely on this property because \rust{const} (constants) in Rust define immutable values that are fully determined at compile time. However, one challenge arises from the need to adjust the digest size based on the NIST security categories. For instance, switching to category five might mean using SHA-512 and thus a 512-bit digest, which would require updating \rust{PARAM_DIGEST_SIZE} accordingly.
+The \rust{[T; N]} array type in Rust ensures that the value is stored on the stack but requires that \rust{T} and \rust{N} are known at compile time. We can rely on this property because \rust{const} (constants) in Rust define immutable values that are fully determined at compile time. However, one challenge arises from the need to adjust the digest size based on the NIST security categories. For instance, switching to category five might mean using SHA-512 and thus a 512-bit digest, which would require updating \rust{PARAM_DIGEST_SIZE} accordingly.
 
 There are multiple ways to address this issue. The simplest approach would be to switch from a stack-allocated array to a heap-allocated vector, \rust{Vec<T>}. However, this would likely reduce performance due to the overhead of dynamic allocation and retrieval. Instead, we adopted the feature-flag technique described in \autoref{sub:feature_flags}.
 
