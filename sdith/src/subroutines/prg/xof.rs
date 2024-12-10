@@ -5,11 +5,11 @@
 //! sampling a random hash `n` byte hash output and interpreting it as an array of field elements.
 
 #[cfg(not(feature = "xof_blake3"))]
-use crate::constants::params::XOF_PRIMITIVE;
+use crate::constants::{params::XOF_PRIMITIVE, types::XOFPrimitive};
 #[cfg(not(feature = "xof_blake3"))]
 use tiny_keccak::{Hasher, Shake, Xof};
 
-use crate::constants::{params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE}, types::XOFPrimitive};
+use crate::constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
 
 /// Trait for the extendable output function (XOF) implementation
 ///

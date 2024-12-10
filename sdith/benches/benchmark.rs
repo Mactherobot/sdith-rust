@@ -182,8 +182,7 @@ criterion_group! {
 criterion_group!(
     name = benches;
     config = get_config();
-    targets = merkle_benchmark
-    // targets = api_benchmark, simd_benchmark, parallel_benchmark, merkle_benchmark
+    targets = api_benchmark, simd_benchmark, parallel_benchmark, merkle_benchmark
 );
 
 criterion_main!(benches);

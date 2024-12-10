@@ -15,6 +15,10 @@ fn main() {
     // Notify the user of the category being used
     println!("cargo:warning=Running with category {cat}");
 
+    if cfg!(feature = "xof_blake3") || cfg!(feature = "hash_blake3") {
+        println!("cargo:warning=Blake3 enabled");
+    }
+
     // Check if feature flag is blake3 as it is not supported for categories above 1
     if (cfg!(feature = "xof_blake3") || cfg!(feature = "hash_blake3")) && cat != "one" {
         panic!("Blake3 only supports 128 bit security. 256 is required for categories above 1.")

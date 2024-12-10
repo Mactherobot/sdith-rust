@@ -6,9 +6,9 @@
 #[cfg(not(feature = "hash_blake3"))]
 use tiny_keccak::{Hasher, Sha3};
 
+use crate::constants::types::Hash;
 #[cfg(not(feature = "hash_blake3"))]
-use crate::constants::params::HASH_PRIMITIVE;
-use crate::constants::types::{Hash, HashPrimitive};
+use crate::constants::{params::HASH_PRIMITIVE, types::HashPrimitive};
 
 /// Hash prefix for challenge 1 Fiats-Shamir Heuristic
 pub const HASH_PREFIX_CHALLENGE_1: [u8; 1] = [1];

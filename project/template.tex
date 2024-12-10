@@ -113,6 +113,8 @@
 \noindent{\Large\sf Master's Thesis, Computer Science\\[1ex]
   \today \\[1ex] Advisor: Diego F. Aranha\\[15ex]}\\[\fill]}
 \epsfig{file=images/logo.eps}\clearpage
+\includegraphics[width=\textwidth]{images/titleimage.png}
+
 
 % A math share macro
 \newcommand{\sh}[1] {\ensuremath{\llbracket #1 \rrbracket}}
@@ -1849,20 +1851,146 @@ This modular design ensures that each aspect of the protocol is encapsulated wit
   \label{fig:structure}
 \end{figure}
 
+\section{Contants}\label{sub:constants}
+The protocol requires a lot of constants -- e.g. the size of the syndrome decoding problem. Consider a simple example in the size of the Hash output \rust{PARAM_DIGEST_SIZE}. The type output of a hash function would be a and array of bytes. We would simply type it a follows 
+
+\begin{minted}{rust}
+  const PARAM_DIGEST_SIZE: usize = 256 / 8;
+  type Hash = [u8; PARAM_DIGEST_SIZE];
+\end{minted}
+
+The \rust{[T; N]} array type in Rust ensures that the value is stored on the stack where \rust{N} is known at compile time. We can rely on this property because \rust{const} (constants) in Rust define immutable values that are fully determined at compile time. However, one challenge arises from the need to adjust the digest size based on the NIST security categories. For instance, switching to category five might mean using SHA-512 and thus a 512-bit digest, which would require updating \rust{PARAM_DIGEST_SIZE} accordingly.
+
+There are multiple ways to address this issue. The simplest approach would be to switch from a stack-allocated array to a heap-allocated vector, \rust{Vec<T>}. However, this would likely reduce performance due to the overhead of dynamic allocation and retrieval. Instead, we adopted the feature-flag technique described in \autoref{sub:feature_flags}.
+
+We introduced three feature flags -- \texttt{category\_one}, \texttt{category\_three}, and \texttt{category\_five} -- and then structured our \texttt{crate::constants::params} module to load the appropriate parameters depending on which feature flag is enabled. This allows us to select the correct digest size at compile time while maintaining stack-based allocations and consistent performance.
+
+\begin{minted}{rust}
+  // src/constants/params.rs
+  #[cfg(feature = "category_one")]
+  mod cat1;
+  #[cfg(feature = "category_one")]
+  use cat1 as cat;
+
+  #[cfg(feature = "category_three")]
+  mod cat3;
+  #[cfg(feature = "category_three")]
+  use cat3 as cat;
+
+  pub const PARAM_DIGEST_SIZE: usize = cat::PARAM_DIGEST_SIZE / 8;
+
+  // src/constants/params/cat1.rs
+  pub(super) const PARAM_DIGEST_SIZE: usize = 256;
+
+  // src/constants/params/cat3.rs
+  pub(super) const PARAM_DIGEST_SIZE: usize = 384;
+\end{minted}
+
 \section{Subroutines}\label{sub:subroutines}
 
 Due to the modularity of the SD-in-the-Head protocol, we were able to set about implementing the initial parts of the protocol as a set of subroutines; \textit{Pseudo-random Generator}, \textit{Commitment}, \textit{Hashing}, and \textit{Merkle tree Commitment Scheme}.
 
 \subsection{PRG}
-First we implemented a pseudo random generator (PRG) based on a extendable output hash function (XOF). We used a library called \textit{tiny-keccak}~\cite{tiny-keccak}, which contains implementations of Keccak derived functions specified in the NIST FIPS 202 standard, SP800-185 and KangarooTwelve.
+To begin our implementation, we started by developing a pseudo-random generator (PRG) using an extendable output function (XOF) as the underlying mechanism. Although building custom cryptographic components can be a complex effort in its own right -- and one that may limit certain manual optimizations -- we chose to rely on the \textit{tiny-keccak}~\cite{tinykeccak} crate for convenience and reliability. This library provides established implementations of Keccak-derived functions aligned with NIST FIPS 202, SP800-185, and KangarooTwelve standards, ensuring both proper compliance and a secure foundation for our PRG.
 
-Our initial implementation focused on the NIST category one, which requires a security level of 128 bits. For this we used the SHAKE-128 implementation. But when we later had to adhere to the NIST category tree and five, we had to be able to switch between different implementations of the underlying XOF. For this we implemented a generic trait for the XOF:
-\todo{link to the xof code}
-This allows us to create a struct that will contain a generic XOF and allow for interchangeability between different XOF implementations:
-\todo{link to the xof code}
-Now in order to use the correct XOF based on the security level needed for each category, we used a constant to swithc between the different implementations of the SHAKE XOF -- we will discuss how this constant was defined for each category in \autoref{sub:categories}:
-\todo{link to the xof code}
-We could now call the squeeze funtion to get the random bytes necessary for the seed, salt and key generation.
+The \texttt{PRG} struct was designed to produce random bytes and includes straightforward methods for generating vectors over the $F_q$ and $F_{q^4}$ fields. Instead of cloning data, it uses \emph{in-place mutation} through mutable references. This approach, relying on an underlying XOF as the randomness source, helps streamline the code and limit unnecessary data copies.
+
+\begin{minted}{rust}
+  pub struct PRG {
+    xof: SDitHXOF<tiny_keccak::Shake>,
+  }
+
+  impl PRG {
+    pub fn init(seed: &[u8; PARAM_SEED_SIZE], salt: Option<&[u8; PARAM_SALT_SIZE]>) -> Self {
+        PRG {
+            xof: SDitHXOF::init(seed, salt),
+        }
+    }
+
+    pub fn sample_field_fq_elements(&mut self, out: &mut [u8]) {
+        self.xof.squeeze(out);
+    }
+  }
+\end{minted}
+
+Our initial implementation targeted the NIST Category 1 requirements \cite{aguilarsyndrome11}, which made use of Shake128 \cite{aguilarsyndrome11} as the XOF. However, we needed a more flexible approach to support other variants, such as those used in Category 3 and Category 5. In addition, we wanted the option to substitute the XOF with alternative, potentially more efficient implementations -- like Blake3 \cite{blakethree} -- without having to rewrite large portions of the code.
+
+To achieve this flexibility, we introduced a trait that defines a common interface for different XOF implementations. By applying generics, we can easily plug in any XOF that conforms to this trait, making it simple to switch between Shake128 and Blake3 (or any other compatible function) within the same PRG structure.
+
+\begin{minted}{rust}
+  // subroutines/prg/xof.rs
+  pub trait SDitHXOFTrait<T> {
+    fn get_xof() -> T;
+    fn init_base(x: &[u8]) -> Self;
+    fn init(seed: &[u8; PARAM_SEED_SIZE], salt: Option<&[u8; PARAM_SALT_SIZE]>) -> Self;
+    fn squeeze(&mut self, output: &mut [u8]);
+  }
+
+  pub struct SDitHXOF<T> {
+      xof: T,
+  }
+\end{minted}
+
+The base variant is implemented with Shake and can be adjusted depending on the category via the \rust{XOF_PRIMITIVE} constant. This design allows us to maintain a uniform API for the PRG while still accommodating a range of cryptographic primitives to meet various performance and security requirements.
+
+\begin{minted}{rust}
+  impl SDitHXOFTrait<Shake> for SDitHXOF<Shake> {
+    fn get_xof() -> Shake {
+        match XOF_PRIMITIVE {
+            XOFPrimitive::SHAKE128 => Shake::v128(),
+            XOFPrimitive::SHAKE256 => Shake::v256(),
+        }
+    }
+
+    fn init_base(x: &[u8]) -> Self {
+      ...
+    }
+
+    fn init(seed: &[u8; PARAM_SEED_SIZE], salt: Option<&[u8; PARAM_SALT_SIZE]>) -> Self {
+        let mut xof = Self::get_xof();
+        if let Some(salt) = salt {
+            xof.update(salt);
+        }
+        xof.update(seed);
+        SDitHXOF { xof }
+    }
+
+    fn squeeze(&mut self, output: &mut [u8]) {
+        self.xof.squeeze(output);
+    }
+  }
+\end{minted}
+
+In order to explore performance upgrades for the hashing we implemented a separate version of the \rust{SDitHXOF} struct that uses the \texttt{blake3} crate~\cite{blake3} as the underlying hash function.
+
+\begin{minted}{rust}
+  impl SDitHXOFTrait<blake3::OutputReader> for SDitHXOF<blake3::OutputReader> {
+    fn get_xof() -> blake3::OutputReader {
+        blake3::Hasher::new().finalize_xof()
+    }
+    ...
+  }
+\end{minted}
+
+We only made simple tests for this module, as we trusted the underlying library to correctly implement the primitive according to NIST standards. Instead we simply tested each method individually and made sure that they actually updated the state of the mutable input.
+
+\begin{minted}{rust}
+  #[cfg(test)]
+  mod tests {
+
+    #[test]
+    fn test_prg() {
+        let seed = &[0u8; PARAM_SEED_SIZE];
+        let mut prg = PRG::init(seed, None);
+
+        let mut output = [0u8; PARAM_DIGEST_SIZE];
+        prg.sample_field_fq_elements(&mut output);
+        assert_ne!(output, [0u8; PARAM_DIGEST_SIZE]);
+    }
+
+    ...
+  }
+\end{minted}
 
 \subsubsection{Hashing}\label{sec:hashing} % (fold)
 As mentioned in the spec, we need a collision-resistant hash function. For this we also used the tiny-keccak library. And again due to the different security levels, we had to be able to switch between different implementations of the underlying hash function. These being the SHA3-256, SHA3-384 and SHA3-512.
