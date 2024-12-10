@@ -5,11 +5,11 @@
 //! sampling a random hash `n` byte hash output and interpreting it as an array of field elements.
 
 #[cfg(not(feature = "xof_blake3"))]
-use crate::constants::params::{XOFPrimitive, XOF_PRIMITIVE};
+use crate::constants::params::XOF_PRIMITIVE;
 #[cfg(not(feature = "xof_blake3"))]
 use tiny_keccak::{Hasher, Shake, Xof};
 
-use crate::constants::params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE};
+use crate::constants::{params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE}, types::XOFPrimitive};
 
 /// Trait for the extendable output function (XOF) implementation
 ///
@@ -61,10 +61,7 @@ impl SDitHXOFTrait<Shake> for SDitHXOF<Shake> {
     }
 
     fn init(seed: &[u8; PARAM_SEED_SIZE], salt: Option<&[u8; PARAM_SALT_SIZE]>) -> Self {
-        let mut xof = match XOF_PRIMITIVE {
-            XOFPrimitive::SHAKE128 => Shake::v128(),
-            XOFPrimitive::SHAKE256 => Shake::v256(),
-        };
+        let mut xof = Self::get_xof();
 
         if let Some(salt) = salt {
             xof.update(salt);

@@ -7,8 +7,8 @@
 use tiny_keccak::{Hasher, Sha3};
 
 #[cfg(not(feature = "hash_blake3"))]
-use crate::constants::params::{HashPrimitive, HASH_PRIMITIVE};
-use crate::constants::types::Hash;
+use crate::constants::params::HASH_PRIMITIVE;
+use crate::constants::types::{Hash, HashPrimitive};
 
 /// Hash prefix for challenge 1 Fiats-Shamir Heuristic
 pub const HASH_PREFIX_CHALLENGE_1: [u8; 1] = [1];
@@ -61,7 +61,6 @@ impl SDitHHashTrait<Sha3> for SDitHHash<Sha3> {
         hasher.update(prefix);
         SDitHHash { hasher }
     }
-
 
     fn finalize(self) -> Hash {
         let mut output = [0u8; crate::constants::params::PARAM_DIGEST_SIZE];
@@ -121,8 +120,8 @@ pub fn hash_2(data: Vec<&[u8]>) -> Hash {
 
 #[cfg(test)]
 mod tests {
-    use crate::constants::params::PARAM_DIGEST_SIZE;
     use super::*;
+    use crate::constants::params::PARAM_DIGEST_SIZE;
 
     fn hash(data: &[u8]) -> Hash {
         let mut hasher = SDitHHash::init();

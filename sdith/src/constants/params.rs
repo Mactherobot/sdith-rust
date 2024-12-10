@@ -20,29 +20,7 @@ mod cat5;
 #[cfg(feature = "category_five")]
 use cat5 as cat;
 
-// ## Types
-#[derive(Debug)]
-/// Compiled version category of the protocol
-pub enum Categories {
-    ONE = 1,
-    THREE = 3,
-    FIVE = 5,
-}
-
-#[derive(Debug)]
-///  Hash primitive used in the signature scheme
-pub enum HashPrimitive {
-    SHA3_256,
-    SHA3_384,
-    SHA3_512,
-}
-
-#[derive(Debug)]
-///  XOF primitive used in the signature scheme
-pub enum XOFPrimitive {
-    SHAKE128,
-    SHAKE256,
-}
+use super::types::{Categories, HashPrimitive, XOFPrimitive};
 
 // ## Constants
 
@@ -98,9 +76,9 @@ pub const PARAM_CHUNK_M: usize = PARAM_M / PARAM_SPLITTING_FACTOR;
 pub const PARAM_CHUNK_W: usize = PARAM_W / PARAM_SPLITTING_FACTOR;
 // Weird params from spec, TODO remove?
 /// m-k rounded up to 32 for performance
-pub const PARAM_M_SUB_K_CEIL32: usize = ((PARAM_M - PARAM_K  + 31) >> 5) << 5;
+pub const PARAM_M_SUB_K_CEIL32: usize = ((PARAM_M - PARAM_K + 31) >> 5) << 5;
 /// m rounded up to 32 for performance
-pub const PARAM_M_CEIL32: usize = ((PARAM_M  + 31) >> 5) << 5;
+pub const PARAM_M_CEIL32: usize = ((PARAM_M + 31) >> 5) << 5;
 
 // ## Precomputed constants
 

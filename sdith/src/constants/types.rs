@@ -20,3 +20,34 @@ pub type Salt = [u8; PARAM_SALT_SIZE];
 
 /// Commitments array of size [`PARAM_N`]
 pub type CommitmentsArray = [Hash; PARAM_N];
+
+#[derive(Debug)]
+/// Compiled version category of the protocol
+pub enum Categories {
+    /// NIST security category one 143 bit security
+    ONE = 1,
+    /// NIST security category three 207 bit security
+    THREE = 3,
+    /// NIST security category five 272 bit security
+    FIVE = 5,
+}
+
+#[derive(Debug)]
+///  Hash primitive used in the signature scheme
+pub enum HashPrimitive {
+    /// SHA3-256 hash
+    SHA3_256,
+    /// SHA3-384 hash
+    SHA3_384,
+    /// SHA3-512 hash
+    SHA3_512,
+}
+
+#[derive(Debug)]
+///  XOF primitive used in the signature scheme
+pub enum XOFPrimitive {
+    /// SHAKE128 XOF
+    SHAKE128,
+    /// SHAKE256 XOF
+    SHAKE256,
+}

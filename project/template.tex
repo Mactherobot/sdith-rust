@@ -149,6 +149,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \chapter{Introduction}\label{ch:intro}
+\todo{Make sure all code examples are up to date}
 
 few pages. Introduce what we have done and how the paper is structured
 
@@ -1804,7 +1805,7 @@ Within the \texttt{src} directory, the code is further divided into submodules, 
   \item \texttt{utils}: Offers utility functions used across the codebase.
 \end{itemize}
 
-This modular design ensures that each aspect of the protocol is encapsulated within its respective submodule, making the codebase easier to understand, maintain, and extend.
+This modular design ensures that each aspect of the protocol is encapsulated within its respective submodule, making the codebase easier to understand, maintain, and extend. \todo{make sure this is up to date}
 \begin{figure}[H]
   \dirtree{%
     .1 \color{orange}Cargo.toml.
@@ -1821,8 +1822,8 @@ This modular design ensures that each aspect of the protocol is encapsulated wit
     .2 arith/\dots.
     .3 gf256/\dots.
     .2 constants/.
+    .3 params/\dots.
     .3 \color{teal}params.rs.
-    .3 \color{teal}precomputed.rs.
     .3 \color{teal}types.rs.
     .2 kat/\dots.
     .2 mpc/\dots.
@@ -1839,14 +1840,88 @@ This modular design ensures that each aspect of the protocol is encapsulated wit
   \label{fig:structure}
 \end{figure}
 
+\section{Contants}\label{sub:constants}
+The protocol requires a lot of constants -- e.g. the size of the syndrome decoding problem. Consider a simple example in the size of the Hash output \rust{PARAM_DIGEST_SIZE}. The type output of a hash function would be a and array of bytes. We would simply type it a follows 
+
+\begin{minted}{rust}
+  const PARAM_DIGEST_SIZE: usize = 256 / 8;
+  type Hash = [u8; PARAM_DIGEST_SIZE];
+\end{minted}
+
+The \rust{[T; N]} array type ensures that the value is stored on the stack. Its possible for us to ensure this due to the nature of \rust{const} (constants) in Rust where the value is known at compile time. However, the digest size would have to change according to the NIST security Categories. For example, for category five we would use SHA-512, we would need to update the size of the digest to 512 bits. This would require us to update the \rust{PARAM_DIGEST_SIZE} constant. There are several ways of solving this problem. The simplest would be to change the hash type to use dynamic heap allocated vectors instead \rust{Vec<T>}. However, this would come at a decrease in performance as data would have to be allocated and fetched. Instead, used the technique described in \autoref{sub:feature_flags}. We introduced the three feature flags \texttt{category\_one}, \texttt{category\_three}, and \texttt{category\_five}. Next we set up the \texttt{crate::constants::params} module. We set up 
+
+\begin{minted}{rust}
+  // src/constants/params.rs
+  #[cfg(feature = "category_one")]
+  mod cat1;
+  #[cfg(feature = "category_one")]
+  use cat1 as cat;
+
+  #[cfg(feature = "category_three")]
+  mod cat3;
+  #[cfg(feature = "category_three")]
+  use cat3 as cat;  
+\end{minted}
+
 \section{Subroutines}\label{sub:subroutines}
 
-Due to the modularity of the SD-in-the-Head protocol, we were able to set about implementing the initial parts of the protocol as a set of subroutines; \textit{Pseudo-random Generator}, \textit{Commitment}, \textit{Hashing}, and \textit{Merkle tree Commitment Scheme}.
+The SD-in-the-Head protocol is designed in a inherently modular way. This makes it easier to develop its different subroutines step by step. Each subroutine handles a specific \textit{concern}, such as basic Galois Field or cryptographic primitives. By beginning with these smaller subroutines, we could better structure our code, and it also became more straightforward to test, refine, and integrate each component before combining them into the overall system.
 
 \subsection{PRG}
-First we implemented a pseudo random generator (PRG) based on a extendable output hash function (XOF). We used a library called \textit{tiny-keccak}~\cite{tiny-keccak}, which contains implementations of Keccak derived functions specified in the NIST FIPS 202 standard, SP800-185 and KangarooTwelve.
+To begin our implementation, we started by developing a pseudo-random generator (PRG) using an extendable output function (XOF) as the underlying mechanism. Although building custom cryptographic components can be a complex effort in its own right -- and one that may limit certain manual optimizations -- we chose to rely on the \textit{tiny-keccak}~\cite{tinykeccak} crate for convenience and reliability. This library provides established implementations of Keccak-derived functions aligned with NIST FIPS 202, SP800-185, and KangarooTwelve standards, ensuring both proper compliance and a secure foundation for our PRG.
 
-Our initial implementation focused on the NIST category one, which requires a security level of 128 bits. For this we used the SHAKE-128 implementation. But when we later had to adhere to the NIST category tree and five, we had to be able to switch between different implementations of the underlying XOF. For this we implemented a generic trait for the XOF:
+\begin{minted}{rust}
+  pub struct PRG {
+    xof: SDitHXOF<tiny_keccak::Shake>,
+  }
+\end{minted}
+
+Our initial implementation focused on the NIST Category one of the specification~\cite{aguilarsyndrome11}, which required the XOF in the form of Shake128~\cite{aguilarsyndrome11}. However our implemementation would have to be able to support different XOF variants to support Category three and five. Furthermore, we wanted to explore the idea that the XOF could be swapped out for a different and more performant implementation -- such as Blake3~\cite{blakethree}. Therefore we designed a trait \rust{SDitHXOF} that allows us to swap the underlying XOF implementation in our \rust{PRG} struct.
+
+\begin{minted}{rust}
+  // subroutines/prg/xof.rs
+  pub trait SDitHXOFTrait<T> {
+    fn get_xof() -> T;
+    fn init_base(x: &[u8]) -> Self;
+    fn init(seed: &[u8; PARAM_SEED_SIZE], salt: Option<&[u8; PARAM_SALT_SIZE]>) -> Self;
+    fn squeeze(&mut self, output: &mut [u8]);
+  }
+
+  pub struct SDitHXOF<T> {
+      xof: T,
+  }
+\end{minted}
+
+The generic type parameter \rust{SDitHXOF<T>} allows for the XOF to be swapped out for a different implementation. For example, we could swap out the Shake128 implementation for Blake3~\cite{blakethree} by implementing the trait for \rust{SDitHXOF<Blake3>}. This would allow us to use the same api in the PRG. Next we implemented the base variant with Shake. 
+
+\begin{minted}{rust}
+  impl SDitHXOFTrait<Shake> for SDitHXOF<Shake> {
+    fn get_xof() -> Shake {
+        match XOF_PRIMITIVE {
+            XOFPrimitive::SHAKE128 => Shake::v128(),
+            XOFPrimitive::SHAKE256 => Shake::v256(),
+        }
+    }
+
+    fn init_base(x: &[u8]) -> Self {
+      ...
+    }
+
+    fn init(seed: &[u8; PARAM_SEED_SIZE], salt: Option<&[u8; PARAM_SALT_SIZE]>) -> Self {
+        let mut xof = Self::get_xof();
+        if let Some(salt) = salt {
+            xof.update(salt);
+        }
+        xof.update(seed);
+        SDitHXOF { xof }
+    }
+
+    fn squeeze(&mut self, output: &mut [u8]) {
+        self.xof.squeeze(output);
+    }
+  }
+\end{minted}
+
 \todo{link to the xof code}
 This allows us to create a struct that will contain a generic XOF and allow for interchangeability between different XOF implementations:
 \todo{link to the xof code}
