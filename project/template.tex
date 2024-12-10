@@ -347,7 +347,7 @@ Furthermore, Alice cannot change her result $g$ without being able to find a dif
 \]
 which she can only do with negligible probability per \autoref{lem:collision}, ensuring \autoref{lem:binding}.
 
-\subsubsection{Merkle Tree Commitment Scheme}
+\subsubsection{Merkle Tree Commitment Scheme}\label{sub:merkle_tree_prelim}
 A variant of such a scheme which allows for partial opening, meaning that the prover does not have to open the entire commitment, but can instead open a subset of the commitment, is the \textit{Merkle Tree Commitment scheme}~\cite{becker2008merkle}.
 
 Let $v_1, \dots, v_n$ be the values to be committed, and let $h$ denote a cryptographically secure hash function. The leaves of the Merkle tree, $a_{0,1}, \dots, a_{0,n}$, are initialized as the hash values of the input values:
@@ -720,7 +720,7 @@ The verifier checks the following:
   \item The output shares add up correctly to the shared output \( y \).
 \end{enumerate}
 
-If all checks pass, the verifier accepts the proof. Otherwise, it rejects
+If all checks pass, the verifier accepts the proof. Otherwise, it rejects. Note that we can hash all individual commitments into a single hash to reduce the communication cost.
 
 \subsubsection*{Zero-knowledge}
 
@@ -813,6 +813,12 @@ The sacrifice protocol achieves a smaller cheating probability compared to the C
 However, additional performance gains have recently been achieved by leveraging threshold secret sharing schemes, as explored in~\cite{feneuil2023threshold}.
 
 \subsection{Linear Secret Sharing Schemes (LSSS)}\label{sec:lsss}
+
+"Applying our approach with a low-threshold LSSS also boosts the performance of the proof system by making the MPC emulation cost independent of N for both the prover and the verifier. The gain is
+particularly significant for the verification time which becomes logarithmic in N (while the prover still
+has to generate and commit the N input shares)."
+
+We change to use LSSS. We have to change the commitment scheme from before where we hashed all values into one hash. Now we will not be sending all values (only $\ell$ values), but we still need to commit to the whole computation -- also the values that $\mathcal{P}$ did not send to $\mathcal{V}$. For this we can use Merkle Tree Commitment (\autoref{sub:merkle_tree_prelim}) scheme which supports partial openings. I.e. we can commit to a the whole computation and the verifier can verify it by opening only a few commitments. 
 
 \todo{Go through Feneuilis threshhold paper and desribe their gains from using LSSS}
 \todo{Move specification of LSSS to SSS section}
