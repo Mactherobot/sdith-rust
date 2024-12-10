@@ -753,7 +753,7 @@ The primary modification lies in Step 3, where the verifier $\mathcal{V}$ select
 
 \end{definition}
 
-\textit{Linear secret charing schemes}, or $(+,+)$-homomorphic schemes, refers to secret sharing schemes that are linearly homomorphic over some field $\mathbb{F}$ (say the galois field \texttt{GF256} described in \autoref{sec:gf256}). This means that given shares $\sh{a}$ and $\sh{b}$ we have that
+\textit{Linear secret sharing schemes}, or $(+,+)$-homomorphic schemes, refers to secret sharing schemes that are linearly homomorphic over some field $\mathbb{F}$ (say the galois field \texttt{GF256} described in \autoref{sec:gf256}). This means that given shares $\sh{a}$ and $\sh{b}$ we have that
 \begin{definition}
   A $(\ell,n)$ threshold SSS is $(+,+)$-homomorphic if for any two secrets $s_1$ and $s_2$ and their shares $[[s_1]]$ and $[[s_2]]$, the sum of the shares $[[s_1]] + [[s_2]] = [[s_{11} + s_{21}, s_{12} + s_{22}, \dots, s_{1n} + s_{2n}]]$ is equal to the share of the sum of the secrets $[[s_1 + s_2]]$ for the same subset of shares.
 \end{definition}
