@@ -1195,7 +1195,7 @@ In Rust, the borrow checker ensures that no data races can occur and it diagnose
 First, it is crucial to first grasp the distinction between the stack and the heap. These are two memory management systems available at runtime~\cite[ch.4]{rustlangRustProgramming}, each with unique characteristics and use cases.
 
 \begin{definition}[The Stack]
-  The stack stores values in a last-in-first-out (LIFO) order, meaning the last value added is the first to be removed. You can think of it like a stack of thermal detonators in a crate: the last detonator placed in the crate is the first one you grab when you need it. All data stored on the stack must have a fixed, known size at compile time. This gives the stack its \textit{fixed-sized} structure.
+  The stack stores values in a last-in-first-out (LIFO) order, meaning the last value added is the first to be removed. All data stored on the stack must have a fixed, known size at compile time. This gives the stack its \textit{fixed-sized} structure.
 \end{definition}
 
 \begin{definition}[The Heap]
@@ -1211,7 +1211,7 @@ Between the two systems, there exists a \textit{performance versus dynamism} tra
   let b: [u8; 3] = [1, 2, 3];
 \end{minted}
 
-This code demonstrates two data types being allocated. The first, \rust{a}, is a vector type, while the second, \rust{b}, is a fixed-size array type. The vector type is always allocated on the heap, whereas the fixed array is allocated on the stack. Pushing  and accessing the stack is faster than for on the heap. Therefore, keeping values on the stack tends to outperform heap allocations. This is because heap allocation involves searching for a suitable location in memory to store the data. Accessing data on the heap is also slower as you have to follow a pointer. Note that there are several optimisations you can do when allocating to the heap, like changing the allocator for specific use cases, instantiating the vector with a capacity or the \rust{SmallVec} that dynamically changes from the stack to the heap when allocation surpasses its defined capacity. See~\cite{rustlangPerformanceBook} for more.
+This code demonstrates two data types being allocated. The first, \rust{a}, is a vector type, while the second, \rust{b}, is a fixed-size array type. The vector type is always allocated on the heap, whereas the fixed array is allocated on the stack. Pushing  and accessing the stack is faster than for on the heap. Therefore, keeping values on the stack tends to outperform heap allocations. This is because heap allocation involves searching for a suitable location in memory to store the data. Accessing data on the heap is slower as you have to follow a pointer from the stack to allocated data. Note that there are several optimisations you can do when allocating to the heap, like changing the allocator for specific use cases, instantiating the vector with a capacity or the \rust{SmallVec} that dynamically changes from the stack to the heap when allocation surpasses its defined capacity. See~\cite{rustlangPerformanceBook} for more.
 
 However, the vector type is far more dynamic. For instance, using the \rust{push} method, you can add more elements to a vector, and the allocator will automatically find additional space on the heap if needed. Conversely, stack allocations in Rust require that the size of the data be known at compile time, which imposes significant restrictions on how dynamic your code can be. This limitation became particularly evident when designing around the different category variants in \autoref{sub:categories}. However, this also ensures at compile time that you cannot access memory outside of the stack, a common vulnerability exposed in C and C++.
 
@@ -1387,11 +1387,12 @@ While the Rust compiler, most often can infer the lifetime of a value it can som
 \end{minted}
 In this example, there are two choices for the output lifetime for the reference returned by the function. The compiler cannot infer which lifetime to use, so it requires the developer to specify it. This is done by adding the lifetime annotation to the function signature.
 \begin{minted}{rust}
-  pub fn find<'a, 'b>(haystack: &'a[u8], needle: &'b[u8]) -> Option<&'a[u8]> {
+  pub fn find<'a, 'b>(h: &'a[u8], n: &'b[u8]) -> Option<&'a[u8]> {
     // ...
   }
 \end{minted}
-In this way, the compiler can determine that the lifetime of the output reference is the same as the input reference \rust{haystack}.
+In the example above we have used the \rust{<'a,'b>} to define that the function accepts 2 generic lifetimes $'a$ and $'b$. These can now be used on the signature of the function to ensure that the lifetime of $h$ is $'a$. Allowing the compiler to easily analyze if the reference being passed as $h$ lives long enough.
+Furthermore, the compiler can determine that the lifetime of the output reference is the same as the input reference \rust{haystack}. 
 
 \subsubsection{Conclusions on Memory Safety in Rust}
 This overview only scratches the surface of the power and features that Rust offers. However, it provides a brief introduction to the core features that make Rust a powerful programming language for developing secure and high-performance software. As mentioned, Rust comes with a steep learning curve, but it is supported by a large and active community that offers extensive documentation and resources. We suggest that the reader explore the official Rust Book~\cite{rustlangRustProgramming} or its community made books, like \textit{Effective Rust}~\cite{lurklurkEffectiveRust} and \textit{The Rust Performance book}~\cite{rustlangPerformanceBook}.
@@ -1409,7 +1410,7 @@ Every value in Rust has a \textit{data type}. Programs written in Rust are \text
 Here, the \rust{parse} function requires the annotation of the variable \rust{guess} to determine how the string should be parsed. Additionally, if you annotate \rust{guess} with a type that does not implement the \rust{parse} function for strings, the compiler will produce an error. This strict type system ensures that Rust minimizes the possibility of writing incorrect code -- at least in terms of the bounds of the language. While Rust enforces correctness in type usage, ensuring that a program operates semantically as intended, such as adhering to a protocol specification, often requires additional validation methods.
 
 \subsubsection{Automated Testing}
-Say that you are implementing an arithmetic field -- \textit{funny enough, we needed to do exactly that!} -- you would want your impletation to follow the properties that define the field. For example \textit{associativity over addition}
+Say that you are implementing field arithmetic -- \textit{funny enough, we needed to do exactly that!} -- you would want your impletation to follow the properties that define the field. For example \textit{associativity over addition}
 \begin{align}
   a + (b + c) = (a + b) + c
 \end{align}
@@ -1492,9 +1493,9 @@ There might be a number of reasons why a signature could not be generated, but a
 One of the reasons for choosing Rust is that it provides several tools and features that make it easier to write code that is both maintainable and readable. In this section, we will discuss some of the features that we utilized in our implementation to achieve this goal.
 
 \subsubsection{Code Documentation}\label{sec:code-documentation}
-First things first, good written should either written in a way so that it is self-explanatory or supply the necessary documentation in order for the reader to quickly grasp the concepts and functionality of the code. Often times you would want to supply documentation in the form of comments in the code, above functions and values to explain what they do and how they work. Furthermore, you would want to supply the user with a \textit{manual} where the user can read about the exposed library.
+First things first, good written code should either be written in a way so that it is self-explanatory or supply the necessary documentation in order for the reader to quickly grasp the concepts and functionality. Often times you would want to supply documentation in the form of comments, above functions and values to explain what they do and how they work. Furthermore, you would want to supply the user with a \textit{manual} where the user can read about the exposed library.
 
-It can be hard to maintain both of these aspects separately. Luckily, Rust enables the developer to write both at the same time. Consider the following code in a module
+It can be hard to maintain both of these aspects separately. Rust enables the developer to write both at the same time. Consider the following code in a module
 
 \begin{minted}{rust}
   //! This module exposes two functions: add and double
