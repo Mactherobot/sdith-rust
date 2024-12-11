@@ -2029,10 +2029,19 @@ pub trait SDitHHashTrait<T> {
 We then implemented the trait, as was shown in \autoref{sub:prg}, for the following hash primitives SHA3-256, SHA3-384 and SHA3-512.
 
 \subsection{Commitments}
-The protocol requires the use of a commitment scheme to ensure that the right multiplication triples are used in the MPC-in-the-Head subroutines. For this we used the merkle tree as mentioned in the \autoref{spec:merkle_tree}.
+To be able to commit to shares we use the hasher that we just defined. The commitment contains the following values:
+\begin{itemize}
+  \item Salt, a random value to ensure that the commitment is unique. 
+  \item $e$, the execution index.
+  \item $i$, the party index.
+  \item $share$, the share that is being committed to.
+\end{itemize}
+We only create simple tests for this functionality as we rely on a hashing crate. We just test that the output of the function is the same base on the same input. And that if given a different salt the output is not the same.
 
 \subsubsection{Merkle Tree impl}\label{sub:merkle_tree_impl}
-Our merkle tree implementation was done using a sized array as data structure. Meaning that we save all the leafs of the tree in the last 256 values of the array. Allowing the utilization of sized arrays. Here we again used feature flags to allow for different implementations of the merkle tree.
+\todo{When the specification is written write up the beginning for this.}
+When implementing the merkle tree we ran into a few issues due to the nature of the implementation. We decided to do it ourselves such that it fit with the specification. 
+This implementation was done using a single array to hold the whole tree, where the last 256 items in the array was the commitments. This made it so that when implementing the different methods we had to be careful and use the correct indexes. This proved to be quite difficult to keep track of. Furthermore, we decided to do the same optimization as was done in original SDITH implementation in C. 
 
 \begin{minted}{rust}
 
