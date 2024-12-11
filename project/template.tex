@@ -44,6 +44,9 @@
 \newtheorem{definition}{Definition}[section]
 \newcommand{\definitionautorefname}{Definition}
 
+\newtheorem{proposition}{Proposition}[section]
+\newcommand{\propositionautorefname}{Proposition}
+
 \theoremstyle{plain}
 \newtheorem{lemma}{Lemma}[section]
 
@@ -342,41 +345,41 @@ Therefore, consider the following protocol. Given a public secure hash function 
 From \autoref{lem:preimage}, we can see that Bob is not able to learn $g$ before he flips his coin without knowing $g \mid w$.\footnote{We can adjust the length of $w$ to enhance the security of the protocol.} This ensures \autoref{lem:hiding}.
 
 Furthermore, Alice cannot change her result $g$ without being able to find a different $w'$ such that:
-\[
+\begin{align*}
   h(g' \mid w') = c.
-\]
+\end{align*}
 which she can only do with negligible probability per \autoref{lem:collision}, ensuring \autoref{lem:binding}.
 
 \subsubsection{Merkle Tree Commitment Scheme}\label{sub:merkle_tree_prelim}
 A variant of such a scheme which allows for partial opening, meaning that the prover does not have to open the entire commitment, but can instead open a subset of the commitment, is the \textit{Merkle Tree Commitment scheme}~\cite{becker2008merkle}.
 
 Let $v_1, \dots, v_n$ be the values to be committed, and let $h$ denote a cryptographically secure hash function. The leaves of the Merkle tree, $a_{0,1}, \dots, a_{0,n}$, are initialized as the hash values of the input values:
-\[
+\begin{align*}
   a_{0,i} = h(v_i), \quad \text{for } i = 1, \dots, n.
-\]
+\end{align*}
 
 Each parent node $a_{i,j}$, where $i$ represents the level of the tree and $j$ denotes the parent index at that level, is computed as the hash of its two child nodes:
-\[
+\begin{align*}
   a_{i,j} = h(a_{i-1,2j} \, | \, a_{i-1,2j+1}),
-\]
+\end{align*}
 where $|$ indicates concatenation of the child nodes.
 
 The root node, $a_{h,0}$, where $h$ is the height of the tree, serves as the commitment value and is sent to the verifier.
 
 To reveal a committed value $v$, the prover computes the authentication path for the value's leaf node $a_{0,l}$, where $l$ is the index of the value. The authentication path $A$ consists of the sequence of sibling nodes required to reconstruct the root. The first element in the authentication path, $A_0$, is the sibling of the leaf node:
-\[
+\begin{align*}
   A_0 =
   \begin{cases}
     a_{0,l-1}, & \text{if } l \text{ is odd,}  \\
     a_{0,l+1}, & \text{if } l \text{ is even.}
   \end{cases}
-\]
+\end{align*}
 This element is recorded as $auth_0$.
 
 For higher levels, each subsequent element in the path is determined as:
-\[
+\begin{align*}
   A_i = h(A_{i-1} \, | \, auth_{i-1}),
-\]
+\end{align*}
 where $auth_i$ is the sibling node of $A_{i-1}$ at the same level.
 
 The prover transmits the authentication path $A$ and the index $p$ of the selected value to the verifier. The verifier checks the validity of the commitment by using the provided leaf value and authentication path to recompute the root of the Merkle tree.
@@ -644,12 +647,12 @@ The basic MPC-in-the-Head protocol serves as a foundation for constructing zero-
 
 \section{MPC Product verification using sacrificing}
 
-To enhance the performance of MPCitH-based zero-knowledge protocols, Baum and Nof introduced a variant of the framework built around a specialized MPC protocol. This protocol efficiently verifies a product relation between three values, \( a \cdot b = c \). Their contributions significantly improved the efficiency of MPCitH-based zero-knowledge protocols and laid the foundation for the SD-in-the-Head protocol, which is designed to prove the SD relation (\autoref{sec:syndrome}).
+To enhance the performance of MPCitH-based zero-knowledge protocols, Baum and Nof introduced a variant of the framework built around a specialized MPC protocol. This protocol efficiently verifies a product relation between three values, $  a \cdot b = c  $. Their contributions significantly improved the efficiency of MPCitH-based zero-knowledge protocols and laid the foundation for the SD-in-the-Head protocol, which is designed to prove the SD relation (\autoref{sec:syndrome}).
 
-The underlying MPC protocol is based on arithmetic circuits, where addition operations are straightforward to perform using any \(+\)-homomorphic secret sharing scheme. However, performing multiplication -- which is required for the product relation -- is significantly more challenging. In this section, we describe the techniques and mechanisms used to address this challenge. The simplest idea would be to verify the relation by simply computing the product. A common technique is to use beaver triples.
+The underlying MPC protocol is based on arithmetic circuits, where addition operations are straightforward to perform using any $ + $-homomorphic secret sharing scheme. However, performing multiplication -- which is required for the product relation -- is significantly more challenging. In this section, we describe the techniques and mechanisms used to address this challenge. The simplest idea would be to verify the relation by simply computing the product. A common technique is to use beaver triples.
 
 \begin{definition}[Beaver triple~\cite{beaver1992efficient}]\label{def:beaver}
-  A Beaver triple is a tuple \((a, b, c)\) such that \(a \cdot b = c\), where \(a, b, c \in \mathbb{F}_q\).
+  A Beaver triple is a tuple $ (a, b, c) $ such that $ a \cdot b = c $, where $ a, b, c \in \mathbb{F}_q $.
 \end{definition}
 
 \begin{definition}[MPC Multiplication using beaver triples]\label{def:beaver-multiplication}
@@ -710,13 +713,57 @@ Consider the cause where one of $\Delta_z$ or $\Delta_c$ is zero and the other i
 
 \section{Threshold Computation in the Head (TCitH)}\label{sec:threshold-mpc}
 
-A majority of constructions based on the MPCitH framework~\cite{baum2020concretely,feneuil2022syndrome,katz2018improved} are based on $(N-1,N)$ additive SSS. These
+A majority of constructions within the MPCitH framework~\cite{baum2020concretely,feneuil2022syndrome,katz2018improved} rely on $ (N-1, N) $ additive secret sharing schemes (SSS). Feneuil and Rivain~\cite{feneuil2023threshold,feneuil2023threshold2} explore the application of threshold secret sharing schemes (\autoref{sec:threshold-sss}). In addition to improving the soundness of the resulting zero-knowledge protocol, their approach reduces the computational overhead: the prover needs to emulate only $ \ell + 1 $ parties, while the verifier needs to verify and emulate just $ \ell $ parties. This optimization delivers significantly improved performance, particularly for low-threshold schemes.
 
-"Applying our approach with a low-threshold LSSS also boosts the performance of the proof system by making the MPC emulation cost independent of N for both the prover and the verifier. The gain is particularly significant for the verification time which becomes logarithmic in N (while the prover still has to generate and commit the N input shares)."
+\begin{table}[]
+  \centering
+  \def\arraystretch{1.5}%  1 is the default, change whatever you need
+  \begin{tabular}{cc|c}
+    \textbf{} & MPCitH                                  & TCitH                                                      \\ \arrayrulecolor{darkgray}\hline
+    Prover    & $ \approx \lambda \frac{N}{\log_2 N}$   & $ \approx \lambda \frac{\ell + 1}{\log_2 \binom{N}{\ell}}$ \\ \arrayrulecolor{lightgray}\hline
+    Verifier  & $ \approx \lambda \frac{N-1}{\log_2 N}$ & $ \approx \lambda \frac{\ell + 1}{\log_2 \binom{N}{\ell}}$ \\ \arrayrulecolor{darkgray}\hline
+  \end{tabular}
+  \caption{Performance for prover and verifier for TCitH compared to MPCitH. I.e. the number of party emulations to achieve a soundness error of $2-\lambda$ (assuming a negligible false positive rate for the underlying MPC protocol). From \cite{feneuil2023threshold}}\label{tbl:tcith-performance}
+\end{table}
 
-While a majority of MPCitH frameworks, including the two described above, use additive secret sharing, Feneuil and Rivain~\cite{feneuil2023threshold, feneuil2023threshold2} explore the use of threshold secret sharing schemes \autoref{sec:threshold-sss} instead. This approach further builds upon the MPC pre-processing approach, but the advantage of threshold schemes, denoted $(\ell,n)$-private SSS, in the MPCitH framework resides in much faster computation times as the prover only has to emulate $\ell + 1$ parties and the verifier only has to emulate $\ell$ parties.
+We define a threshold MPC protocol, $ f_{thr} $, based on a $ (\ell, N) $-private SSS. In the context of the SD-in-the-Head protocol, this can be instantiated with Shamir's Secret Sharing (\autoref{sec:shamir}).
 
-We change to use LSSS. We have to change the commitment scheme from before where we hashed all values into one hash. Now we will not be sending all values (only $\ell$ values), but we still need to commit to the whole computation -- also the values that $\mathcal{P}$ did not send to $\mathcal{V}$. For this we can use Merkle Tree Commitment (\autoref{sub:merkle_tree_prelim}) scheme which supports partial openings. I.e. we can commit to a the whole computation and the verifier can verify it by opening only a few commitments.
+On the other hand, the TCitH model described by~\cite{feneuil2023threshold} results in a slightly larger proof size due to the increased flexibility in the number of input shares the prover must open. While the prover still commits to all input sharings, only a subset of these needs to be opened during the protocol.
+
+To facilitate this, a Merkle Tree Commitment Scheme (\autoref{sub:merkle_tree_prelim}) is employed. This scheme enables the prover to efficiently prove the consistency of a subset of committed inputs by providing additionally the authentication path along with the tree root -- introducing the slight increase in communicational complexity.
+
+\begin{lemma}[Soundness of TCitH based ZK]
+  Given a threshold MPC protocol $ f_{thr} $ with threshold $ \ell $ and $ N $ parties, we see a soundness error
+  \begin{align*}
+    \frac{1}{\binom{N}{\ell}} + p_{f_{thr}} \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1}
+  \end{align*}
+\end{lemma}
+
+\textit{Proof:} Soundness follows the same principle as before, with a slight modification. First, assume that the MPC protocol has a perfect error rate $  p_{f_{thr}} = 0  $.
+
+\begin{proposition}
+  The malicious prover must tamper with exactly $  N - \ell  $ MPC party emulations to successfully cheat the verifier.
+\end{proposition}
+
+Consider the case where the malicious prover attempts to cheat on fewer than $  N - \ell  $ parties. In this scenario, at least $  \ell + 1  $ parties have consistent views. Since $  p_{f_{thr}} = 0  $, these consistent views define a valid witness $  w  $ such that $  \mathcal{R}(x, w) = 1  $, by the definition of the MPC protocol. Conversely, if the prover tampers with more than $  N - \ell  $ parties, the verifier will always detect the inconsistency.
+
+Given $  p_{f_{thr}} = 0  $ and the verifier opening $  \ell  $ inputs, the malicious prover can succeed in cheating the verifier with probability at most:
+\begin{align*}
+  \frac{1}{\binom{N}{\ell}}
+\end{align*}
+
+Now, consider the case where $  p_{f_{thr}} \neq 0  $. The malicious prover may exploit the possibility of cheating the MPC protocol itself, resulting in a soundness error of:
+\begin{align*}
+  \frac{1}{\binom{N}{\ell}} + \left(1 - \frac{1}{\binom{N}{\ell}}\right) \cdot p_{f_{thr}}.
+\end{align*}
+
+Finally, the malicious prover could provide an invalid sharing of the input witness $ \sh{w} $. Under such an attack, the final soundness error becomes:
+\begin{align*}
+  \frac{1}{\binom{N}{\ell}} + p_{f_{thr}} \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1} \geq \frac{1}{\binom{N}{\ell}} + \left(1 - \frac{1}{\binom{N}{\ell}}\right) \cdot p_{f_{thr}}. \qed
+\end{align*}
+
+This final step is formally proven in~\cite[p20]{feneuil2023threshold}.
+\todo{Should we go over the proof?}
 
 \section{Limbo trick}
 
@@ -2334,8 +2381,8 @@ We now describe an overview of the protocol.
 
 \noindent Input and Setup
 \begin{itemize}[parsep=0pt, itemsep=0pt]
-  \item Both the prover $\mathcal{P}$ and verifier $\mathcal{V}$ start with a shared output \( y \), a circuit description \( C \), and parameters:  $N$ the number of parties, $M$ the number of emulations nad $\tau < M$ the number of challenges.
-  \item The prover also holds the witness \( w \), which satisfies \( C(w) = y \).
+  \item Both the prover $\mathcal{P}$ and verifier $\mathcal{V}$ start with a shared output $  y  $, a circuit description $  C  $, and parameters:  $N$ the number of parties, $M$ the number of emulations nad $\tau < M$ the number of challenges.
+  \item The prover also holds the witness $  w  $, which satisfies $  C(w) = y  $.
 \end{itemize}
 
 \noindent \textit{Round 1}: Prover Prepares Commitments
@@ -2352,14 +2399,14 @@ We now describe an overview of the protocol.
 
 \noindent \textit{Round 2}: Verifier's Challenge\label{cac:round2}
 \begin{itemize}[parsep=0pt, itemsep=0pt]
-  \item The verifier picks a random subset \( E \in [M] \) for $|E| = \tau$ of computations (a challenge set) sends it to the prover.
+  \item The verifier picks a random subset $  E \in [M]  $ for $|E| = \tau$ of computations (a challenge set) sends it to the prover.
 \end{itemize}
 
 \noindent \textit{Round 3}: Prover Simulates and Commits
 \begin{enumerate}[parsep=0pt, itemsep=0pt]
   \item \textit{Subset Simulation}:
         \begin{itemize}[parsep=0pt, itemsep=0pt]
-          \item For computations not in the challenge set (\( \bar{E} \)), the prover simulates the protocol as though running it honestly.
+          \item For computations not in the challenge set ($  \bar{E}  $), the prover simulates the protocol as though running it honestly.
           \item It prepares a "view" of how computations would occur using the pre-shared randomness.
         \end{itemize}
   \item \textit{Commitments}: The prover commits to these simulation views and computes a hash summarizing the result.
@@ -2368,7 +2415,7 @@ We now describe an overview of the protocol.
 
 \noindent \textit{Round 4}: Verifier's Random Check
 \begin{itemize}[parsep=0pt, itemsep=0pt]
-  \item For computations in \( \bar{E} \), the verifier selects a random subset of secret shares to inspect for correctness.
+  \item For computations in $  \bar{E}  $, the verifier selects a random subset of secret shares to inspect for correctness.
 \end{itemize}
 
 \noindent \textit{Round 5}: Prover Sends Proof Details
@@ -2381,8 +2428,8 @@ We now describe an overview of the protocol.
 The verifier checks the following:
 \begin{enumerate}[parsep=0pt, itemsep=0pt]
   \item The integrity of the commitments and hashes matches the prover's claims.
-  \item The simulation views for computations in \( \bar{E} \) are consistent with the protocol rules and commitments.
-  \item The output shares add up correctly to the shared output \( y \).
+  \item The simulation views for computations in $  \bar{E}  $ are consistent with the protocol rules and commitments.
+  \item The output shares add up correctly to the shared output $  y  $.
 \end{enumerate}
 
 If all checks pass, the verifier accepts the proof. Otherwise, it rejects. Note that we can hash all individual commitments into a single hash to reduce the communication cost.
