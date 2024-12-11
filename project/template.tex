@@ -425,6 +425,7 @@ A notable feature of this construction is that if the parties possess two shares
     & = x + y
 \end{align*}
 This property enables us to easily produce Multi-Party Computation (MPC) (see \autoref{sec:mpc}) on top of such a SSS\@. However, to allow full arithmetic circuits, we need more elaborate protocols, which we will discuss in \autoref{sec:zk-arithmetic-mpc-circuits}.
+
 \subsubsection{Threshold SSS}\label{sec:threshold-sss}
 
 In many situations such schemes are not sufficient. Imagine wanting to solve the the distribution of a secret (e.g. a password) among a set of locations to ensure that you do not have a single-point-of-failure. To solve this, we require a SSS that can reconstruct the secret from a a subset of shares up to a threshold $\ell$. This is called a $(\ell, n)$-threshold SSS\@.
@@ -486,7 +487,7 @@ Furthermore, the $(\ell, n)$ the scheme is $(+, +)$-homomorphic. This follows fr
 
 \subsection{Secure Multi-Party Computation}\label{sec:mpc}
 
-Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following, sections we will denote a MPC protocol by $\Pi_f$ for an $n$-party functionality $f(x, w_1, \dots, w_n)$, a public input $x$ and secret inputs $w_i$ of the party $P_i$. The goal is to compute the function $f$ on the inputs of the $n$ parties while upholding the following properties~\cite{cramer2015secure}
+Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following, sections we will denote a MPC protocol by $f$ for an $n$-party functionality $f(x, w_1, \dots, w_n)$, a public input $x$ and secret inputs $w_i$ of the party $P_i$. The goal is to compute the function $f$ on the inputs of the $n$ parties while upholding the following properties~\cite{cramer2015secure}
 
 \begin{definition}[Correctness]\label{def:mpc-correctness}
   We say that $\Pi$ realizes a deterministic $n$-party functionality $f(x, w_1, \dots, w_n)$ with perfect (resp., statistical) correctness if for all inputs $x, w_1, \dots, w_n$, the probability that the output of some player is different from the output of $f$ is $0$ (resp., negligible in $k$), where the probability is over the independent choices of the random inputs $r_1, \dots, r_n$.
@@ -500,7 +501,7 @@ Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling
   The MPC protocol has privacy up to $\ell$ malicious parties.\footnote{Most often achieved by using a $(\ell, n)$-private secret sharing scheme \autoref{def:mpc-ss-threshold}}
 \end{definition}
 
-In terms of security needed for the SD-in-the-Head protocol, we define the following security requirements for the MPC protocol $\Pi_f$
+In terms of security needed for the SD-in-the-Head protocol, we define the following security requirements for the MPC protocol $f$
 
 \begin{itemize}
   \item \textbf{Semi-honest security}: The protocol is secure against semi-honest adversaries, where parties follow the protocol but may attempt to learn information from the messages they receive.
@@ -595,16 +596,17 @@ The SD-in-the-Head protocol construction is based on the \textit{Multi-Party Com
 
 The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as its security relies on assumptions that are still believed to be quantum secure. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold} which have no known quantum algorithms that break their security.
 
-We will give insight into the basic construction suggested by Ishai et al~\cite{ishai2007zero}.
+We will describe the basic construction suggested by Ishai et al~\cite{ishai2007zero}. For now, we will only consider an underlying semi-honest MPC protocol $f_{add}$ for $N$ parties with $N-1$ secrecy based on \textit{additive} secret sharing \autoref{sec:additive-sss}.
 
 \begin{definition}\label{def:mpcinth_basic}
-  Given a semi-honest $\ell$-private MPC protocol $\Pi_f$ with perfect correctness, a relation $\mathcal{R}$ for some public statement $x$, a witness $w$. Let $w_i$ be an additive secret share of $\sh{w}$ for the party $P_i$. Let $f$ be a $n$-party functionality $f(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, i.e. $f(x,w)$ accepts if $(x,w) \in \mathcal{R}$.
+  Given $f_{add}$ a ZK relation $\mathcal{R}$ for some public statement $x$, and a witness $w$ (\autoref{sec:zk}).
+  Let $w_i$ be an additive secret share of $\sh{w}$ for the party $P_i$. Let $f_{add}(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, i.e. $f_{add}(x,w)$ accepts if $(x,w) \in \mathcal{R}$.
 
   \begin{enumerate}[parsep=2pt, itemsep=0pt]
     \item The prover builds a random sharing of $\sh{w} = w_1, \dots, w_n$. Then
           \begin{enumerate}[nolistsep]
-            \item Simulates the outputs of the MPC protocol $\Pi_f$ on the inputs $(x, w_1, \dots, w_n)$ and the randomness $r_1, \dots, r_n$.
-            \item Prepares views $V_1, \dots, V_n$ of the parties in the protocol $\Pi_f$.\footnote{Remember that the views include the inputs, randomness and messages received by the parties.}
+            \item Simulates the outputs of the MPC protocol $f$ on the inputs $(x, w_1, \dots, w_n)$ and the randomness $r_1, \dots, r_n$.
+            \item Prepares views $V_1, \dots, V_n$ of the parties in the protocol $f$.\footnote{Remember that the views include the inputs, randomness and messages received by the parties.}
             \item Commits to each view $V_i$ using a secure commitment scheme, and sends ($\text{Commit}(V_1), \dots, \text{Commit}(V_n)$) to the verifier.
           \end{enumerate}
     \item The verifier picks $\ell$ random distinct indices $i \in [n]$ and sends them to the prover.
@@ -621,41 +623,44 @@ We will give insight into the basic construction suggested by Ishai et al~\cite{
 We see the following properties of the protocol:
 
 \begin{lemma}[Completeness~\cite{ishai2007zero}]\label{def:mpcinth_completeness}
-  A boolean function is said to be complete if it depends on all inputs of the function. Given an honest prover, $\mathcal{R}(x,w) = 1$ and the correctness of $\Pi_f$, all outputs of $P_i$ are one and all views are consistent.
-\end{lemma}
-
-\begin{lemma}[Soundness~\cite{ishai2007zero}]
-  If the statement $x$ is false, i.e. $x \notin L$, then $\mathcal{R}(x,w) = 0$ for all $w$. By the correctness of $\Pi_f$, the output of all parties must be $0$. If the verifier accepts, then the prover must have created $\ell$ inconsistent views. This happens with probability at most $p = 1 / \binom{n}{\ell}$. The error probability can be reduced to $2^{-k}$ by repeating the protocol $O(kn^2)$ times.
+  A boolean function is said to be complete if it depends on all inputs of the function. Given an honest prover, $\mathcal{R}(x,w) = 1$ and the correctness of the MPC protocol $f_{add}$, all outputs of $P_i$ are one and all views are consistent.
 \end{lemma}
 
 \begin{lemma}[Zero-Knowledge~\cite{ishai2007zero}]
-  The verifier only sees $\ell$ views, and therefore from the definition of $\Pi_f$ learns nothing of the secret witness $w$.
+  The verifier only sees $\ell$ views, and therefore from the definition of the MPC protocol $f_{add}$ learns nothing of the secret witness $w$.
 \end{lemma}
 
-The basic MPC-in-the-Head protocol serves as a foundation for constructing zero-knowledge (ZK) proofs for any NP relation and has been demonstrated to yield relatively efficient ZK protocols~\cite{feneuil2023threshold,baum2020concretely,katz2018improved}. Giacomelli et al. and Chase et al.~\cite{katz2018improved,giacomelli2016zkboo,chase2017post} provided concrete implementations of the \emph{MPC-in-the-Head} approach and observed that employing a 3-party protocol $\Pi$ achieved optimal performance within the space of protocols they analyzed. However, due to the small number of parties, the soundness of the resulting honest-verifier zero-knowledge (HVZK) proof is relatively weak. As a consequence, a large number of parallel repetitions is required to achieve negligible soundness error. This increases the size of the proofs and the communication overhead of the protocols. However, recent work by Baum and Nof~\cite{baum2020concretely} and Feneuil and Rivain~\cite{feneuil2023threshold} propose promising approaches to mitigate these issues.
+We consider soundness of the MPCitH framework. We assume that the verifier accepts the relation $\mathcal{R}(x,w)$ for $x \notin L$ -- i.e. the verifier accepts the relation even though the prover has created a false statement. This means that the prover must have cheated on of two ways. First, the prover may have cheated in the underlying MPC protocol which is defined by the error probability $p_{f_{add}}$.
 
-\subsection{MPC preprocessing}
+Secondly, the prover could have tampered with the views. In this, the prover must have corrupted one party and creating a inconsistent view. The probability that the prover succeeds with this is at most $1 / N$. This gives us an overall soundness
 
-Pre-processing in MPC is an optimization technique that leverages shares of correlated randomness, such as randomness derived from a shared seed, which remains independent of the inputs to the protocol. This independence allows the parties to accelerate computation and perform pre-computation in advance. As a result, this approach allows the development of MPCitH protocols that can leverage greater soundness while having lesser impact on the size of the proof. Such a technique was introduced by~\cite{katz2018improved} as part of their \textit{cut-and-choose} approach. 
+\begin{lemma}[Soundness of MPCitH for $f_{add}$~\cite{feneuil2022syndrome}]\label{lem:soundness_mpcinth}
+  \begin{align*}
+    1 - (1 - \frac{1}{N}) (1 - p_{f_{add}}) = \frac{1}{N} + p - \frac{1}{N} p_{f_{add}}
+  \end{align*}
+\end{lemma}
 
-\subsubsection{MPC over arithmetic circuits}\label{sec:zk-arithmetic-mpc-circuits}
-First we need to describe a basic MPC protocol that allows us to securely compute an arithmetic circuit. While addition is considered generally easy for a MPC protocol, multiplication is more challenging. 
+The basic MPC-in-the-Head protocol serves as a foundation for constructing zero-knowledge (ZK) proofs for any NP relation and has been demonstrated to yield relatively efficient ZK protocols~\cite{feneuil2022syndrome,baum2020concretely,katz2018improved}. Giacomelli et al. and Chase et al.~\cite{katz2018improved,giacomelli2016zkboo,chase2017post} provided concrete implementations of the \emph{MPC-in-the-Head} approach and observed that employing a 3-party protocol $\Pi$ achieved optimal performance within the space of protocols they analyzed. However, due to the small number of parties, the soundness of the resulting honest-verifier zero-knowledge (HVZK) proof is relatively weak. As a consequence, a large number of parallel repetitions is required to achieve negligible soundness error. This increases the size of the proofs and the communication overhead of the protocols. In this section we will describe a variant of the MPC-in-the-Head protocol which is sound for the addition relation.
 
-In order to form a ZK proof for the SD polynomial relation in \autoref{sec:polynomial_representation}, we need a MPC protocol that allows us to securely compute multiplication circuits. For this we use \textit{beaver triples}.
+\section{MPC Product verification using sacrificing}
+
+To enhance the performance of MPCitH-based zero-knowledge protocols, Baum and Nof introduced a variant of the framework built around a specialized MPC protocol. This protocol efficiently verifies a product relation between three values, \( a \cdot b = c \). Their contributions significantly improved the efficiency of MPCitH-based zero-knowledge protocols and laid the foundation for the SD-in-the-Head protocol, which is designed to prove the SD relation (\autoref{sec:syndrome}).
+
+The underlying MPC protocol is based on arithmetic circuits, where addition operations are straightforward to perform using any \(+\)-homomorphic secret sharing scheme. However, performing multiplication -- which is required for the product relation -- is significantly more challenging. In this section, we describe the techniques and mechanisms used to address this challenge. The simplest idea would be to verify the relation by simply computing the product. A common technique is to use beaver triples.
 
 \begin{definition}[Beaver triple~\cite{beaver1992efficient}]\label{def:beaver}
-  A beaver triple is a tuple $(a, b, c)$ where $a \cdot b = c$ and $a, b, c \in \mathbb{F}_q$.
+  A Beaver triple is a tuple \((a, b, c)\) such that \(a \cdot b = c\), where \(a, b, c \in \mathbb{F}_q\).
 \end{definition}
 
-\begin{definition}[Multiplication circuit using beaver triples]\label{def:beaver-multiplication}
-  Given a preprocessed random beaver triple $\sh{a}, \sh{b}, \sh{c} $, the parties do the following:
+\begin{definition}[MPC Multiplication using beaver triples]\label{def:beaver-multiplication}
+  Given a $+$-homomorphic additive secret sharing scheme and a preprocessed random beaver triple $\sh{a}, \sh{b}, \sh{c} $, the parties do the following:
   \begin{enumerate}
     \item The parties compute $ \sh{\alpha} = \sh{x} - \sh{a} $ and $ \sh{\beta} = \sh{y} - \sh{b} $.
     \item The parties run $ \text{open}(\sh{\alpha}) $ and $ \text{open}(\sh{\beta}) $ to obtain $ \alpha $ and $ \beta $.
     \item Each party computes $ \sh{z} = \sh{c} - \alpha \cdot \sh{b} - \beta \cdot \sh{a} + \alpha \cdot \beta $.
   \end{enumerate}
 
-  The above is a well-known technique \cite{beaver1992efficient} and works because
+  The above is a well-known technique~\cite{beaver1992efficient} correctness follows from the fact that
   \begin{align*}
     \sh{z} & = \sh{c} - \alpha \cdot \sh{b} - \beta \cdot \sh{a} + \alpha \cdot \beta        \\
            & = \sh{ab} - (x - a) \cdot \sh{b} - (y - b) \cdot \sh{a} + (x - a) \cdot (y - b) \\
@@ -663,102 +668,9 @@ In order to form a ZK proof for the SD polynomial relation in \autoref{sec:polyn
   \end{align*}
 \end{definition}
 
-\subsubsection{ZK from Cut-and-Choose}\label{sec:zk-cut-and-choose}
+Proposals for zero-knowledge proofs -- such as the \textit{Cut-and-Choose} protocol~\cite{katz2018improved,baum2020concretely} -- utilize \autoref{def:beaver-multiplication}, combined with preprocessing techniques, to achieve promising results\footnote{See \autoref{sec:zk-cut-and-choose}}.
 
-Building upon the multiplication protocol above, Baum and Nof~\cite{baum2020concretely} outlines the fundamental concept of the cut-and-choose technique in their \textit{HVZKAoK Protocol using Cut and Choose}. For a detailed outline of the protocol see \cite[s3.2]{baum2020concretely}. Here we provide a high-level overview of the protocol.\\
-
-\noindent Input and Setup
-\begin{itemize}[parsep=0pt, itemsep=0pt]
-  \item Both the prover $\mathcal{P}$ and verifier $\mathcal{V}$ start with a shared output \( y \), a circuit description \( C \), and parameters:  $N$ the number of parties, $M$ the number of emulations nad $\tau < M$ the number of challenges.
-  \item The prover also holds the witness \( w \), which satisfies \( C(w) = y \).
-\end{itemize}
-
-\noindent \textit{Round 1}: Prover Prepares Commitments
-\begin{enumerate}[parsep=0pt, itemsep=0pt]
-  \item \textit{Salt and Seeds}: The prover picks a random salt and seeds $sd_e$ to initialize randomness for the protocol.
-  \item \textit{Random Shares}: For each gate in the circuit (multiplication and square gates), the prover generates random shares of valid triples.
-  \item \textit{Commitments}:
-        \begin{itemize}[parsep=0pt, itemsep=0pt]
-          \item The prover commits to random shared triples.
-          \item Linear random shares for input $w$ wires are also generated and committed.
-          \item The prover constructs hashes summarizing these commitments and sends them to the verifier.
-        \end{itemize}
-\end{enumerate}
-
-\noindent \textit{Round 2}: Verifier's Challenge\label{cac:round2}
-\begin{itemize}[parsep=0pt, itemsep=0pt]
-  \item The verifier picks a random subset \( E \in [M] \) for $|E| = \tau$ of computations (a challenge set) sends it to the prover.
-\end{itemize}
-
-\noindent \textit{Round 3}: Prover Simulates and Commits
-\begin{enumerate}[parsep=0pt, itemsep=0pt]
-  \item \textit{Subset Simulation}:
-        \begin{itemize}[parsep=0pt, itemsep=0pt]
-          \item For computations not in the challenge set (\( \bar{E} \)), the prover simulates the protocol as though running it honestly.
-          \item It prepares a "view" of how computations would occur using the pre-shared randomness.
-        \end{itemize}
-  \item \textit{Commitments}: The prover commits to these simulation views and computes a hash summarizing the result.
-  \item \textit{Sending Proofs}: The prover sends relevant commitments and hashes to the verifier.
-\end{enumerate}
-
-\noindent \textit{Round 4}: Verifier's Random Check
-\begin{itemize}[parsep=0pt, itemsep=0pt]
-  \item For computations in \( \bar{E} \), the verifier selects a random subset of secret shares to inspect for correctness.
-\end{itemize}
-
-\noindent \textit{Round 5}: Prover Sends Proof Details
-\begin{itemize}[parsep=0pt, itemsep=0pt]
-  \item The prover sends detailed information, including specific shares, corrections, and commitments, for the verifier to validate the protocol's correctness.
-\end{itemize}
-
-\noindent Verification by the Verifier
-
-The verifier checks the following:
-\begin{enumerate}[parsep=0pt, itemsep=0pt]
-  \item The integrity of the commitments and hashes matches the prover's claims.
-  \item The simulation views for computations in \( \bar{E} \) are consistent with the protocol rules and commitments.
-  \item The output shares add up correctly to the shared output \( y \).
-\end{enumerate}
-
-If all checks pass, the verifier accepts the proof. Otherwise, it rejects. Note that we can hash all individual commitments into a single hash to reduce the communication cost.
-
-\subsubsection*{Zero-knowledge}
-
-Zero-Knowledge of the protocol is satisfied by the $N$-privacy of $\Pi_C$ (\autoref{def:mpc-ell-privacy}) as only $N-1$ views are shared, the witness $w$ is never revealed to the verifier.
-
-\subsubsection*{Soundness}
-
-We bound probability of $\mathcal{V}$ accepting a cheating outcome of  the cut and choose protocol -- i.e. that $C(w) \neq y$. First, we assume that $\mathcal{P}$ cheats by incorrectly generating the precomputed triples. Let $c$ be the number of pre-processing emulations that are tampered.
-
-The first challenge $E$ allows $\mathcal{V}$ to test $\tau$ triples. It's trivial to detect inconsistencies in the triples through the seed $sd_e$ by recomputing the triples and comparing them to the opened commitments. To reduce communication even more, the resulting computation from $\mathcal{P}$ is hashed into a single hash which $\mathcal{V}$ tries to recompute. The probability that cheating is not detected is
-
-\begin{align*}
-  \frac{\binom{M-c}{\tau}}{\binom{M}{\tau}}
-\end{align*}
-
-Next, we assume that $\mathcal{P}$ cheats by deviating from the MPC protocol. In order to make the output of the protocol $y$ -- remember that we assume $C(w) \neq y$ -- $\mathcal{P}$ must deviate in $M-\tau-c$ emulations. As $N-1$ views are opened and verified, $\mathcal{P}$ can only cheat in one view of \textbf{one} party. The probability that this is not detected is $\frac{1}{N^{M-\tau-c}}$.
-
-\begin{lemma}[Soundness of the Cut-and-Choose protocol]\label{lem:cut-and-choose-soundness}
-  Let $c$ be the number of pre-processing emulations where $\mathcal{P}$ cheats. The probability that $\mathcal{V}$ accepts the outcome of the protocol for $C(w) \neq y$ is bounded by
-  \begin{align*}
-    \xi_c(M, N, \tau) = \max_{0 \leq c \leq M-\tau} \left\{\frac{\binom{M-c}{\tau}}{\binom{M}{\tau} \cdot N^{M-\tau-c}} \right\}
-  \end{align*}
-\end{lemma}
-
-The soundness of the protocol follows from the security of secure hash functions \autoref{sec:prelim_hash} as the verification of the random triples, input and outputs of the protocol is done by hashing the random triples and comparing the resulting hash to the output of the protocol. A formal proof of the protocol can be found in~\cite[p9]{baum2020concretely}.
-
-Our primary objective was to mitigate the strict dependency of the communication complexity of the ZK MPCitH protocol on $N$. By leveraging the use of seeds and incorporating a pre-processing phase, we facilitate the transmission of a single seed and a hash, rather than the entirety of inputs to the protocol. This approach effectively constrains communication as a function of $N$, while simultaneously enhancing the soundness of the protocol. Importantly, this improvement in soundness comes with only a marginal increase in communication overhead.
-
-\begin{lemma}[Communication cost for \textit{Cut-and-Choose}]
-  \begin{align*}
-    |hash| \cdot 3 & + |sd| \cdot (\tau + 1 + \log(N) (M - \tau )) + |com| \cdot 2(M - \tau )      \\
-                   & + \log_2(|F|) \cdot (M - \tau )(3n_{mul} + 2n_{sq} + n_{in} + 1)\text{ bits.}
-  \end{align*}
-\end{lemma}
-
-\subsubsection{Zero-Knowledge from Sacrificing}\label{sec:zk-sacrifice}
-
-Building on the protocol outlined earlier, the authors propose a variant. In this variant, instead of simulating the computing of a value, the protocol instead simulates a \textit{verification} of the triple relation by sacrificing another triple. Consider the protocol below based on the MPC protocol described in~\cite{damgaard2012multiparty}.
+Building upon these protocols, Baum and Nof~\cite{baum2020concretely} propose a variant that shifts the focus from simulating the computation of a product to simulating the \textit{verification} of the triple relation instead. This verification is achieved by sacrificing another triple, ensuring correctness while improving performance. Consider the following protocol, which is based on the MPC protocol described in~\cite{damgaard2012multiparty}.
 
 \begin{definition}[Verification of a multiplication triple by sacrificing another]\label{def:sacrifice}
   Given an input triple $(x,y,z) \in \mathbb{F}$ random shared triple $(\sh{a}, \sh{b}, \sh{c}) \in \mathbb{F}$, it is possible to verify the correctness of the statement $z = x \cdot y$ without revealing any information on either of the input. Define \texttt{open} according to \autoref{def:ss-share}.
@@ -794,53 +706,26 @@ Observe that if both triples are correct multiplication triples (i.e., $z = xy$ 
 
 Consider the cause where one of $\Delta_z$ or $\Delta_c$ is zero and the other is non-zero. In this case the verifier will not accept from~\ref{eq:sacrifice-proof}. Otherwise, we require that $\epsilon = \Delta_c \cdot \Delta_z^{-1}$ which happens with probability $\frac{1}{|\mathbb{F}|}$. \qed
 
-\subsubsection*{The Sacrificing Protocol}
+\autoref{def:sacrifice} forms the foundational mechanism underpinning the SD-in-the-Head protocol. While this approach delivers significant improvements~\cite{baum2020concretely,feneuil2022syndrome} in efficiency and soundness for ZK protocols, further advancements can be achieved by revisiting the secret sharing schemes utilized within the MPCitH framework.
 
-The Sacrificing Protocol starts as the previous protocol as $\mathcal{P}$ generates triples and input shares and commits to them. The primary modification from the Cut-and-Choose protocol is in \hyperref[cac:round2]{round 2}. Instead of challenging the triples generated by the prover, th protocol has $\mathcal{V}$ generate a random seed to produce random $\epsilon$ values to be used by the MPC protocol from \autoref{def:sacrifice}. The prover $\mathcal{P}$ uses to the seed to regenerate the $\epsilon$ values and commit to the verification of the multiplication gates in the MPC protocol. This adjustment enables the verifier to independently verify the correctness of the triples without relying on the prover to generate valid triples.
+\section{Threshold Computation in the Head (TCitH)}\label{sec:threshold-mpc}
 
-\subsubsection*{Soundness}
+A majority of constructions based on the MPCitH framework~\cite{baum2020concretely,feneuil2022syndrome,katz2018improved} are based on $(N-1,N)$ additive SSS. These
 
-We bound probability that $\mathcal{V}$ accepts while $C(w) \neq y$. $\mathcal{P}$ can cheat by changing the shares of the output wire of a multiplication gate or adjusting the share on one of the input wires to make the output consistent with our assumption. The latter is similar to the Cut-and-Choose protocol and succeeds with $\frac{1}{N}$ probability. We saw from \autoref{lem:sacrifice_soundness} that the probability of tampering with the output wires of the multiplication gates is bounded by $\frac{1}{|\mathbb{F}|}$.
+"Applying our approach with a low-threshold LSSS also boosts the performance of the proof system by making the MPC emulation cost independent of N for both the prover and the verifier. The gain is particularly significant for the verification time which becomes logarithmic in N (while the prover still has to generate and commit the N input shares)."
 
-\begin{lemma}[Sacrificing protocol cheating probability]\label{lem:sacrifice_soundness} Let $\xi_{sac}(M,N)$ be the probability that $\mathcal{V}$ accepts while $C(w) \neq y$. Then
-  \begin{align*}
-    \xi_{sac} (M,N) = \left(\frac{N + | \mathbb{F}| -1}{|\mathbb{F}| \cdot N}\right)^M
-  \end{align*}
-\end{lemma}
+While a majority of MPCitH frameworks, including the two described above, use additive secret sharing, Feneuil and Rivain~\cite{feneuil2023threshold, feneuil2023threshold2} explore the use of threshold secret sharing schemes \autoref{sec:threshold-sss} instead. This approach further builds upon the MPC pre-processing approach, but the advantage of threshold schemes, denoted $(\ell,n)$-private SSS, in the MPCitH framework resides in much faster computation times as the prover only has to emulate $\ell + 1$ parties and the verifier only has to emulate $\ell$ parties.
 
-The sacrifice protocol achieves a smaller cheating probability compared to the Cut-and-Choose protocol. This improvement allows the same soundness level for the entire protocol to be achieved with a lower value of \( M \), thereby reducing the overall communication complexity. Baum and Nof~\cite{baum2020concretely} demonstrate that their sacrifice protocol achieves the same bits of security while significantly lowering communication complexity compared to earlier MPCitH protocols like Stern~\cite{stern1996new}. Furthermore, it markedly decreases the prover's runtime compared to Ligero~\cite{ames2017ligero}.
+We change to use LSSS. We have to change the commitment scheme from before where we hashed all values into one hash. Now we will not be sending all values (only $\ell$ values), but we still need to commit to the whole computation -- also the values that $\mathcal{P}$ did not send to $\mathcal{V}$. For this we can use Merkle Tree Commitment (\autoref{sub:merkle_tree_prelim}) scheme which supports partial openings. I.e. we can commit to a the whole computation and the verifier can verify it by opening only a few commitments.
 
-However, additional performance gains have recently been achieved by leveraging threshold secret sharing schemes, as explored in~\cite{feneuil2023threshold}.
+\section{Limbo trick}
 
-\subsection{Linear Secret Sharing Schemes (LSSS)}\label{sec:lsss}
+Reusing the challenge.
 
-This approach further builds upon the MPC pre-processing approach introduced by Katz et al~\cite{katz2018improved} and Baum and Nof~\cite{baum2020concretely}, but utilises threshhold secret sharing schemes to reduce the computations required by both the prover and the verifier.
+\section{Avoiding interpolating through Reversed MPC}
 
-"Applying our approach with a low-threshold LSSS also boosts the performance of the proof system by making the MPC emulation cost independent of N for both the prover and the verifier. The gain is
-particularly significant for the verification time which becomes logarithmic in N (while the prover still
-has to generate and commit the N input shares)."
+Avoiding the interpolation needed by the verifier to reproduce the broadcast shares.
 
-We change to use LSSS. We have to change the commitment scheme from before where we hashed all values into one hash. Now we will not be sending all values (only $\ell$ values), but we still need to commit to the whole computation -- also the values that $\mathcal{P}$ did not send to $\mathcal{V}$. For this we can use Merkle Tree Commitment (\autoref{sub:merkle_tree_prelim}) scheme which supports partial openings. I.e. we can commit to a the whole computation and the verifier can verify it by opening only a few commitments. 
-
-\todo{Go through Feneuilis threshhold paper and desribe their gains from using LSSS}
-\todo{Move specification of LSSS to SSS section}
-
-\textit{Secret sharing schemes} (SSS) are a type of cryptographic protocol that allows for the distribution of a secret amongst a group of participants. The secret can only be reconstructed when a sufficient number of shares are combined together. The threshold variant of the SD-in-the-Head protocol relies on a low-threshold linear secret sharing scheme (\textit{LSSS}). Threshold secret sharing schemes allow for the reconstruction of a secret from a subset of shares of length $\ell$, where $\ell$ is the threshold. The threshold allows for the SD-in-the-Head protocol to be more communication efficient, as the amount of shares needed to reconstruct the secret is low.
-
-\begin{definition}\label{def:sss}
-  \textit{$S$ is a $(\ell,n)$ threshold SSS if it satisfies the following properties}:
-
-  \begin{itemize}
-    \item \textbf{Share generation}: Given a secret $s$, the scheme generates seeds $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$. $n$ shares $\texttt{share}(s) = \sh{s} = [s_1, s_2, \dots, s_n]$.
-    \item \textbf{Reconstruction}: Given a subset of shares $\sh{s'}$ of size $\ell$, the scheme can reconstruct the secret $s = \texttt{open}(\sh{s'})$.
-  \end{itemize}
-
-\end{definition}
-
-\textit{Linear secret sharing schemes}, or $(+,+)$-homomorphic schemes, refers to secret sharing schemes that are linearly homomorphic over some field $\mathbb{F}$ (say the galois field \texttt{GF256} described in \autoref{sec:gf256}). This means that given shares $\sh{a}$ and $\sh{b}$ we have that
-\begin{definition}
-  A $(\ell,n)$ threshold SSS is $(+,+)$-homomorphic if for any two secrets $s_1$ and $s_2$ and their shares $[[s_1]]$ and $[[s_2]]$, the sum of the shares $[[s_1]] + [[s_2]] = [[s_{11} + s_{21}, s_{12} + s_{22}, \dots, s_{1n} + s_{2n}]]$ is equal to the share of the sum of the secrets $[[s_1 + s_2]]$ for the same subset of shares.
-\end{definition}
 
 \section{Fiat-Shamir Heuristic}\label{sec:fiatshamir}
 To transform any zero-knowledge protocol into a signature scheme, one can use the approach described in~\cite{fiat1986prove}. Here, we outline the general concept.
@@ -1392,7 +1277,7 @@ In this example, there are two choices for the output lifetime for the reference
   }
 \end{minted}
 In the example above we have used the \rust{<'a,'b>} to define that the function accepts 2 generic lifetimes $'a$ and $'b$. These can now be used on the signature of the function to ensure that the lifetime of $h$ is $'a$. Allowing the compiler to easily analyze if the reference being passed as $h$ lives long enough.
-Furthermore, the compiler can determine that the lifetime of the output reference is the same as the input reference \rust{haystack}. 
+Furthermore, the compiler can determine that the lifetime of the output reference is the same as the input reference \rust{haystack}.
 
 \subsubsection{Conclusions on Memory Safety in Rust}
 This overview only scratches the surface of the power and features that Rust offers. However, it provides a brief introduction to the core features that make Rust a powerful programming language for developing secure and high-performance software. As mentioned, Rust comes with a steep learning curve, but it is supported by a large and active community that offers extensive documentation and resources. We suggest that the reader explore the official Rust Book~\cite{rustlangRustProgramming} or its community made books, like \textit{Effective Rust}~\cite{lurklurkEffectiveRust} and \textit{The Rust Performance book}~\cite{rustlangPerformanceBook}.
@@ -2078,7 +1963,7 @@ We only made simple tests for this module, as we trusted the underlying library 
 \end{minted}
 
 \subsubsection{Hashing}\label{sec:hashing} % (fold)
-As mentioned in the spec, we need a collision-resistant hash function. For this we also used the tiny-keccak crate. And again due to the different security categories, we had to be able to switch between different implementations of the underlying hash function. 
+As mentioned in the spec, we need a collision-resistant hash function. For this we also used the tiny-keccak crate. And again due to the different security categories, we had to be able to switch between different implementations of the underlying hash function.
 First, as mentioned in the \autoref{sub:constants}, we defined a primitive type for the Hash which we used to define a generic trait:
 \begin{minted}{rust}
 pub trait SDitHHashTrait<T> {
@@ -2422,7 +2307,116 @@ future work: Verkle trees optimisation
 
 \cleardoublepage
 \appendix
-\chapter{The Technical Details}
+\chapter{Appendix}
+
+\section{ZK from Cut-and-Choose}\label{sec:zk-cut-and-choose}
+
+Baum and Nof~\cite{baum2020concretely} outlines the fundamental concept of the cut-and-choose technique in their \textit{HVZKAoK Protocol using Cut and Choose}. For a detailed outline of the protocol see \cite[s3.2]{baum2020concretely}. Here we provide a high-level overview of the protocol. The underlying MPC protocol is based on beaver triples~\cite{beaver1992efficient} from \autoref{def:beaver} to enable multiplication circuits for additive $+$-homomorphic secret sharing schemes.
+
+\begin{definition}[MPC Multiplication using beaver triples]\label{def:beaver-multiplication}
+  Given a $+$-homomorphic additive secret sharing scheme and a preprocessed random beaver triple $\sh{a}, \sh{b}, \sh{c} $, the parties do the following:
+  \begin{enumerate}
+    \item The parties compute $ \sh{\alpha} = \sh{x} - \sh{a} $ and $ \sh{\beta} = \sh{y} - \sh{b} $.
+    \item The parties run $ \text{open}(\sh{\alpha}) $ and $ \text{open}(\sh{\beta}) $ to obtain $ \alpha $ and $ \beta $.
+    \item Each party computes $ \sh{z} = \sh{c} - \alpha \cdot \sh{b} - \beta \cdot \sh{a} + \alpha \cdot \beta $.
+  \end{enumerate}
+
+  The above is a well-known technique~\cite{beaver1992efficient} correctness follows from the fact that
+  \begin{align*}
+    \sh{z} & = \sh{c} - \alpha \cdot \sh{b} - \beta \cdot \sh{a} + \alpha \cdot \beta        \\
+           & = \sh{ab} - (x - a) \cdot \sh{b} - (y - b) \cdot \sh{a} + (x - a) \cdot (y - b) \\
+           & = \sh{xy}
+  \end{align*}
+\end{definition}
+
+We now describe an overview of the protocol.
+
+\noindent Input and Setup
+\begin{itemize}[parsep=0pt, itemsep=0pt]
+  \item Both the prover $\mathcal{P}$ and verifier $\mathcal{V}$ start with a shared output \( y \), a circuit description \( C \), and parameters:  $N$ the number of parties, $M$ the number of emulations nad $\tau < M$ the number of challenges.
+  \item The prover also holds the witness \( w \), which satisfies \( C(w) = y \).
+\end{itemize}
+
+\noindent \textit{Round 1}: Prover Prepares Commitments
+\begin{enumerate}[parsep=0pt, itemsep=0pt]
+  \item \textit{Salt and Seeds}: The prover picks a random salt and seeds $sd_e$ to initialize randomness for the protocol.
+  \item \textit{Random Shares}: For each gate in the circuit (multiplication and square gates), the prover generates random shares of valid triples.
+  \item \textit{Commitments}:
+        \begin{itemize}[parsep=0pt, itemsep=0pt]
+          \item The prover commits to random shared triples.
+          \item Linear random shares for input $w$ wires are also generated and committed.
+          \item The prover constructs hashes summarizing these commitments and sends them to the verifier.
+        \end{itemize}
+\end{enumerate}
+
+\noindent \textit{Round 2}: Verifier's Challenge\label{cac:round2}
+\begin{itemize}[parsep=0pt, itemsep=0pt]
+  \item The verifier picks a random subset \( E \in [M] \) for $|E| = \tau$ of computations (a challenge set) sends it to the prover.
+\end{itemize}
+
+\noindent \textit{Round 3}: Prover Simulates and Commits
+\begin{enumerate}[parsep=0pt, itemsep=0pt]
+  \item \textit{Subset Simulation}:
+        \begin{itemize}[parsep=0pt, itemsep=0pt]
+          \item For computations not in the challenge set (\( \bar{E} \)), the prover simulates the protocol as though running it honestly.
+          \item It prepares a "view" of how computations would occur using the pre-shared randomness.
+        \end{itemize}
+  \item \textit{Commitments}: The prover commits to these simulation views and computes a hash summarizing the result.
+  \item \textit{Sending Proofs}: The prover sends relevant commitments and hashes to the verifier.
+\end{enumerate}
+
+\noindent \textit{Round 4}: Verifier's Random Check
+\begin{itemize}[parsep=0pt, itemsep=0pt]
+  \item For computations in \( \bar{E} \), the verifier selects a random subset of secret shares to inspect for correctness.
+\end{itemize}
+
+\noindent \textit{Round 5}: Prover Sends Proof Details
+\begin{itemize}[parsep=0pt, itemsep=0pt]
+  \item The prover sends detailed information, including specific shares, corrections, and commitments, for the verifier to validate the protocol's correctness.
+\end{itemize}
+
+\noindent Verification by the Verifier
+
+The verifier checks the following:
+\begin{enumerate}[parsep=0pt, itemsep=0pt]
+  \item The integrity of the commitments and hashes matches the prover's claims.
+  \item The simulation views for computations in \( \bar{E} \) are consistent with the protocol rules and commitments.
+  \item The output shares add up correctly to the shared output \( y \).
+\end{enumerate}
+
+If all checks pass, the verifier accepts the proof. Otherwise, it rejects. Note that we can hash all individual commitments into a single hash to reduce the communication cost.
+
+\subsubsection*{Zero-knowledge}
+
+Zero-Knowledge of the protocol is satisfied by the $N$-privacy of $\Pi_C$ (\autoref{def:mpc-ell-privacy}) as only $N-1$ views are shared, the witness $w$ is never revealed to the verifier.
+
+\subsubsection*{Soundness}
+
+We bound probability of $\mathcal{V}$ accepting a cheating outcome of  the cut and choose protocol -- i.e. that $C(w) \neq y$. First, we assume that $\mathcal{P}$ cheats by incorrectly generating the precomputed triples. Let $c$ be the number of pre-processing emulations that are tampered.
+
+The first challenge $E$ allows $\mathcal{V}$ to test $\tau$ triples. It's trivial to detect inconsistencies in the triples through the seed $sd_e$ by recomputing the triples and comparing them to the opened commitments. To reduce communication even more, the resulting computation from $\mathcal{P}$ is hashed into a single hash which $\mathcal{V}$ tries to recompute. The probability that cheating is not detected is
+\begin{align*}
+  \frac{\binom{M-c}{\tau}}{\binom{M}{\tau}}
+\end{align*}
+Next, we assume that $\mathcal{P}$ cheats by deviating from the MPC protocol. In order to make the output of the protocol $y$ -- remember that we assume $C(w) \neq y$ -- $\mathcal{P}$ must deviate in $M-\tau-c$ emulations. As $N-1$ views are opened and verified, $\mathcal{P}$ can only cheat in one view of \textbf{one} party. The probability that this is not detected is $\frac{1}{N^{M-\tau-c}}$.
+
+\begin{lemma}[Soundness of the Cut-and-Choose protocol]\label{lem:cut-and-choose-soundness}
+  Let $c$ be the number of pre-processing emulations where $\mathcal{P}$ cheats. The probability that $\mathcal{V}$ accepts the outcome of the protocol for $C(w) \neq y$ is bounded by
+  \begin{align*}
+    \xi_c(M, N, \tau) = \max_{0 \leq c \leq M-\tau} \left\{\frac{\binom{M-c}{\tau}}{\binom{M}{\tau} \cdot N^{M-\tau-c}} \right\}
+  \end{align*}
+\end{lemma}
+
+The soundness of the protocol follows from the security of secure hash functions \autoref{sec:prelim_hash} as the verification of the random triples, input and outputs of the protocol is done by hashing the random triples and comparing the resulting hash to the output of the protocol. A formal proof of the protocol can be found in~\cite[p9]{baum2020concretely}.
+
+Our primary objective was to mitigate the strict dependency of the communication complexity of the ZK MPCitH protocol on $N$. By leveraging the use of seeds and incorporating a pre-processing phase, we facilitate the transmission of a single seed and a hash, rather than the entirety of inputs to the protocol. This approach effectively constrains communication as a function of $N$, while simultaneously enhancing the soundness of the protocol. Importantly, this improvement in soundness comes with only a marginal increase in communication overhead.
+
+\begin{lemma}[Communication cost for \textit{Cut-and-Choose}]
+  \begin{align*}
+    |hash| \cdot 3 & + |sd| \cdot (\tau + 1 + \log(N) (M - \tau )) + |com| \cdot 2(M - \tau )      \\
+                   & + \log_2(|F|) \cdot (M - \tau )(3n_{mul} + 2n_{sq} + n_{in} + 1)\text{ bits.}
+  \end{align*}
+\end{lemma}
 
 \todo{\dots}
 

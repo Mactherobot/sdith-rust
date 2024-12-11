@@ -22,9 +22,11 @@ use super::polynomial_evaluation;
 /// Challenge pair `(r, e) ∈ F_point^t, (F_point^t)^d`
 #[derive(Clone)]
 pub struct Challenge {
-    /// Challenge value r
+    /// Challenge value r. The verifier challenges the prover in at several points to check the correctness of the
+    /// polynomial relation.
     pub r: [FPoint; PARAM_T],
-    /// Challenge value epsilon
+    /// Challenge value epsilon. The idea from the Sacrificing Protocol by Baum and Nof and allows the 
+    /// verifier to check the correctness of the randomly generated "pre-processed" beaver triples.
     pub eps: [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR],
     /// Pre-computed powers of r for each evaluation and splitting.
     pub powers_of_r: [[FPoint; PARAM_CHUNK_M + 1]; PARAM_T],

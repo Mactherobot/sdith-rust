@@ -104,7 +104,7 @@ impl Signature {
 
         let mut broadcast_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
 
-        // Run through Tau and l to compute the broadcast shares
+        // For each emulation (Tau) and each L parties, compute the broadcast shares
         for e in 0..PARAM_TAU {
             for j in 0..PARAM_L {
                 let broadcast_share = party_computation(
