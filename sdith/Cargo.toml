@@ -3,12 +3,9 @@ name = "sdith"
 version = "0.0.0"
 edition = "2021"
 resolver = "2"
-
-# TODO: Move library into workspace to ensure that lib only compiles what it needs. 
-# Then we can use the package as a dependency for the cli binary in main.rs
-# https://stackoverflow.com/a/47113822
-[lib]
-name = "sdith"
+autobenches = false
+autotests = false
+autobins = false
 
 [dependencies]
 tiny-keccak = { version = "2.0.2", features = ["shake", "sha3"] }
@@ -28,6 +25,22 @@ mimalloc = { version = "*", optional = true }
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
 nist-pqc-seeded-rng = "0.2.0"
+stats-ci = "0.1.1"
+
+# TODO: Move library into workspace to ensure that lib only compiles what it needs. 
+# Then we can use the package as a dependency for the cli binary in main.rs
+# https://stackoverflow.com/a/47113822
+[lib]
+name = "sdith"
+path = "src/lib.rs"
+bench = false # Prevents benchmarks from running non-existent tests
+doctest = false # Prevents doctests from src/lib.rs
+
+[[bin]]
+name = "cli"
+path = "src/cli/main.rs"
+test = false # Prevents tests from src/main.rs
+bench = false # Prevents benchmarks from src/main.rs
 
 [[bench]]
 name = "benchmark"
@@ -44,8 +57,8 @@ opt-level = 3
 
 [profile.baseline]
 inherits = "dev"
-opt-level = 0 # Disables all optimizations
-lto = "off"   # Disables link time optimizations
+opt-level = 0    # Disables all optimizations
+lto = "off"      # Disables link time optimizations
 
 [profile.release]
 strip = "debuginfo" # Strips debug information from the binary
@@ -58,7 +71,7 @@ panic = "abort"     # https://nnethercote.github.io/perf-book/build-configuratio
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(CHANNEL_NIGHTLY)'] }
 
 [features]
-default = ["optimized", "merkle_batching"]
+default = ["optimized"]
 
 # Categories
 category_one = []   # This is the default category.
@@ -66,7 +79,7 @@ category_three = []
 category_five = []
 
 # Optimization features
-optimized = ["simd", "parallel"]
+optimized = ["simd", "parallel", "merkle_batching"]
 parallel = ["dep:rayon"]
 simd = []
 jemalloc = ["dep:tikv-jemallocator"]

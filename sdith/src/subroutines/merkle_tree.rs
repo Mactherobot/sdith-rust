@@ -13,9 +13,9 @@
 //!
 //! The structure allows for the Treshold variant of the signature scheme to only open the commitments to a subset of the parties.
 
-#[cfg(feature = "merkle_base")]
+#[cfg(not(any(feature = "merkle_batching", feature = "merkle_parallel")))]
 pub mod base;
-#[cfg(feature = "merkle_base")]
+#[cfg(not(any(feature = "merkle_batching", feature = "merkle_parallel")))]
 pub use base::BaseMerkleTree as MerkleTree;
 
 #[cfg(feature = "merkle_batching")]
@@ -302,7 +302,6 @@ mod test {
 
         // We are not zero index, so start from 1
         for i in 1..=(tree.n_nodes() - tree.n_leaves()) {
-
             let left = tree.node(i * 2);
             let right = tree.node(i * 2 + 1);
             assert_eq!(

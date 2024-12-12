@@ -8,8 +8,6 @@ use crate::constants::{
     types::{CommitmentsArray, Hash},
 };
 
-use std::time::Instant;
-
 use super::{merkle_hash, MerkleTreeTrait, PARAM_MERKLE_TREE_NODES};
 
 /// Merkle tree struct

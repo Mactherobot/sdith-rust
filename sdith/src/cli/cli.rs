@@ -2,7 +2,7 @@ use base64::{engine::general_purpose::STANDARD, Engine as _};
 use std::path::{Path, PathBuf};
 
 use clap::{ArgAction, Error, Parser, Subcommand};
-use colored::Colorize;
+use colored::Colorize as _;
 use rand::{rngs::StdRng, RngCore, SeedableRng};
 
 use sdith::{
@@ -86,12 +86,12 @@ impl Keygen {
         let print_all = !self.pub_key && !self.sec_key;
         if self.output.is_none() {
             if print_all || self.pub_key {
-                eprintln!();
+                eprint!("\n{}", "Public key: ".blue());
                 println!("{}", STANDARD.encode(pk.serialise()));
             }
 
             if print_all || self.sec_key {
-                eprintln!();
+                eprint!("\n{}", "Secret key: ".blue());
                 println!("{}", STANDARD.encode(sk.serialise()));
             }
 
