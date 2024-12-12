@@ -4,6 +4,28 @@ This is a Rust implementation of the SDitH protocol. The SDitH protocol is a qua
 
 ## Feature flags
 
+The package provides several feature flags to configure the compilation. The default configuration is:
+
+`default = ["optimized"]`
+
+Categories
+- `category_one`: Use the 143-bit security level (default)
+- `category_three`: Use the 207-bit security level
+- `category_five`: Use the 272-bit security level
+
+
+Optimizations
+- `parallel`: Use parallel operations
+- `simd`: Use SIMD operations
+- `merkle_batching`: Use the base Merkle tree implementation
+- `optimized`: combination:
+- `blake3`: Use the Blake3 for hashing and XOF (only for the `category_one` category)
+
+Features
+- `mul_spec`: Use the multiplication in the spec implementation instead of the lookup implementation seeing a small performance decrease but probably constant time
+- `xof_blake3`: Use the Blake3 XOF implementation
+- `hash_blake3`: Use the Blake3 hash implementation
+
 ### Categories
 
 The protocol has three proposed instances which support different security levels. These are separated into three categories:
@@ -44,7 +66,7 @@ Note that Blake3 increases performance, but only supports category 1 due to the 
 
 ```bash
 cargo build --features xof_blake3,hash_blake3
-````
+```
 
 ## Testing
 
@@ -105,20 +127,28 @@ Options:
   -V, --version  Print version
 ```
 
-
 ## Benchmarking
 
 To run the benchmarks, execute the following command:
 
 ```bash
-cargo bench
+cargo bench [benchmark]
 ```
+
+We have the following `[benchmark]`'s:
+
+- `api`: Benchmarks the API: key generation, signing, verification
+- `gf256`: Benchmarks the multiplication in GF(256) using different implementations
+- `parallel`: Benchmarks operations that are optimized for parallelism
+- `simd`: Benchmarks operations that are optimized for SIMD
+- `size`: Benchmarks the signature sizes
+- `merkle`: Benchmarks the Merkle tree operations
 
 ### Profiling
 
 For profiling, use can use [samply](https://github.com/mstange/samply). To profile the code, execute the following command:
 
-First build the selected 
+First build the selected
 
 - src/bin/profiling_sign
 - src/bin/profiling_keygen -- not implemented

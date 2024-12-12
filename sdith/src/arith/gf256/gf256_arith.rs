@@ -133,12 +133,14 @@ fn gf256_add(a: u8, b: u8) -> u8 {
 /// Function for GF(256) multiplication between two u8
 #[inline(always)]
 fn gf256_mul(a: u8, b: u8) -> u8 {
-    _mul_spec(a, b)
+    if cfg!(feature = "mul_spec") {
+        _mul_spec(a, b)
+    } else {
+        _mul_lookup(a, b)
+    }
 }
 
 /// Multiplication using log table lookup a * b = g^(log_g(a) + log_g(b))
-/// time:   [624.38 ps 628.09 ps 632.25 ps]
-#[deprecated(note="please use `_mul_spec` instead")]
 #[inline(always)]
 pub fn _mul_lookup(a: u8, b: u8) -> u8 {
     if (a == 0) || (b == 0) {
@@ -221,7 +223,7 @@ fn gf256_mul_inverse_lookup(a: u8) -> u8 {
 mod tests {
     use super::*;
     use crate::{
-        arith::test_field_definitions, constants::params::PARAM_SEED_SIZE, subroutines::prg::PRG
+        arith::test_field_definitions, constants::params::PARAM_SEED_SIZE, subroutines::prg::PRG,
     };
 
     /// TODO: remove these tests when we have used the proper test vectors

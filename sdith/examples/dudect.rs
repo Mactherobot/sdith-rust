@@ -1,11 +1,11 @@
 #![allow(deprecated)]
+use criterion::black_box;
 use dudect_bencher::{ctbench_main, BenchRng, Class, CtRunner};
 use rand::Rng;
 use sdith::arith::gf256::gf256_arith::{_mul_lookup, _mul_spec, _mul_wiki};
 
 /// Benchmark multiplication in GF(256). We check if we keep `a` constant for a random `b` is there a notable difference
-/// in the time it takes to do the multiplication
-/// used for different implementations of multiplication
+/// in the time it takes to do the multiplication used for different implementations of multiplication
 fn run_mul_bench(
     runner: &mut CtRunner,
     rng: &mut BenchRng,
@@ -13,38 +13,32 @@ fn run_mul_bench(
     right: u8,
     left: u8,
 ) {
-    let mut inputs: Vec<u8> = Vec::new();
-    let mut classes = Vec::new();
-
-    // Make 100,000 random pairs
+    // Make 100,000 iterations
     for _ in 0..100_000 {
-        // Flip a coin. To choose class. Left is 10 * b and right is 245 * b
-        inputs.push(rng.gen::<u8>());
-        classes.push(if rng.gen::<bool>() {
-            Class::Left
-        } else {
-            Class::Right
-        });
-    }
-
-    for (class, v) in classes.into_iter().zip(inputs.into_iter()) {
-        // Now time how long it takes to do a vector comparison
+        // Flip a coin for class.
+        let class = if rng.gen::<bool>() { Class::Left } else { Class::Right };
+        // Contant value for the multiplication depending on the class
         let a = match class {
             Class::Left => left,
             Class::Right => right,
         };
-        runner.run_one(class, || mul(v, a));
+        // Random value for the multiplication
+        let b = rng.gen::<u8>();
+        runner.run_one(class, || black_box(mul(a, b)));
     }
 }
 
 // We choose two arbitrary values for the multiplication. However we try to distance them from each other
-const MUL_LEFT: u8 = 10u8;
+const MUL_LEFT: u8 = 1u8;
 const MUL_RIGHT: u8 = 245u8;
 
 fn gf256_mul_lookup(runner: &mut CtRunner, rng: &mut BenchRng) {
     run_mul_bench(runner, rng, &_mul_lookup, MUL_LEFT, MUL_RIGHT);
 }
 
+/// Compare the multiplication in the lookup implementation with two constant values
+/// Left class: 0, Right class: 245
+/// Otherwise the other value is random.
 fn gf256_mul_lookup_zero(runner: &mut CtRunner, rng: &mut BenchRng) {
     run_mul_bench(runner, rng, &_mul_lookup, 0u8, MUL_RIGHT);
 }
@@ -53,10 +47,14 @@ fn gf256_mul_spec(runner: &mut CtRunner, rng: &mut BenchRng) {
     run_mul_bench(runner, rng, &_mul_spec, MUL_LEFT, MUL_RIGHT);
 }
 
+/// Compare the multiplication in the spec implementation with two constant values
+/// Left class: 0, Right class: 245
+/// Otherwise the other value is random.
 fn gf256_mul_spec_zero(runner: &mut CtRunner, rng: &mut BenchRng) {
     run_mul_bench(runner, rng, &_mul_spec, 0u8, MUL_RIGHT);
 }
 
+/// Testing just for fun. It's bad in all ways.
 fn gf256_mul_wiki(runner: &mut CtRunner, rng: &mut BenchRng) {
     run_mul_bench(runner, rng, &_mul_wiki, MUL_LEFT, MUL_RIGHT);
 }

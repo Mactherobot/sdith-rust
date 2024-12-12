@@ -11,6 +11,7 @@ pub(crate) fn mul_benchmark<M: Measurement>(c: &mut Criterion<M>) {
     group.bench_function("mul_lookup", |b| {
         b.iter_batched(
             || (rng.gen::<u8>(), rng.gen::<u8>()),
+            #[allow(deprecated)]
             |(a, b)| gf256::gf256_arith::_mul_lookup(a, b),
             criterion::BatchSize::SmallInput,
         )

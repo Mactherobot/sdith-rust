@@ -34,7 +34,7 @@ pub(crate) fn api_benchmark<M: Measurement>(c: &mut Criterion<M>) {
     let entropy = (sign_seed, sign_salt);
 
     let message: Vec<u8> = vec![1, 2, 3, 4];
-    group.bench_function("Signature::sign_message", |b| {
+    group.bench_function("signing", |b| {
         b.iter(|| Signature::sign_message(entropy, &sk, &message))
     });
 
@@ -42,7 +42,7 @@ pub(crate) fn api_benchmark<M: Measurement>(c: &mut Criterion<M>) {
     let signature: Vec<u8> = Signature::sign_message(entropy, &sk, &message)
         .unwrap()
         .serialise();
-    group.bench_function("Signature::verify_signature", |b| {
+    group.bench_function("verification", |b| {
         b.iter(|| Signature::verify_signature(&pk, &signature))
     });
 
