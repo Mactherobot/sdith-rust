@@ -1,4 +1,4 @@
-use clap::{Command, CommandFactory, Error, Parser};
+use clap::{CommandFactory, Parser};
 use cli::Commands;
 use colored::Colorize as _;
 
@@ -16,7 +16,7 @@ fn main() {
         None => {
             let _ = cli::Cli::command().print_help();
             Ok(())
-        },
+        }
     };
 
     if res.is_err() {
