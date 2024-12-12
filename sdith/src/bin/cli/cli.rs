@@ -1,13 +1,13 @@
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use std::path::{Path, PathBuf};
 
-use clap::{ArgAction, Error, Parser, Subcommand};
+use clap::{ArgAction, Command, Error, Parser, Subcommand};
 use colored::Colorize as _;
 use rand::{rngs::StdRng, RngCore, SeedableRng};
 
 use sdith::{
     constants::{
-        params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
+        params::{self, PARAM_SALT_SIZE, PARAM_SEED_SIZE},
         types::{Salt, Seed},
     },
     keygen::{self, PublicKey, SecretKey},
@@ -45,9 +45,20 @@ macro_rules! clap_err_result_msg {
 }
 
 #[derive(Parser)]
-#[command(version, about("SDitH signature protocol"), long_about = None)]
+#[command(version, about("SDitH signature protocol"))]
+#[cfg_attr(
+    not(any(feature = "category_three", feature = "category_five")),
+    command(about("SDitH signature protocol\nNIST Category ONE variant"))
+)]
+#[cfg_attr(
+    feature = "category_three",
+    command(about("SDitH signature protocol\nNIST Category THREE variant"))
+)]
+#[cfg_attr(
+    feature = "category_five",
+    command(about("SDitH signature protocol\nNIST Category FIVE variant"))
+)]
 pub struct Cli {
-    // TODO: Implement Category of the protocol. Either 1, 2 or 3.
     #[command(subcommand)]
     pub command: Option<Commands>,
 }
@@ -57,10 +68,88 @@ pub enum Commands {
     Keygen(Keygen),
     Sign(Signing),
     Verify(Verifying),
+    Parameters(Parameters),
 }
 
 #[derive(Parser)]
-#[command(version, about("SDitH signature protocol key generation"), long_about = None)]
+#[command(version, about("SDitH signature protocol -- print parameters"), long_about = None)]
+pub struct Parameters {}
+
+impl Parameters {
+    pub fn print_info(&self) -> Result<(), Error> {
+        println!("SDitH signature protocol parameters");
+
+        if cfg!(feature = "category_three") {
+            println!("NIST Category THREE variant");
+        } else if cfg!(feature = "category_five") {
+            println!("NIST Category FIVE variant");
+        } else {
+            println!("NIST Category ONE variant");
+        }
+
+        println!();
+
+        println!("{}", "SD Parameters:".blue().bold());
+        println!(
+            "{}\t(q) The Galois field size GL(q) = GL(2^8) = GL(256)",
+            params::PARAM_Q.to_string().bold()
+        );
+        println!("{}\t(M) Code length", params::PARAM_M.to_string().bold());
+        println!(
+            "{}\t(K) Vector dimension",
+            params::PARAM_K.to_string().bold()
+        );
+        println!(
+            "{}\t(w) The Hamming weight bound PARAM_CODE_WEIGHT",
+            params::PARAM_W.to_string().bold()
+        );
+        println!(
+            "{}\t(d) Splitting factor for the syndrome variant",
+            params::PARAM_SPLITTING_FACTOR.to_string().bold()
+        );
+
+        println!("{}", "MPCitH Parameters:".blue().bold());
+        println!(
+            "{}\t(t) Number of random evaluation points",
+            params::PARAM_T.to_string().bold()
+        );
+        println!(
+            "{}\t(η) F_point size for F_point = F_(q^η)",
+            params::PARAM_ETA.to_string().bold()
+        );
+        println!(
+            "{}\t(N) Number of secret parties = q",
+            params::PARAM_N.to_string().bold()
+        );
+        println!(
+            "{}\t(τ) Number of repetitions of the protocol",
+            params::PARAM_TAU.to_string().bold()
+        );
+        println!(
+            "{}\t(ℓ) Privacy threshold (number of open parties)",
+            params::PARAM_L.to_string().bold()
+        );
+
+        println!("{}", "\nSignature Parameters:".blue().bold());
+        println!(
+            "{}\tSeed size in bytes",
+            params::PARAM_SEED_SIZE.to_string().bold()
+        );
+        println!(
+            "{}\tSalt size in bytes",
+            params::PARAM_SALT_SIZE.to_string().bold()
+        );
+        println!(
+            "{}\tDigest (Hash) size in bytes",
+            params::PARAM_DIGEST_SIZE.to_string().bold()
+        );
+
+        return Ok(());
+    }
+}
+
+#[derive(Parser)]
+#[command(version, about("SDitH signature protocol -- key generation"), long_about = None)]
 pub struct Keygen {
     /// Master seed. Must be 32 bytes long.
     #[arg(short, long)]
@@ -140,7 +229,7 @@ impl Keygen {
 }
 
 #[derive(Parser)]
-#[command(version, about("SDitH signature protocol signing"), long_about = None)]
+#[command(version, about("SDitH signature protocol -- signing"), long_about = None)]
 pub struct Signing {
     /// Message file or string
     #[arg(short, long)]
@@ -198,7 +287,7 @@ impl Signing {
 }
 
 #[derive(Parser)]
-#[command(version, about("SDitH signature protocol verification"), long_about = None)]
+#[command(version, about("SDitH signature protocol -- verification"), long_about = None)]
 pub struct Verifying {
     /// Public key file or string
     #[arg(long("pk"))]

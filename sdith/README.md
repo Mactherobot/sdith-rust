@@ -2,31 +2,9 @@
 
 This is a Rust implementation of the SDitH protocol. The SDitH protocol is a quantum secure signature scheme using MPCitH (Multi-Party Computation in the Head), Syndrome Decoding and Fiat-Shamir Heuristic.
 
-## Testing
+## Feature flags
 
-To run the tests, execute the following command:
-
-```bash
-cargo test
-```
-
-For Category 5, you might have to increase the stack size. To do so, execute the following command:
-
-```bash
-RUST_MIN_STACK=8388608 cargo test --features category_five
-```
-
-### Specification tests
-
-The folder `src/spec_tests` contains tests that compare inputs and outputs of the implementation to the SDitH c++ implementation. To run these tests, include the feature flag `spec_tests`:
-
-```bash
-cargo test --features spec_tests
-```
-
-Note that these tests are only available for category 1.
-
-## Categories
+### Categories
 
 The protocol has three proposed instances which support different security levels. These are separated into three categories:
 
@@ -42,8 +20,6 @@ You can set the category by the feature flag `category_#`.
 # Set the category through the feature flag
 cargo build --features category_three
 ```
-
-## Feature flags
 
 ### Optimisations
 
@@ -70,6 +46,28 @@ Note that Blake3 increases performance, but only supports category 1 due to the 
 cargo build --features xof_blake3,hash_blake3
 ````
 
+## Testing
+
+To run the tests, execute the following command:
+
+```bash
+cargo test
+```
+
+For Category 5, you might have to increase the stack size. To do so, execute the following command:
+
+```bash
+RUST_MIN_STACK=8388608 cargo test --features category_five
+```
+
+### KAT tests
+
+The folder `src/kat` contains tests that compare inputs and outputs of the implementation to the SDitH c++ implementation. To run these tests, include the feature flag `kat`:
+
+```bash
+cargo test --features kat
+```
+
 ## Benchmarking
 
 To run the benchmarks, execute the following command:
@@ -80,14 +78,35 @@ cargo bench
 
 ## CLI usage
 
+The sdith cli is the main binary built and it is located in the `src/bin/cli` folder.
+
+You can run it by either building the binary or using the `cargo run` command.
+
+```bash
+# Build the binary
+cargo build --release
+
+# Run the binary
+./target/release/sdith
+
+# Or use cargo run
+cargo run
 ```
+
+The cli has the following api
+
+```
+SDitH signature protocol
+NIST Category ONE variant
+
 Usage: sdith [COMMAND]
 
 Commands:
-  keygen  SDitH signature protocol key generation
-  sign    SDitH signature protocol signing
-  verify  SDitH signature protocol verification
-  help    Print this message or the help of the given subcommand(s)
+  keygen      SDitH signature protocol -- key generation
+  sign        SDitH signature protocol -- signing
+  verify      SDitH signature protocol -- verification
+  parameters  SDitH signature protocol -- print parameters
+  help        Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help     Print help
@@ -98,14 +117,18 @@ Options:
 
 For profiling, use can use [samply](https://github.com/mstange/samply). To profile the code, execute the following command:
 
-First build the code without release.
+First build the selected 
+
+- src/bin/profiling_sign
+- src/bin/profiling_keygen -- not implemented
+- src/bin/profiling_verify -- not implemented
 
 ```bash
-cargo build
+cargo build --bin profiling_sign
 ```
 
 Then run the profiler using the desired CLI commands: `keygen`, `sign` or `verify`. Check [CLI-usage](#cli-usage). For example
 
 ```bash
-samply record target/debug/sdith sign --msg "Hello, World!" --sk path/to/sk/file
+samply record target/debug/profiling_sign [iterations]
 ```

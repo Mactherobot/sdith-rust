@@ -1,8 +1,10 @@
 [package]
 name = "sdith"
+description = "SDitH Signature Scheme Protocol from NIST Post-Quantum Cryptography Standardization, Additional signature schemes round 2"
 version = "0.0.0"
 edition = "2021"
 resolver = "2"
+default-run = "cli" # Default run the cli
 
 # We manually specify targets below
 autobenches = false
@@ -48,9 +50,15 @@ doctest = false # Prevents doctests from src/lib.rs
 
 [[bin]]
 name = "cli"
-path = "src/cli/main.rs"
-test = false # Prevents tests from src/main.rs
-bench = false # Prevents benchmarks from src/main.rs
+path = "src/bin/cli/mod.rs"
+test = false # Prevents tests from cli
+bench = false # Prevents benchmarks from cli
+
+[[bin]]
+name = "profiling_sign"
+path = "src/bin/profiling/sign.rs"
+test = false # Prevents tests from profiling
+bench = false # Prevents benchmarks from profiling
 
 [[bench]]
 name = "benchmark"

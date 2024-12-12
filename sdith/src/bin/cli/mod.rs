@@ -1,4 +1,4 @@
-use clap::{Error, Parser};
+use clap::{Command, CommandFactory, Error, Parser};
 use cli::Commands;
 use colored::Colorize as _;
 
@@ -11,10 +11,12 @@ fn main() {
         Some(Commands::Keygen(keygen)) => keygen.generate_keys(),
         Some(Commands::Sign(signing)) => signing.sign_message(),
         Some(Commands::Verify(verify)) => verify.verify_signature(),
-        None => Err(Error::raw(
-            clap::error::ErrorKind::DisplayHelp,
-            "No command provided",
-        )),
+        Some(Commands::Parameters(parameters)) => parameters.print_info(),
+        // Print help
+        None => {
+            let _ = cli::Cli::command().print_help();
+            Ok(())
+        },
     };
 
     if res.is_err() {

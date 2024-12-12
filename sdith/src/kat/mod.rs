@@ -68,17 +68,15 @@ fn get_value_from_line(line: &str) -> &str {
 }
 
 fn get_response_file() -> &'static str {
-    if cfg!(feature = "category_one") {
-        println!("category_one");
-        include_str!("./vectors/cat1_gf256/PQCsignKAT.rsp")
-    } else if cfg!(feature = "category_three") {
+    if cfg!(feature = "category_three") {
         println!("category_three");
         include_str!("./vectors/cat3_gf256/PQCsignKAT.rsp")
     } else if cfg!(feature = "category_five") {
         println!("category_five");
         include_str!("./vectors/cat5_gf256/PQCsignKAT.rsp")
     } else {
-        panic!("No category feature enabled")
+        println!("category_one");
+        include_str!("./vectors/cat1_gf256/PQCsignKAT.rsp")
     }
 }
 
@@ -162,4 +160,6 @@ mod kat_tests {
             assert!(verification.is_ok());
         }
     }
+    
+    // TODO Test signature same as spec
 }
