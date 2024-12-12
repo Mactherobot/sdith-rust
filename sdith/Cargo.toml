@@ -3,9 +3,13 @@ name = "sdith"
 version = "0.0.0"
 edition = "2021"
 resolver = "2"
+
+# We manually specify targets below
 autobenches = false
 autotests = false
 autobins = false
+
+## Dependencies
 
 [dependencies]
 tiny-keccak = { version = "2.0.2", features = ["shake", "sha3"] }
@@ -27,13 +31,19 @@ criterion = { version = "0.5", features = ["html_reports"] }
 nist-pqc-seeded-rng = "0.2.0"
 stats-ci = "0.1.1"
 
+[build-dependencies]
+dotenv_codegen = "0.15.0"
+rustc_version = "0.4.1"
+
+## Targets
+
 # TODO: Move library into workspace to ensure that lib only compiles what it needs. 
 # Then we can use the package as a dependency for the cli binary in main.rs
 # https://stackoverflow.com/a/47113822
 [lib]
 name = "sdith"
 path = "src/lib.rs"
-bench = false # Prevents benchmarks from running non-existent tests
+bench = false # Prevents benchmarks from running src/lib.rs tests
 doctest = false # Prevents doctests from src/lib.rs
 
 [[bin]]
@@ -46,11 +56,8 @@ bench = false # Prevents benchmarks from src/main.rs
 name = "benchmark"
 harness = false
 
-[build-dependencies]
-dotenv_codegen = "0.15.0"
-rustc_version = "0.4.1"
+## Profiles
 
-# Build profiles
 [profile.dev]
 debug = 1
 opt-level = 3
@@ -67,8 +74,12 @@ lto = "fat"         # Performs “fat” LTO which attempts to perform optimizat
 opt-level = 3       # Optimizes 0: no optimizations, 1: some optimizations, 2: all optimizations, 3: all optimizations, "s": optimize for binary size, "z": optimize for binary size, but also turn off loop vectorization.
 panic = "abort"     # https://nnethercote.github.io/perf-book/build-configuration.html#abort-on-panic
 
+## Linting
+
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(CHANNEL_NIGHTLY)'] }
+
+## Features
 
 [features]
 default = ["optimized"]
