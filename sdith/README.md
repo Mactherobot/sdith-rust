@@ -68,14 +68,6 @@ The folder `src/kat` contains tests that compare inputs and outputs of the imple
 cargo test --features kat
 ```
 
-## Benchmarking
-
-To run the benchmarks, execute the following command:
-
-```bash
-cargo bench
-```
-
 ## CLI usage
 
 The sdith cli is the main binary built and it is located in the `src/bin/cli` folder.
@@ -113,7 +105,16 @@ Options:
   -V, --version  Print version
 ```
 
-## Profiling
+
+## Benchmarking
+
+To run the benchmarks, execute the following command:
+
+```bash
+cargo bench
+```
+
+### Profiling
 
 For profiling, use can use [samply](https://github.com/mstange/samply). To profile the code, execute the following command:
 
@@ -131,4 +132,14 @@ Then run the profiler using the desired CLI commands: `keygen`, `sign` or `verif
 
 ```bash
 samply record target/debug/profiling_sign [iterations]
+```
+
+### Constant time benchmarks
+
+We run the [dudect_bencher](https://docs.rs/dudect-bencher/latest/dudect_bencher/) to benchmark the constant time implementations of the protocol.
+
+To run the benchmarks, execute the following command:
+
+```bash
+cargo run --release --example dudect
 ```

@@ -1,7 +1,8 @@
 //! # Rijndaels Galois Field `F_2^8` for [`u8`].
 
-use crate::{arith::FieldArith, subroutines::prg::PRG};
 use std::num::Wrapping;
+
+use crate::{arith::FieldArith, subroutines::prg::PRG};
 
 /// The primitive polynomial x^4 + x^3 + x + 1 (0b0001_1011)
 #[allow(dead_code)]
@@ -93,6 +94,7 @@ const POWER_TABLE_0X03: [u8; 512] = [
 ];
 
 /// Extension function for the lookup table
+#[inline(always)]
 fn power_lookup(a: u16) -> u8 {
     POWER_TABLE_0X03[a as usize]
 }
@@ -118,6 +120,7 @@ const LOG_TABLE_0X03: [u16; 256] = [
 ];
 
 /// Accessing log tables
+#[inline(always)]
 fn log_lookup(a: u8) -> u16 {
     LOG_TABLE_0X03[a as usize]
 }
@@ -128,16 +131,29 @@ fn gf256_add(a: u8, b: u8) -> u8 {
 }
 
 /// Function for GF(256) multiplication between two u8
+#[inline(always)]
 fn gf256_mul(a: u8, b: u8) -> u8 {
+    _mul_spec(a, b)
+}
+
+/// Multiplication using log table lookup a * b = g^(log_g(a) + log_g(b))
+/// time:   [624.38 ps 628.09 ps 632.25 ps]
+#[deprecated(note="please use `_mul_spec` instead")]
+#[inline(always)]
+pub fn _mul_lookup(a: u8, b: u8) -> u8 {
     if (a == 0) || (b == 0) {
         return 0;
     }
-    _mul_lookup(a, b)
+    let log_a = log_lookup(a);
+    let log_b = log_lookup(b);
+    let res = log_a + log_b;
+    power_lookup(res)
 }
 
 /// Multiplication from the spec implementation
-/// TODO: Small benchmark with different multiplication functions
-pub(super) fn _mul_spec(a: u8, b: u8) -> u8 {
+/// time:   [399.59 ps 400.26 ps 400.96 ps]
+#[inline(always)]
+pub fn _mul_spec(a: u8, b: u8) -> u8 {
     let a = Wrapping(a);
     let b = Wrapping(b);
     let one = Wrapping(1_u8);
@@ -153,7 +169,9 @@ pub(super) fn _mul_spec(a: u8, b: u8) -> u8 {
     return r.0;
 }
 
-fn _mul_wiki(a: u8, b: u8) -> u8 {
+/// Multiplication using wiki implementation
+#[inline(always)]
+pub fn _mul_wiki(a: u8, b: u8) -> u8 {
     // TODO: Lookup carryless multiplication in Rust clmul
     let mut r: u8 = 0;
     let mut a = a.clone();
@@ -175,14 +193,6 @@ fn _mul_wiki(a: u8, b: u8) -> u8 {
     }
 
     r
-}
-
-/// Multiplication using log table lookup a * b = g^(log_g(a) + log_g(b))
-fn _mul_lookup(a: u8, b: u8) -> u8 {
-    let log_a = log_lookup(a);
-    let log_b = log_lookup(b);
-    let res = log_a + log_b;
-    power_lookup(res)
 }
 
 /// using lookup table for power: a^b = g^(log_g(a^b)) = g^(b * log_g(a)) = g^(b * log_g(a) mod |g|)

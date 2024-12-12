@@ -30,6 +30,7 @@ mimalloc = { version = "*", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
+dudect-bencher = "0.6.0"
 nist-pqc-seeded-rng = "0.2.0"
 stats-ci = "0.1.1"
 
@@ -62,6 +63,12 @@ bench = false # Prevents benchmarks from profiling
 
 [[bench]]
 name = "benchmark"
+path = "benches/benchmark.rs"
+harness = false
+
+[[example]]
+name = "dudect"
+path = "examples/dudect.rs" # Dudect Constant Time Benchmark has to be run as an example
 harness = false
 
 ## Profiles
