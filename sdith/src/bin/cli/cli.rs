@@ -1,7 +1,7 @@
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use std::path::{Path, PathBuf};
 
-use clap::{ArgAction, Command, Error, Parser, Subcommand};
+use clap::{ArgAction, Error, Parser, Subcommand};
 use colored::Colorize as _;
 use rand::{rngs::StdRng, RngCore, SeedableRng};
 
