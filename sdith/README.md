@@ -9,12 +9,13 @@ The package provides several feature flags to configure the compilation. The def
 `default = ["optimized"]`
 
 Categories
+
 - `category_one`: Use the 143-bit security level (default)
 - `category_three`: Use the 207-bit security level
 - `category_five`: Use the 272-bit security level
 
-
 Optimizations
+
 - `parallel`: Use parallel operations
 - `simd`: Use SIMD operations
 - `merkle_batching`: Use the base Merkle tree implementation
@@ -22,6 +23,7 @@ Optimizations
 - `blake3`: Use the Blake3 for hashing and XOF (only for the `category_one` category)
 
 Features
+
 - `mul_spec`: Use the multiplication in the spec implementation instead of the lookup implementation seeing a small performance decrease but probably constant time
 - `xof_blake3`: Use the Blake3 XOF implementation
 - `hash_blake3`: Use the Blake3 hash implementation
@@ -49,7 +51,7 @@ The package provides several optimisations that can be enabled through feature f
 
 - `parallel`: A common bottleneck in the protocsimdol is when you have to compute input shares or commitments as they rely on hashing
 - `simd`: The protocol uses SIMD instructions to speed up matrix multiplication and vector operations
-- `jemalloc` and `mimalloc`: Change the allocator used by the Rust runtime
+- `merkle_batching`: Use the batching for generating the Merkle tree
 
 The most performant configuration can be set with the `optimized` feature flag.
 
