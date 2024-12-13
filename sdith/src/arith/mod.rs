@@ -110,7 +110,7 @@ where
 
     // Inverse of addition and multiplication:
     assert_eq!(a.field_sub(a), T::field_add_identity());
-    // assert_eq!(a.field_mul(b).field_div(b), a); // Division not implemented
+    // assert_eq!(a.field_mul(b).field_div(b), a); // Division not implemented for f_q^4
 
     // Distributivity of multiplication over addition:
     assert_eq!(
