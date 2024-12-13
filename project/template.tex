@@ -2209,36 +2209,76 @@ As above we created several tests to ensure that the function adhered correctly 
     }
 \end{minted}
 In this example we check that based on wrong inputs the function fails. 
-\subsubsection{Galois field arithmetic}\label{sub:gf256_arith}
-As stated earlier, we wanted to implement the underlying arithmetic our selves and not rely on a crate for the arithmetic of the field. This led us to implement the galois field arithmetic.
-We did this by creating a trait for field arithmetic, with the 
-This allows us to implement the field arithmetic for different types:
+
+\subsection{Field Arithmetic Implementation}\label{sub:field_arithmetic}
+To ensure full control over the underlying field arithmetic and avoid reliance on external crates, we implemented the Galois field arithmetic ourselves. This decision allowed us to tailor the implementation to our specific requirements.
+
+We began by defining a trait for field arithmetic, which encapsulates the necessary operations such as addition, multiplication, and exponentiation. This approach provides flexibility to implement field arithmetic for various data types. For example:
+
 \begin{minted}{rust}
 pub type FPoint = [u8; 4];
 
 impl FieldArith for FPoint {
-
     fn field_mul(&self, rhs: Self) -> Self {
         gf256_ext32_mul(*self, rhs)
     }
-
 }
 \end{minted}
-And we can now use the field arithmetic in our code to for example generate beaver triples:
-\todo{link to the beaver triple code}
 
-Furthermore, all our arithmetic can be tested individually, as we can see in the following test:
-\todo{link to the arith test}
+This implementation allows us to use the defined field arithmetic seamlessly in our code. For instance, the inner product calculation for Beaver triples can be written concisely as:
+
+\begin{minted}{rust}
+c[j] = c[j].field_add(aj.field_mul(bj));
+\end{minted}
+
+To ensure that our arithmetic implementation adheres to the expected properties of a field, we created a comprehensive test suite for the trait. This umbrella test verifies properties such as commutativity, associativity, and distributivity. Here is the implementation:
+
+\begin{minted}{rust}
+pub(super) fn test_field_definitions<T>(a: T, b: T, c: T)
+where
+    T: FieldArith + std::fmt::Debug,
+{
+    // Commutativity of addition and multiplication:
+    assert_eq!(a.field_add(b), b.field_add(a));
+    assert_eq!(a.field_mul(b), b.field_mul(a));
+
+    // Associativity of addition and multiplication:
+    assert_eq!(a.field_add(b.field_add(c)), a.field_add(b).field_add(c));
+    assert_eq!(a.field_mul(b.field_mul(c)), a.field_mul(b).field_mul(c));
+
+    // Identity of addition and multiplication:
+    assert_eq!(a.field_add(T::field_add_identity()), a);
+    assert_eq!(a.field_mul(T::field_mul_identity()), a);
+
+    // Inverse of addition and multiplication:
+    assert_eq!(a.field_sub(a), T::field_add_identity());
+    // assert_eq!(a.field_mul(b).field_div(b), a); // Division not implemented
+
+    // Distributivity of multiplication over addition:
+    assert_eq!(
+        a.field_mul(b.field_add(c)),
+        a.field_mul(b).field_add(a.field_mul(c))
+    );
+
+    // Negation:
+    assert_eq!(b.field_add(a.field_neg()), b.field_sub(a));
+}
+\end{minted}
+
+This test ensures that the field arithmetic implementation behaves correctly, providing confidence in its use throughout the rest of the system.
+
+\subsection{Field Extensions}\label{sub:field_extensions}
+After defining the trait and general setup for the $GF(2)$ binary arithmetic, we could then implementing the methods for the $GF(2^8)$ field. The field is defined by the polynomial $x^8 + x^4 + x^3 + x + 1$. We implemented the field arithmetic using the irreducible polynomial $x^8 + x^4 + x^3 + x + 1$.
+
+\todo{Write about the implementation of the field extensions}
+
+
+\subsection{Field polynomials}\label{sub:field_polynomials} % (fold)
+
+\subsection{Field vector operations}\label{sub:field_vector_operations} % (fold)
 
 \section{Categories}\label{sub:categories} % (fold)
 We tried reworking to use dynamically sized vectors instead of compile time sized arrays. Which proved to be a big rework and refactor. Benching showed slower running times. So instead we went with compile time script to set the constants.
-
-% Removed after using feature flags instead
-% \subsubsection{Environment variables}\label{sub:env_vars}
-% Environment variables can be set in the command line or given to the compiler when invoking cargo. The following code snippet shows how you would pass the category to the compiler. Due to the fact that we went with
-% \begin{minted}{bash}
-% ~$ SDITH_CATEGORY=5 cargo bench
-% \end{minted}
 
 After implementing the environment variables, we realised that we could also use feature flags to change the category. This is done by adding the following to the Cargo.toml file.
 \begin{minted}{rust}
