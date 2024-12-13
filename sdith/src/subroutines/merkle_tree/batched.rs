@@ -91,8 +91,8 @@ impl MerkleTreeTrait for BatchedMerkleTree {
         let mut last_index = tree.n_nodes;
 
         // Add leaves to the tree
-        (0..nb_leaves).for_each(|i| {
-            tree.nodes[first_index + i] = commitments[i];
+        commitments.iter().enumerate().for_each(|(i, commitment)| {
+            tree.nodes[first_index + i] = *commitment;
         });
 
         for _h in (2..height).rev() {
@@ -136,7 +136,6 @@ impl MerkleTreeTrait for BatchedMerkleTree {
         for _h in (0..2).rev() {
             // Indicates if the last node is isolated
             // let last_is_isolated = 1 - (last_index & 0x1);
-
             first_index >>= 1;
             last_index >>= 1;
 
@@ -176,19 +175,10 @@ impl MerkleTreeTrait for BatchedMerkleTree {
 
     fn auth_path(&self, selected_leaves: &[u16]) -> Vec<Hash> {
         let revealed_nodes = Self::get_revealed_nodes(selected_leaves);
-
-        let mut auth = vec![];
-
-        // Fetch the missing nodes
-        for h in (1..=self.height).rev() {
-            for i in 1 << h..(1 << (h + 1)) {
-                if revealed_nodes.contains(&i) {
-                    auth.push(self.nodes[i as usize]);
-                }
-            }
-        }
-
-        auth
+        revealed_nodes
+            .iter()
+            .map(|&idx| self.nodes[idx as usize])
+            .collect()
     }
 
     fn get_auth_size(selected_leaves: &[u16]) -> usize {

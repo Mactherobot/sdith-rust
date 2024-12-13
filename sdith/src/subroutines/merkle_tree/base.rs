@@ -35,16 +35,12 @@ impl MerkleTreeTrait for BaseMerkleTree {
 
         let mut first_index = tree.n_nodes - nb_leaves + 1;
         let mut last_index = tree.n_nodes;
-
         // Add leaves to the tree
-        (0..nb_leaves).for_each(|i| {
-            tree.nodes[first_index + i] = commitments[i];
-        }); // TODO: Optimize the loop below with batch processing https://github.com/sdith/sdith/blob/main/Optimized_Implementation/Threshold_Variant/sdith_threshold_cat1_gf256/merkle-tree.c
+        commitments.iter().enumerate().for_each(|(i, commitment)| {
+            tree.nodes[first_index + i] = *commitment;
+        });
 
         for _h in (0..height).rev() {
-            // Indicates if the last node is isolated
-            // let last_is_isolated = 1 - (last_index & 0x1);
-
             first_index >>= 1;
             last_index >>= 1;
 
@@ -88,13 +84,9 @@ impl MerkleTreeTrait for BaseMerkleTree {
         let mut auth = vec![];
 
         // Fetch the missing nodes
-        for h in (1..=self.height).rev() {
-            for i in 1 << h..(1 << (h + 1)) {
-                if revealed_nodes.contains(&i) {
-                    auth.push(self.nodes[i as usize]);
-                }
-            }
-        }
+        revealed_nodes.iter().for_each(|index| {
+            auth.push(self.nodes[*index as usize]);
+        });
 
         auth
     }
