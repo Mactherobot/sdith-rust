@@ -2056,6 +2056,45 @@ We initially implemented the tree with a simple bottom-up approach, hashing chil
 merkle_hash_x4(parent_indexes, left_child_hashes, right_child_hashes, salt);
 \end{minted}
 This provided a minor speed improvement, discussed further in \autoref{ch:bench}. \todo{Consider discussing attempts at parallelization.}
+In order to test the correctness of the tree, we first check that the leaves correspond to the correct commitments. Then we run through parent nodes and recompute the hashes up until the root. We then check that the root becomes the correct value.
+\begin{minted}{rust}
+    #[test]
+    fn test_new_merkle_tree() {
+        let commitments = setup_test_commitments();
+        let tree = MerkleTree::new(commitments, None);
+
+        // Get the correct leaves.
+        for i in 0..PARAM_N {
+            assert_eq!(tree.leaf(i), commitments[i], "Leaf does not match");
+        }
+
+        // We are not zero index, so start from 1
+        for i in 1..=(tree.n_nodes() - tree.n_leaves()) {
+            let left = tree.node(i * 2);
+            let right = tree.node(i * 2 + 1);
+            assert_eq!(
+                tree.node(i),
+                merkle_hash(i, &left, &right, None),
+                "Failed at index {}",
+                i
+            );
+        }
+
+        // Check root
+        assert_eq!(
+            tree.root(),
+            [
+                199, 131, 242, 88, 170, 201, 178, 129, 245, 242, 187, 134, 115, 97, 225, 3, 107, 3,
+                181, 38, 31, 251, 54, 70, 65, 75, 186, 229, 200, 5, 128, 60
+            ],
+            "Root does not match"
+        );
+
+        assert_eq!(tree.height, PARAM_MERKLE_TREE_HEIGHT as u32);
+        assert_eq!(tree.n_leaves(), { PARAM_N });
+        assert_eq!(tree.n_nodes(), PARAM_MERKLE_TREE_NODES - 1);
+    }
+\end{minted}
 
 \subsubsection{authPath and getAuthSize}\label{sec:auth_path}
 The initial \texttt{authPath} implementation iterated backward through the array, identifying missing nodes by checking parent-child relationships. For signature validation, we later adopted an optimized approach using \texttt{get\_revealed\_nodes}:
@@ -2088,6 +2127,31 @@ fn auth_path(&self, selected_leaves: &[u16]) -> Vec<Hash> {
     revealed_nodes.iter().map(|&idx| self.nodes[idx as usize]).collect()
 }
 \end{minted}
+Testing that we found the revealed nodes was done by doing the computation manually and then use the found authentication path nodes as check. We created several cases to ensure that it works for different types of inputs. Even though the protocol has a constant number of leaves and nodes:
+\begin{minted}{rust}
+    #[test]
+    fn test_merkle_two_selected_neighboring_leaves() {
+        let commitments = setup_test_commitments();
+        let tree = MerkleTree::new(commitments, None);
+
+        let auth = tree.auth_path(&[0, 1]);
+
+        // The auth path should have 7 nodes (one from each level)
+        assert_eq!(auth.len(), PARAM_MERKLE_TREE_HEIGHT - 1);
+        assert_eq!(
+            auth,
+            vec![
+                tree.node(129),
+                tree.node(65),
+                tree.node(33),
+                tree.node(17),
+                tree.node(9),
+                tree.node(5),
+                tree.node(3),
+            ]
+        );
+    }
+\end{minted}
 
 \subsubsection{getRootFromAuthPath}\label{sec:get_root_from_auth_path}
 Verification involves recomputing the root from the authentication path:
@@ -2116,12 +2180,38 @@ Verification involves recomputing the root from the authentication path:
 \end{minted}
 This function iteratively recomputes hashes by traversing the tree from the selected leaves to the root. We have stripped all the non-interesting parts, and left the 2 main loops using the queue structure to iterate from the selected leaves up to the root. 
 
+As above we created several tests to ensure that the function adhered correctly to normal input. But we also tested against several odd inputs to make sure that we caught if the function failed in some edge cases or if the function was not implemented correctly. 
+\begin{minted}{rust}
+    #[test]
+    fn test_merkle_root_from_auth_wrong_commitments() {
+        let mut commitments = setup_test_commitments();
+
+        let mut prg = PRG::init_base(&[1]);
+        (0..PARAM_N).for_each(|i| prg.sample_field_fq_non_zero(&mut commitments[i]));
+        let tree = MerkleTree::new(commitments, None);
+
+        let selected_leaves = [233u16, 234u16, 235u16];
+        let mut commitments_tau = [[1_u8; PARAM_DIGEST_SIZE]; PARAM_L];
+        for i in selected_leaves {
+            commitments_tau[(i - 233) as usize] = commitments[0];
+        }
+
+        let mut auth = tree.auth_path(&selected_leaves);
+        let Ok(root) = MerkleTree::get_root_from_auth_path(
+            &mut auth,
+            &commitments_tau,
+            &selected_leaves,
+            None,
+        ) else {
+            panic!("Could not get merkle root from auth")
+        };
+        assert_ne!(tree.root(), root);
+    }
+\end{minted}
+In this example we check that based on wrong inputs the function fails. 
 \subsubsection{Galois field arithmetic}\label{sub:gf256_arith}
-As stated earlier, we wanted to implement the underlying arithmetic our selves and not rely on there being a library for the arithmetic of the field. This led us to implement the galois field arithmetic.
-We did this by creating a trait for field arithmetic:
-
-\todo{link to FieldArith trait}
-
+As stated earlier, we wanted to implement the underlying arithmetic our selves and not rely on a crate for the arithmetic of the field. This led us to implement the galois field arithmetic.
+We did this by creating a trait for field arithmetic, with the 
 This allows us to implement the field arithmetic for different types:
 \begin{minted}{rust}
 pub type FPoint = [u8; 4];
