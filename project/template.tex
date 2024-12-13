@@ -2037,17 +2037,84 @@ To be able to commit to shares we use the hasher that we just defined. The commi
 \end{itemize}
 We only create simple tests for this functionality as we rely on a hashing crate. We just test that the output of the function is the same base on the same input. And that if given a different salt the output is not the same.
 
-\subsubsection{Merkle Tree impl}\label{sub:merkle_tree_impl}
-\todo{When the specification is written write up the beginning for this.}
-When implementing the merkle tree we ran into a few issues due to the nature of the implementation. We decided to do it ourselves such that it fit with the specification. 
-This implementation was done using a single array to hold the whole tree, where the last 256 items in the array was the commitments. This made it so that when implementing the different methods we had to be careful and use the correct indexes. This proved to be quite difficult to keep track of. Furthermore, we decided to do the same optimization as was done in original SDITH implementation in C. 
+\subsection{Merkle Tree Implementation}\label{sub:merkle_tree_impl}
+\todo{Write the introduction for this section once the specification is complete.}
 
+The implementation of the Merkle tree encountered challenges due to its 1D array representation. Despite these, we retained this structure for its performance advantages. The tree is stored in a single array where the last half holds the commitments. Given that the protocol specifies fixed-size trees for each category, we leveraged constants from \autoref{sub:constants} to allocate the tree on the stack efficiently.
+
+We defined a trait for the Merkle tree with methods derived from the specification:
+\begin{itemize}
+  \item \texttt{new}: Builds a Merkle tree from a commitment array and salt.
+  \item \texttt{authPath}: Generates an authentication path for specific leaf indexes.
+  \item \texttt{getAuthSize}: Determines the size of the authentication path for serialization and signature parsing.
+  \item \texttt{getRootFromAuthPath}: Computes the root hash from commitments and an authentication path.
+\end{itemize}
+
+\subsubsection{new}\label{sec:new}
+We initially implemented the tree with a simple bottom-up approach, hashing child nodes and updating parent nodes. The root hash is stored at the array's first index and returned as the global commitment. A subsequent optimization introduced batching, inspired by a C++ implementation, where four parent hashes are computed simultaneously:
 \begin{minted}{rust}
+merkle_hash_x4(parent_indexes, left_child_hashes, right_child_hashes, salt);
+\end{minted}
+This provided a minor speed improvement, discussed further in \autoref{ch:bench}. \todo{Consider discussing attempts at parallelization.}
+
+\subsubsection{authPath and getAuthSize}\label{sec:auth_path}
+The initial \texttt{authPath} implementation iterated backward through the array, identifying missing nodes by checking parent-child relationships. For signature validation, we later adopted an optimized approach using \texttt{get\_revealed\_nodes}:
+\begin{minted}{rust}
+fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
+        if selected_leaves.is_empty() {
+            return vec![];
+        }
+
+        // Initialize
+        let mut revealed_nodes = vec![];
+        let mut q: Queue<usize> = queue![];
+
+        for selected_leaf in selected_leaves.iter() {
+          // Add the selected leaves to the queue
+        }
+
+        while q.peek().unwrap() != 1 {
+          // Walk up the tree and add the parent to the queue collecting all the revealed nodes on the way
+        }
+
+        revealed_nodes
+    }
 
 \end{minted}
+This function uses a queue to traverse the tree and identify revealed nodes. These nodes determine the size of the authentication path by multiplying their count by the hash digest size. The \texttt{authPath} method uses these revealed nodes to fetch their corresponding values:
+\begin{minted}{rust}
+fn auth_path(&self, selected_leaves: &[u16]) -> Vec<Hash> {
+    let revealed_nodes = Self::get_revealed_nodes(selected_leaves);
+    revealed_nodes.iter().map(|&idx| self.nodes[idx as usize]).collect()
+}
+\end{minted}
 
-We then build the tree buttom up by hashing the left and right children of the current node and storing the result in the next position in the array. We do this until we reach the root node, which we then return as our global commitment.
+\subsubsection{getRootFromAuthPath}\label{sec:get_root_from_auth_path}
+Verification involves recomputing the root from the authentication path:
+\begin{minted}{rust}
+    fn get_root_from_auth_path(
+        auth_path: &mut Vec<Hash>,
+        commitments: &[Hash],
+        selected_leaves: &[u16],
+        salt: Option<Hash>,
+    ) -> Result<Hash, &'static str> {
 
+        // Create the queue
+        let mut q: Queue<(Hash, usize)> = queue![];
+
+        for (i, selected_leaf) in selected_leaves.iter().enumerate() {
+          // Add the commitments to the queue
+        }
+        while q.peek().unwrap().1 != 1 {
+          // Traverse the tree from the selected leafs to the root and recompute the hashes
+          // If we recompute a parent put this into the queue to walk one step up in the tree
+        }
+        let (root, _) = q.remove().unwrap();
+
+        Ok(root)
+    }
+\end{minted}
+This function iteratively recomputes hashes by traversing the tree from the selected leaves to the root. We have stripped all the non-interesting parts, and left the 2 main loops using the queue structure to iterate from the selected leaves up to the root. 
 
 \subsubsection{Galois field arithmetic}\label{sub:gf256_arith}
 As stated earlier, we wanted to implement the underlying arithmetic our selves and not rely on there being a library for the arithmetic of the field. This led us to implement the galois field arithmetic.
