@@ -2272,10 +2272,13 @@ After defining the trait and general setup for the $GF(2)$ binary arithmetic, we
 
 \todo{Write about the implementation of the field extensions}
 
-
 \subsection{Field polynomials}\label{sub:field_polynomials} % (fold)
 
 \subsection{Field vector operations}\label{sub:field_vector_operations} % (fold)
+
+\subsection{Witness generation}\label{sub:witness_generation} % (fold)
+In order to create a public and private key pair, we need a witness for the syndrome decoding instance. As presented in the \autoref{eq:polynomial_representation} we need to create a set of polynomials that is based upon   a matrix $H$.
+The way we do this is by 
 
 \section{Categories}\label{sub:categories} % (fold)
 We tried reworking to use dynamically sized vectors instead of compile time sized arrays. Which proved to be a big rework and refactor. Benching showed slower running times. So instead we went with compile time script to set the constants.
@@ -2312,15 +2315,25 @@ One can now invoke the benchmarking for category one by running the following co
 
 
 \section{Key generation}
+We use the witness to set the public and private key. 
+
 
 \section{MPC}\label{sub:mpc_algo}
 After implementing all the subroutines, we could now do the MPC computations necessary for signing and verification.
+
+\subsection{Signing}\label{sub:signing}
+This is basically just a summarization of all the sub protocols, as we have separated out all the logic into different subroutines. But 
+
+\subsection{Verification}\label{sub:verification}
+
+
 
 \section{Comparison with spec impl}\label{sub:comparison_with_spec_impl}
 In order to verify and debug our own code we tried to setup our implementation to fit with the specification implementation in C, meaning we had to run their code in order to get the intermediate data in order to compare the internal states.
 Here we found a bug in the way the view-opening challenges was calculated, they had forgotten to finalize the Shake before squeezing, which was a problem because in the tiny keccak rust library this was always done when initializing a hash or xof.
 Furthermore we found that in order to generate the same output from the xof we needed to first rotate the permutation once by supplying an empty vector before actually using the function.
 We also found that the merkle tree was not using the salt.
+
 
 \section{Optimizations}
 
