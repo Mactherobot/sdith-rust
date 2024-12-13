@@ -1,24 +1,24 @@
 //! # Commitment
-//! 
+//!
 //! Commitment primitive for shares in the MPCitH protocol.
 //! Allows for verifying the MPC protocol _in the head_ execution.
 
-use crate::constants::types::{Hash, Salt};
 use super::prg::hashing::{SDitHHash, SDitHHashTrait as _};
+use crate::constants::types::{Hash, Salt};
 
 /// The prefix for the commitment hash function.
 const COMMITMENT_HASH_PREFIX: [u8; 1] = [0];
 
 /// Commit to a share, using a salt, execution index and party index, through hashing.
-/// 
+///
 /// `commit_share(salt, e, i, share) = Hash(0 || salt || e_0 || e_1 || i_0 || i_1 || share)`
-/// 
+///
 /// # Arguments
 /// - `salt`: 2λ-bit salt
 /// - `e`: Execution index [`crate::constants::params::PARAM_TAU`] of the share
 /// - `i`: Party index [`crate::constants::params::PARAM_N`] of the share
 /// - `share`: Share data to commit to
-/// 
+///
 /// where `e` and `i` are split into little-endian bytes.
 pub fn commit_share(salt: &Salt, e: u16, i: u16, share: &[u8]) -> Hash {
     // get e_0, e_1 such that e = e_0 + 256 * e_1
@@ -50,5 +50,19 @@ mod commit_share_tests {
         let hash2 = super::commit_share(&salt, e, i, &share);
 
         assert_eq!(hash1, hash2);
+    }
+
+    #[test]
+    fn test_that_different_salt_gives_different_output() {
+        let salt = [0u8; PARAM_SALT_SIZE];
+        let diff_salt = [1u8; PARAM_SALT_SIZE];
+        let e = 1;
+        let i = 2;
+        let share = [3u8; PARAM_SALT_SIZE];
+
+        let hash1 = super::commit_share(&salt, e, i, &share);
+        let hash2 = super::commit_share(&diff_salt, e, i, &share);
+
+        assert_ne!(hash1, hash2);
     }
 }
