@@ -2268,9 +2268,78 @@ where
 This test ensures that the field arithmetic implementation behaves correctly, providing confidence in its use throughout the rest of the system.
 
 \subsection{Field Extensions}\label{sub:field_extensions}
-After defining the trait and general setup for the $GF(2)$ binary arithmetic, we could then implementing the methods for the $GF(2^8)$ field. The field is defined by the polynomial $x^8 + x^4 + x^3 + x + 1$. We implemented the field arithmetic using the irreducible polynomial $x^8 + x^4 + x^3 + x + 1$.
+After defining the trait and general setup for $GF(2)$ binary arithmetic, we proceeded to implement the methods for the $GF(2^4)$ and $GF(2^8)$ fields.
 
-\todo{Write about the implementation of the field extensions}
+\subsubsection{First Simple Extension}\label{sec:first_simple_extension}
+
+For the $GF(2^4)$ field, we did not implement the functions as a trait, as they are solely used as sub-functions for the $GF(2^8)$ field. To represent an element in the $GF(2^4)$ field, we used a 2-byte array, representing $(a, b) = a + bX$. 
+
+\paragraph{Addition in $GF(2^4)$}
+
+Adding two elements in $GF(2^4)$ is straightforward: it is equivalent to performing a bitwise XOR operation on each component. The implementation is as follows:
+
+\begin{minted}{rust}
+fn gf256_ext16_add(a: [u8; 2], b: [u8; 2]) -> [u8; 2] {
+    [a[0].field_add(b[0]), a[1].field_add(b[1])]
+}
+\end{minted}
+
+\paragraph{Multiplication in $GF(2^4)$}
+
+Multiplication is more intricate. Given two elements $(a, b)$ and $(c, d)$, we compute their product as:
+\[
+(a + bX) \cdot (c + dX)
+\]
+The Rust implementation of this operation is as follows:
+
+\begin{minted}{rust}
+fn gf256_ext16_mul(_a: [u8; 2], _b: [u8; 2]) -> [u8; 2] {
+    let [a, b] = _a;
+    let [c, d] = _b;
+    let bd = b.field_mul(d);
+    let ac = a.field_mul(c);
+    let sum_ab = a.field_add(b);
+    let sum_cd = c.field_add(d);
+
+    let c0 = u8::field_add(&ac, bd.field_mul(0x20));
+    let c1 = u8::field_sub(&sum_ab.field_mul(sum_cd), ac);
+    [c0, c1]
+}
+\end{minted}
+
+Here:
+\begin{itemize}
+    \item $ac$ is the product of the constant terms $a$ and $c$.
+    \item $bd \cdot 0x20$ accounts for the reduction modulo the irreducible polynomial.
+    \item The linear terms are computed using the sum of $a+b$ and $c+d$, with adjustments to maintain consistency with field arithmetic.
+\end{itemize}
+
+\paragraph{Testing the $GF(2^4)$ Field}
+
+Since the $GF(2^4)$ field is only used as a sub-function for the $GF(2^8)$ field, we implemented a minimal test to verify correctness. Specifically, we checked that a simple multiplication by 32 is consistent with the operation $(a, b) \cdot (0, 32)$:
+
+\begin{minted}{rust}
+    fn test_f_256_16_mul_32() {
+        let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], None);
+        let a: [u8; 2] = prg.sample_field_fq_elements_vec(2).try_into().unwrap();
+        let n32 = [0u8, 32u8];
+
+        let mul32 = gf256_ext16_mul32(a);
+        let expected = gf256_ext16_mul(a, n32);
+
+        assert_eq!(mul32, expected);
+    }
+\end{minted}
+
+More extensive testing was reserved for the $GF(2^8)$ field, as it is the primary target of our implementation.
+
+\todo{Maybe reference the section that defines this}
+% subsubsection First simple extension (end)
+\subsubsection{GF256}\label{sec:gf_} % (fold)
+Now that we have the $GF(2^4)$ field we can implement the $GF(2^8)$ field arithmetic. We represent an element in the $GF(2^8)$ field as a 4-byte array. So we have a representation of $(a,b,c,d) = a + bX + cX^2 + dX^3$. 
+
+
+% subsubsection GF256 (end)
 
 \subsection{Field polynomials}\label{sub:field_polynomials} % (fold)
 
