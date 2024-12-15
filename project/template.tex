@@ -2272,7 +2272,7 @@ After defining the trait and general setup for $GF(2)$ binary arithmetic, we pro
 
 \subsubsection{First Simple Extension}\label{sec:first_simple_extension}
 
-For the $GF(2^4)$ field, we did not implement the functions as a trait, as they are solely used as sub-functions for the $GF(2^8)$ field. To represent an element in the $GF(2^4)$ field, we used a 2-byte array, representing $(a, b) = a + bX$. 
+For the $GF(q^2)$ field, we did not implement the functions as a trait, as they are solely used as sub-functions for the $GF(q^8)$ field. To represent an element in the $GF(q^2)$ field, we used a 2-byte array, representing $(a, b) = a + bX$. 
 
 \paragraph{Addition in $GF(2^4)$}
 
@@ -2314,9 +2314,9 @@ Here:
     \item The linear terms are computed using the sum of $a+b$ and $c+d$, with adjustments to maintain consistency with field arithmetic.
 \end{itemize}
 
-\paragraph{Testing the $GF(2^4)$ Field}
+\paragraph{Testing the $GF(q^2)$ Field}
 
-Since the $GF(2^4)$ field is only used as a sub-function for the $GF(2^8)$ field, we implemented a minimal test to verify correctness. Specifically, we checked that a simple multiplication by 32 is consistent with the operation $(a, b) \cdot (0, 32)$:
+Since the $GF(q^2)$ field is only used as a sub-function for the $GF(q^4)$ field, we implemented a minimal test to verify correctness. Specifically, we checked that a simple multiplication by 32 is consistent with the operation $(a, b) \cdot (0, 32)$:
 
 \begin{minted}{rust}
     fn test_f_256_16_mul_32() {
@@ -2331,17 +2331,41 @@ Since the $GF(2^4)$ field is only used as a sub-function for the $GF(2^8)$ field
     }
 \end{minted}
 
-More extensive testing was reserved for the $GF(2^8)$ field, as it is the primary target of our implementation.
+More extensive testing was reserved for the $GF(q^4)$ field, as it is the primary target of our implementation.
 
 \todo{Maybe reference the section that defines this}
 % subsubsection First simple extension (end)
 \subsubsection{GF256}\label{sec:gf_} % (fold)
-Now that we have the $GF(2^4)$ field we can implement the $GF(2^8)$ field arithmetic. We represent an element in the $GF(2^8)$ field as a 4-byte array. So we have a representation of $(a,b,c,d) = a + bX + cX^2 + dX^3$. 
+Now that we have the $GF(q^2)$ field we can implement the $GF(q^4)$ field arithmetic. We represent an element in the $GF(q^4)$ field as a 4-byte array. So we have a representation of $(a,b,c,d) = a + bX + cX^2 + dX^3$. 
+As mentioned before in the \autoref{sub:field_arithmetic} we have a trait for the required field operations, so we can just implement those on the type $FPoint$. First we implement the addition and multiplication operations:
+
+\paragraph{Addition in $GF(q^4)$}
 
 
+
+\begin{minted}{rust}
+    fn field_mul(&self, rhs: Self) -> Self {
+        let a = *self;
+        let [p0, p1, q0, q1] = a;
+        let [r0, r1, s0, s1] = rhs;
+
+        let qs = gf256_ext16_mul([q0, q1], [s0, s1]);
+        let pr = gf256_ext16_mul([p0, p1], [r0, r1]);
+        let p_plus_q = gf256_ext16_add([p0, p1], [q0, q1]);
+        let r_plus_s = gf256_ext16_add([r0, r1], [s0, s1]);
+
+        let [r0, r1] = gf256_ext16_add(gf256_ext16_mul32(qs), pr);
+        let [r2, r3] = gf256_ext16_add(gf256_ext16_mul(p_plus_q, r_plus_s), pr);
+
+        [r0, r1, r2, r3]
+    }
+\end{minted}
+
+\todo{Write about the addition and multiplication in the $GF(2^8)$ field}
 % subsubsection GF256 (end)
 
 \subsection{Field polynomials}\label{sub:field_polynomials} % (fold)
+We can now define polynomials using the $GF(2^8)$ field, and do simple arithmetic upon the elements. 
 
 \subsection{Field vector operations}\label{sub:field_vector_operations} % (fold)
 
