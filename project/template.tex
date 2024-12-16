@@ -44,6 +44,9 @@
 \newtheorem{definition}{Definition}[section]
 \newcommand{\definitionautorefname}{Definition}
 
+\newtheorem{protocol}{Protocol}[section]
+\newcommand{\protocolautorefname}{Protocol}
+
 \newtheorem{proposition}{Proposition}[section]
 \newcommand{\propositionautorefname}{Proposition}
 
@@ -426,7 +429,7 @@ A notable feature of this construction is that if the parties possess two shares
     & = \texttt{open}(\sh{x}) + \texttt{open}(\sh{y}) \\
     & = x + y
 \end{align*}
-This property enables us to easily produce Multi-Party Computation (MPC) (see \autoref{sec:mpc}) on top of such a SSS\@. However, to allow full arithmetic circuits, we need more elaborate protocols, which we will discuss in \autoref{sec:zk-arithmetic-mpc-circuits}.
+This property enables us to easily produce Multi-Party Computation (MPC) (see \autoref{sec:mpc}) on top of such a SSS\@. However, to allow full arithmetic circuits, we need more elaborate protocols, which we will discuss in \autoref{sec:mpc_sacrificing}.
 
 \subsubsection{Threshold SSS}\label{sec:threshold-sss}
 
@@ -600,7 +603,7 @@ The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, buil
 
 We will describe the basic construction suggested by Ishai et al~\cite{ishai2007zero}. For now, we will only consider an underlying semi-honest MPC protocol $f_{add}$ for $N$ parties with $N-1$ secrecy based on \textit{additive} secret sharing \autoref{sec:additive-sss}.
 
-\begin{definition}\label{def:mpcinth_basic}
+\begin{protocol}\label{def:mpcinth_basic}
   Given $f_{add}$ a ZK relation $\mathcal{R}$ for some public statement $x$, and a witness $w$ (\autoref{sec:zk}).
   Let $w_i$ be an additive secret share of $\sh{w}$ for the party $P_i$. Let $f_{add}(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, i.e. $f_{add}(x,w)$ accepts if $(x,w) \in \mathcal{R}$.
 
@@ -620,7 +623,7 @@ We will describe the basic construction suggested by Ishai et al~\cite{ishai2007
             \item\label{prop:mpcinth_knowledge} The views output $1$ according to $\mathcal{R}$ meaning that $\mathcal{R}(x,w) = 1$.
           \end{enumerate}
   \end{enumerate}
-\end{definition}
+\end{protocol}
 
 We see the following properties of the protocol:
 
@@ -644,7 +647,7 @@ Secondly, the prover could have tampered with the views. In this, the prover mus
 
 The basic MPC-in-the-Head protocol serves as a foundation for constructing zero-knowledge (ZK) proofs for any NP relation and has been demonstrated to yield relatively efficient ZK protocols~\cite{feneuil2022syndrome,baum2020concretely,katz2018improved}. Giacomelli et al. and Chase et al.~\cite{katz2018improved,giacomelli2016zkboo,chase2017post} provided concrete implementations of the \emph{MPC-in-the-Head} approach and observed that employing a 3-party protocol $\Pi$ achieved optimal performance within the space of protocols they analyzed. However, due to the small number of parties, the soundness of the resulting honest-verifier zero-knowledge (HVZK) proof is relatively weak. As a consequence, a large number of parallel repetitions is required to achieve negligible soundness error. This increases the size of the proofs and the communication overhead of the protocols. In this section we will describe a variant of the MPC-in-the-Head protocol which is sound for the addition relation.
 
-\section{MPC Product verification using sacrificing}
+\section{MPC Product verification using sacrificing}\label{sec:mpc_sacrificing}
 
 To enhance the performance of MPCitH-based zero-knowledge protocols, Baum and Nof introduced a variant of the framework built around a specialized MPC protocol. This protocol efficiently verifies a product relation between three values, $  a \cdot b = c  $. Their contributions significantly improved the efficiency of MPCitH-based zero-knowledge protocols and laid the foundation for the SD-in-the-Head protocol, which is designed to prove the SD relation (\autoref{sec:syndrome}).
 
@@ -654,7 +657,7 @@ The underlying MPC protocol is based on arithmetic circuits, where addition oper
   A Beaver triple is a tuple $ (a, b, c) $ such that $ a \cdot b = c $, where $ a, b, c \in \mathbb{F}_q $.
 \end{definition}
 
-\begin{definition}[MPC Multiplication using beaver triples]\label{def:beaver-multiplication}
+\begin{protocol}[MPC Multiplication using beaver triples]\label{def:beaver-multiplication}
   Given a $+$-homomorphic additive secret sharing scheme and a preprocessed random beaver triple $\sh{a}, \sh{b}, \sh{c} $, the parties do the following:
   \begin{enumerate}
     \item The parties compute $ \sh{\alpha} = \sh{x} - \sh{a} $ and $ \sh{\beta} = \sh{y} - \sh{b} $.
@@ -668,13 +671,13 @@ The underlying MPC protocol is based on arithmetic circuits, where addition oper
            & = \sh{ab} - (x - a) \cdot \sh{b} - (y - b) \cdot \sh{a} + (x - a) \cdot (y - b) \\
            & = \sh{xy}
   \end{align*}
-\end{definition}
+\end{protocol}
 
 Proposals for zero-knowledge proofs -- such as the \textit{Cut-and-Choose} protocol~\cite{katz2018improved,baum2020concretely} -- utilize \autoref{def:beaver-multiplication}, combined with preprocessing techniques, to achieve promising results\footnote{See \autoref{sec:zk-cut-and-choose}}.
 
 Building upon these protocols, Baum and Nof~\cite{baum2020concretely} propose a variant that shifts the focus from simulating the computation of a product to simulating the \textit{verification} of the triple relation instead. This verification is achieved by sacrificing another triple, ensuring correctness while improving performance. Consider the following protocol, which is based on the MPC protocol described in~\cite{damgaard2012multiparty}.
 
-\begin{definition}[Verification of a multiplication triple by sacrificing another]\label{def:sacrifice}
+\begin{protocol}[Verification of a multiplication triple by sacrificing another]\label{def:sacrifice}
   Given an input triple $(x,y,z) \in \mathbb{F}$ random shared triple $(\sh{a}, \sh{b}, \sh{c}) \in \mathbb{F}$, it is possible to verify the correctness of the statement $z = x \cdot y$ without revealing any information on either of the input. Define \texttt{open} according to \autoref{def:ss-share}.
   \begin{enumerate}
     \item The parties generate a random $\epsilon \in \mathbb{F}$.
@@ -683,7 +686,7 @@ Building upon these protocols, Baum and Nof~\cite{baum2020concretely} propose a 
     \item The parties locally set $\sh{v} = \epsilon\sh{z} - \sh{c} + \alpha  \cdot \sh{b} + \beta  \cdot \sh{a} - \alpha  \cdot \beta$.
     \item The parties run \texttt{open}$(\sh{v})$ to obtain $v$ and accept iff $v = 0$.
   \end{enumerate}
-\end{definition}
+\end{protocol}
 
 Observe that if both triples are correct multiplication triples (i.e., $z = xy$ and $c = ab$) then the parties will always accept since
 
@@ -777,241 +780,166 @@ Within the context of the SD-in-the-Head protocol, the transformation from a ZK 
 
 \chapter{Specification}\label{ch:spec}
 
-\todo{more detailed description of the algorithm
-  e.g. how we sampled I[e] witness challenge
-  table of spec params (with our code naming and different categories)}
-
-For our implementation, we selected the \textit{threshold} variant of the SD-in-the-Head protocol~\cite{aguilarsyndrome11,feneuil2023threshold}, as this variant offers the most significant performance improvements compared to the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11,aguilar2023return}, albeit at the cost of a slightly larger signature size.
-
-In this chapter, we provide a specification of the initial SD-in-the-Head protocol, along with the details specific to the implemented threshold variant. We include pseudo-code for the major subroutines and algorithms, as well as a comprehensive description of the parameters used in the protocol. Finally, we present an overview of the associated security guarantees.
-
-\section{SD-in-the-Head Protocol}
-The original SD-in-the-Head protocol is based on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field. As a reminder, problem is expressed as follows (see \autoref{sec:syndrome})
+The SD-in-the-Head protocol is founded on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field, as described in \autoref{sec:syndrome}. To recall, the problem is formally stated as follows:
 \begin{quote}
-  For a parity check matrix $H \in \mathbb{F}_q^{(m-k)\times m}$ in standard form and a syndrome $y$. The challenge is to find a vector $x$ s.t. $Hx = y$ and $wt(x) \leq w$.
+  Given a parity-check matrix $H \in \mathbb{F}_q^{(m-k) \times m}$ in standard form and a syndrome $y \in \mathbb{F}_q^{m-k}$, the challenge is to find a vector $x \in \mathbb{F}_q^m$ such that $Hx = y$ and $wt(x) \leq w$, where $wt(x)$ denotes the Hamming weight of $x$. This can be expressed as:
   \begin{align*}
-    y = Hx = H'x_a + x_b \text{ \ \ \ where \ \ \ } H' \in \mathbb{F}_q^{(m-k)\times k}
+    y = Hx = H'x_a + x_b, \quad \text{where } H' \in \mathbb{F}_q^{(m-k) \times k},
   \end{align*}
-  for $x = (x_a | x_b)$. We have the polynomial representation of the problem
-  \begin{align*}
-    S\cdot Q = P\cdot F \text{ \ \ \ where \ \ \ } S, Q, P, F \in \mathbb{F}_q[X]
-  \end{align*}
+  with $x = (x_a \mid x_b)$ denoting the concatenation of subvectors $x_a$ and $x_b$.
 \end{quote}
-\noindent Testing that the relation holds has a small probability of a \textit{false positive}. We denote this as $p$. The protocol takes several steps to reduce $p$. First, the relation is evaluated at random points $\{r_k \in \mathbb{F}_q\}_{k\in[t]}$. Second, the field of the random points is extended from $\mathbb{F}_q$ to $\mathbb{F}_{q^4}$.
 
-security
+The SD-in-the-Head protocol establishes a signature scheme by demonstrating the correctness of a public SD instance $(H, y)$ using a secret witness derived from $x$. Its construction unfolds in three main steps:
+\begin{enumerate}
+  \item \textbf{Defining an MPC protocol:} Define a multi-party computation (MPC) protocol that enables $N$ parties to collaboratively verify the correctness of the public SD instance $(H, y)$ using a private witness $x$.
+  \item \textbf{Transforming into a ZKP:} Convert the MPC protocol into a zero-knowledge proof (ZKP) through the MPC-in-the-Head (MPCitH) framework, detailed in \autoref{sec:mpcinth}.
+  \item \textbf{Deriving a signature scheme:} Adapt the ZKP into a digital signature scheme using the Fiat-Shamir transformation, as described in \autoref{sec:fiatshamir}.
+\end{enumerate}
 
-The SD-in-the-Head protocol is based on the \textit{Multi-Party Computation in the Head} (MPCitH) framework (see \autoref{sec:mpcinth}). \todo{Explain why we then use MPC and the linearity of polynomial evaluation with sacrificing random beaver triples}
+The construction is highly modular, allowing flexibility and adaptability, as you can tweak the SD instance, the MPC protocol, the MPCitH and Fiat-Shamir transformations. The authors propose two distinct protocol variants: the \textit{hypercube} variant and the \textit{threshold} variant. For this work, we focus on the \textit{threshold} variant~\cite{aguilarsyndrome11,feneuil2023threshold,feneuil2023threshold2}, as it offers significant performance enhancements compared to both the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11,aguilar2023return,feneuil2023threshold2}, albeit at the cost of slightly larger signature sizes.
 
-\section{Field implementation}
+This chapter presents a comprehensive specification of the SD-in-the-Head MPC protocol, its transformation into a signature scheme, and the specific implementation details of the threshold variant. Additionally, we describe key optimizations applied to the protocol, such as avoiding interpolation and utilizing the $d$-split variant of the SD instance. A detailed table summarizing the protocol parameters and security assumptions is provided in \autoref{tab:sdith-protocol-parameters}.
 
-\subsection{Field extension}
+\begin{table}[]
+  \begin{tabular}{p{0.12\textwidth}p{0.78\textwidth}}
+    \hline
+    \multicolumn{2}{l}{\textbf{Syndrome Decoding Parameters}}                                                                             \\
+    $q$                          & Size of the SD base field.                                                                             \\
+    $m$                          & Code length.                                                                                           \\
+    $k$                          & Vector dimension.                                                                                      \\
+    $w$                          & Hamming weight bound.                                                                                  \\
+    $d$                          & Parameter of the $d$-splitting variant.                                                                \\ \hline
 
-First extend $F_q$ to $F_{q^4} = F_q[Z] / (Z^2 + Z + 32(X))$. This is done by representing elements in the field as polynomials of degree at most 1 with coefficients in $F_q$. \todo{Define addition and multiplication}
+    \multicolumn{2}{l}{\textbf{Signature Parameters}}                                                                                     \\
+    $\lambda$                    & Security parameter.                                                                                    \\
+    $N$                          & Number of secret parties.                                                                              \\
+    $\tau$                       & Number of repetitions.                                                                                 \\
+    $t$                          & Number of random evaluation points.                                                                    \\ \hline
 
-\subsubsection{Polynomial evaluation}
-\todo{Should this be moved to the specification section?}
-For polynomial evaluation in the algorithm, seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. The polynomial $P(x)$ is defined as
-\begin{align}
-  \textstyle\bigcup_{|Q|}(F_q)^{|Q|} \times F_q^\eta & \rightarrow F_q^\eta                 \nonumber                                                    \\
-  Q(r)                                               & = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1} &  & Q_i \in F_q, r \in F_q^\eta\label{eq:mpcpoly}
-\end{align}
+    \multicolumn{2}{l}{\textbf{Syndrome Decoding Instance}}                                                                               \\
+    $H$                          & Parity-check matrix.                                                                                   \\
+    $x$                          & Solution of the SD instance satisfying $wt(x) \leq w$.                                                 \\
+    $y$                          & Syndrome computed as $y = Hx$.                                                                         \\
+    $H'$                         & Random part of the parity-check matrix such that $H = (H' \mid I_{m-k})$.                              \\
+    $(x_A, x_B)$                 & Two halves of the SD solution satisfying $y = H' x_A + x_B$.                                           \\ \hline
 
-\todo{See gf256\_ext.rs}
+    \multicolumn{2}{l}{\textbf{Fields}}                                                                                                   \\
+    $\mathbb{F}_q$               & Field with $q$ elements: base field of the SD instance.                                                \\
+    $f_1, \ldots, f_q$           & Elements of $\mathbb{F}_q$.                                                                            \\
+    $\mathbb{F}_{\text{points}}$ & Extension field of $\mathbb{F}_q$ (base field of the MPC elements $\alpha, \beta, v, r, \varepsilon$). \\
+    $\eta$                       & Field extension such that $\mathbb{F}_{\text{points}} = \mathbb{F}_q^\eta$.                            \\ \hline
 
-\section{Merkle Tree Commitment}
+    \multicolumn{2}{l}{\textbf{Multi-Party Computation}}                                                                                  \\
+    $S, Q, P$                    & Polynomials in $\mathbb{F}_q[X]$, witnesses for the syndrome decoding proof.                           \\
+    $F$                          & Vanishing polynomial of the set $\{f_1, \ldots, f_m\} \subseteq \mathbb{F}_q$                          \\
+    $a, b, c$                    & Beaver triple satisfying $a_k \cdot b_k = c_k$, $\forall k \in [1 : t]$.                               \\
+    $\alpha, \beta, v$           & Broadcast values (coordinates in $\mathbb{F}_{\text{points}}$).                                        \\
+    $i$                          & Index of a party in $[1 : N]$.                                                                         \\
+    $\sh{v}$                     & Sharing of a value $v$.                                                                                \\
+    $p$                          & False positive probability of the MPC protocol.                                                        \\ \hline
 
-\todo{Right now this section sounds more like a section in "Implementation". Instead it should describe the spec like their paper does with the addition of the getRevealedNodes method.}
+    \multicolumn{2}{l}{\textbf{Threshold variant}}                                                                                        \\
+    $\ell$                       & Privacy threshold (number of open parties).                                                            \\
+    $I$                          & Set of open parties $(I \subseteq [1 : N], |I| = \ell)$.                                               \\
+  \end{tabular}
+  \caption{SDitH protocol parameters overview~\cite[Table 1]{aguilarsyndrome11}.}\label{tab:sdith-protocol-parameters}
+\end{table}
 
-We chose to follow the definitions for the merkle tree provided in \cite{aguilarsyndrome11}. However, we added a separate method that calculates bottom up the revealed nodes based on the view opening challenges. This is used to know the length of the authentication path that is added to the signature and is needed when parsing the signature for verification. The algorithm uses the queue structure which is also mentioned in the spec, where the tree structure is a 1D array with the last elements being the leaf. First it checks for empty input. Then we initiate an empty list to hold the revealed nodes. Now in order to traverse the tree we will get the $heightIndex$ and $lastIndex$, which are the current layer of the tree, and the index of the 1D array of where the current layer stops. Lastly we need a queue to hold the indexes. Now in order to find the revealed nodes it starts by adding the indexes of the selected leaves to the queue. Then we go through the queue until the next index is $1$ which indicates that we are at the root. In the while loop we first get the current index, and then check if we have gone up a layer in the tree, and if the current node is a left child. If the current node is a left child and it is the last index in the layer, then we can just skip to the next node because we know it has no sibling. If it is not the last node we get the next node as a candidate, if the queue is not empty. If the current node is still the left child, and the next node in the queue is the other child of the same parent we do not need to add this as a revealed node as it is part of the known values. But if the next node is not the right child of the current node we add it as a revealed node. If the current node is not the left child we add the left child to the revealed nodes. And then we add the parent index to the queue. When we exit the while loop we have traversed the tree bottom up adding for each layer the neighbours of the selected leaves. The algorithm is described in pseudocode in \autoref{alg:get-revealed-nodes}.
+\section{The MPC Protocol}
 
-\todo{change last sentence}
+The SD-in-the-Head protocol builds upon the \textit{Multi-Party Computation in the Head} (MPCitH) framework. As a first step, we describe the underlying MPC protocol, which is used to verify the polynomial relation of the SD instance as detailed in \autoref{sec:polynomial_representation}:
+\begin{align*}
+  S \cdot Q = P \cdot F, \quad \text{where } S, Q, P, F \in \mathbb{F}_q[X].
+\end{align*}
 
-\begin{breakablealgorithm}
-  \caption{Get Revealed Nodes for Selected Leaves in Merkle Tree}\label{alg:get-revealed-nodes}
-  \begin{algorithmic}[1]
-    \Require $selectedLeaves$: List of selected leaf indices
-    \Ensure List of revealed node indices
+The foundations for secret sharing and multi-party computation (MPC) are presented in \autoref{sec:additive-sss} and \autoref{sec:mpc}, respectively. The SD-in-the-Head MPC protocol is constructed using the sacrificing protocol introduced by Baum and Nof~\cite{baum2020concretely}, as detailed in \autoref{sec:mpc_sacrificing}.
 
-    \Function{getRevealedNodes}{$selectedLeaves$}
-    \If{$selectedLeaves$ is empty}
-    \State \Return empty list
-    \EndIf
+\begin{protocol}[SD-in-the-Head MPC protocol]\label{def:sdith-mpc}
+  We assume the existence of a random oracle $R$ to sample values. This random oracle is later replaced by the verifier's challenge in the MPCitH framework. Given a public SD instance $(H, y)$, and the private sharings for each party $(\sh{x_A}, \sh{P}, \sh{Q})$, as well as $t$ sharings of random beaver triples $\sh{a}, \sh{b}, \sh{c}$, the protocol proceeds as follows:
+  \begin{enumerate}
+    \item Sample $r, \epsilon \in_R \mathbb{F}_{\text{points}}^t$ uniformly at random.
+    \item For each party $P_i \in [1 : N]$:
+          \begin{enumerate}
+            \item Set $\sh{x_B} = y - H' \sh{x_A}$.
+            \item Compute $\sh{S}$ via Lagrange interpolation of $\sh{x} = (\sh{x_A} \mid \sh{x_B})$.\label{step:sdith-mpc-lagrange-interpolation}
+            \item Locally evaluate $\sh{S(r_k)}$, $\sh{Q(r_k)}$, and $\sh{F \cdot P(r_k)}$ for all $r_k \in \mathbb{F}_{\text{points}}$.
+          \end{enumerate}
+    \item For each party $P_i \in [1 : N]$ and for all $j \in [t]$, verify $(\sh{S(r_k)}, \sh{Q(r_k)}, \sh{P \cdot F(r_k)})$ by sacrificing $(\sh{a_k}, \sh{b_k}, \sh{c_k})$:
+          \begin{enumerate}
+            \item Compute $\sh{\alpha_k} = \epsilon_k \cdot \sh{Q(r_k)} + \sh{a_k}$ and $\sh{\beta_k} = \sh{S(r_k)} + \sh{b_k}$.
+            \item Broadcast $\sh{\alpha_k}$ and $\sh{\beta_k}$ to publicly recompute $\alpha_k$ and $\beta_k$.
+            \item Compute:
+                  \begin{align*}
+                    \sh{v_k} & = \epsilon_k \cdot \sh{F \cdot P(r_k)} - \sh{c_k} + \alpha_k \cdot \sh{b_k} + \beta_k \cdot \sh{a_k} - \alpha_k \cdot \beta_k.
+                  \end{align*}
+            \item Broadcast $\sh{v_k}$ to publicly recompute $v_k$.
+            \item Output \texttt{Accept} if $v_k = 0$, and \texttt{Reject} otherwise.
+          \end{enumerate}
+  \end{enumerate}
+\end{protocol}
 
-    \State $revealedNodes \gets \text{empty list}$
-    \State $(heightIndex,\; lastIndex) \gets (1 \ll treeHeight,\; treeNodes - 1)$
-    \State $queue \gets \text{empty queue}$
+In its basic form, the MPC protocol is assumed to be a $(N-1, N)$-private MPC protocol. However, the protocol can be optimized using $(\ell, N)$-private threshold secret sharing, where $\ell < N - 1$. This threshold variant adjustment allows for improved efficiency while maintaining security.
 
-
-    \ForAll{$leaf \in selectedLeaves$} \Comment{Add commitments to the queue}
-    \State $val \gets (1 \ll treeHeight) + leaf$
-    \If{$\text{queue.add}(val)$ fails}
-    \State \textbf{panic} ``Could not add element to queue''
-    \EndIf
-    \EndFor
-
-    \While{$queue.peek() \neq 1$} \Comment{Do until we reach the root}
-    \State $index \gets queue.remove()$
-
-    \If{$index < heightIndex$}
-    \State $heightIndex \gets heightIndex \gg 1$
-    \State $lastIndex \gets lastIndex \gg 1$
-    \EndIf
-
-    \State $isLeftChild \gets (index \; \% \; 2 == 0)$
-
-    \If{$isLeftChild \land index == lastIndex$}
-    \Comment{Node has no sibling}
-    \State \textbf{continue}
-    \Else
-    \State $candidateIndex \gets 0$
-    \If{\textbf{not} $queue.isEmpty()$}
-    \State $candidateIndex \gets queue.peek()$
-    \EndIf
-
-    \If{$isLeftChild \land (candidateIndex == index + 1)$}
-    \State $queue.remove()$
-    \ElsIf{$isLeftChild$}
-    \State $revealedNodes.append(index + 1)$
-    \Else
-    \State $revealedNodes.append(index - 1)$
-    \EndIf
-    \EndIf
-
-    \State $parentIndex \gets index \gg 1$
-    \If{$queue.add(parentIndex)$ fails}
-    \State \textbf{panic} ``Could not add element to queue''
-    \EndIf
-    \EndWhile
-
-    \State \Return $revealedNodes$
-    \EndFunction
-
-  \end{algorithmic}
-\end{breakablealgorithm}
+To analyze the security of the protocol, we define its false positive probability, denoted as $p$. The false positive probability quantifies the likelihood that the MPC protocol incorrectly accepts an invalid instance. The following lemma formally characterizes $p$:
 
 
-\todo{Can we use Haraka v2}
+\begin{lemma}[False positive probability $p$ of \autoref{def:sdith-mpc}]
+  Let $x_A = \texttt{open}(\sh{x_A})$. If $x_A$ corresponds to a valid SD instance $(H', y)$ and if all sharings are correctly generated. Then \autoref{def:sdith-mpc} always outputs \texttt{Accept}.
+  Otherwise, the probability of a false positive is bounded by
+  \begin{align*}
+    p = \sum_{i=0}^t \left(\frac{m + w - 1}{|\mathbb{F}_{q^4}|}\right)^i \cdot \left(1 - \frac{m + w - 1}{|\mathbb{F}_{q^4}|}\right)^{t-i} \cdot \left(\frac{1}{|\mathbb{F}_q|}\right)^{t-i}
+  \end{align*} over the randomness $r$ and $\epsilon$.
+\end{lemma}
 
-\section{Hashing and XOF}
+\subsection{Avoiding interpolations for $S$}\label{sec:sdith-mpc-avoid-interpolation}
+Currently, step~\ref{step:sdith-mpc-lagrange-interpolation} in \autoref{def:sdith-mpc} utilizes interpolation to compute $\sh{S}$ for each share $\sh{x}$. However, interpolation is computationally expensive. To mitigate this, we redefine the SD instance as follows:
 
-\todo{Write about Shake, Keccak} and how we initiate the hash function and XOF
+\begin{definition}[Redefined SD instance $y = Hx$]
+  Let $s$ represent the coefficients of the polynomial $S$ in \autoref{eq:polynomial_representation}, and let $V$ be a matrix such that:
+  \begin{align*}
+    S = \text{Lagrange Interpolation}(x) \Leftrightarrow s = Vx.
+  \end{align*}
+  The SD instance is then redefined as:
+  \begin{align*}
+    y = HVx.
+  \end{align*}
+\end{definition}
 
-\section{Limbo trick}
+This redefinition preserves the security properties of the original SD problem, as the linear code $\mathcal{C}_{HV}$ remains uniformly random. This is due to the randomness of $\mathcal{C}_H$ and the invertibility of $V$.
+
+With this modification, we can replace the sharing $\sh{x_A}$ by representing $s = (s_A \mid s_B) = Vx$. The parties can then compute $\sh{s_B}$ and $\sh{s}$ from the sharing of $\sh{s_A}$ using:
+\begin{align*}
+  \sh{s_B} = y - H'\sh{s_A}.
+\end{align*}
+
+\section{The Signature Scheme}
+
+To obtain a signature scheme from the MPC protocol \autoref{def:sdith-mpc}, two transformations are needed. First, into a ZK-POK using MPCitH and second, into a signature scheme using the Fiat-Shamir transform.
+
+\subsubsection*{ZK-POK from MPCitH}
+
+\autoref{sec:mpcinth}
+
+\begin{protocol}[ZK-POK from MPCitH] The ZK-POK is run as follows
+  \begin{itemize}
+    \item The prover $\mathcal{P}$ generates input sharing and commites to the party shares.
+    \item The verifier $\mathcal{V}$ challenges $\mathcal{P}$ with randomness $r,\epsilon$ of \autoref{def:sdith-mpc}.
+    \item $\mathcal{P}$ runs \autoref{def:sdith-mpc} \textit{in their head} and sends the broadcast values to $\mathcal{V}$.
+    \item $\mathcal{V}$ challenges $\mathcal{P}$ to open all parties in $I \subsetneq [1 : N]$
+    \item $\mathcal{P}$ opens and reveals the commitment values of all parties in $I$.
+    \item $\mathcal{V}$ checks the consistency of the MPC protocol values and the commitment values.
+  \end{itemize}
+\end{protocol}
+
+\section{Optimisations}
+
+\subsection{Limbo trick}
 
 Reusing the challenge.
 
-\section{Avoiding interpolating through Reversed MPC}
+\subsection{Avoiding verifier interpolating through Reversed MPC}
 
 Avoiding the interpolation needed by the verifier to reproduce the broadcast shares.
-
-\section{MPC computation}
-
-The computation is based on HVZKAoK Protocol using imperfect preprocessing and sacrificing. Section 3.3~\cite{baum2020concretely}.
-
-A toy example of the computation protocol computations, can be seen in~\autoref{fig:mpc}. We have the two computation methods. Here for 1 split and 1 evaluation point. This means that we have only value for each challenge and beaver triple. Note that any arithmetic is run in GF256, so addition and subtraction are both \texttt{XOR} and multiplication is modulus $x^8 + x^4 + x^3 + x + 1$. Furthermore, for negation we have that $-a = a$.
-
-\begin{figure}
-  \makebox[\textwidth]{
-    \fbox{\begin{minipage}[t]{.45\textwidth}
-        \noindent \texttt{PartyComputation}
-        \begin{flalign*}
-           & \textit{Input: }                                                               \\
-           & (s_a, Q, P, a, b, c), (\overline{\alpha}, \overline{\beta}), (H', y)           \\
-           & (\epsilon, r), \texttt{with\_offset}                                           \\
-           & \textit{Output: }                                                              \\
-           & (\alpha, \beta, v)                                                             \\\\
-           & Q = Q_1\text{ if \texttt{with\_offset} else }Q_0                               \\
-           & S = (s_a | y + H's_a) \text{ if \texttt{with\_offset} else } (s_a | H's_a)     \\
-           & v = -c                                                                         \\
-           & \alpha = \epsilon \cdot Q(r) + a                                               \\
-           & \beta = S(r) + b                                                               \\
-           & v \mathrel{{+}{=}} \epsilon \cdot F(r) \cdot P(r)                              \\
-           & v \mathrel{{+}{=}} \overline{\alpha} \cdot b + \overline{\beta} \cdot a        \\
-           & v \mathrel{{+}{=}} - \alpha \cdot \beta \text{ \ \ \ if \texttt{with\_offset}}
-        \end{flalign*}
-      \end{minipage}}
-    \hfill
-    \noindent
-    \fbox{\begin{minipage}[t]{.45\textwidth}
-        \noindent \texttt{InverseComputation}
-        \begin{flalign*}
-           & \textit{Input: }                                                                \\
-           & (s_a, Q, P), (\alpha, \beta, v), (\overline{\alpha}, \overline{\beta}), (H', y) \\
-           & (\epsilon, r), \texttt{with\_offset}                                            \\
-           & \textit{Output: }                                                               \\
-           & (a, b, c)                                                                       \\\\
-           & Q = Q_1\text{ if \texttt{with\_offset} else }Q_0                                \\
-           & S = (s_a | y + H's_a) \text{ if \texttt{with\_offset} else } (s_a | H's_a)      \\
-           & c = -v                                                                          \\
-           & a = \alpha - \epsilon \cdot Q(r)                                                \\
-           & b = \beta - S(r)                                                                \\
-           & c \mathrel{{+}{=}} \epsilon \cdot F(r) \cdot P(r)                               \\
-           & c \mathrel{{+}{=}} \overline{\alpha} \cdot b + \overline{\beta} \cdot a         \\
-           & c \mathrel{{+}{=}} - \alpha \cdot \beta \text{ \ \ \ if \texttt{with\_offset}}
-        \end{flalign*}
-      \end{minipage}}}
-  \caption{Simplified version of the MPC party computation and inverse computation. $Q_0$ means that $Q$ is completed with a $0$ for leading coefficient. Furthermore, $F$ is precomputed. Note that all arithmetic is done in $\mathbb{F}_q = GF256$. All elements are in $\mathbb{F}_q^\eta$ except for the coefficients of $Q$, $S$ and $P$ which are in $\mathbb{F}_q$.}\label{fig:mpc}
-\end{figure}
-\bigskip
-
-Note that the
-
-If we first instantiate an input $i$ and one random input $i^*$ (like the \texttt{input\_coef}).Then the input share is generated by adding the two. Similar, but simpler, to the input share generation of Algorithm 12, line 13 of the specification.
-\begin{align*}
-  i                & = (s_a, Q, P, a,b,c)                                             \\
-  i^*              & = ({s_a}^*, Q^*, P^*, a^*,b^*,c^*)                               \\
-  \sh{i} = i + i^* & = ({s_a} + {s_a}^*, Q + Q^*, P + P^*, a + a^*, b + b^*, c + c^*) \\
-                   & = (\sh{s_a}, \sh{Q}, \sh{P}, \sh{a}, \sh{b}, \sh{c})             \\
-  \texttt{chal}    & = (\epsilon, r)                                                  \\
-  \texttt{pk}      & = (H', y)
-\end{align*}
-We also compute the plain broadcast share of the input as per Algorithm 12, line 18. Note that $\overline{v}$ is computed to zero and therefore removed from the computation in the implementation.
-\begin{align*}
-  (\overline{\alpha},\ \overline{\beta})         & =
-  \texttt{PartyComputation}(i,\ (\overline{\alpha}, \overline{\beta}),\ \texttt{chal},\ \texttt{pk},\ \texttt{true})                                                                                   \\\\
-  \overline{\alpha}                         =    & \epsilon \cdot Q_1(r) + a                                                                                                                           \\
-  \overline{\beta}                          =    & S_y(r)  + b                                                                                                                                         \\
-  \overline{v}                            =      & -c + \epsilon \cdot F(r) \cdot P(r) + \overline{\alpha} \cdot b + \overline{\beta} \cdot a  - \overline{\alpha} \cdot \overline{\beta}              \\
-  \overline{v}                            =      & -c + \epsilon \cdot F(r) \cdot P(r) + (\epsilon \cdot Q_1(r) + a) \cdot b + (S_y(r)  + b) \cdot a  - (\epsilon \cdot Q_1(r) + a) \cdot (S_y(r) + b) \\
-  \overline{v}                            =      & -c + \epsilon \cdot F(r) \cdot P(r)                                                                                                                 \\
-                                                 & + \epsilon \cdot Q_1(r) \cdot b + c + S_y(r) \cdot a + c                                                                                            \\
-                                                 & - \epsilon \cdot Q_1(r) \cdot S_y(r) - \epsilon \cdot Q_1(r) \cdot b - a \cdot S_y(r) - c                                                           \\
-  \overline{v}                                 = & \ 0
-\end{align*}
-We then compute a broadcast share from the randomness and the broadcast, as per Algorithm 12, line 21.
-\begin{align*}
-  (\alpha^*, \beta^*, v^*) & = \texttt{PartyComputation}(i^*, (\overline{\alpha},
-  \overline{\beta}), \texttt{chal}, \texttt{pk}, \texttt{false})                  \\\\
-  \alpha^*                 & = \epsilon \cdot {Q^*}_0(r) + a^*                    \\
-  \beta^*                  & =  {S^*}_0(r) + b^*
-\end{align*}
-This broadcast share is sent to the verifier along with the truncated input share (removing the beaver triples). The verifier then needs to recompute the input share beaver triples using the \texttt{InverseComputation} function. First we add the input share to the broadcast share as per Algorithm 13, line 8.
-\begin{align*}
-  (\alpha', \beta', v') & = (\alpha^*, \beta^*, v^*) + (\overline{\alpha},\ \overline{\beta}, 0)
-  = (\alpha^* + \overline{\alpha}, \beta^* + \overline{\beta}, v^* + 0)                          \\\\
-  \alpha'               & = \epsilon \cdot {Q^*}_0(r) + a^* + \overline{\alpha}                  \\
-                        & = \epsilon \cdot {Q^*}_0(r) + a^* + \epsilon \cdot Q_1(r) + a          \\
-  \beta'                & = {S^*}_0(r) + b^* + \overline{\beta}                                  \\
-                        & = {S^*}_0(r) + b^* + S_y(r) + b                                        \\
-\end{align*}
-Next, the verifier computes the inverse of the broadcast share to recompute $(\sh{a}, \sh{b}, \sh{c})$ using the \texttt{InverseComputation} function. This is done as per Algorithm 13, line 10.
-\begin{align*}
-  (a', b', c') & = \texttt{InverseComputation}(\sh{i}, (\alpha', \beta', v'),
-  (\overline{\alpha}, \overline{\beta}), \texttt{chal}, \texttt{pk}, \texttt{true})                                                     \\\\
-  a'           & = \alpha' - \epsilon \cdot {\sh{Q}}_1(r)                                                                               \\
-               & = \epsilon \cdot {Q^*}_0(r) + a^* + \epsilon \cdot Q_1(r) + a - \epsilon \cdot {\sh{Q}}_1(r)                           \\
-               & = \epsilon \cdot {Q^*}_0(r) - \epsilon \cdot {\sh{Q}}_1(r) + \epsilon \cdot Q_1(r) + \sh{a}                            \\
-               & = \epsilon \cdot ({Q^*}_0(r) - {\sh{Q}}_1(r) +  Q_1(r)) + \sh{a}                                                       \\
-               & = \epsilon \cdot (Q^*_0(r) +  Q^*_0(r)) + \sh{a}                                             &  & \autoref{eq:mpcpoly} \\
-               & = \sh{a}                                                                                     &  & \autoref{eq:mpcpoly} \\
-  b'           & = \beta' - {\sh{S}}_y(r)                                                                                               \\
-               & = {S^*}_0(r) + b^* + S_y(r) + b - {\sh{S}}_y(r)                                                                        \\
-               & = {S^*}_0(r) - {\sh{S}}_y(r) + S_y(r)  + \sh{b}                                                                        \\
-               & = {S^*}_0(r) - S^*_0(r)  + \sh{b}                                                            &  & \autoref{eq:mpcpoly} \\
-               & = \sh{b}                                                                                     &  & \autoref{eq:mpcpoly} \\
-\end{align*}
-\todo{Want to explain the above in a more detailed manner? Specifically ${Q^*}_0(r) - {\sh{Q}}_1(r) = Q_1(r)$}
 
 \section{Security}
 
@@ -2406,14 +2334,20 @@ fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
 \subsection{Field polynomials}\label{sub:field_polynomials} % (fold)
 We can now define polynomials using the $GF(2^8)$ field, and do simple arithmetic upon the elements.
 
+For polynomial evaluation in the algorithm, seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. The polynomial $P(x)$ is defined as
+\begin{align}
+  \textstyle\bigcup_{|Q|}(F_q)^{|Q|} \times F_q^\eta & \rightarrow F_q^\eta                 \nonumber                                                    \\
+  Q(r)                                               & = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1} &  & Q_i \in F_q, r \in F_q^\eta\label{eq:mpcpoly}
+\end{align}
+
+\todo{See gf256\_ext.rs}
+
 \subsection{Field vector operations}\label{sub:field_vector_operations} % (fold)
 
 \subsection{Sampling SD polynomial relation}\label{sub:witness_generation}
 
-To create a public and private key pair, we need a witness for the ZK in the form of a syndrome decoding (SD) instance. 
-\begin{align*}
-  y = HVx
-\end{align*}
+To create a public and private key pair, we need a witness for the ZK in the form of a syndrome decoding (SD) instance $y = Hx$.
+
 Recall, that the witness is generated in the $d$-split variant, so all the computed values are separated into ``chunks'' and the parameters are divided by $d$ and that the instance is captures in the form of the polynomial relation
 \begin{align*}
   S\cdot Q = P\cdot F
@@ -2421,7 +2355,7 @@ Recall, that the witness is generated in the $d$-split variant, so all the compu
 
 \subsubsection{Sampling the $x$ vector}
 
-First, we needed to sample an $x$ vector with the required $d$-split hamming weight $w$ and length $m$. The function \rust{sample_non_zero_x_positions} determines the positions of the non-zero coordinates. It samples random coordinates within the range of $x$ until $w$ non-zero coordinates are selected. The function returns the $x\_vector$ and the positions of the non-zero coordinates, which are used to compute the polynomial $Q$.
+First, we needed to sample an $x$ vector with the required $d$-split hamming weight $w$ and length $m$. The function \rust{sample_non_zero_x_positions} determines the positions of the non-zero coordinates. It samples random coordinates within the range of $x$ until $w$ non-zero coordinates are selected. The function returns the \rust{x_vector} and the positions of the non-zero coordinates, which are used to compute the polynomial $Q$.
 
 \begin{minted}{rust}
   let positions = sample_non_zero_x_positions(prg);
@@ -2467,9 +2401,9 @@ fn compute_q_prime_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N] {
 
 Next, we can compute the polynomials $S$ and $P$. Recall, that $S$ is the lagrangian interpolation of the vector $x$ -- s.t. $S(i) = x_i$ -- while $P = S \cdot Q / F$.
 
-In a naive implementation, we would have the parties of the MPC protocol each locally compute the interpolation of their share of $x$ to obtain $S$. However, this would be computationally expensive.
+In a naive implementation, we would have the parties of the MPC protocol each locally compute the interpolation of their share of $x$ to obtain $S$. However, this would be computationally expensive and we optimise this by redefining the SD instance, detailed in \autoref{sec:sdith-mpc-avoid-interpolation}.
 
-Instead, we leverage the \textit{Lagrange interpolation structure} for both $S$ and $P$. $S$ is given by the lagrange basis polynomial $L_i(X)$ as
+We leverage the \textit{Lagrange interpolation structure} for both $S$ and $P$. $S$ is given by the lagrange basis polynomial $L_i(X)$ as
 \begin{align*}
   S(X) = \sum_{i=0}^{m-1} x_i \cdot L_i(X)
 \end{align*}
@@ -2965,6 +2899,8 @@ Baum and Nof~\cite{baum2020concretely} outlines the fundamental concept of the c
 
 We now describe an overview of the protocol.
 
+\begin{protocol}[MPC Cut-and-Choose]\label{def:mpc-cut-and-choose}
+
 \noindent Input and Setup
 \begin{itemize}[parsep=0pt, itemsep=0pt]
   \item Both the prover $\mathcal{P}$ and verifier $\mathcal{V}$ start with a shared output $  y  $, a circuit description $  C  $, and parameters:  $N$ the number of parties, $M$ the number of emulations nad $\tau < M$ the number of challenges.
@@ -3019,6 +2955,7 @@ The verifier checks the following:
 \end{enumerate}
 
 If all checks pass, the verifier accepts the proof. Otherwise, it rejects. Note that we can hash all individual commitments into a single hash to reduce the communication cost.
+\end{protocol}
 
 \subsubsection*{Zero-knowledge}
 
@@ -3053,5 +2990,183 @@ Our primary objective was to mitigate the strict dependency of the communication
 \end{lemma}
 
 \todo{\dots}
+
+\section{Merkle Tree Commitment Revealed Nodes}\label{sub:merkle_tree_revealed_nodes}
+
+We chose to follow the definitions for the merkle tree provided in \cite{aguilarsyndrome11}. However, we added a separate method that calculates bottom up the revealed nodes based on the view opening challenges. This is used to know the length of the authentication path that is added to the signature and is needed when parsing the signature for verification. The algorithm uses the queue structure which is also mentioned in the spec, where the tree structure is a 1D array with the last elements being the leaf. First it checks for empty input. Then we initiate an empty list to hold the revealed nodes. Now in order to traverse the tree we will get the $heightIndex$ and $lastIndex$, which are the current layer of the tree, and the index of the 1D array of where the current layer stops. Lastly we need a queue to hold the indexes. Now in order to find the revealed nodes it starts by adding the indexes of the selected leaves to the queue. Then we go through the queue until the next index is $1$ which indicates that we are at the root. In the while loop we first get the current index, and then check if we have gone up a layer in the tree, and if the current node is a left child. If the current node is a left child and it is the last index in the layer, then we can just skip to the next node because we know it has no sibling. If it is not the last node we get the next node as a candidate, if the queue is not empty. If the current node is still the left child, and the next node in the queue is the other child of the same parent we do not need to add this as a revealed node as it is part of the known values. But if the next node is not the right child of the current node we add it as a revealed node. If the current node is not the left child we add the left child to the revealed nodes. And then we add the parent index to the queue. When we exit the while loop we have traversed the tree bottom up adding for each layer the neighbours of the selected leaves. The algorithm is described in pseudocode in \autoref{alg:get-revealed-nodes}.
+
+\todo{change last sentence}
+
+\begin{breakablealgorithm}
+  \caption{Get Revealed Nodes for Selected Leaves in Merkle Tree}\label{alg:get-revealed-nodes}
+  \begin{algorithmic}[1]
+    \Require $selectedLeaves$: List of selected leaf indices
+    \Ensure List of revealed node indices
+
+    \Function{getRevealedNodes}{$selectedLeaves$}
+    \If{$selectedLeaves$ is empty}
+    \State \Return empty list
+    \EndIf
+
+    \State $revealedNodes \gets \text{empty list}$
+    \State $(heightIndex,\; lastIndex) \gets (1 \ll treeHeight,\; treeNodes - 1)$
+    \State $queue \gets \text{empty queue}$
+
+
+    \ForAll{$leaf \in selectedLeaves$} \Comment{Add commitments to the queue}
+    \State $val \gets (1 \ll treeHeight) + leaf$
+    \If{$\text{queue.add}(val)$ fails}
+    \State \textbf{panic} ``Could not add element to queue''
+    \EndIf
+    \EndFor
+
+    \While{$queue.peek() \neq 1$} \Comment{Do until we reach the root}
+    \State $index \gets queue.remove()$
+
+    \If{$index < heightIndex$}
+    \State $heightIndex \gets heightIndex \gg 1$
+    \State $lastIndex \gets lastIndex \gg 1$
+    \EndIf
+
+    \State $isLeftChild \gets (index \; \% \; 2 == 0)$
+
+    \If{$isLeftChild \land index == lastIndex$}
+    \Comment{Node has no sibling}
+    \State \textbf{continue}
+    \Else
+    \State $candidateIndex \gets 0$
+    \If{\textbf{not} $queue.isEmpty()$}
+    \State $candidateIndex \gets queue.peek()$
+    \EndIf
+
+    \If{$isLeftChild \land (candidateIndex == index + 1)$}
+    \State $queue.remove()$
+    \ElsIf{$isLeftChild$}
+    \State $revealedNodes.append(index + 1)$
+    \Else
+    \State $revealedNodes.append(index - 1)$
+    \EndIf
+    \EndIf
+
+    \State $parentIndex \gets index \gg 1$
+    \If{$queue.add(parentIndex)$ fails}
+    \State \textbf{panic} ``Could not add element to queue''
+    \EndIf
+    \EndWhile
+
+    \State \Return $revealedNodes$
+    \EndFunction
+
+  \end{algorithmic}
+\end{breakablealgorithm}
+
+\section{MPC computation toy example}
+
+The computation is based on HVZKAoK Protocol using imperfect preprocessing and sacrificing. Section 3.3~\cite{baum2020concretely}.
+
+A toy example of the computation protocol computations, can be seen in~\autoref{fig:mpc}. We have the two computation methods. Here for 1 split and 1 evaluation point. This means that we have only value for each challenge and beaver triple. Note that any arithmetic is run in GF256, so addition and subtraction are both \texttt{XOR} and multiplication is modulus $x^8 + x^4 + x^3 + x + 1$. Furthermore, for negation we have that $-a = a$.
+
+\begin{figure}
+  \makebox[\textwidth]{
+    \fbox{\begin{minipage}[t]{.45\textwidth}
+        \noindent \texttt{PartyComputation}
+        \begin{flalign*}
+           & \textit{Input: }                                                               \\
+           & (s_a, Q, P, a, b, c), (\overline{\alpha}, \overline{\beta}), (H', y)           \\
+           & (\epsilon, r), \texttt{with\_offset}                                           \\
+           & \textit{Output: }                                                              \\
+           & (\alpha, \beta, v)                                                             \\\\
+           & Q = Q_1\text{ if \texttt{with\_offset} else }Q_0                               \\
+           & S = (s_a | y + H's_a) \text{ if \texttt{with\_offset} else } (s_a | H's_a)     \\
+           & v = -c                                                                         \\
+           & \alpha = \epsilon \cdot Q(r) + a                                               \\
+           & \beta = S(r) + b                                                               \\
+           & v \mathrel{{+}{=}} \epsilon \cdot F(r) \cdot P(r)                              \\
+           & v \mathrel{{+}{=}} \overline{\alpha} \cdot b + \overline{\beta} \cdot a        \\
+           & v \mathrel{{+}{=}} - \alpha \cdot \beta \text{ \ \ \ if \texttt{with\_offset}}
+        \end{flalign*}
+      \end{minipage}}
+    \hfill
+    \noindent
+    \fbox{\begin{minipage}[t]{.45\textwidth}
+        \noindent \texttt{InverseComputation}
+        \begin{flalign*}
+           & \textit{Input: }                                                                \\
+           & (s_a, Q, P), (\alpha, \beta, v), (\overline{\alpha}, \overline{\beta}), (H', y) \\
+           & (\epsilon, r), \texttt{with\_offset}                                            \\
+           & \textit{Output: }                                                               \\
+           & (a, b, c)                                                                       \\\\
+           & Q = Q_1\text{ if \texttt{with\_offset} else }Q_0                                \\
+           & S = (s_a | y + H's_a) \text{ if \texttt{with\_offset} else } (s_a | H's_a)      \\
+           & c = -v                                                                          \\
+           & a = \alpha - \epsilon \cdot Q(r)                                                \\
+           & b = \beta - S(r)                                                                \\
+           & c \mathrel{{+}{=}} \epsilon \cdot F(r) \cdot P(r)                               \\
+           & c \mathrel{{+}{=}} \overline{\alpha} \cdot b + \overline{\beta} \cdot a         \\
+           & c \mathrel{{+}{=}} - \alpha \cdot \beta \text{ \ \ \ if \texttt{with\_offset}}
+        \end{flalign*}
+      \end{minipage}}}
+  \caption{Simplified version of the MPC party computation and inverse computation. $Q_0$ means that $Q$ is completed with a $0$ for leading coefficient. Furthermore, $F$ is precomputed. Note that all arithmetic is done in $\mathbb{F}_q = GF256$. All elements are in $\mathbb{F}_q^\eta$ except for the coefficients of $Q$, $S$ and $P$ which are in $\mathbb{F}_q$.}\label{fig:mpc}
+\end{figure}
+\bigskip
+
+Note that the
+
+If we first instantiate an input $i$ and one random input $i^*$ (like the \texttt{input\_coef}).Then the input share is generated by adding the two. Similar, but simpler, to the input share generation of Algorithm 12, line 13 of the specification.
+\begin{align*}
+  i                & = (s_a, Q, P, a,b,c)                                             \\
+  i^*              & = ({s_a}^*, Q^*, P^*, a^*,b^*,c^*)                               \\
+  \sh{i} = i + i^* & = ({s_a} + {s_a}^*, Q + Q^*, P + P^*, a + a^*, b + b^*, c + c^*) \\
+                   & = (\sh{s_a}, \sh{Q}, \sh{P}, \sh{a}, \sh{b}, \sh{c})             \\
+  \texttt{chal}    & = (\epsilon, r)                                                  \\
+  \texttt{pk}      & = (H', y)
+\end{align*}
+We also compute the plain broadcast share of the input as per Algorithm 12, line 18. Note that $\overline{v}$ is computed to zero and therefore removed from the computation in the implementation.
+\begin{align*}
+  (\overline{\alpha},\ \overline{\beta})         & =
+  \texttt{PartyComputation}(i,\ (\overline{\alpha}, \overline{\beta}),\ \texttt{chal},\ \texttt{pk},\ \texttt{true})                                                                                   \\\\
+  \overline{\alpha}                         =    & \epsilon \cdot Q_1(r) + a                                                                                                                           \\
+  \overline{\beta}                          =    & S_y(r)  + b                                                                                                                                         \\
+  \overline{v}                            =      & -c + \epsilon \cdot F(r) \cdot P(r) + \overline{\alpha} \cdot b + \overline{\beta} \cdot a  - \overline{\alpha} \cdot \overline{\beta}              \\
+  \overline{v}                            =      & -c + \epsilon \cdot F(r) \cdot P(r) + (\epsilon \cdot Q_1(r) + a) \cdot b + (S_y(r)  + b) \cdot a  - (\epsilon \cdot Q_1(r) + a) \cdot (S_y(r) + b) \\
+  \overline{v}                            =      & -c + \epsilon \cdot F(r) \cdot P(r)                                                                                                                 \\
+                                                 & + \epsilon \cdot Q_1(r) \cdot b + c + S_y(r) \cdot a + c                                                                                            \\
+                                                 & - \epsilon \cdot Q_1(r) \cdot S_y(r) - \epsilon \cdot Q_1(r) \cdot b - a \cdot S_y(r) - c                                                           \\
+  \overline{v}                                 = & \ 0
+\end{align*}
+We then compute a broadcast share from the randomness and the broadcast, as per Algorithm 12, line 21.
+\begin{align*}
+  (\alpha^*, \beta^*, v^*) & = \texttt{PartyComputation}(i^*, (\overline{\alpha},
+  \overline{\beta}), \texttt{chal}, \texttt{pk}, \texttt{false})                  \\\\
+  \alpha^*                 & = \epsilon \cdot {Q^*}_0(r) + a^*                    \\
+  \beta^*                  & =  {S^*}_0(r) + b^*
+\end{align*}
+This broadcast share is sent to the verifier along with the truncated input share (removing the beaver triples). The verifier then needs to recompute the input share beaver triples using the \texttt{InverseComputation} function. First we add the input share to the broadcast share as per Algorithm 13, line 8.
+\begin{align*}
+  (\alpha', \beta', v') & = (\alpha^*, \beta^*, v^*) + (\overline{\alpha},\ \overline{\beta}, 0)
+  = (\alpha^* + \overline{\alpha}, \beta^* + \overline{\beta}, v^* + 0)                          \\\\
+  \alpha'               & = \epsilon \cdot {Q^*}_0(r) + a^* + \overline{\alpha}                  \\
+                        & = \epsilon \cdot {Q^*}_0(r) + a^* + \epsilon \cdot Q_1(r) + a          \\
+  \beta'                & = {S^*}_0(r) + b^* + \overline{\beta}                                  \\
+                        & = {S^*}_0(r) + b^* + S_y(r) + b                                        \\
+\end{align*}
+Next, the verifier computes the inverse of the broadcast share to recompute $(\sh{a}, \sh{b}, \sh{c})$ using the \texttt{InverseComputation} function. This is done as per Algorithm 13, line 10.
+\begin{align*}
+  (a', b', c') & = \texttt{InverseComputation}(\sh{i}, (\alpha', \beta', v'),
+  (\overline{\alpha}, \overline{\beta}), \texttt{chal}, \texttt{pk}, \texttt{true})                                                     \\\\
+  a'           & = \alpha' - \epsilon \cdot {\sh{Q}}_1(r)                                                                               \\
+               & = \epsilon \cdot {Q^*}_0(r) + a^* + \epsilon \cdot Q_1(r) + a - \epsilon \cdot {\sh{Q}}_1(r)                           \\
+               & = \epsilon \cdot {Q^*}_0(r) - \epsilon \cdot {\sh{Q}}_1(r) + \epsilon \cdot Q_1(r) + \sh{a}                            \\
+               & = \epsilon \cdot ({Q^*}_0(r) - {\sh{Q}}_1(r) +  Q_1(r)) + \sh{a}                                                       \\
+               & = \epsilon \cdot (Q^*_0(r) +  Q^*_0(r)) + \sh{a}                                             &  & \autoref{eq:mpcpoly} \\
+               & = \sh{a}                                                                                     &  & \autoref{eq:mpcpoly} \\
+  b'           & = \beta' - {\sh{S}}_y(r)                                                                                               \\
+               & = {S^*}_0(r) + b^* + S_y(r) + b - {\sh{S}}_y(r)                                                                        \\
+               & = {S^*}_0(r) - {\sh{S}}_y(r) + S_y(r)  + \sh{b}                                                                        \\
+               & = {S^*}_0(r) - S^*_0(r)  + \sh{b}                                                            &  & \autoref{eq:mpcpoly} \\
+               & = \sh{b}                                                                                     &  & \autoref{eq:mpcpoly} \\
+\end{align*}
+\todo{Want to explain the above in a more detailed manner? Specifically ${Q^*}_0(r) - {\sh{Q}}_1(r) = Q_1(r)$}
+
 
 \end{document}

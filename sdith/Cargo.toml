@@ -69,6 +69,7 @@ harness = false
 [[example]]
 name = "dudect"
 path = "examples/dudect.rs" # Dudect Constant Time Benchmark has to be run as an example
+bench = false
 harness = false
 
 ## Profiles
@@ -88,6 +89,9 @@ codegen-units = 1   # Removes parallel code compilation for slower compilation t
 lto = "fat"         # Performs “fat” LTO which attempts to perform optimizations across all crates within the dependency graph.
 opt-level = 3       # Optimizes 0: no optimizations, 1: some optimizations, 2: all optimizations, 3: all optimizations, "s": optimize for binary size, "z": optimize for binary size, but also turn off loop vectorization.
 panic = "abort"     # https://nnethercote.github.io/perf-book/build-configuration.html#abort-on-panic
+
+[profile.bench]
+inherits = "release"
 
 ## Linting
 
