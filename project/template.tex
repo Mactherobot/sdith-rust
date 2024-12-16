@@ -2286,9 +2286,14 @@ fn gf256_ext16_add(a: [u8; 2], b: [u8; 2]) -> [u8; 2] {
 \paragraph{Multiplication in $GF(q^2)$}
 
 Multiplication is more intricate. Given two elements $(a, b)$ and $(c, d)$, we compute their product as:
-\[
+\begin{align}
   (a + bX) \cdot (c + dX)
-\]
+  (a + bX) * (c + dX) &= ac + (ad + bc) * X + bd * X^2`
+                      &= ac + (ad + bc) * X + bd * (X + 32)`
+                      &= (ac + bd * 32) + (ad + bc + bd)X`
+                      &= (ac + bd * 32) + ((a + b) * (c + d) - ac)X`
+                      &= c0 + c1X`
+\end{align}
 The Rust implementation of this operation is as follows:
 
 \begin{minted}{rust}
@@ -2334,10 +2339,15 @@ More extensive testing was reserved for the $GF(q^4)$ field, as it is the primar
 
 \todo{Maybe reference the section that defines this}
 % subsubsection First simple extension (end)
+
+
 \subsubsection{$GF(q^4)$}\label{sec:gf_} % (fold)
 Now that we have the $GF(q^2)$ field we can implement the $GF(q^4)$ field arithmetic. We represent an element in the $GF(q^4)$ field as a 4-byte array. So we have a representation of $(a,b,c,d) = a + bX + cX^2 + dX^3$. 
 As mentioned before in the \autoref{sub:field_arithmetic} we have a trait for the required field operations, so we can implement those on the type $FPoint$.
+
+
 \paragraph{Addition in $GF(q^4)$}
+
 First we implemented the addition which is again a simple XOR operation on each component. Using the feature flag we created 2 implementations, first a simple addition using the $$GF(q^2)$$ field and then a SIMD implementation using the \texttt{std::simd} module, which yielded a little more performance.
 \begin{minted}{rust}
 #[inline(always)]
