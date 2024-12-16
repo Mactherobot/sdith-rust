@@ -151,6 +151,7 @@ impl FieldArith for FPoint {
 }
 
 #[inline(always)]
+#[cfg(not(feature = "simd"))]
 fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
     let [p0, p1, q0, q1] = a;
     let [r0, r1, s0, s1] = b;
@@ -159,6 +160,19 @@ fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
     let [r2, r3] = gf256_ext16_add([q0, q1], [s0, s1]);
 
     [r0, r1, r2, r3]
+}
+
+#[inline(always)]
+#[cfg(feature = "simd")]
+fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
+    use std::simd::u8x4;
+
+    let simd_a = u8x4::from(a);
+    let simd_b = u8x4::from(b);
+
+    let res = simd_a ^ simd_b;
+
+    res.into()
 }
 
 #[cfg(test)]
