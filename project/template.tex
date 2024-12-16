@@ -2336,7 +2336,38 @@ More extensive testing was reserved for the $GF(q^4)$ field, as it is the primar
 % subsubsection First simple extension (end)
 \subsubsection{$GF(q^4)$}\label{sec:gf_} % (fold)
 Now that we have the $GF(q^2)$ field we can implement the $GF(q^4)$ field arithmetic. We represent an element in the $GF(q^4)$ field as a 4-byte array. So we have a representation of $(a,b,c,d) = a + bX + cX^2 + dX^3$. 
-As mentioned before in the \autoref{sub:field_arithmetic} we have a trait for the required field operations, so we can implement those on the type $FPoint$. First we implemented the addition which is again a simple XOR operation on each component. 
+As mentioned before in the \autoref{sub:field_arithmetic} we have a trait for the required field operations, so we can implement those on the type $FPoint$.
+\paragraph{Addition in $GF(q^4)$}
+First we implemented the addition which is again a simple XOR operation on each component. Using the feature flag we created 2 implementations, first a simple addition using the $$GF(q^2)$$ field and then a SIMD implementation using the \texttt{std::simd} module, which yielded a little more performance.
+\begin{minted}{rust}
+#[inline(always)]
+#[cfg(not(feature = "simd"))]
+fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
+    let [p0, p1, q0, q1] = a;
+    let [r0, r1, s0, s1] = b;
+
+    let [r0, r1] = gf256_ext16_add([p0, p1], [r0, r1]);
+    let [r2, r3] = gf256_ext16_add([q0, q1], [s0, s1]);
+
+    [r0, r1, r2, r3]
+}
+
+#[inline(always)]
+#[cfg(feature = "simd")]
+fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
+    use std::simd::u8x4;
+
+    let simd_a = u8x4::from(a);
+    let simd_b = u8x4::from(b);
+
+    let res = simd_a ^ simd_b;
+
+    res.into()
+}
+\end{minted}
+
+\paragraph{Multiplication in $GF(q^4)$}
+
 
 \subsubsection{Multiplication in $GF(q^4)$}\label{sec:multiplication_in_gf_q_} % (fold)
 
