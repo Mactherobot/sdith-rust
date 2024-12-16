@@ -11,7 +11,7 @@ use crate::{
     arith::{
         gf256::{
             gf256_matrices::{gen_hmatrix, mul_hmatrix_vector, HPrimeMatrix},
-            gf256_poly::gf256_remove_one_degree_factor_monic,
+            gf256_poly::gf256_monic_polynomial_division,
             gf256_vector::{gf256_add_vector, gf256_mul_vector_by_scalar},
         },
         FieldArith as _,
@@ -20,7 +20,7 @@ use crate::{
         params::{
             PARAM_CHUNK_M, PARAM_CHUNK_W, PARAM_K, PARAM_M, PARAM_M_SUB_K, PARAM_SALT_SIZE,
             PARAM_SEED_SIZE, PARAM_SPLITTING_FACTOR, PRECOMPUTED_F_POLY,
-            PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S,
+            PRECOMPUTED_LAGRANGE_INTERPOLATION_WEIGHTS,
         },
         types::Seed,
     },
@@ -258,6 +258,9 @@ pub fn sample_polynomial_relation(
     let mut x_vectors: [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR] =
         [[0; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
 
+    // holder of intermediate results for S and P
+    let mut tmp_poly = [0_u8; PARAM_CHUNK_M];
+
     for n_poly in 0..PARAM_SPLITTING_FACTOR {
         // Sample x vector
         let (x_vector, positions) = sample_x_chunk(prg);
@@ -267,27 +270,25 @@ pub fn sample_polynomial_relation(
         q_poly[n_poly] = compute_q_prime_chunk(&positions);
 
         // Compute S and P
-        let mut tmp_poly = [0_u8; PARAM_CHUNK_M]; // holder of intermediate results for S and P
         for i in 0..PARAM_CHUNK_M {
-            let scalar = x_vector[i].field_mul(PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S[i]);
+            let scalar = x_vector[i].field_mul(PRECOMPUTED_LAGRANGE_INTERPOLATION_WEIGHTS[i]); // Multiply langrangian weight by x_i
 
             // Compute S polynomial
-            gf256_remove_one_degree_factor_monic(
+            gf256_monic_polynomial_division(
                 &mut tmp_poly,
                 &PRECOMPUTED_F_POLY,
                 PARAM_CHUNK_M,
                 i as u8,
-            );
-            gf256_mul_vector_by_scalar(&mut tmp_poly, scalar);
-            gf256_add_vector(&mut s_poly[n_poly], &tmp_poly);
+            ); // Compute quotient polynomial F(X) / (X - alpha_i)
+            gf256_mul_vector_by_scalar(&mut tmp_poly, scalar); // Multiply by langrangian weight
+            gf256_add_vector(&mut s_poly[n_poly], &tmp_poly); // Transfer to s_poly
 
             // Compute P polynomial
-            gf256_remove_one_degree_factor_monic(
-                &mut tmp_poly,
-                &q_poly[n_poly],
-                PARAM_CHUNK_W,
-                i as u8,
-            );
+            gf256_monic_polynomial_division(
+                &mut tmp_poly, 
+                &q_poly[n_poly], 
+                PARAM_CHUNK_W, 
+                i as u8); // Compute the 
             gf256_mul_vector_by_scalar(&mut tmp_poly, scalar);
             gf256_add_vector(&mut p_poly[n_poly], &tmp_poly);
         }
@@ -421,7 +422,7 @@ pub fn sample_x_chunk(prg: &mut PRG) -> ([u8; PARAM_CHUNK_M], [u8; PARAM_CHUNK_W
     prg.sample_field_fq_non_zero(&mut non_zero_elements);
 
     for (j, pos) in positions.iter().enumerate() {
-        x_vector[*pos as usize] ^= non_zero_elements[j];
+        x_vector[*pos as usize] ^= non_zero_elements[j]; // Transfor random values to x at hamming weight positions
     }
 
     (x_vector, positions)

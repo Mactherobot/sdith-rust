@@ -84,6 +84,8 @@ pub const PARAM_M_CEIL32: usize = ((PARAM_M + 31) >> 5) << 5;
 
 /// Precomputed public polynomial F
 pub const PRECOMPUTED_F_POLY: [u8; PARAM_CHUNK_M + 1] = cat::PRECOMPUTED_F_POLY;
-/// Lagrange coefficients for computing S
-pub const PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S: [u8; PARAM_CHUNK_M] =
-    cat::PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S;
+/// Lagrange scalar coefficients for computing S
+/// 
+/// 1 / ∏_{j \neq i}(alpha_i - alpha_j)
+pub const PRECOMPUTED_LAGRANGE_INTERPOLATION_WEIGHTS: [u8; PARAM_CHUNK_M] =
+    cat::PRECOMPUTED_LAGRANGE_INTERPOLATION_WEIGHTS;

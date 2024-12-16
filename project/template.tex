@@ -784,8 +784,7 @@ Within the context of the SD-in-the-Head protocol, the transformation from a ZK 
 
 For our implementation, we selected the \textit{threshold} variant of the SD-in-the-Head protocol~\cite{aguilarsyndrome11,feneuil2023threshold}, as this variant offers the most significant performance improvements compared to the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11,aguilar2023return}, albeit at the cost of a slightly larger signature size.
 
-In this chapter, we provide a specification of the initial SD-in-the-Head protocol, along with the details specific to the threshold variant. We include pseudo-code for the major subroutines and algorithms, as well as a comprehensive description of the parameters used in the protocol. Finally, we present an overview of the associated security guarantees.
-
+In this chapter, we provide a specification of the initial SD-in-the-Head protocol, along with the details specific to the implemented threshold variant. We include pseudo-code for the major subroutines and algorithms, as well as a comprehensive description of the parameters used in the protocol. Finally, we present an overview of the associated security guarantees.
 
 \section{SD-in-the-Head Protocol}
 The original SD-in-the-Head protocol is based on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field. As a reminder, problem is expressed as follows (see \autoref{sec:syndrome})
@@ -794,7 +793,7 @@ The original SD-in-the-Head protocol is based on the computational hardness of t
   \begin{align*}
     y = Hx = H'x_a + x_b \text{ \ \ \ where \ \ \ } H' \in \mathbb{F}_q^{(m-k)\times k}
   \end{align*}
-  for $x = (x_a | x_b)$. We have the polynomial representation of the problem (see \autoref{sec:polynomial_representation})
+  for $x = (x_a | x_b)$. We have the polynomial representation of the problem
   \begin{align*}
     S\cdot Q = P\cdot F \text{ \ \ \ where \ \ \ } S, Q, P, F \in \mathbb{F}_q[X]
   \end{align*}
@@ -919,11 +918,11 @@ A toy example of the computation protocol computations, can be seen in~\autoref{
         \noindent \texttt{PartyComputation}
         \begin{flalign*}
            & \textit{Input: }                                                               \\
-           & (s_a, Q', P, a, b, c), (\overline{\alpha}, \overline{\beta}), (H', y)          \\
+           & (s_a, Q, P, a, b, c), (\overline{\alpha}, \overline{\beta}), (H', y)           \\
            & (\epsilon, r), \texttt{with\_offset}                                           \\
            & \textit{Output: }                                                              \\
            & (\alpha, \beta, v)                                                             \\\\
-           & Q = Q'_1\text{ if \texttt{with\_offset} else }Q'_0                             \\
+           & Q = Q_1\text{ if \texttt{with\_offset} else }Q_0                               \\
            & S = (s_a | y + H's_a) \text{ if \texttt{with\_offset} else } (s_a | H's_a)     \\
            & v = -c                                                                         \\
            & \alpha = \epsilon \cdot Q(r) + a                                               \\
@@ -938,18 +937,18 @@ A toy example of the computation protocol computations, can be seen in~\autoref{
     \fbox{\begin{minipage}[t]{.45\textwidth}
         \noindent \texttt{InverseComputation}
         \begin{flalign*}
-           & \textit{Input: }                                                                 \\
-           & (s_a, Q', P), (\alpha, \beta, v), (\overline{\alpha}, \overline{\beta}), (H', y) \\
-           & (\epsilon, r), \texttt{with\_offset}                                             \\
-           & \textit{Output: }                                                                \\
-           & (a, b, c)                                                                        \\\\
-           & Q = Q_1\text{ if \texttt{with\_offset} else }Q_0                                 \\
-           & S = (s_a | y + H's_a) \text{ if \texttt{with\_offset} else } (s_a | H's_a)       \\
-           & c = -v                                                                           \\
-           & a = \alpha - \epsilon \cdot Q(r)                                                 \\
-           & b = \beta - S(r)                                                                 \\
-           & c \mathrel{{+}{=}} \epsilon \cdot F(r) \cdot P(r)                                \\
-           & c \mathrel{{+}{=}} \overline{\alpha} \cdot b + \overline{\beta} \cdot a          \\
+           & \textit{Input: }                                                                \\
+           & (s_a, Q, P), (\alpha, \beta, v), (\overline{\alpha}, \overline{\beta}), (H', y) \\
+           & (\epsilon, r), \texttt{with\_offset}                                            \\
+           & \textit{Output: }                                                               \\
+           & (a, b, c)                                                                       \\\\
+           & Q = Q_1\text{ if \texttt{with\_offset} else }Q_0                                \\
+           & S = (s_a | y + H's_a) \text{ if \texttt{with\_offset} else } (s_a | H's_a)      \\
+           & c = -v                                                                          \\
+           & a = \alpha - \epsilon \cdot Q(r)                                                \\
+           & b = \beta - S(r)                                                                \\
+           & c \mathrel{{+}{=}} \epsilon \cdot F(r) \cdot P(r)                               \\
+           & c \mathrel{{+}{=}} \overline{\alpha} \cdot b + \overline{\beta} \cdot a         \\
            & c \mathrel{{+}{=}} - \alpha \cdot \beta \text{ \ \ \ if \texttt{with\_offset}}
         \end{flalign*}
       \end{minipage}}}
@@ -2371,11 +2370,18 @@ We can now define polynomials using the $GF(2^8)$ field, and do simple arithmeti
 
 \subsection{Sampling SD polynomial relation}\label{sub:witness_generation}
 
-To create a public and private key pair, we need a witness for the ZK in the form of a syndrome decoding (SD) instance. As outlined in \autoref{eq:polynomial_representation}, this involves generating a set of polynomials derived from a random $x$ vector in the syndrome instance.
+To create a public and private key pair, we need a witness for the ZK in the form of a syndrome decoding (SD) instance. 
+\begin{align*}
+  y = HVx
+\end{align*}
+Recall, that the witness is generated in the $d$-split variant, so all the computed values are separated into ``chunks'' and the parameters are divided by $d$ and that the instance is captures in the form of the polynomial relation
+\begin{align*}
+  S\cdot Q = P\cdot F
+\end{align*}
 
 \subsubsection{Sampling the $x$ vector}
 
-We needed to sample an $x$ vector with the required $d$-split hamming weight $w$ and length $m$. The function \rust{sample_non_zero_x_positions} determines the positions of the non-zero coordinates. It samples random coordinates within the range of $x$ until $w$ non-zero coordinates are selected. The function returns the $x\_vector$ and the positions of the non-zero coordinates, which are used to compute the polynomial $Q'$.
+First, we needed to sample an $x$ vector with the required $d$-split hamming weight $w$ and length $m$. The function \rust{sample_non_zero_x_positions} determines the positions of the non-zero coordinates. It samples random coordinates within the range of $x$ until $w$ non-zero coordinates are selected. The function returns the $x\_vector$ and the positions of the non-zero coordinates, which are used to compute the polynomial $Q$.
 
 \begin{minted}{rust}
   let positions = sample_non_zero_x_positions(prg);
@@ -2391,9 +2397,17 @@ We needed to sample an $x$ vector with the required $d$-split hamming weight $w$
   (x_vector, positions)
 \end{minted}
 
-\subsubsection{Computing the Polynomial $Q'$}
+\subsubsection{Computing the Polynomial $Q$}
 
-The polynomial $Q'$ is computed based on the positions of the non-zero coordinates in $x$. We iterate through the positions to compute the coefficients of $Q'$. The computation of each coefficient follows the method described in \autoref{sec:polynomial_representation}.
+The polynomial $Q$ is computed based on the positions of the non-zero coordinates in $x$. Recall the structure of the polynomial:
+\begin{align*}
+  Q(X) = \prod_{i\in E} Q_i X^i
+\end{align*}
+We iterate over the positions $E$ of the sampled values of $x$ to compute the coefficients of $Q$. The computation for each coefficient is performed following the approach outlined in \autoref{sec:polynomial_representation}.
+
+The polynomial is constructed using \textit{backward recurrence} by setting the leading coefficient to $1$ and iterating through the indices in reverse order, i.e., $[i, \dots, 2, 1]$.
+
+We leverage a generic parameter $N$, allowing the function to construct a coefficient vector whose size is determined at compile time, dynamically adapting as needed to the categories. All arithmetics are performed in the field $F_q$.
 
 \begin{minted}{rust}
 fn compute_q_prime_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N] {
@@ -2411,41 +2425,65 @@ fn compute_q_prime_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N] {
 
 \subsubsection{Computing the Polynomials $S$ and $P$}
 
-With the $x$ vector and precomputed arrays of leading coefficients, we can compute the polynomials $S$ and $P$.
+Next, we can compute the polynomials $S$ and $P$. Recall, that $S$ is the lagrangian interpolation of the $x$ vector -- s.t. $S(i) = x_i$ -- while $P = S \cdot Q / F$.
 
-To compute $S$, we use the following procedure:
+In a naive implementation, we would have the parties of the MPC protocol each locally compute the interpolation of their share of $x$ to obtain $S$. However, this would be computationally expensive.
+
+Instead, we leverage the \textit{Lagrange interpolation structure} for both $S$ and $P$. $S$ is given by the lagrange basis polynomial $L_i(X)$ as
+\begin{align*}
+  S(X) = \sum_{i=0}^{m-1} x_i \cdot L_i(X)
+\end{align*}
+where $L_i(X)$ is
+\begin{align*}
+  L_i(X) = \prod_{\substack{0\leq j\leq m \\ j\neq i}} \frac{X-\alpha_j}{\alpha_i-\alpha_j}
+\end{align*}
+Consider the polynomial $F(X) = \prod_{j=0}^{m-1} (X - \alpha_j)$, where $F(X)$ is a public monic polynomial whose roots correspond to the interpolation points $\alpha_j$ -- i.e. each index in $x$. The $i$-th Lagrange basis polynomial can then be expressed as:
+\begin{align*}
+  L_i(X) = \frac{F(X)}{X - \alpha_i} \cdot \frac{1}{\prod_{j \neq i} (\alpha_i - \alpha_j)}.
+\end{align*}
+This formulation allows us to identify two values that can be precomputed for the algorithm:
+
+\begin{enumerate}
+  \item \textbf{Public Polynomial $F(X)$}: This is the vanishing polynomial over the set of interpolation points $\{\alpha_j\}_{j=0}^{m-1}$.
+  \item \textbf{Lagrange Interpolation Weight}: The scalar term $\frac{1}{\prod_{j \neq i} (\alpha_i - \alpha_j)}$, which is commonly referred to as the \textit{Lagrange interpolation weight} or simply the \textit{weight} of the $i$-th Lagrange basis polynomial.
+\end{enumerate}
+
+These precomputed values are stored as constants:
+\begin{itemize}
+  \item \rust{PRECOMPUTED_F_POLY} holds the public polynomial $F(X)$.
+  \item \rust{PRECOMPUTED_LAGRANGE_INTERPOLATION_WEIGHTS} stores the interpolation weights for each basis polynomial.
+\end{itemize}
+
+Similarly for $P$, we can leverage the same interpolation structure but instead, scale by the contribution of $Q$ to the interpolation weights.
+\begin{align*}
+  P(X) = x_i \cdot \frac{Q(X)}{X - \alpha_i} \cdot \frac{1}{\prod_{j\neq i}(\alpha_i - \alpha_j)}
+\end{align*}
+
+Therefore, to compute $S$ and $P$ we iterate over each interpolation point $\alpha_i$ and compute the scalar $x_i \cdot \frac{1}{\prod_{j\neq i}(\alpha_i - \alpha_j)}$ and the contributions of $F$ and $Q$ to the interpolation weights.
+
+We store the precomputations in a temporary array \rust{tmp_poly} and then transfer the result to the polynomial \rust{s_poly} using \rust{gf256_add_vector}.
 
 \begin{minted}{rust}
-let scalar = x_vector[i].field_mul(PRECOMPUTED_LEADING_COEFFICIENTS_OF_LJ_FOR_S[i]);
+  // Compute S and P
+  for i in 0..PARAM_CHUNK_M {
+      let scalar = x_vector[i].field_mul(PRECOMPUTED_LAGRANGE_INTERPOLATION_WEIGHTS[i]); // Multiply langrangian weight by x_i
 
-// Compute S polynomial
-gf256_remove_one_degree_factor_monic(
-    &mut tmp_poly,
-    &PRECOMPUTED_F_POLY,
-    PARAM_CHUNK_M,
-    i as u8,
-);
-gf256_mul_vector_by_scalar(&mut tmp_poly, scalar);
-gf256_add_vector(&mut s_poly[n_poly], &tmp_poly);
+      // Compute S polynomial
+      gf256_monic_polynomial_division(
+          &mut tmp_poly,
+          &PRECOMPUTED_F_POLY,
+          PARAM_CHUNK_M,
+          i as u8,
+      ); // Compute quotient polynomial F(X) / (X - alpha_i)
+      gf256_mul_vector_by_scalar(&mut tmp_poly, scalar); // Multiply by langrangian weight
+      gf256_add_vector(&mut s_poly[n_poly], &tmp_poly); // Transfer to s_poly
+
+      // Compute P polynomial
+      gf256_monic_polynomial_division(&mut tmp_poly, &q_poly[n_poly], PARAM_CHUNK_W, i as u8);
+      gf256_mul_vector_by_scalar(&mut tmp_poly, scalar);
+      gf256_add_vector(&mut p_poly[n_poly], &tmp_poly);
+  }
 \end{minted}
-
-Here, we remove the one-degree factor from the polynomial $F$, multiply the result by a precomputed Lagrange scalar, and add the result to the polynomial $S$.
-
-Similarly, to compute $P$, we proceed as follows:
-
-\begin{minted}{rust}
-  // Compute P polynomial
-  gf256_remove_one_degree_factor_monic(
-      &mut tmp_poly,
-      &q_poly[n_poly],
-      PARAM_CHUNK_W,
-      i as u8,
-  );
-  gf256_mul_vector_by_scalar(&mut tmp_poly, scalar);
-  gf256_add_vector(&mut p_poly[n_poly], &tmp_poly);
-\end{minted}
-
-This involves removing the one-degree factor from the $Q'$ polynomial, multiplying the result by the scalar, and adding the result to the polynomial $P$.
 
 \subsubsection{Constructing the Witness}
 
@@ -2550,22 +2588,9 @@ fn test_sample_x_chunk() {
 }
 \end{minted}
 
-For $Q'$, we validated correctness by ensuring that its evaluation at the non-zero coordinates yielded the expected results:
+Additionally we tested the correctness of the polynomial relation generation process by verifying that the relation was sound and that $S \cdot Q = P \cdot F$.
 
 \begin{minted}{rust}
-fn test_compute_q_chunk_with_sample() {
-    let positions = sample_x_chunk(&mut PRG::init(&[0u8; PARAM_SEED_SIZE], None)).1;
-    let q = compute_q_prime_chunk(&positions);
-    for pos in positions.iter() {
-        assert_eq!(gf256_evaluate_polynomial_horner_monic(&q, *pos), 0);
-    }
-}
-\end{minted}
-
-Additionally we tested the correctness of the whole polynomial relation generation process by verifying that the relation was sound and that $S \cdot Q = P \cdot F$.
-
-\begin{minted}{rust}
-  ...
   // Test that S * Q = P * F
   let mut s_q = [0_u8; PARAM_CHUNK_M];
   let mut p_f = [0_u8; PARAM_CHUNK_M];

@@ -30,19 +30,21 @@ pub fn gf256_evaluate_polynomial_horner_monic(coeffs: &[u8], x: u8) -> u8 {
     acc
 }
 
-/// The function divides the input polynomial P_in(X) by the binomial (X−α), assuming P_in(X) is a monic polynomial (a polynomial whose leading coefficient is 1). It outputs the resulting quotient polynomial Q(X).
-/// If (X-alpha) divides P_in, returns P_in / (X-alpha)
-pub fn gf256_remove_one_degree_factor_monic(
-    q_out: &mut [u8],
-    p_in: &[u8],
-    in_degree: usize,
+/// Divide monic polynomial by linear factor (X-alpha). Returns the quotient polynomial. 
+/// Since the input polynomial is monic, 
+///  - the leading coefficient of the output is 1 
+///  - it has (X-alpha) as a factor and leaves no remainder.
+pub fn gf256_monic_polynomial_division(
+    quotient_polynomial_out: &mut [u8],
+    monic_polynomial_in: &[u8],
+    in_length: usize,
     alpha: u8,
 ) {
-    q_out[in_degree - 1] = 1_u8; // Monic polynomial: a polynomial whose leading coefficient is 1; e.g. X^3 + 23X^2 + 34X + 45
+    quotient_polynomial_out[in_length - 1] = 1_u8; // Monic polynomial: a polynomial whose leading coefficient is 1; e.g. X^3 + 23X^2 + 34X + 45
 
     // Start from the second last element
-    for i in (0..=in_degree - 2).rev() {
-        q_out[i] = p_in[i + 1].field_add(alpha.field_mul(q_out[i + 1])); // Q_i = P_i+1 + alpha * Q_i+1
+    for i in (0..=in_length - 2).rev() {
+        quotient_polynomial_out[i] = monic_polynomial_in[i + 1].field_add(alpha.field_mul(quotient_polynomial_out[i + 1])); // Q_i = P_i+1 + alpha * Q_i+1
     }
 }
 
@@ -79,7 +81,7 @@ mod test_poly_ops {
         let mut p_out = [0_u8; 3];
         let expected = [118, 192, 1];
 
-        gf256_remove_one_degree_factor_monic(&mut p_out, &p_in, 3, alpha);
+        gf256_monic_polynomial_division(&mut p_out, &p_in, 3, alpha);
         assert_eq!(p_out, expected);
     }
 }
