@@ -207,11 +207,10 @@ pub fn expand_seed<const SEEDS: usize>(seed_root: Seed) -> [Seed; SEEDS] {
 pub fn generate_instance_with_solution(master_seed: Seed) -> (Instance, Solution) {
     let mut prg = PRG::init(&master_seed, None);
 
-    let (q, s, p, _x) = sample_witness(&mut prg);
+    let (q, s, p, _) = sample_polynomial_relation(&mut prg);
 
     // Sample a seed for matrix H
     let seed_h = prg.sample_seed();
-
     let witness = generate_witness(seed_h, (q, s, p));
 
     let instance = Instance {
@@ -229,7 +228,7 @@ pub fn generate_instance_with_solution(master_seed: Seed) -> (Instance, Solution
     (instance, solution)
 }
 
-/// Computes the polynomials S, Q, and P.
+/// Samples the x vector and computes the polynomials S, Q, and P.
 /// SampleWitness from the spec.
 ///
 /// This function generates three polynomials: `SPoly`, `QPoly`, and `PPoly` by sampling positions
@@ -243,7 +242,7 @@ pub fn generate_instance_with_solution(master_seed: Seed) -> (Instance, Solution
 ///
 /// A tuple containing the generated polynomials: `(Q', S, P, x)`.
 /// `x` is only used for testing purposes.
-pub fn sample_witness(
+pub fn sample_polynomial_relation(
     prg: &mut PRG,
 ) -> (
     QPoly,
@@ -261,7 +260,7 @@ pub fn sample_witness(
 
     for n_poly in 0..PARAM_SPLITTING_FACTOR {
         // Sample x vector
-        let (x_vector, positions) = sample_x(prg);
+        let (x_vector, positions) = sample_x_chunk(prg);
         x_vectors[n_poly] = x_vector;
 
         // Compute Q
@@ -314,7 +313,7 @@ mod test_witness {
     fn test_generate_witness() {
         let seed_test = [0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed_test, None);
-        let (q, s, p, ..) = sample_witness(&mut prg);
+        let (q, s, p, ..) = sample_polynomial_relation(&mut prg);
         let result = generate_witness(seed_test, (q, s, p));
 
         let h_prime = result.h_prime;
@@ -333,7 +332,7 @@ mod test_witness {
     fn test_compute_polynomials() {
         let seed = [0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);
-        let (q_poly, s_poly, p_poly, x_vectors) = sample_witness(&mut prg);
+        let (q_poly, s_poly, p_poly, x_vectors) = sample_polynomial_relation(&mut prg);
 
         assert_eq!(q_poly.len(), PARAM_SPLITTING_FACTOR);
         assert_eq!(s_poly.len(), PARAM_SPLITTING_FACTOR);
@@ -414,16 +413,15 @@ fn sample_non_zero_x_positions(prg: &mut PRG) -> [u8; PARAM_CHUNK_W] {
 
 /// Create a vector x with hamming weight PARAM_CHUNK_WEIGHT.
 /// Returns x_vector and the non-zero positions.
-pub fn sample_x(prg: &mut PRG) -> ([u8; PARAM_CHUNK_M], [u8; PARAM_CHUNK_W]) {
+pub fn sample_x_chunk(prg: &mut PRG) -> ([u8; PARAM_CHUNK_M], [u8; PARAM_CHUNK_W]) {
     let positions = sample_non_zero_x_positions(prg);
     let mut x_vector = [0_u8; PARAM_CHUNK_M];
-    let mut non_zero_coordinates = [1u8; PARAM_CHUNK_W];
 
-    // Sample non-zero coordinates for x
-    prg.sample_field_fq_non_zero(&mut non_zero_coordinates);
+    let mut non_zero_elements = [1u8; PARAM_CHUNK_W];
+    prg.sample_field_fq_non_zero(&mut non_zero_elements);
 
     for (j, pos) in positions.iter().enumerate() {
-        x_vector[*pos as usize] ^= non_zero_coordinates[j];
+        x_vector[*pos as usize] ^= non_zero_elements[j];
     }
 
     (x_vector, positions)
@@ -519,7 +517,7 @@ mod test_helpers {
 
     fn get_solution(seed: Seed) -> Solution {
         let mut prg = PRG::init(&seed, None);
-        let (q_poly, s_poly, p_poly, ..) = sample_witness(&mut prg);
+        let (q_poly, s_poly, p_poly, ..) = sample_polynomial_relation(&mut prg);
         let witness = generate_witness(seed, (q_poly, s_poly, p_poly));
         Solution {
             s_a: witness.s_a,
@@ -551,7 +549,7 @@ mod test_helpers {
         for i in 0..255 {
             let seed = [i as u8; PARAM_SEED_SIZE];
             let mut prg = PRG::init(&seed, None);
-            let (x_vector, _positions) = sample_x(&mut prg);
+            let (x_vector, _positions) = sample_x_chunk(&mut prg);
 
             assert_eq!(x_vector.len(), PARAM_CHUNK_M);
             assert!(
@@ -578,7 +576,7 @@ mod test_helpers {
 
     #[test]
     fn test_compute_q_chunk_with_sample() {
-        let positions = sample_x(&mut PRG::init(&[0u8; PARAM_SEED_SIZE], None)).1;
+        let positions = sample_x_chunk(&mut PRG::init(&[0u8; PARAM_SEED_SIZE], None)).1;
         let q = compute_q_prime_chunk(&positions);
         for pos in positions.iter() {
             assert_eq!(gf256_evaluate_polynomial_horner_monic(&q, *pos), 0);
@@ -589,7 +587,7 @@ mod test_helpers {
     fn test_compute_s() {
         let seed = [0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);
-        let (q, s, p, ..) = sample_witness(&mut prg);
+        let (q, s, p, ..) = sample_polynomial_relation(&mut prg);
         let witness = generate_witness(seed, (q, s, p));
         let y = witness.y;
         let h_prime = witness.h_prime;
@@ -605,7 +603,7 @@ mod test_helpers {
     fn test_complete_q() {
         let seed = [0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);
-        let (q_poly, ..) = sample_witness(&mut prg);
+        let (q_poly, ..) = sample_polynomial_relation(&mut prg);
         let q_complete = complete_q(q_poly, 1);
 
         for (i, q_comp) in q_complete.iter().enumerate() {

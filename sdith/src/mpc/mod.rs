@@ -394,7 +394,7 @@ mod mpc_tests {
         },
         mpc::{broadcast::BroadcastShare, challenge::get_powers},
         signature::input::INPUT_SIZE,
-        witness::{generate_witness, sample_witness},
+        witness::{generate_witness, sample_polynomial_relation},
     };
 
     use super::*;
@@ -410,7 +410,7 @@ mod mpc_tests {
         let hseed = Seed::from([0; PARAM_SEED_SIZE]);
         let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
 
-        let (q, s, p, _) = sample_witness(&mut prg);
+        let (q, s, p, _) = sample_polynomial_relation(&mut prg);
         let witness = generate_witness(hseed, (q, s, p));
 
         let beaver = BeaverTriples::generate(&mut prg);
@@ -464,7 +464,7 @@ mod mpc_tests {
         let hseed = Seed::from([0; PARAM_SEED_SIZE]);
         let mut prg = PRG::init(&mseed, Some(&[0; PARAM_SALT_SIZE]));
 
-        let (q, s, p, _) = sample_witness(&mut prg);
+        let (q, s, p, _) = sample_polynomial_relation(&mut prg);
         let witness = generate_witness(hseed, (q, s, p));
         let beaver = BeaverTriples::generate(&mut prg);
 

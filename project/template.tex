@@ -2030,7 +2030,7 @@ We then implemented the trait, as was shown in \autoref{sub:prg}, for the follow
 \subsection{Commitments}
 To be able to commit to shares we use the hasher that we just defined. The commitment contains the following values:
 \begin{itemize}
-  \item Salt, a random value to ensure that the commitment is unique. 
+  \item Salt, a random value to ensure that the commitment is unique.
   \item $e$, the execution index.
   \item $i$, the party index.
   \item $share$, the share that is being committed to.
@@ -2178,9 +2178,9 @@ Verification involves recomputing the root from the authentication path:
         Ok(root)
     }
 \end{minted}
-This function iteratively recomputes hashes by traversing the tree from the selected leaves to the root. We have stripped all the non-interesting parts, and left the 2 main loops using the queue structure to iterate from the selected leaves up to the root. 
+This function iteratively recomputes hashes by traversing the tree from the selected leaves to the root. We have stripped all the non-interesting parts, and left the 2 main loops using the queue structure to iterate from the selected leaves up to the root.
 
-As above we created several tests to ensure that the function adhered correctly to normal input. But we also tested against several odd inputs to make sure that we caught if the function failed in some edge cases or if the function was not implemented correctly. 
+As above we created several tests to ensure that the function adhered correctly to normal input. But we also tested against several odd inputs to make sure that we caught if the function failed in some edge cases or if the function was not implemented correctly.
 \begin{minted}{rust}
     #[test]
     fn test_merkle_root_from_auth_wrong_commitments() {
@@ -2208,7 +2208,7 @@ As above we created several tests to ensure that the function adhered correctly 
         assert_ne!(tree.root(), root);
     }
 \end{minted}
-In this example we check that based on wrong inputs the function fails. 
+In this example we check that based on wrong inputs the function fails.
 
 \subsection{Field Arithmetic Implementation}\label{sub:field_arithmetic}
 To ensure full control over the underlying field arithmetic and avoid reliance on external crates, we implemented the Galois field arithmetic ourselves. This decision allowed us to tailor the implementation to our specific requirements.
@@ -2272,7 +2272,7 @@ After defining the trait and general setup for $GF(2)$ binary arithmetic, we pro
 
 \subsubsection{First Simple Extension}\label{sec:first_simple_extension}
 
-For the $GF(q^2)$ field, we did not implement the functions as a trait, as they are solely used as sub-functions for the $GF(q^8)$ field. To represent an element in the $GF(q^2)$ field, we used a 2-byte array, representing $(a, b) = a + bX$. 
+For the $GF(q^2)$ field, we did not implement the functions as a trait, as they are solely used as sub-functions for the $GF(q^8)$ field. To represent an element in the $GF(q^2)$ field, we used a 2-byte array, representing $(a, b) = a + bX$.
 
 \paragraph{Addition in $GF(2^4)$}
 
@@ -2288,7 +2288,7 @@ fn gf256_ext16_add(a: [u8; 2], b: [u8; 2]) -> [u8; 2] {
 
 Multiplication is more intricate. Given two elements $(a, b)$ and $(c, d)$, we compute their product as:
 \[
-(a + bX) \cdot (c + dX)
+  (a + bX) \cdot (c + dX)
 \]
 The Rust implementation of this operation is as follows:
 
@@ -2309,9 +2309,9 @@ fn gf256_ext16_mul(_a: [u8; 2], _b: [u8; 2]) -> [u8; 2] {
 
 Here:
 \begin{itemize}
-    \item $ac$ is the product of the constant terms $a$ and $c$.
-    \item $bd \cdot 0x20$ accounts for the reduction modulo the irreducible polynomial.
-    \item The linear terms are computed using the sum of $a+b$ and $c+d$, with adjustments to maintain consistency with field arithmetic.
+  \item $ac$ is the product of the constant terms $a$ and $c$.
+  \item $bd \cdot 0x20$ accounts for the reduction modulo the irreducible polynomial.
+  \item The linear terms are computed using the sum of $a+b$ and $c+d$, with adjustments to maintain consistency with field arithmetic.
 \end{itemize}
 
 \paragraph{Testing the $GF(q^2)$ Field}
@@ -2336,7 +2336,7 @@ More extensive testing was reserved for the $GF(q^4)$ field, as it is the primar
 \todo{Maybe reference the section that defines this}
 % subsubsection First simple extension (end)
 \subsubsection{GF256}\label{sec:gf_} % (fold)
-Now that we have the $GF(q^2)$ field we can implement the $GF(q^4)$ field arithmetic. We represent an element in the $GF(q^4)$ field as a 4-byte array. So we have a representation of $(a,b,c,d) = a + bX + cX^2 + dX^3$. 
+Now that we have the $GF(q^2)$ field we can implement the $GF(q^4)$ field arithmetic. We represent an element in the $GF(q^4)$ field as a 4-byte array. So we have a representation of $(a,b,c,d) = a + bX + cX^2 + dX^3$.
 As mentioned before in the \autoref{sub:field_arithmetic} we have a trait for the required field operations, so we can just implement those on the type $FPoint$. First we implement the addition and multiplication operations:
 
 \paragraph{Addition in $GF(q^4)$}
@@ -2365,40 +2365,35 @@ As mentioned before in the \autoref{sub:field_arithmetic} we have a trait for th
 % subsubsection GF256 (end)
 
 \subsection{Field polynomials}\label{sub:field_polynomials} % (fold)
-We can now define polynomials using the $GF(2^8)$ field, and do simple arithmetic upon the elements. 
+We can now define polynomials using the $GF(2^8)$ field, and do simple arithmetic upon the elements.
 
 \subsection{Field vector operations}\label{sub:field_vector_operations} % (fold)
 
-\subsection{Witness Generation}\label{sub:witness_generation}
+\subsection{Sampling SD polynomial relation}\label{sub:witness_generation}
 
-To create a public and private key pair, we need a witness for the syndrome decoding (SD) instance. As outlined in \autoref{eq:polynomial_representation}, this involves generating a set of polynomials derived from the $x$ vector in the syndrome instance.
+To create a public and private key pair, we need a witness for the ZK in the form of a syndrome decoding (SD) instance. As outlined in \autoref{eq:polynomial_representation}, this involves generating a set of polynomials derived from a random $x$ vector in the syndrome instance.
 
-\subsubsection{Sampling the $x$ Vector}
+\subsubsection{Sampling the $x$ vector}
 
-First, we sample the $x$ vector using a master seed:
+We needed to sample an $x$ vector with the required $d$-split hamming weight $w$ and length $m$. The function \rust{sample_non_zero_x_positions} determines the positions of the non-zero coordinates. It samples random coordinates within the range of $x$ until $w$ non-zero coordinates are selected. The function returns the $x\_vector$ and the positions of the non-zero coordinates, which are used to compute the polynomial $Q'$.
 
 \begin{minted}{rust}
-pub fn sample_x(prg: &mut PRG) -> ([u8; PARAM_CHUNK_M], [u8; PARAM_CHUNK_W]) {
-    let positions = sample_non_zero_x_positions(prg);
-    let mut x_vector = [0_u8; PARAM_CHUNK_M];
-    let mut non_zero_coordinates = [1u8; PARAM_CHUNK_W];
+  let positions = sample_non_zero_x_positions(prg);
+  let mut x_vector = [0_u8; PARAM_CHUNK_M];
+  
+  let mut non_zero_elements = [1u8; PARAM_CHUNK_W];
+  prg.sample_field_fq_non_zero(&mut non_zero_elements);
 
-    // Sample non-zero coordinates for x
-    prg.sample_field_fq_non_zero(&mut non_zero_coordinates);
+  for (j, pos) in positions.iter().enumerate() {
+      x_vector[*pos as usize] ^= non_zero_elements[j];
+  }
 
-    for (j, pos) in positions.iter().enumerate() {
-        x_vector[*pos as usize] ^= non_zero_coordinates[j];
-    }
-
-    (x_vector, positions)
-}
+  (x_vector, positions)
 \end{minted}
-
-The function \texttt{sample\_non\_zero\_x\_positions} determines the positions of the non-zero coordinates. It samples random coordinates within the range of $x$ until $w$ non-zero coordinates are selected. The function returns the $x\_vector$ and the positions of the non-zero coordinates, which are used to compute the polynomial $Q'$.
 
 \subsubsection{Computing the Polynomial $Q'$}
 
-The polynomial $Q'$ is computed based on the positions of the non-zero coordinates:
+The polynomial $Q'$ is computed based on the positions of the non-zero coordinates in $x$. We iterate through the positions to compute the coefficients of $Q'$. The computation of each coefficient follows the method described in \autoref{sec:polynomial_representation}.
 
 \begin{minted}{rust}
 fn compute_q_prime_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N] {
@@ -2413,8 +2408,6 @@ fn compute_q_prime_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N] {
     coeffs
 }
 \end{minted}
-
-This function iterates through the positions to compute the coefficients of $Q'$. The computation of each coefficient follows the method described in \autoref{sec:polynomial_representation}.
 
 \subsubsection{Computing the Polynomials $S$ and $P$}
 
@@ -2472,7 +2465,7 @@ Next, we generate the matrix $H'$ using a seed $seed_h$ sampled earlier:
 let h_prime = gen_hmatrix(seed_h);
 \end{minted}
 
-The function \texttt{gen\_hmatrix} initializes the matrix $H'$ using the seed. 
+The function \texttt{gen\_hmatrix} initializes the matrix $H'$ using the seed.
 
 Finally, we compute the syndrome instance $y$ as $y = s_b + H' \cdot s_a$:
 
@@ -2482,7 +2475,7 @@ mul_hmatrix_vector(&mut y, &h_prime, s_a);
 y
 \end{minted}
 
-We combine these components to define the witness:
+We combine these components to define the witness. Again, we take use of the \rust{cfg} attribute to write code that is only compiled when running tests. In this case we also add $s_b$ to the witness to test the correctness of the generated witness later. Note, that the \rust{Witness} struct is only the internal representation, and is now separated into an instance and a solution.
 
 \begin{minted}{rust}
 Witness {
@@ -2497,34 +2490,33 @@ Witness {
 }
 \end{minted}
 
-\subsubsection{Generating the Syndrome Decoding Instance}
+\subsubsection{Generating the SD instance and solution}
 
 With $Q$, $S$, $P$, and the witness defined, we can construct the syndrome decoding instance and its solution:
 
 \begin{minted}{rust}
 pub fn generate_instance_with_solution(master_seed: Seed) -> (Instance, Solution) {
-    let mut prg = PRG::init(&master_seed, None);
+  let mut prg = PRG::init(&master_seed, None);
 
-    let (q, s, p, _x) = sample_witness(&mut prg);
+  let (q, s, p, _) = sample_polynomial_relation(&mut prg);
 
-    // Sample a seed for matrix H
-    let seed_h = prg.sample_seed();
+  // Sample a seed for matrix H
+  let seed_h = prg.sample_seed();
+  let witness = generate_witness(seed_h, (q, s, p));
 
-    let witness = generate_witness(seed_h, (q, s, p));
+  let instance = Instance {
+      seed_h: witness.seed_h,
+      y: witness.y,
+      h_prime: witness.h_prime,
+  };
 
-    let instance = Instance {
-        seed_h: witness.seed_h,
-        y: witness.y,
-        h_prime: witness.h_prime,
-    };
+  let solution = Solution {
+      s_a: witness.s_a,
+      q_poly: q,
+      p_poly: p,
+  };
 
-    let solution = Solution {
-        s_a: witness.s_a,
-        q_poly: q,
-        p_poly: p,
-    };
-
-    (instance, solution)
+  (instance, solution)
 }
 \end{minted}
 
@@ -2534,14 +2526,14 @@ Here, we initialize the PRG to sample the $x$ vector and the seed for the $H'$ m
 
 To ensure correctness, we created several tests for the witness generation process.
 
-For the $x$ vector, we checked its length, the Hamming weight, and the positions of non-zero coordinates:
+For the $x$ vector, we checked length and hamming weight. We also checked that the $x$ vector contained non zero values in the non-zero positions.
 
 \begin{minted}{rust}
-fn test_sample_x() {
+fn test_sample_x_chunk() {
     for i in 0..255 {
         let seed = [i as u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(&seed, None);
-        let (x_vector, _positions) = sample_x(&mut prg);
+        let (x_vector, _positions) = sample_x_chunk(&mut prg);
 
         assert_eq!(x_vector.len(), PARAM_CHUNK_M);
         assert!(
@@ -2562,7 +2554,7 @@ For $Q'$, we validated correctness by ensuring that its evaluation at the non-ze
 
 \begin{minted}{rust}
 fn test_compute_q_chunk_with_sample() {
-    let positions = sample_x(&mut PRG::init(&[0u8; PARAM_SEED_SIZE], None)).1;
+    let positions = sample_x_chunk(&mut PRG::init(&[0u8; PARAM_SEED_SIZE], None)).1;
     let q = compute_q_prime_chunk(&positions);
     for pos in positions.iter() {
         assert_eq!(gf256_evaluate_polynomial_horner_monic(&q, *pos), 0);
@@ -2570,7 +2562,26 @@ fn test_compute_q_chunk_with_sample() {
 }
 \end{minted}
 
-Additional tests verified the correctness of other computed values and sub-functions.
+Additionally we tested the correctness of the whole polynomial relation generation process by verifying that the relation was sound and that $S \cdot Q = P \cdot F$.
+
+\begin{minted}{rust}
+  ...
+  // Test that S * Q = P * F
+  let mut s_q = [0_u8; PARAM_CHUNK_M];
+  let mut p_f = [0_u8; PARAM_CHUNK_M];
+
+  // Compute S * Q and P * F
+  for i in 0..PARAM_CHUNK_M {
+      s_q[i] = gf256_evaluate_polynomial_horner(&s_poly_d, i as u8)
+          .field_mul(gf256_evaluate_polynomial_horner_monic(&q_poly_d, i as u8));
+      p_f[i] = gf256_evaluate_polynomial_horner(&p_poly_d, i as u8).field_mul(
+          gf256_evaluate_polynomial_horner(&PRECOMPUTED_F_POLY, i as u8),
+      );
+  }
+
+  assert_eq!(s_q, p_f);
+  
+\end{minted}
 
 \section{Categories}\label{sub:categories} % (fold)
 We tried reworking to use dynamically sized vectors instead of compile time sized arrays. Which proved to be a big rework and refactor. Benching showed slower running times. So instead we went with compile time script to set the constants.
@@ -2607,14 +2618,14 @@ One can now invoke the benchmarking for category one by running the following co
 
 
 \section{Key generation}
-We use the witness to set the public and private key. 
+We use the witness to set the public and private key.
 
 
 \section{MPC}\label{sub:mpc_algo}
 After implementing all the subroutines, we could now do the MPC computations necessary for signing and verification.
 
 \subsection{Signing}\label{sub:signing}
-This is basically just a summarization of all the sub protocols, as we have separated out all the logic into different subroutines. But 
+This is basically just a summarization of all the sub protocols, as we have separated out all the logic into different subroutines. But
 
 \subsection{Verification}\label{sub:verification}
 
