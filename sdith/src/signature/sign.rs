@@ -11,13 +11,14 @@
 //! 5. Build the signature, with the message, salt, h1 and the broadcast plain, broadcast shares, solution shares and auth paths
 
 use crate::arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix};
+use crate::constants::params::PARAM_MERKLE_TREE_NODES;
 use crate::mpc::beaver::BeaverTriples;
 use crate::mpc::{
     compute_broadcast, compute_input_shares, expand_view_challenge_hash, party_computation,
     ComputeInputSharesResult,
 };
 use crate::subroutines::marshalling::Marshalling;
-use crate::subroutines::merkle_tree::MerkleTreeTrait as _;
+use crate::subroutines::merkle_tree::batched::{auth_path, new};
 use crate::utils::iterator::*;
 use crate::witness::SOLUTION_PLAIN_SIZE;
 use crate::{
@@ -27,7 +28,7 @@ use crate::{
     },
     keygen::SecretKey,
     mpc::{broadcast::BROADCAST_SHARE_PLAIN_SIZE, challenge::Challenge},
-    subroutines::{commitments::commit_share, merkle_tree::MerkleTree, prg::PRG},
+    subroutines::{commitments::commit_share, prg::PRG},
 };
 
 use super::input::INPUT_SIZE;
@@ -39,9 +40,13 @@ impl Signature {
     pub fn commit_shares(
         input_shares: &[[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU],
         salt: Salt,
-    ) -> ([[u8; PARAM_DIGEST_SIZE]; PARAM_TAU], Vec<MerkleTree>) {
+    ) -> (
+        [[u8; PARAM_DIGEST_SIZE]; PARAM_TAU],
+        [[Hash; PARAM_MERKLE_TREE_NODES]; PARAM_TAU],
+    ) {
         let mut commitments: [Hash; PARAM_TAU] = [[0u8; PARAM_DIGEST_SIZE]; PARAM_TAU];
-        let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
+        let mut merkle_nodes: [[Hash; PARAM_MERKLE_TREE_NODES]; PARAM_TAU] =
+            [[[0u8; PARAM_DIGEST_SIZE]; PARAM_MERKLE_TREE_NODES]; PARAM_TAU];
         let mut commitments_prime = [[0u8; PARAM_DIGEST_SIZE]; PARAM_N];
         for e in 0..PARAM_TAU {
             get_iterator(&mut commitments_prime)
@@ -50,12 +55,11 @@ impl Signature {
                     *commitment = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
                 });
 
-            let merkle_tree = MerkleTree::new(commitments_prime, None); // TODO: I spec there is a salt here. In implementation there is not.
-            commitments[e] = merkle_tree.root();
-            merkle_trees.push(merkle_tree);
+            commitments[e] = new(&mut merkle_nodes[e], commitments_prime, None);
+            // TODO: I spec there is a salt here. In implementation there is not.
         }
 
-        (commitments, merkle_trees)
+        (commitments, merkle_nodes)
     }
 
     /// Sign a `message` using the `secret_key` and the `entropy`
@@ -86,7 +90,7 @@ impl Signature {
             compute_input_shares(&input_plain, &mut prg);
 
         // Commit shares
-        let (commitments, merkle_trees) = Signature::commit_shares(&input_shares, salt);
+        let (commitments, merkle_nodes) = Signature::commit_shares(&input_shares, salt);
 
         // h1 = Hash1 (seedH , y, salt, com[1], . . . , com[τ ])
         let h1 = Signature::gen_h1(&secret_key.seed_h, &secret_key.y, salt, commitments);
@@ -131,7 +135,7 @@ impl Signature {
         let mut solution_share = [[[0u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
         let mut auth: [Vec<Hash>; PARAM_TAU] = Default::default();
         for e in 0..PARAM_TAU {
-            auth[e] = merkle_trees[e].auth_path(&view_opening_challenges[e]);
+            auth[e] = auth_path(merkle_nodes[e], &view_opening_challenges[e]);
             for (li, i) in view_opening_challenges[e].iter().enumerate() {
                 // Truncate witness share by removing beaver triples from the plain value
                 solution_share[e][li] =

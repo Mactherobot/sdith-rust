@@ -17,7 +17,9 @@ use crate::{
         expand_view_challenge_hash,
     },
     subroutines::{
-        marshalling::Marshalling, merkle_tree::{MerkleTree, MerkleTreeTrait}, prg::hashing::{hash_1, hash_2}
+        marshalling::Marshalling,
+        merkle_tree::batched::get_auth_size,
+        prg::hashing::{hash_1, hash_2},
     },
     witness::SOLUTION_PLAIN_SIZE,
 };
@@ -191,7 +193,7 @@ impl Marshalling<Vec<u8>> for Signature {
         let mut auth_lengths = [0; PARAM_TAU];
         // Get the auth sizes
         for e in 0..PARAM_TAU {
-            auth_lengths[e] = MerkleTree::get_auth_size(&view_opening_challenges[e]);
+            auth_lengths[e] = get_auth_size(&view_opening_challenges[e]);
         }
 
         let mut auth: [Vec<Hash>; PARAM_TAU] = Default::default();

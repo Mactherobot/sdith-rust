@@ -13,10 +13,10 @@ mod simd;
 mod size;
 
 use api::api_benchmark;
+use gf256::mul_benchmark;
 use merkle::merkle_benchmark;
 use parallel::parallel_benchmark;
 use simd::simd_benchmark;
-use gf256::mul_benchmark;
 
 fn get_config() -> Criterion {
     Criterion::default()

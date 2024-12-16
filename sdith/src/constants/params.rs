@@ -85,7 +85,16 @@ pub const PARAM_M_CEIL32: usize = ((PARAM_M + 31) >> 5) << 5;
 /// Precomputed public polynomial F
 pub const PRECOMPUTED_F_POLY: [u8; PARAM_CHUNK_M + 1] = cat::PRECOMPUTED_F_POLY;
 /// Lagrange scalar coefficients for computing S
-/// 
+///
 /// 1 / ∏_{j \neq i}(alpha_i - alpha_j)
 pub const PRECOMPUTED_LAGRANGE_INTERPOLATION_WEIGHTS: [u8; PARAM_CHUNK_M] =
     cat::PRECOMPUTED_LAGRANGE_INTERPOLATION_WEIGHTS;
+
+/// ## Merkle Tree Constants
+
+/// The height of the Merkle tree
+pub const PARAM_MERKLE_TREE_HEIGHT: usize = PARAM_LOG_N;
+/// The number of nodes in the Merkle tree
+pub const PARAM_MERKLE_TREE_NODES: usize = 2_usize.pow(PARAM_MERKLE_TREE_HEIGHT as u32) + (PARAM_N);
+/// The prefix for the Merkle tree hash
+pub const HASH_PREFIX_MERKLE_TREE: u8 = 3;
