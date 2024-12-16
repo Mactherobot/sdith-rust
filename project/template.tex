@@ -2288,10 +2288,10 @@ fn gf256_ext16_add(a: [u8; 2], b: [u8; 2]) -> [u8; 2] {
 Multiplication is more intricate. Given two elements $(a, b)$ and $(c, d)$, we compute their product as:
 \begin{align}
   (a + bX) \cdot (c + dX)
-  (a + bX) * (c + dX) &= ac + (ad + bc) * X + bd * X^2`
-                      &= ac + (ad + bc) * X + bd * (X + 32)`
-                      &= (ac + bd * 32) + (ad + bc + bd)X`
-                      &= (ac + bd * 32) + ((a + b) * (c + d) - ac)X`
+  (a + bX) \cdot (c + dX) &= ac + (ad + bc) \cdot X + bd * X^2`
+                      &= ac + (ad + bc) \cdot X + bd \cdot (X + 32)`
+                      &= (ac + bd \cdot 32) + (ad + bc + bd)X`
+                      &= (ac + bd \cdot 32) + ((a + b) \cdot (c + d) - ac)X`
                       &= c0 + c1X`
 \end{align}
 The Rust implementation of this operation is as follows:
