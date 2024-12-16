@@ -2039,7 +2039,7 @@ We only create simple tests for this functionality as we rely on a hashing crate
 \subsection{Merkle Tree Implementation}\label{sub:merkle_tree_impl}
 \todo{Write the introduction for this section once the specification is complete.}
 
-The implementation of the Merkle tree encountered challenges due to its 1D array representation. Despite these, we retained this structure for its performance advantages. The tree is stored in a single array where the last half holds the commitments. Given that the protocol specifies fixed-size trees for each category, we leveraged constants from \autoref{sub:constants} to allocate the tree on the stack efficiently.
+The implementation of the Merkle tree presented challenges due to its one-dimensional array representation. However, we opted to retain this structure because of its performance benefits. In this design, the tree is stored in a single array, with the last half reserved for the commitments. During optimization, we experimented with a simpler structure, but since it yielded no tangible improvements, we decided to keep the more readable implementation. As the protocol specifies fixed-size trees for each category, we utilized constants from \autoref{sub:constants} to allocate the tree efficiently on the stack.
 
 We defined a trait for the Merkle tree with methods derived from the specification:
 \begin{itemize}
@@ -2267,15 +2267,15 @@ where
 This test ensures that the field arithmetic implementation behaves correctly, providing confidence in its use throughout the rest of the system.
 
 \subsection{Field Extensions}\label{sub:field_extensions}
-After defining the trait and general setup for $GF(2)$ binary arithmetic, we proceeded to implement the methods for the $GF(2^4)$ and $GF(2^8)$ fields.
+After defining the trait and general setup for $GF(2)$ binary arithmetic, we proceeded to implement the methods for the $GF(q^2)$ and $GF(q^4)$ fields.
 
 \subsubsection{First Simple Extension}\label{sec:first_simple_extension}
 
 For the $GF(q^2)$ field, we did not implement the functions as a trait, as they are solely used as sub-functions for the $GF(q^8)$ field. To represent an element in the $GF(q^2)$ field, we used a 2-byte array, representing $(a, b) = a + bX$.
 
-\paragraph{Addition in $GF(2^4)$}
+\paragraph{Addition in $GF(q^2)$}
 
-Adding two elements in $GF(2^4)$ is straightforward: it is equivalent to performing a bitwise XOR operation on each component. The implementation is as follows:
+Adding two elements in $GF(q^2)$ is straightforward: it is equivalent to performing a bitwise XOR operation on each component. The implementation is as follows:
 
 \begin{minted}{rust}
 fn gf256_ext16_add(a: [u8; 2], b: [u8; 2]) -> [u8; 2] {
@@ -2283,7 +2283,7 @@ fn gf256_ext16_add(a: [u8; 2], b: [u8; 2]) -> [u8; 2] {
 }
 \end{minted}
 
-\paragraph{Multiplication in $GF(2^4)$}
+\paragraph{Multiplication in $GF(q^2)$}
 
 Multiplication is more intricate. Given two elements $(a, b)$ and $(c, d)$, we compute their product as:
 \[
@@ -2334,12 +2334,13 @@ More extensive testing was reserved for the $GF(q^4)$ field, as it is the primar
 
 \todo{Maybe reference the section that defines this}
 % subsubsection First simple extension (end)
-\subsubsection{GF256}\label{sec:gf_} % (fold)
-Now that we have the $GF(q^2)$ field we can implement the $GF(q^4)$ field arithmetic. We represent an element in the $GF(q^4)$ field as a 4-byte array. So we have a representation of $(a,b,c,d) = a + bX + cX^2 + dX^3$.
-As mentioned before in the \autoref{sub:field_arithmetic} we have a trait for the required field operations, so we can just implement those on the type $FPoint$. First we implement the addition and multiplication operations:
+\subsubsection{$GF(q^4)$}\label{sec:gf_} % (fold)
+Now that we have the $GF(q^2)$ field we can implement the $GF(q^4)$ field arithmetic. We represent an element in the $GF(q^4)$ field as a 4-byte array. So we have a representation of $(a,b,c,d) = a + bX + cX^2 + dX^3$. 
+As mentioned before in the \autoref{sub:field_arithmetic} we have a trait for the required field operations, so we can implement those on the type $FPoint$. First we implemented the addition which is again a simple XOR operation on each component. 
 
-\paragraph{Addition in $GF(q^4)$}
+\subsubsection{Multiplication in $GF(q^4)$}\label{sec:multiplication_in_gf_q_} % (fold)
 
+% subsubsection Multiplication in $GF(q^4)$ (end)
 
 
 \begin{minted}{rust}
@@ -2425,7 +2426,7 @@ fn compute_q_prime_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N] {
 
 \subsubsection{Computing the Polynomials $S$ and $P$}
 
-Next, we can compute the polynomials $S$ and $P$. Recall, that $S$ is the lagrangian interpolation of the $x$ vector -- s.t. $S(i) = x_i$ -- while $P = S \cdot Q / F$.
+Next, we can compute the polynomials $S$ and $P$. Recall, that $S$ is the lagrangian interpolation of the vector $x$ -- s.t. $S(i) = x_i$ -- while $P = S \cdot Q / F$.
 
 In a naive implementation, we would have the parties of the MPC protocol each locally compute the interpolation of their share of $x$ to obtain $S$. However, this would be computationally expensive.
 
@@ -2513,7 +2514,7 @@ mul_hmatrix_vector(&mut y, &h_prime, s_a);
 y
 \end{minted}
 
-We combine these components to define the witness. Again, we take use of the \rust{cfg} attribute to write code that is only compiled when running tests. In this case we also add $s_b$ to the witness to test the correctness of the generated witness later. Note, that the \rust{Witness} struct is only the internal representation, and is now separated into an instance and a solution.
+We combine these components to define the witness. Again, we take use of the \rust{cfg} attribute to write code that is only compiled when running tests. In this case we also add $s_b$ to the witness to test the correctness of the generated witness later. Note, that the \rust{Witness} struct is only the internal representation, and is separated into an instance and a solution.
 
 \begin{minted}{rust}
 Witness {
