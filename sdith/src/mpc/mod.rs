@@ -455,7 +455,22 @@ mod mpc_tests {
         }
     }
 
-    // TODO: Test `[polynomial_evaluation]` function
+    #[test]
+    fn test_polynomial_evaluation() {
+        let mut prg = PRG::init_base(&[2]);
+        let r = FPoint::field_sample(&mut prg); // r = [40, 106, 142, 69]
+
+        let mut powers_of_r = [FPoint::default(); PARAM_M + 1];
+        get_powers(r, &mut powers_of_r);
+
+        let q_poly = [vec![1, 2, 3]];
+
+        let q_eval = polynomial_evaluation(&q_poly[0], &powers_of_r); // r_0 =
+                                                                      // [1,0,0,0] * 1 + [40, 106, 142, 69] * 2 + [123, 29, 100, 186] * 3 = [220, 243, 171, 95]
+
+        let expected = FPoint::from([220, 243, 171, 95]); // q(r) = 1 + 2r + 3r^2
+        assert_eq!(q_eval, expected);
+    }
 
     /// Test that we compute the correct sized broadcast values
     #[test]

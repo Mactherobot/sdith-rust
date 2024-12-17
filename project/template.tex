@@ -2694,8 +2694,65 @@ Additionally we tested the correctness of the polynomial relation generation pro
   }
 
   assert_eq!(s_q, p_f);
-  
 \end{minted}
+
+\subsection{MPC}\label{sub:mpc_algo}
+As the last thing, before we can implement the signing algorithm, we need the underlying MPC simulation sub routines described in \autoref{def:sdith-mpc}.
+First we go through the helper methods that are used to do the computations. Then we describe the creation of beaver triples and finally the whole MPC computations.
+
+\paragraph{Polynomial Evaluation}
+For polynomial evaluation in the algorithm, seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. 
+\begin{align}
+  \textstyle\bigcup_{|Q|}(F_q)^{|Q|} \times F_q^\eta & \rightarrow F_q^\eta                 \nonumber                                                    \\
+  Q(r)                                               & = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1} &  & Q_i \in F_q, r \in F_q^\eta\label{eq:mpcpoly}
+\end{align}
+
+To implement this we utilized our field arithmetic and an array of pre computed powers of the $r$, which we will cover in the section about the challenge generation. \todo{reference the correction section}
+
+\begin{minted}{rust}
+pub fn polynomial_evaluation(poly_d: &[u8], powers_of_r: &[FPoint]) -> FPoint {
+    assert!(powers_of_r.len() >= poly_d.len());
+    let mut sum = FPoint::default();
+    let degree = poly_d.len();
+    for i in 0..degree {
+        // sum += r_j^(i-1) * q_poly_d[i]
+        let mut r_i = powers_of_r[i];
+        gf256_mul_vector_by_scalar(&mut r_i, poly_d[i]);
+        sum = sum.field_add(r_i);
+    }
+    sum
+}
+\end{minted}
+
+\paragraph{Testing the Polynomial Evaluation}
+Due to the nature of the polynomial evaluation we created a manual example and checked that our function evaluated the polynomial correctly.
+\begin{minted}{rust}
+    fn test_polynomial_evaluation() {
+        let mut prg = PRG::init_base(&[2]);
+        let r = FPoint::field_sample(&mut prg); // r = [40, 106, 142, 69]
+
+        let mut powers_of_r = [FPoint::default(); PARAM_M + 1];
+        get_powers(r, &mut powers_of_r);
+
+        let q_poly = [vec![1, 2, 3]];
+
+        let q_eval = polynomial_evaluation(&q_poly[0], &powers_of_r); // r_0 =
+                                                                      // [1,0,0,0] * 1 + [40, 106, 142, 69] * 2 + [123, 29, 100, 186] * 3 = [220, 243, 171, 95]
+
+        let expected = FPoint::from([220, 243, 171, 95]); // q(r) = 1 + 2r + 3r^2
+        assert_eq!(q_eval, expected);
+    }
+\end{minted}
+
+\paragraph{Compute q}
+
+\paragraph{Beaver Triples}
+
+\paragraph{Broadcast}
+
+\paragraph{Party Computation}
+
+\paragraph{Inverse Party Computation}
 
 \section{Categories}\label{sub:categories} % (fold)
 We tried reworking to use dynamically sized vectors instead of compile time sized arrays. Which proved to be a big rework and refactor. Benching showed slower running times. So instead we went with compile time script to set the constants.
@@ -2735,16 +2792,6 @@ One can now invoke the benchmarking for category one by running the following co
 We use the witness to set the public and private key.
 
 
-\section{MPC}\label{sub:mpc_algo}
-After implementing all the subroutines, we could now do the MPC computations necessary for signing and verification.
-
-\paragraph{Polynomial Evaluation}
-For polynomial evaluation in the algorithm, seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. The polynomial $P(x)$ is defined as: 
-
-\begin{align}
-  \textstyle\bigcup_{|Q|}(F_q)^{|Q|} \times F_q^\eta & \rightarrow F_q^\eta                 \nonumber                                                    \\
-  Q(r)                                               & = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1} &  & Q_i \in F_q, r \in F_q^\eta\label{eq:mpcpoly}
-\end{align}
 \subsection{Signing}\label{sub:signing}
 This is basically just a summarization of all the sub protocols, as we have separated out all the logic into different subroutines. But
 
