@@ -6,6 +6,8 @@ pub mod beaver;
 pub mod broadcast;
 pub mod challenge;
 
+use std::sync::{Arc, Mutex};
+
 use crate::{
     arith::{
         gf256::{
@@ -128,7 +130,7 @@ pub fn compute_input_shares(
     });
 
     for e in 0..PARAM_TAU {
-        get_iterator(&mut input_shares[e])
+        get_mut_iterator(&mut input_shares[e])
             .enumerate()
             .for_each(|(i, share)| {
                 *share = compute_share(input_plain, &input_coefs[e], i as u8, i == 0);
@@ -249,50 +251,56 @@ fn _party_computation(
     // Outputs
     let mut alpha_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
     let mut beta_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
-    let mut v = [FPoint::default(); PARAM_T];
+    let v = Arc::new(Mutex::new([FPoint::default(); PARAM_T]));
 
     for j in 0..PARAM_T {
         // v[j] = -c[j]
         if compute_v {
-            v[j] = c[j].field_neg();
+            v.lock().unwrap()[j] = c[j].field_neg();
         }
 
         let powers_of_r_j = chal.powers_of_r[j];
 
-        for d in 0..PARAM_SPLITTING_FACTOR {
-            let a = a[d][j];
-            let b = b[d][j];
+        get_mut_iterator(&mut alpha_share)
+            .zip(&mut beta_share)
+            .enumerate()
+            .for_each(|(d, (alpha_share, beta_share))| {
+                let a = a[d][j];
+                let b = b[d][j];
 
-            // Challenge values
+                // Challenge values
 
-            // α[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
-            let eval_q = polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
-            let eval_s = polynomial_evaluation(&s_poly[d], &powers_of_r_j);
-            alpha_share[d][j] = chal.eps[d][j].field_mul(eval_q).field_add(a);
+                // α[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
+                let eval_q = polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
+                let eval_s = polynomial_evaluation(&s_poly[d], &powers_of_r_j);
+                alpha_share[j] = chal.eps[d][j].field_mul(eval_q).field_add(a);
 
-            // β[d][j] = Evaluate(S[d], r[j]) + b[d][j]
-            beta_share[d][j] = eval_s.field_add(b);
+                // β[d][j] = Evaluate(S[d], r[j]) + b[d][j]
+                beta_share[j] = eval_s.field_add(b);
 
-            if compute_v {
-                // v[j] += ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
-                let eval_p = polynomial_evaluation(&p_poly[d], &powers_of_r_j);
-                v[j] = v[j].field_add(
-                    chal.f_poly_eval[j]
-                        .field_mul(eval_p)
-                        .field_mul(chal.eps[d][j]),
-                );
-                // v[j] += α'[d][j] ⊗ b[d][j] + β'[d][j] ⊗ a[d][j]
-                v[j] = v[j].field_add(broadcast.alpha[d][j].field_mul(b));
-                v[j] = v[j].field_add(broadcast.beta[d][j].field_mul(a));
+                if compute_v {
+                    // v[j] += ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
+                    let eval_p = polynomial_evaluation(&p_poly[d], &powers_of_r_j);
+                    let mut v = v.lock().unwrap();
+                    v[j] = v[j].field_add(
+                        chal.f_poly_eval[j]
+                            .field_mul(eval_p)
+                            .field_mul(chal.eps[d][j]),
+                    );
+                    // v[j] += α'[d][j] ⊗ b[d][j] + β'[d][j] ⊗ a[d][j]
+                    v[j] = v[j].field_add(broadcast.alpha[d][j].field_mul(b));
+                    v[j] = v[j].field_add(broadcast.beta[d][j].field_mul(a));
 
-                if with_offset {
-                    // v[j] =+ -α[d][j] ⊗ β[d][j]
-                    v[j] =
-                        v[j].field_add(alpha_share[d][j].field_neg().field_mul(beta_share[d][j]));
+                    if with_offset {
+                        // v[j] =+ -α[d][j] ⊗ β[d][j]
+                        v[j] = v[j].field_add(alpha_share[j].field_neg().field_mul(beta_share[j]));
+                    }
                 }
-            }
-        }
+            });
     }
+
+    let v = *v.lock().unwrap();
+
     Ok(BroadcastShare {
         alpha: alpha_share,
         beta: beta_share,

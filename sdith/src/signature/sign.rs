@@ -44,7 +44,7 @@ impl Signature {
         let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
         let mut commitments_prime = [[0u8; PARAM_DIGEST_SIZE]; PARAM_N];
         for e in 0..PARAM_TAU {
-            get_iterator(&mut commitments_prime)
+            get_mut_iterator(&mut commitments_prime)
                 .enumerate()
                 .for_each(|(i, commitment)| {
                     *commitment = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
@@ -82,7 +82,7 @@ impl Signature {
 
         // Compute input shares for the MPC
         let input_plain = input.serialise();
-        let ComputeInputSharesResult(input_shares, input_coefs): ComputeInputSharesResult =
+        let ComputeInputSharesResult(input_shares, input_coefs) =
             compute_input_shares(&input_plain, &mut prg);
 
         // Commit shares
