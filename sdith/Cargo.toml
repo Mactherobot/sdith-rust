@@ -1,5 +1,5 @@
 [package]
-name = "sdith"
+name = "rsdith"
 description = "SDitH Signature Scheme Protocol from NIST Post-Quantum Cryptography Standardization, Additional signature schemes round 2"
 version = "0.0.0"
 edition = "2021"
@@ -44,7 +44,7 @@ rustc_version = "0.4.1"
 # Then we can use the package as a dependency for the cli binary in main.rs
 # https://stackoverflow.com/a/47113822
 [lib]
-name = "sdith"
+name = "rsdith"
 path = "src/lib.rs"
 bench = false # Prevents benchmarks from running src/lib.rs tests
 doctest = false # Prevents doctests from src/lib.rs
