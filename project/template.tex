@@ -27,7 +27,7 @@
 \usepackage{dirtree}
 \usepackage{arydshln}
 \usepackage{colortbl}
-\usepackage[a4paper, total={6in, 9in}]{geometry}
+\usepackage[a4paper, total={6in, 10in}, headsep=0.5in]{geometry}
 \usepackage{mdframed}
 \usepackage{listings}
 \lstdefinestyle{tree}{
@@ -898,9 +898,9 @@ In its basic form, the MPC protocol is assumed to be a $(N-1, N)$-private MPC pr
   \end{align*} over the randomness $r$ and $\epsilon$.
 \end{lemma}
 
-\section{The Zero-Knowledge Proof of Knowledge (ZK-POK) Protocol}
+\section{ZK-POK Protocol}
 
-To obtain a signature scheme from the MPC protocol \autoref{def:sdith-mpc}, two transformations are needed. First, into a ZK-POK using MPCitH. The ZK-POK described \autoref{def:sdith-zkpok} in is based on the verification by sacrificing triples strategy for MPCitH~\cite{baum2020concretely} detailed in \autoref{sec:mpc_sacrificing}.
+To obtain a signature scheme from the MPC protocol \autoref{def:sdith-mpc}, two transformations are needed. First, we will transform the MPC protocol into a zero-knowledge proof of knowledge (ZK-POK) using MPCitH. The ZK-POK described \autoref{def:sdith-zkpok} in is based on the verification by sacrificing triples strategy for MPCitH~\cite{baum2020concretely} detailed in \autoref{sec:mpc_sacrificing}. 
 
 \begin{protocol}[ZK-POK from MPCitH~\cite{feneuil2022syndrome}]\label{def:sdith-zkpok}
   Both the prover $\mathcal{P}$ and the verifier $\mathcal{V}$ hold public SD instance $(H,y)$. $\mathcal{P}$ holds $x$ such that $y = Hx$ and $\text{wt}(x)\ leq w$.
