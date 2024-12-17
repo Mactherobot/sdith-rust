@@ -2415,11 +2415,47 @@ We test the extended field arithmetic by using the same test as we defined for t
 
 
 \subsection{Field polynomials}\label{sub:field_polynomials} % (fold)
-In order to compute our witness, we need to be able to evaluate a polynomial at a certain point.
+In order to compute the witness, we need to be able to divide a monic polynomial by some linear factor in order to create the Lagrange basis polynomials.
+This is done by first adding a 1 in the leading coefficient for the returned polynomial. Then we iterate through the polynomial in reverse order and compute the coefficients using the formula:
+\begin{align}
+  Q_i = P_{i+1} + alpha * Q_{i+1}
+\end{align}
+\begin{minted}{rust}
+/// Divide monic polynomial by linear factor (X-alpha). Returns the quotient polynomial. 
+/// Since the input polynomial is monic, 
+///  - the leading coefficient of the output is 1 
+///  - it has (X-alpha) as a factor and leaves no remainder.
+pub fn gf256_monic_polynomial_division(
+    quotient_polynomial_out: &mut [u8],
+    monic_polynomial_in: &[u8],
+    in_length: usize,
+    alpha: u8,
+) {
+    quotient_polynomial_out[in_length - 1] = 1_u8; // Monic polynomial: a polynomial whose leading coefficient is 1; e.g. X^3 + 23X^2 + 34X + 45
 
-\todo{See gf256\_ext.rs}
+    // Start from the second last element
+    for i in (0..=in_length - 2).rev() {
+        quotient_polynomial_out[i] = monic_polynomial_in[i + 1].field_add(alpha.field_mul(quotient_polynomial_out[i + 1])); // Q_i = P_i+1 + alpha * Q_i+1
+    }
+}
+\end{minted}
+
+\paragraph{Testing the Polynomial Division}
+To test that our implementation computes the correct reduced polynomial we created a precomputed example and tested that the output matched the expected value.
+\begin{minted}{rust}
+    fn test_remove_one_degree_factor_monic() {
+        let p_in: [u8; 4] = [112_u8, 45_u8, 195_u8, 1_u8];
+        let alpha = 3_u8;
+        let mut p_out = [0_u8; 3];
+        let expected = [118, 192, 1];
+
+        gf256_monic_polynomial_division(&mut p_out, &p_in, 3, alpha);
+        assert_eq!(p_out, expected);
+    }
+\end{minted}
 
 \subsection{Field vector operations}\label{sub:field_vector_operations} % (fold)
+
 
 \subsection{Sampling SD polynomial relation}\label{sub:witness_generation}
 
