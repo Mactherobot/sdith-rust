@@ -121,7 +121,7 @@ impl FieldArith for FPoint {
 
     /// Multiplication: Field extension `F_q^4 = F_q[Z] / (Z^2 + Z + 32(X))` where (X) = 256
     ///
-    /// For u = (p,q) = p + qZ,
+    /// For u = (p,q) = p + qZ and v = (r,s) = r + sZ
     ///
     /// u * v = (p + qZ) * (r + sZ)
     ///       = pr + psZ + qrZ + qsZ^2
