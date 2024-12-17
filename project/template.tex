@@ -28,6 +28,7 @@
 \usepackage{arydshln}
 \usepackage{colortbl}
 \usepackage[a4paper, total={6in, 9in}]{geometry}
+\usepackage{mdframed}
 \usepackage{listings}
 \lstdefinestyle{tree}{
   literate=
@@ -44,7 +45,7 @@
 \newtheorem{definition}{Definition}[section]
 \newcommand{\definitionautorefname}{Definition}
 
-\newtheorem{protocol}{Protocol}[section]
+\newmdtheoremenv{protocol}{Protocol}[section]
 \newcommand{\protocolautorefname}{Protocol}
 
 \newtheorem{proposition}{Proposition}[section]
@@ -670,14 +671,15 @@ The underlying MPC protocol is based on arithmetic circuits, where addition oper
     \item The parties run $ \text{open}(\sh{\alpha}) $ and $ \text{open}(\sh{\beta}) $ to obtain $ \alpha $ and $ \beta $.
     \item Each party computes $ \sh{z} = \sh{c} - \alpha \cdot \sh{b} - \beta \cdot \sh{a} + \alpha \cdot \beta $.
   \end{enumerate}
-
-  The above is a well-known technique~\cite{beaver1992efficient} correctness follows from the fact that
-  \begin{align*}
-    \sh{z} & = \sh{c} - \alpha \cdot \sh{b} - \beta \cdot \sh{a} + \alpha \cdot \beta        \\
-           & = \sh{ab} - (x - a) \cdot \sh{b} - (y - b) \cdot \sh{a} + (x - a) \cdot (y - b) \\
-           & = \sh{xy}
-  \end{align*}
 \end{protocol}
+
+
+The above is a well-known technique~\cite{beaver1992efficient} correctness follows from the fact that
+\begin{align*}
+  \sh{z} & = \sh{c} - \alpha \cdot \sh{b} - \beta \cdot \sh{a} + \alpha \cdot \beta        \\
+         & = \sh{ab} - (x - a) \cdot \sh{b} - (y - b) \cdot \sh{a} + (x - a) \cdot (y - b) \\
+         & = \sh{xy}
+\end{align*}
 
 Proposals for zero-knowledge proofs -- such as the \textit{Cut-and-Choose} protocol~\cite{katz2018improved,baum2020concretely} -- utilize \autoref{def:beaver-multiplication}, combined with preprocessing techniques, to achieve promising results\footnote{See \autoref{sec:zk-cut-and-choose}}. Building upon these protocols, Baum and Nof~\cite{baum2020concretely} propose a variant that shifts the focus from simulating the computation of a product to simulating the \textit{verification} of the triple relation instead. This verification is achieved by sacrificing another triple, ensuring correctness while improving performance. Consider the following protocol, which is based on the MPC protocol described in~\cite{damgaard2012multiparty}.
 
@@ -893,35 +895,85 @@ In its basic form, the MPC protocol is assumed to be a $(N-1, N)$-private MPC pr
   \end{align*} over the randomness $r$ and $\epsilon$.
 \end{lemma}
 
+\section{The Zero-Knowledge Proof of Knowledge (ZK-POK) protocol}
 
-\section{The Signature Scheme}
-
-To obtain a signature scheme from the MPC protocol \autoref{def:sdith-mpc}, two transformations are needed. First, into a zero-knowledge proof of knowledge (ZK-POK) using MPCitH and second, into a signature scheme using the Fiat-Shamir transform.
+To obtain a signature scheme from the MPC protocol \autoref{def:sdith-mpc}, two transformations are needed. First, into a ZK-POK using MPCitH and second, into a signature scheme using the Fiat-Shamir transform.
 
 The ZK-POK is based on the verification by sacrificing triples strategy for MPCitH~\cite{baum2020concretely} detailed in \autoref{sec:mpc_sacrificing}.
 
 \begin{protocol}[ZK-POK from MPCitH~\cite{feneuil2022syndrome}]
   Both the prover $\mathcal{P}$ and the verifier $\mathcal{V}$ hold public SD instance $(H,y)$. $\mathcal{P}$ holds $x$ such that $y = Hx$ and $\text{wt}(x)\ leq w$.
-  \begin{itemize}
-    \item $\mathcal{P}$ computes the proof witness $(Q, S, P)$ from $x$ and public polynomial $F$.
-    \item $\mathcal{P}$ Sample a root seed $sd$ and expand to seeds $sd_i$. Commit to the party randomness $\texttt{com}(sd_i, p_i)$.
-    \item $\mathcal{P}$ prepares inputs for the MPC protocol. For each party $i \in [1 : N]$ and for all $j \in [t]$, it computes
-    \begin{itemize}
-      \item 
-      \item $\mathcal{P}$ generates the inputs to the MPC protocol
-      \begin{itemize}
-        \item \textit{Beaver triples}: $\sh{a}, \sh{b} \leftarrow \texttt{PRG}(seed_i)$ and $\sh{c} = \sh{a} \cdot \sh{b}$.
-        \item $state_i = (seed_i, \sh{x_A}, \sh{Q}, \sh{P})$.
-      \end{itemize} 
-      \item $\mathcal{P}$ commites 
-    \end{itemize}
-    \item The verifier $\mathcal{V}$ challenges $\mathcal{P}$ with randomness $r,\epsilon$ of \autoref{def:sdith-mpc}.
-    \item $\mathcal{P}$ runs \autoref{def:sdith-mpc} \textit{in their head} and sends the broadcast values to $\mathcal{V}$.
-    \item $\mathcal{V}$ challenges $\mathcal{P}$ to open all parties in $I \subsetneq [1 : N]$
-    \item $\mathcal{P}$ opens and reveals the commitment values of all parties in $I$.
-    \item $\mathcal{V}$ checks the consistency of the MPC protocol values and the commitment values.
-  \end{itemize} 
+
+  \paragraph{Round 1} $\mathcal{P}$ computes the proof witness $(Q, S, P)$ from $x$ and public polynomial $F$.
+
+  $\mathcal{P}$ prepares inputs for the MPC protocol: \\
+  Sample a root seed $sd$ and computes each party's seed $sd_i$ and commitment randomness $\rho_i$.\\
+
+  \noindent
+  For each party $i \in [N]$
+  \begin{itemize}[parsep=0pt, itemsep=0pt]
+    \item $\sh{a_j}_i, \sh{b_j}_i \leftarrow \texttt{PRG}(sd_i)$ for each $j \in [t]$
+    \item if $i \neq N$
+          \begin{itemize}
+            \item $\{ \sh{c_j}_i \}_{j \in [t]}, \sh{x_A}_i, \sh{Q}_i, \sh{P}_i \leftarrow \texttt{PRG}(sd_i)$
+            \item $\texttt{state}_i = sd_i$
+          \end{itemize}
+    \item else
+          \begin{itemize}
+            \item \( \sh{x_A}_N = x_A - \sum_{\ell \neq N} \sh{x_A}_\ell \)
+            \item \( \sh{Q}_N = Q - \sum_{\ell \neq N} \sh{Q}_\ell \)
+            \item \( \sh{P}_N = P - \sum_{\ell \neq N} \sh{P}_\ell \)
+            \item \( \sh{c_j}_N = \langle a_j, b_j \rangle - \sum_{\ell \neq N} \sh{c_j}_\ell \), for each \( j \in [t] \)
+            \item \(\texttt{aux} = \left( \sh{x_A}_N, \sh{Q}_N, \sh{P}_N, \{ \sh{c_j}_N \}_{j \in [t]} \right)\)
+            \item $\texttt{state}_N = sd_N\ ||\ \texttt{aux}$
+          \end{itemize}
+    \item Commit to the party state $c_i = \texttt{com}(\texttt{state}_i, \rho_i)$
+  \end{itemize}
+
+  \noindent
+  The prover builds hash $h = \texttt{Hash}(c_1, \ldots, c_N)$ and sends $h$ to the verifier.
+
+  \paragraph{Round 2} $\mathcal{V}$ samples for each $j \in [t]$ random points $r_j \in \mathbb{F}_q^4$ and $\epsilon_j \in \mathbb{F}_q^4$ and sends them top $\mathcal{P}$.
+
+  \paragraph{Round 3} $\mathcal{P}$ simulates the MPC protocol \textit{in their head}.
+  \begin{align*}
+    \sh{\alpha_j}, \sh{\beta_j}, \sh{v_j} \leftarrow \texttt{MPC}(\sh{x_A}, \sh{Q}, \sh{P}, \sh{a}, \sh{b}, r_j, \epsilon_j) \quad \text{for }j \in [t]
+  \end{align*}
+  $\mathcal{P}$ computes hash $h' = \texttt{Hash}(\sh{\alpha_j}, \sh{\beta_j}, \sh{v_j}, \dots \sh{\alpha_t}, \sh{\beta_t}, \sh{v_t})$ and sends $h'$ to $\mathcal{V}$.
+
+  \paragraph{Round 4} $\mathcal{V}$ uniformly samples $i^* \in [N], |i^*| = N-1$ and sends $i^*$ to $\mathcal{P}$.
+
+  \paragraph{Round 5}
+  The prover sends \( (\texttt{state}_i, \rho_i)_{i \neq i^*}, \texttt{com}_{i^*}, \{ \sh{\alpha_j}_{i^*} \}_{j \in [t]}, \{ \sh{\beta_j}_{i^*} \}_{j \in [t]} \).
+
+  \paragraph{Verification}
+  \begin{enumerate}
+    \item \textbf{Input Commitment Consistency:}
+          For each \( i \neq i^* \), $\mathcal{V}$ computes the commitments to the parties' states:
+          \[
+            \texttt{com}_i = \texttt{Com}(\texttt{state}_i; \rho_i).
+          \]
+          Then, she checks that the hash value \( h \) matches:
+          \[
+            h \stackrel{?}{=} \texttt{Hash}(\texttt{com}_1, \dots, \texttt{com}_N).
+          \]
+
+    \item \textbf{MPC state consistency:}
+          Using the states \( \{ \texttt{state}_i \}_{i \neq i^*} \), $\mathcal{V}$ simulates all the parties except for \( i^* \). From the recomputed shares, she checks the hash consistency:
+          \[
+            h' \stackrel{?}{=} \texttt{Hash}(\sh{\alpha_1}, \sh{\beta_1}, \sh{v_1}, \dots, \sh{\alpha_t}, \sh{\beta_t}, \sh{v_t}),
+          \]
+          where the missing shares \( \sh{v_j}_{i^*} \) are defined as:
+          \[
+            \sh{v_j}_{i^*} := - \sum_{i \neq i^*} \sh{v_j}_i \quad \text{for each } j \in [t].
+          \]
+  \end{enumerate}
+
+  \noindent
+  If both checks succeed, the verifier accepts. Otherwise, she rejects.
 \end{protocol}
+
+\paragraph{Fiat-Shamir Transform}
 
 \section{Optimisations}
 
@@ -2213,7 +2265,7 @@ After defining the trait and general setup for $GF(2)$ binary arithmetic, we pro
 
 \paragraph{First Simple Extension}\label{sec:first_simple_extension}
 
-For the $GF(q^2)$ field, we did not implement the functions as a trait, as they are solely used as sub-functions for the $GF(q^8)$ field. To represent an element in the $GF(q^2)$ field, we used a 2-byte array, representing $(a, b) = a + bX$. The field is an extension from the lower field $GF(q)$ by the irreducible polynomial $X^2 + X + 32$. 
+For the $GF(q^2)$ field, we did not implement the functions as a trait, as they are solely used as sub-functions for the $GF(q^8)$ field. To represent an element in the $GF(q^2)$ field, we used a 2-byte array, representing $(a, b) = a + bX$. The field is an extension from the lower field $GF(q)$ by the irreducible polynomial $X^2 + X + 32$.
 
 \begin{align}
   F_{q^2}[X] = F_q[X] / (X^2 + X + 32)
