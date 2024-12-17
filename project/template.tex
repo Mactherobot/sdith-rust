@@ -41,11 +41,14 @@
 \setlength{\parindent}{10pt} % indentation
 
 \usepackage{amsthm}
+
+\setlength{\parskip}{2pt}
+
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[section]
 \newcommand{\definitionautorefname}{Definition}
 
-\newmdtheoremenv{protocol}{Protocol}[section]
+\newmdtheoremenv[innertopmargin=-2pt]{protocol}{Protocol}[section]
 \newcommand{\protocolautorefname}{Protocol}
 
 \newtheorem{proposition}{Proposition}[section]
