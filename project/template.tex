@@ -2285,7 +2285,7 @@ More extensive testing was reserved for the $GF(q^4)$ field, as it is the primar
 \todo{Maybe reference the section that defines this}
 % paragraph First simple extension (end)
 
-\subsubsection{Extending to the 32 bit field}\label{sec:gf_} % (fold)
+\subsubsection{Extending to the 32 bit field}\label{sec:gf_256_32_bit_field} % (fold)
 Now that we have the $GF(q^2)$ field we can implement the $GF(q^4)$ field arithmetic. We represent an element in the $GF(q^4)$ field as a 4-byte array. So we have a representation of $(a,b,c,d) = a + bX + cX^2 + dX^3$. And the extension is done by the irreducible polynomial $X^4 + X + 32$:
 
 \begin{align}
@@ -2359,17 +2359,9 @@ Our implementation follows the formula above:
 \paragraph{Testing the $GF(q^4)$ Field}
 We test the extended field arithmetic by using the same test as we defined for the trait in \autoref{sub:field_arithmetic}.
 
-% subsubsection Multiplication in $GF(q^4)$ (end)
-% subsubsection GF256 (end)
 
 \subsection{Field polynomials}\label{sub:field_polynomials} % (fold)
-We can now define polynomials using the $GF(2^8)$ field, and do simple arithmetic upon the elements.
-
-For polynomial evaluation in the algorithm, seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. The polynomial $P(x)$ is defined as
-\begin{align}
-  \textstyle\bigcup_{|Q|}(F_q)^{|Q|} \times F_q^\eta & \rightarrow F_q^\eta                 \nonumber                                                    \\
-  Q(r)                                               & = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1} &  & Q_i \in F_q, r \in F_q^\eta\label{eq:mpcpoly}
-\end{align}
+In order to compute our witness, we need to be able to evaluate a polynomial at a certain point.
 
 \todo{See gf256\_ext.rs}
 
@@ -2466,8 +2458,8 @@ Similarly for $P$, we can leverage the same interpolation structure but instead,
 
 Therefore, to compute $S$ and $P$ we iterate over each interpolation point $\alpha_i$ and compute the scalar $x_i \cdot \frac{1}{\prod_{j\neq i}(\alpha_i - \alpha_j)}$ and the contributions of $F$ and $Q$ to the interpolation weights.
 
-We store the precomputations in a temporary array \rust{tmp_poly} and then transfer the result to the polynomial \rust{s_poly} using \rust{gf256_add_vector}.
-
+We store the pre-computations in a temporary array \rust{tmp_poly} and then transfer the result to the polynomial \rust{s_poly} using \rust{gf256_add_vector}.
+\todo{Use the section on field polys to explain this better}
 \begin{minted}{rust}
   // Compute S and P
   for i in 0..PARAM_CHUNK_M {
@@ -2654,6 +2646,13 @@ We use the witness to set the public and private key.
 \section{MPC}\label{sub:mpc_algo}
 After implementing all the subroutines, we could now do the MPC computations necessary for signing and verification.
 
+\paragraph{Polynomial Evaluation}
+For polynomial evaluation in the algorithm, seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. The polynomial $P(x)$ is defined as: 
+
+\begin{align}
+  \textstyle\bigcup_{|Q|}(F_q)^{|Q|} \times F_q^\eta & \rightarrow F_q^\eta                 \nonumber                                                    \\
+  Q(r)                                               & = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1} &  & Q_i \in F_q, r \in F_q^\eta\label{eq:mpcpoly}
+\end{align}
 \subsection{Signing}\label{sub:signing}
 This is basically just a summarization of all the sub protocols, as we have separated out all the logic into different subroutines. But
 
