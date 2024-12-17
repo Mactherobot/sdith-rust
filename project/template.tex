@@ -2285,6 +2285,13 @@ More extensive testing was reserved for the $GF(q^4)$ field, as it is the primar
 \todo{Maybe reference the section that defines this}
 % paragraph First simple extension (end)
 
+\subsubsection{Extending to the 32 bit field}\label{sec:gf_} % (fold)
+Now that we have the $GF(q^2)$ field we can implement the $GF(q^4)$ field arithmetic. We represent an element in the $GF(q^4)$ field as a 4-byte array. So we have a representation of $(a,b,c,d) = a + bX + cX^2 + dX^3$. And the extension is done by the irreducible polynomial $X^4 + X + 32$:
+
+\begin{align}
+  F_{q^4} = F_q[Z] / (Z^2 + Z + 32(X))
+\end{align}
+
 As mentioned before in the \autoref{sub:field_arithmetic} we have a trait for the required field operations, so we can implement those on the type $FPoint$.
 
 \paragraph{Addition in $GF(q^4)$}
@@ -2318,13 +2325,19 @@ fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
 \end{minted}
 
 \paragraph{Multiplication in $GF(q^4)$}
+We can describe a multiplication between 2 points in the extended field.
+For $u = (p,q) = p + qZ$ and $v = (r,s) = r + sZ$ we have:
+\begin{align}
+  u \cdot v &= (p + qZ) \cdot (r + sZ) \\
+        &= pr + psZ + qrZ + qsZ^2\\
+        &= pr + (ps + qr)Z + qs(Z + 32X) 
+        &= pr + (ps + qr)Z + qsZ + 32qsX\\ 
+        &= (pr + 32qsX) + (ps + qr + qs)Z\\
+        &= (pr + 32qsX) + ((p + q) \cdot (r + s) - pr)Z\\
+\end{align}
+Note that we use the following fact in the multiplication: $Z^2 = Z + 32X$ This comes from the fact that it is $mod(2)$.
 
-
-\subsubsection{Multiplication in $GF(q^4)$}\label{sec:multiplication_in_gf_q_} % (fold)
-
-% subsubsection Multiplication in $GF(q^4)$ (end)
-
-
+Our implementation follows the formula above:
 \begin{minted}{rust}
     fn field_mul(&self, rhs: Self) -> Self {
         let a = *self;
@@ -2345,7 +2358,6 @@ fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
 
 \paragraph{Testing the $GF(q^4)$ Field}
 We test the extended field arithmetic by using the same test as we defined for the trait in \autoref{sub:field_arithmetic}.
-
 
 % subsubsection Multiplication in $GF(q^4)$ (end)
 % subsubsection GF256 (end)
