@@ -898,13 +898,11 @@ In its basic form, the MPC protocol is assumed to be a $(N-1, N)$-private MPC pr
   \end{align*} over the randomness $r$ and $\epsilon$.
 \end{lemma}
 
-\section{The Zero-Knowledge Proof of Knowledge (ZK-POK) protocol}
+\section{The Zero-Knowledge Proof of Knowledge (ZK-POK) Protocol}
 
-To obtain a signature scheme from the MPC protocol \autoref{def:sdith-mpc}, two transformations are needed. First, into a ZK-POK using MPCitH and second, into a signature scheme using the Fiat-Shamir transform.
+To obtain a signature scheme from the MPC protocol \autoref{def:sdith-mpc}, two transformations are needed. First, into a ZK-POK using MPCitH. The ZK-POK described \autoref{def:sdith-zkpok} in is based on the verification by sacrificing triples strategy for MPCitH~\cite{baum2020concretely} detailed in \autoref{sec:mpc_sacrificing}.
 
-The ZK-POK is based on the verification by sacrificing triples strategy for MPCitH~\cite{baum2020concretely} detailed in \autoref{sec:mpc_sacrificing}.
-
-\begin{protocol}[ZK-POK from MPCitH~\cite{feneuil2022syndrome}]
+\begin{protocol}[ZK-POK from MPCitH~\cite{feneuil2022syndrome}]\label{def:sdith-zkpok}
   Both the prover $\mathcal{P}$ and the verifier $\mathcal{V}$ hold public SD instance $(H,y)$. $\mathcal{P}$ holds $x$ such that $y = Hx$ and $\text{wt}(x)\ leq w$.
 
   \paragraph{Round 1} $\mathcal{P}$ computes the proof witness $(Q, S, P)$ from $x$ and public polynomial $F$.
@@ -976,7 +974,8 @@ The ZK-POK is based on the verification by sacrificing triples strategy for MPCi
   If both checks succeed, the verifier accepts. Otherwise, she rejects.
 \end{protocol}
 
-\paragraph{Fiat-Shamir Transform}
+\paragraph{The Signature Protocol}
+Lastly, we need to turn the ZK-POK protocol into a signature protocol using the Fiat-Shamir heuristic and include the message $m$.
 
 \section{Optimisations}
 
