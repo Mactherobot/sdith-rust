@@ -780,7 +780,7 @@ Within the context of the SD-in-the-Head protocol, the transformation from a ZK 
 
 \chapter{Specification}\label{ch:spec}
 
-The SD-in-the-Head protocol is founded on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field, as described in \autoref{sec:syndrome}. To recall, the problem is formally stated as follows:
+The SD-in-the-Head protocol is founded on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field, as described in \autoref{sec:syndrome}. To recall, the problem is formally stated:
 \begin{quote}
   Given a parity-check matrix $H \in \mathbb{F}_q^{(m-k) \times m}$ in standard form and a syndrome $y \in \mathbb{F}_q^{m-k}$, the challenge is to find a vector $x \in \mathbb{F}_q^m$ such that $Hx = y$ and $wt(x) \leq w$, where $wt(x)$ denotes the Hamming weight of $x$. This can be expressed as:
   \begin{align*}
@@ -2198,7 +2198,11 @@ After defining the trait and general setup for $GF(2)$ binary arithmetic, we pro
 
 \subsubsection{First Simple Extension}\label{sec:first_simple_extension}
 
-For the $GF(q^2)$ field, we did not implement the functions as a trait, as they are solely used as sub-functions for the $GF(q^8)$ field. To represent an element in the $GF(q^2)$ field, we used a 2-byte array, representing $(a, b) = a + bX$.
+For the $GF(q^2)$ field, we did not implement the functions as a trait, as they are solely used as sub-functions for the $GF(q^8)$ field. To represent an element in the $GF(q^2)$ field, we used a 2-byte array, representing $(a, b) = a + bX$. The field is an extension from the lower field $GF(q)$ by the irreducible polynomial $X^2 + X + 32$. 
+
+\begin{align}
+  F_{q^2}[X] = F_q[X] / (X^2 + X + 32)
+\end{align}
 
 \paragraph{Addition in $GF(q^2)$}
 
@@ -2266,11 +2270,15 @@ More extensive testing was reserved for the $GF(q^4)$ field, as it is the primar
 \todo{Maybe reference the section that defines this}
 % subsubsection First simple extension (end)
 
+\subsubsection{Extending to the 32 bit field}\label{sec:gf_} % (fold)
+Now that we have the $GF(q^2)$ field we can implement the $GF(q^4)$ field arithmetic. We represent an element in the $GF(q^4)$ field as a 4-byte array. So we have a representation of $(a,b,c,d) = a + bX + cX^2 + dX^3$. And the extension is done by the irreducible polynomial $X^4 + X + 32$:
 
-\subsubsection{$GF(q^4)$}\label{sec:gf_} % (fold)
-Now that we have the $GF(q^2)$ field we can implement the $GF(q^4)$ field arithmetic. We represent an element in the $GF(q^4)$ field as a 4-byte array. So we have a representation of $(a,b,c,d) = a + bX + cX^2 + dX^3$. 
+\begin{align}
+  F_{q^4} = F_q[Z] / (Z^2 + Z + 32(X))
+\end{align}
+
+
 As mentioned before in the \autoref{sub:field_arithmetic} we have a trait for the required field operations, so we can implement those on the type $FPoint$.
-
 
 \paragraph{Addition in $GF(q^4)$}
 
@@ -2303,13 +2311,19 @@ fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
 \end{minted}
 
 \paragraph{Multiplication in $GF(q^4)$}
+We can describe a multiplication between 2 points in the extended field.
+For $u = (p,q) = p + qZ$ and $v = (r,s) = r + sZ$ we have:
+\begin{align}
+  u \cdot v &= (p + qZ) \cdot (r + sZ) \\
+        &= pr + psZ + qrZ + qsZ^2\\
+        &= pr + (ps + qr)Z + qs(Z + 32X) 
+        &= pr + (ps + qr)Z + qsZ + 32qsX\\ 
+        &= (pr + 32qsX) + (ps + qr + qs)Z\\
+        &= (pr + 32qsX) + ((p + q) \cdot (r + s) - pr)Z\\
+\end{align}
+Note that we use the following fact in the multiplication: $Z^2 = Z + 32X$ This comes from the fact that it is $mod(2)$.
 
-
-\subsubsection{Multiplication in $GF(q^4)$}\label{sec:multiplication_in_gf_q_} % (fold)
-
-% subsubsection Multiplication in $GF(q^4)$ (end)
-
-
+Our implementation follows the formula above:
 \begin{minted}{rust}
     fn field_mul(&self, rhs: Self) -> Self {
         let a = *self;
@@ -2328,6 +2342,9 @@ fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
     }
 \end{minted}
 
+
+
+% subsubsection Multiplication in $GF(q^4)$ (end)
 \todo{Write about the addition and multiplication in the $GF(2^8)$ field}
 % subsubsection GF256 (end)
 
