@@ -38,6 +38,7 @@ where
     /// Field division operation
     ///
     /// Division is implemented as multiplication by the multiplicative inverse.
+    #[cfg(test)]
     fn field_div(&self, rhs: Self) -> Self
     where
         Self: Sized,
@@ -63,6 +64,7 @@ where
     ///
     /// The polynomial is represented as a slice of field elements with the coefficients in increasing order.
     /// e.g. `poly[0] + poly[1]*x + poly[2]*x^2 + ... + poly[n]*x^n`
+    #[cfg(test)]
     fn field_eval_polynomial(&self, poly: &[Self]) -> Self {
         assert!(poly.len() > 0 && poly.len() < u32::MAX as usize);
         let degree = poly.len() - 1;

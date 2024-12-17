@@ -2285,9 +2285,6 @@ More extensive testing was reserved for the $GF(q^4)$ field, as it is the primar
 \todo{Maybe reference the section that defines this}
 % paragraph First simple extension (end)
 
-
-\subsubsection{$GF(q^4)$}\label{sec:gf_} % (fold)
-Now that we have the $GF(q^2)$ field we can implement the $GF(q^4)$ field arithmetic. We represent an element in the $GF(q^4)$ field as a 4-byte array. So we have a representation of $(a,b,c,d) = a + bX + cX^2 + dX^3$. 
 As mentioned before in the \autoref{sub:field_arithmetic} we have a trait for the required field operations, so we can implement those on the type $FPoint$.
 
 \paragraph{Addition in $GF(q^4)$}
@@ -2346,11 +2343,12 @@ fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
     }
 \end{minted}
 
+\paragraph{Testing the $GF(q^4)$ Field}
+We test the extended field arithmetic by using the same test as we defined for the trait in \autoref{sub:field_arithmetic}.
 
 
 % subsubsection Multiplication in $GF(q^4)$ (end)
-\todo{Write about the addition and multiplication in the $GF(2^8)$ field}
-% paragraph GF256 (end)
+% subsubsection GF256 (end)
 
 \subsection{Field polynomials}\label{sub:field_polynomials} % (fold)
 We can now define polynomials using the $GF(2^8)$ field, and do simple arithmetic upon the elements.

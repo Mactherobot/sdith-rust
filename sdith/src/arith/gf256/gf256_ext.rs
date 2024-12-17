@@ -201,7 +201,6 @@ mod ext32_tests {
     }
 
     //// Polynomial evaluation
-
     #[test]
     fn test_field_eval_polynomial() {
         let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], None);
