@@ -3,9 +3,9 @@
 use criterion::measurement::Measurement;
 use criterion::Criterion;
 use nist_pqc_seeded_rng::RngCore;
-use sdith::constants::params::{PARAM_DIGEST_SIZE, PARAM_N, PARAM_SALT_SIZE};
-use sdith::constants::types::Hash;
-use sdith::subroutines::merkle_tree::{MerkleTree, MerkleTreeTrait as _};
+use rsdith::constants::params::{PARAM_DIGEST_SIZE, PARAM_N, PARAM_SALT_SIZE};
+use rsdith::constants::types::Hash;
+use rsdith::subroutines::merkle_tree::{MerkleTree, MerkleTreeTrait as _};
 
 
 pub(crate) fn merkle_benchmark<M: Measurement>(c: &mut Criterion<M>) {

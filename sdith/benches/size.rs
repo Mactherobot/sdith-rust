@@ -5,7 +5,7 @@ use colored::Colorize as _;
 use criterion::Criterion;
 use nist_pqc_seeded_rng::{NistPqcAes256CtrRng, Seed};
 use rand::{RngCore as _, SeedableRng as _};
-use sdith::{keygen::keygen, signature, subroutines::marshalling::Marshalling as _};
+use rsdith::{keygen::keygen, signature, subroutines::marshalling::Marshalling as _};
 use stats_ci::{Confidence, StatisticsOps};
 
 const ITER: usize = 250;
@@ -21,8 +21,8 @@ pub(crate) fn proof_size_benchmark(_c: &mut Criterion) {
     }
 
     let mut rng = NistPqcAes256CtrRng::from_seed(Seed::default());
-    let mut root_seed = sdith::constants::types::Seed::default();
-    let mut salt = sdith::constants::types::Salt::default();
+    let mut root_seed = rsdith::constants::types::Seed::default();
+    let mut salt = rsdith::constants::types::Salt::default();
     rng.fill_bytes(&mut root_seed);
     rng.fill_bytes(&mut salt);
     let (_, sk) = keygen(root_seed);

@@ -5,7 +5,7 @@ use clap::{ArgAction, Error, Parser, Subcommand};
 use colored::Colorize as _;
 use rand::{rngs::StdRng, RngCore, SeedableRng};
 
-use sdith::{
+use rsdith::{
     constants::{
         params::{self, PARAM_SALT_SIZE, PARAM_SEED_SIZE},
         types::{Salt, Seed},

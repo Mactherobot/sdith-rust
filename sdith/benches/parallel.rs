@@ -2,7 +2,7 @@
 use criterion::{measurement::Measurement, Criterion};
 use nist_pqc_seeded_rng::{NistPqcAes256CtrRng, Seed};
 use rand::{RngCore as _, SeedableRng as _};
-use sdith::{
+use rsdith::{
     constants::params::{PARAM_N, PARAM_SALT_SIZE, PARAM_SEED_SIZE, PARAM_TAU},
     mpc,
     signature::{input::INPUT_SIZE, Signature},

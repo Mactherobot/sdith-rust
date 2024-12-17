@@ -11,7 +11,7 @@
 //!
 
 use rand::RngCore as _;
-use sdith::constants::types::{Salt, Seed};
+use rsdith::constants::types::{Salt, Seed};
 use std::env;
 
 fn main() {
@@ -30,7 +30,7 @@ fn main() {
     rng.fill_bytes(&mut seed);
     rng.fill_bytes(&mut salt);
 
-    let (_, sk) = sdith::keygen::keygen(seed);
+    let (_, sk) = rsdith::keygen::keygen(seed);
 
     let mut msg = vec![0u8; 100];
 
@@ -38,6 +38,6 @@ fn main() {
 
     (0..iterations).for_each(|_| {
         rng.fill_bytes(&mut msg);
-        let _signature = sdith::signature::Signature::sign_message((seed, salt), &sk, &msg);
+        let _signature = rsdith::signature::Signature::sign_message((seed, salt), &sk, &msg);
     });
 }

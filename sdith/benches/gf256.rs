@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use criterion::{measurement::Measurement, Criterion};
 use rand::Rng as _;
-use sdith::arith::gf256;
+use rsdith::arith::gf256;
 
 /// Benchmarking functions that use parallel operations: commit shares, compute input shares
 pub(crate) fn mul_benchmark<M: Measurement>(c: &mut Criterion<M>) {

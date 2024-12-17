@@ -3,7 +3,7 @@
 use criterion::{black_box, measurement::Measurement, Criterion};
 use nist_pqc_seeded_rng::{NistPqcAes256CtrRng, Seed};
 use rand::{RngCore as _, SeedableRng as _};
-use sdith::{arith::gf256::{gf256_matrices::{field_mul_matrix_vector, HPrimeMatrix}, gf256_vector::{gf256_add_vector, gf256_mul_scalar_add_vector}}, constants::params::{PARAM_K, PARAM_M_SUB_K, PARAM_SEED_SIZE}, subroutines::prg::PRG};
+use rsdith::{arith::gf256::{gf256_matrices::{field_mul_matrix_vector, HPrimeMatrix}, gf256_vector::{gf256_add_vector, gf256_mul_scalar_add_vector}}, constants::params::{PARAM_K, PARAM_M_SUB_K, PARAM_SEED_SIZE}, subroutines::prg::PRG};
 
 /// Benchmarking functions that use SIMD operations: Matrix multiplication, Vector operations
 pub(crate) fn simd_benchmark<M: Measurement>(c: &mut Criterion<M>) {

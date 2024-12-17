@@ -143,13 +143,15 @@ fn gf256_mul(a: u8, b: u8) -> u8 {
 /// Multiplication using log table lookup a * b = g^(log_g(a) + log_g(b))
 #[inline(always)]
 pub fn _mul_lookup(a: u8, b: u8) -> u8 {
-    if (a == 0) || (b == 0) {
-        return 0;
-    }
     let log_a = log_lookup(a);
     let log_b = log_lookup(b);
     let res = log_a + log_b;
-    power_lookup(res)
+    let res = power_lookup(res);
+    if (a == 0) || (b == 0) {
+        0
+    } else {
+        res
+    }
 }
 
 /// Multiplication from the spec implementation
