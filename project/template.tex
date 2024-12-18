@@ -1089,7 +1089,7 @@ Finally, we introduce a $\texttt{salt} \in \{0,1\}^{2\lambda}$, which serves as 
           \begin{align*}
             h_2 = \texttt{Hash}_2(m, \texttt{salt}, h_1, \texttt{broad\_plain}, \{\texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell\}_{e=1}^\tau)
           \end{align*}
-    \item Compute the second challenge $I \subset [N] \leftarrow \texttt{PRG}(h_1)$ for $|I| = \ell$
+    \item Compute the second challenge $I \subset [N] \leftarrow \texttt{PRG}(h_2)$ for $|I| = \ell$
   \end{enumerate}
 
   \paragraph{Phase 5} Building of the signature output the signature $\sigma$.
