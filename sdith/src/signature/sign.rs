@@ -98,14 +98,11 @@ impl Signature {
         if broadcast_result.is_err() {
             return Err("MPC Simulation failed".to_string());
         }
-
         let broadcast = broadcast_result.unwrap();
-
         let broadcast_plain = broadcast.serialise();
-
-        let mut broadcast_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
-
+        
         // For each emulation (Tau) and each L parties, compute the broadcast shares
+        let mut broadcast_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
         for e in 0..PARAM_TAU {
             for j in 0..PARAM_L {
                 let broadcast_share = party_computation(
