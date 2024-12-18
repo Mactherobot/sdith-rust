@@ -2959,7 +2959,7 @@ This allows us to compute the plain broadcast shares by simply calling the MPC c
 \subsubsection{Inverse Party Computation}
 When needing to verify the signature we need to be able to reverse the MPC computation in order to go back to the original beaver triple. So the implementation of the inverse is just the reverse of the above described function. But without the boolean for computing $v$ as we always want to compute $c$ in this case. We use these beaver triples to append them to the input shares. Of which is used to verify the signature by using them along with the authentication path to recompute the root of the merkle tree.
 
-\subsection{Testing the MPC Simulation}
+\subsubsection{Testing the MPC Simulation}
 As this is one of the harder sections to test, as it is working on random looking data we have created the following tests to ensure that the MPC simulation is working correctly. 
 First we created simple tests that ensured that we could reverse the computation, this however proved to be rather useless in that the values of which the function should work upon was with some additional randomness that under the right computations would cancel out. 
 We then create a simple toy example computation that should be easier to follow due to the randomness being just 1, the computation is described in \autoref{app:toy_example}.
