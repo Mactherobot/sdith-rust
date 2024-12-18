@@ -2962,7 +2962,7 @@ When needing to verify the signature we need to be able to reverse the MPC compu
 \subsection{Testing the MPC Simulation}
 As this is one of the harder sections to test, as it is working on random looking data we have created the following tests to ensure that the MPC simulation is working correctly. 
 First we created simple tests that ensured that we could reverse the computation, this however proved to be rather useless in that the values of which the function should work upon was with some additional randomness that under the right computations would cancel out. 
-We then create a simple toy example computation that should be easier to follow due to the randomness being just 1:
+We then create a simple toy example computation that should be easier to follow due to the randomness being just 1, the computation is described in \autoref{app:toy_example}.
 \begin{minted}{rust}
         let (input, broadcast, chal, h_prime, y) = prepare();
         let random_input_plain: InputSharePlain = [1; INPUT_SIZE];
@@ -3486,7 +3486,7 @@ We chose to follow the definitions for the merkle tree provided in \cite{aguilar
   \end{algorithmic}
 \end{breakablealgorithm}
 
-\section{MPC computation toy example}
+\section{MPC computation toy example}\label{app:toy_example}
 
 The computation is based on HVZKAoK Protocol using imperfect preprocessing and sacrificing. Section 3.3~\cite{baum2020concretely}.
 
