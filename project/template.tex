@@ -1803,7 +1803,6 @@ The release profile was configured to maximize optimization during the compilati
 
   \item \mintinline{toml}{opt-level = 3/"z"}: This applies the highest level of performance optimizations offered by the compiler, enabling aggressive optimizations for runtime efficiency. To test the difference between optimising for binary size and performance, we ran the \textit{release} profile with both level 3 and \mintinline{toml}{"z"}, which optimises for binary size as opposed to performance.
 
-
   \item \mintinline{toml}{panic = "abort"}: This setting ensures that the program aborts immediately on a panic, without performing unwinding. If unwinding (e.g., via the \rust{catch_unwind} macro) is not required, setting \texttt{panic} to \texttt{"abort"} reduces binary size and often provides a slight performance boost.
 \end{itemize}
 
@@ -2782,7 +2781,7 @@ Due to the nature of the polynomial evaluation we created a manual example and c
 We can omit sending the leading coefficient since it is always going to be 1. For this we have created a function that can add the leading coefficient, as we also need to be able to add 0 for the leading coefficient for all the shares that are not the leading. As they need to sum to 1. Our implementation is a simple loop that will add an element that is going to be the leading coefficient.
 
 \subsubsection{Beaver Triples}
-Generation of $\tau \cdot d$ Beaver triples for doing the \autoref{def:sacrifice}is done by first sampling $d$ field elements $a,b$, and then compute the correlated $c = a \cdot b$ elements. If the splitting factor $d=1$ the inner product is just simple multiplications, but if we have a higher splitting factor $d=2$ the $c_j$, where $j \in [1:\tau]$, value is computed as follows:
+Generation of $t \cdot d$ Beaver triples for doing the \autoref{def:sacrifice}is done by first sampling $d$ field elements $a,b$, and then compute the correlated $c = a \cdot b$ elements. If the splitting factor $d=1$ the inner product is just simple multiplications, but if we have a higher splitting factor $d=2$ the $c_j$, where $j \in [1:\tau]$, value is computed as follows:
 \begin{align}
   c_j = \sum_{i=1}^{d} a_{ j,i } \cdot b_{j,i}
 \end{align}
@@ -2817,6 +2816,52 @@ impl Challenge {
     }
 }
 \end{minted}
+
+\subsubsection{Expansion of view-opening Challenge}
+To complete the Fiat-Shamir transform into a Signature scheme we need to pick the opened views described in \autoref{def:mpcinth_basic} based on the second hash computed on the message, salt, the first Fiat-Shamir hash, and the broadcast values.
+We do this by first initializing the PRG with the $h_2$ hash, and then sampling field elements until we have $l$ unique indices for each of the $\tau$ sets. We then sort the values to ensure that the views are ordered correctly.
+\begin{minted}{rust}
+pub fn expand_view_challenge_hash(h2: Hash) -> [[u16; PARAM_L]; PARAM_TAU] {
+    // Initialize the XOF (extendable output function) context with the second Fiat-Shamir
+    // transform hash
+    let mut prg = PRG::init_base(&h2);
+
+    // Define a mask for reducing the value range
+    let mask: u16 = (1 << PARAM_LOG_N) - 1;
+    let mut opened_views = [[0u16; PARAM_L]; PARAM_TAU]; // Array for storing the opened views
+
+    let mut tmp = [0u8; 2]; // Temporary buffer for sampled bytes
+    let mut value: u16; // The sampled value
+
+    // Loop through all sets (PARAM_TAU sets)
+    for i in 0..PARAM_TAU {
+        let mut unique_values = std::collections::HashSet::new(); // To ensure uniqueness within a set
+
+        // Generate unique values for the set (PARAM_L values per set)
+        for j in 0..PARAM_L {
+            loop {
+                // Sample bytes from entropy and convert to u16 (handling endianness)
+                prg.sample_field_fq_elements(&mut tmp);
+                value = (tmp[0] as u16) | ((tmp[1] as u16) << 8);
+                value &= mask; // Apply mask to limit value range
+
+                // Ensure the value is within valid range and is unique
+                if value < PARAM_N as u16 && unique_values.insert(value) {
+                    break;
+                }
+            }
+
+            // Store the unique value in the output array
+            opened_views[i][j] = value;
+        }
+        // Sort the values in the set
+        opened_views[i].sort();
+    }
+    // Return the resulting array of opened views
+    opened_views
+}
+\end{minted}
+As this relies on the PRG to sample the values, we have a test that ensures that the values are unique and within the correct range.
 
 \subsubsection{Party Computation}
 We now have all the required parts to build the MPC simulation, defined in\todo{Reference correct section} \autoref{def:sdith-mpc}. The way we implemented this was to use the same function to create the plain broadcast values as the broadcast values computed for the shares. Our first attempt at implementing this algorithm, we had a hard time following every step that was done, due to a lack in clarification on what every computation was supposed to do. Furthermore creating tests for this was quite difficult as this function relies heavily on the provided values. We also tried to compare our intermediate values with the values from the specification implementation, which also proved to be a challenge since there is a lot of values that are computed in the algorithm.
@@ -3000,13 +3045,101 @@ One can now invoke the benchmarking for category one by running the following co
   ~$ cargo bench --features category_one
 \end{minted}
 
-
-\section{Key generation}
-We use the witness to set the public and private key.
-
-
 \subsection{Signing}\label{sub:signing}
-This is basically just a summarization of all the sub protocols, as we have separated out all the logic into different subroutines. But
+We sepee
+\todo{Write about the expand view challenge hash, and the compute share methods}
+After creating all the subroutines, we implemented the general signing algorithm described in \autoref{sec:sdith-signature}.
+\begin{minted}{rust}
+    pub fn sign_message(
+        entropy: (Seed, Salt),
+        secret_key: &SecretKey,
+        message: &Vec<u8>,
+    ) -> Result<Self, String> {
+        // Expansion of the parity matrix H'
+        let h_prime: HPrimeMatrix = gen_hmatrix(secret_key.seed_h);
+
+        // Randomness generation for the Beaver triples and the shares
+        let (mseed, salt) = entropy;
+        let mut prg = PRG::init(&mseed, Some(&salt));
+        let beaver = BeaverTriples::generate(&mut prg);
+
+        // Create the input
+        let input = Input {
+            solution: secret_key.solution,
+            beaver,
+        };
+
+        // Compute input shares for the MPC
+        let input_plain = input.serialise();
+        let ComputeInputSharesResult(input_shares, input_coefs): ComputeInputSharesResult =
+            compute_input_shares(&input_plain, &mut prg);
+
+        // Commit shares
+        let (commitments, merkle_trees) = Signature::commit_shares(&input_shares, salt);
+
+        // Create MPC challenge
+        let h1 = Signature::gen_h1(&secret_key.seed_h, &secret_key.y, salt, commitments);
+        let chal = Challenge::new(h1);
+
+        // MPC Simulation
+        let broadcast_result = compute_broadcast(input, &chal, h_prime, secret_key.y);
+        if broadcast_result.is_err() {
+            return Err("MPC Simulation failed".to_string());
+        }
+        let broadcast = broadcast_result.unwrap();
+        let broadcast_plain = broadcast.serialise();
+
+        // For each emulation (Tau) and each L parties, compute the broadcast shares
+        let mut broadcast_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
+        for e in 0..PARAM_TAU {
+            for j in 0..PARAM_L {
+                let broadcast_share = party_computation(
+                    input_coefs[e][j],
+                    &chal,
+                    h_prime,
+                    secret_key.y,
+                    &broadcast,
+                    false,
+                )?;
+
+                broadcast_shares[e][j] = broadcast_share.serialise();
+            }
+        }
+
+        // Second challenge (view-opening challenge)
+        let h2 = Signature::gen_h2(message, &salt, &h1, &broadcast_plain, &broadcast_shares);
+
+        // Create the set of view-opening challenges
+        let view_opening_challenges = expand_view_challenge_hash(h2);
+
+        // Signature building
+        let mut solution_share = [[[0u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
+        let mut auth: [Vec<Hash>; PARAM_TAU] = Default::default();
+        for e in 0..PARAM_TAU {
+            auth[e] = merkle_trees[e].auth_path(&view_opening_challenges[e]);
+            for (li, i) in view_opening_challenges[e].iter().enumerate() {
+                // Truncate witness share by removing beaver triples from the plain value
+                solution_share[e][li] =
+                    Input::truncate_beaver_triples(&input_shares[e][(*i) as usize]);
+            }
+        }
+
+        // Build the signature
+        let signature = Signature {
+            message: message.clone(),
+            salt,
+            h1,
+            broadcast_plain,
+            broadcast_shares,
+            auth,
+            solution_share,
+            view_opening_challenges,
+        };
+
+        Ok(signature)
+    }
+  
+\end{minted}
 
 \subsection{Verification}\label{sub:verification}
 
