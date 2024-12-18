@@ -46,7 +46,7 @@ impl Marshalling<InputSharePlain> for Input {
 
 impl Input {
     /// Remove the Beaver triples from the input shares as they can be derived from the Solution shares
-    /// {\begin{align*}x_A\end{align*}_i, \begin{align*}P\end{align*}_i, \begin{align*}Q\end{align*}_i}_(i \in I) and broadcast shares {\begin{align*}α\end{align*}_i, \begin{align*}β\end{align*}_i, \begin{align*}v\end{align*}_i}_(i \in I).
+    /// {\[x_A\]_i, \[P\]_i, \[Q\]_i}_(i \in I) and broadcast shares {\[α\]_i, \[β\]_i, \[v\]_i}_(i \in I).
     pub fn truncate_beaver_triples(input_share: &[u8; INPUT_SIZE]) -> [u8; SOLUTION_PLAIN_SIZE] {
         input_share[..SOLUTION_PLAIN_SIZE].try_into().unwrap()
     }
