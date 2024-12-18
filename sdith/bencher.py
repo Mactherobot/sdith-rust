@@ -130,7 +130,7 @@ def print_run(features, category, profile, test):
 def grab_results(out, test):
     # Regex pattern to match test names and time results
     testnamepattern = f"(?P<test_name>{test}?\/\S+)"
-    timeresultpattern = r"time:\s+(\[\S+\s\S+\s(?P<test_res>\S+\s\S+)\s\S+\s\S+\])"
+    timeresultpattern = r"time:\s+(\begin{align*}\S+\s\S+\s(?P<test_res>\S+\s\S+)\s\S+\s\S+\end{align*})"
 
     # Test for the test name pattern and time result pattern
     testname = re.search(testnamepattern, out)

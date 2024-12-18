@@ -583,9 +583,9 @@ with $x = (x_A | x_B)$. This improves the performance of the algorithms used in 
 
 \subsubsection{Polynomial representation of SD}\label{sec:polynomial_representation}
 
-The SD-in-the-Head MPC protocol must prove that the SD problem \( y = Hx \) is satisfied. As outlined in \autoref{def:sdith-mpc}, the shared input \(\sh{x_A}\) is provided to the MPC protocol. Consequently, the correctness of the initial statement \( y = Hx \) follows directly~\cite{feneuil2022syndrome}.
+The SD-in-the-Head MPC protocol must prove that the SD problem $ y = Hx $ is satisfied. As outlined in \autoref{def:sdith-mpc}, the shared input $\sh{x_A}$ is provided to the MPC protocol. Consequently, the correctness of the initial statement $ y = Hx $ follows directly~\cite{feneuil2022syndrome}.
 
-In addition to this, we need to verify that the Hamming weight condition \( \text{wt}(x) \leq w \) holds. To achieve this, the prover constructs three polynomials \( S \), \( Q \), and \( P \), alongside one public polynomial \( F \). These polynomials play a critical role in ensuring the weight condition is satisfied while preserving the zero-knowledge property of the protocol. The polynomials are defined as follows:
+In addition to this, we need to verify that the Hamming weight condition $ \text{wt}(x) \leq w $ holds. To achieve this, the prover constructs three polynomials $ S $, $ Q $, and $ P $, alongside one public polynomial $ F $. These polynomials play a critical role in ensuring the weight condition is satisfied while preserving the zero-knowledge property of the protocol. The polynomials are defined as follows:
 
 \begin{definition}[SD-in-the-Head polynomials representation]\label{def:sdith-polynomials}
   Let $f_1,\dots, f_q$ denote all the elements of $\mathbb{F}_q$ and $x\in \mathbb{F}^m_q$ is a binary vector with hamming weight $wt(x) /leq w$, then the polynomials are defined as:
@@ -937,26 +937,26 @@ To analyze the security of the protocol, we define its false positive probabilit
 
 \subsubsection{Threshold variant MPC protocol}\label{sub:sdith-threshold-sss}
 
-The threshold variant of the MPC protocol (\autoref{def:sdith-mpc}) is obtained by incorporating \textit{Shamir's Secret Sharing Scheme} (SSSS), as described in \autoref{sub:shamir}. By replacing the additive secret sharing scheme with Shamir's polynomial-based scheme, the protocol is extended into a \((\ell, N)\)-threshold MPC protocol, where any \(\ell\) out of \(N\) parties can reconstruct the secret, while fewer than \(\ell\) parties gain no information about the secret.
+The threshold variant of the MPC protocol (\autoref{def:sdith-mpc}) is obtained by incorporating \textit{Shamir's Secret Sharing Scheme} (SSSS), as described in \autoref{sub:shamir}. By replacing the additive secret sharing scheme with Shamir's polynomial-based scheme, the protocol is extended into a $(\ell, N)$-threshold MPC protocol, where any $\ell$ out of $N$ parties can reconstruct the secret, while fewer than $\ell$ parties gain no information about the secret.
 
 To accommodate the threshold variant, the inputs to the MPC protocol are modified. By the definition of the MPC protocol, there exist linear functions:
 \begin{align}
   \varphi^1_{r,\varepsilon}                 & : (s_A, P, Q, a, b, c) \mapsto (\alpha, \beta), \\
   \varphi^2_{r, \varepsilon, \alpha, \beta} & : (s_A, P, Q, a, b, c) \mapsto v,
 \end{align}
-such that each party locally computes \(\varphi^1\) and \(\varphi^2\) on the input shares \(\sh{s_A}_i, \sh{P}_i, \sh{Q}_i, \sh{a}_i, \sh{b}_i, \sh{c}_i\), producing \(\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i\) as valid sharings of \(\alpha, \beta, v\).
+such that each party locally computes $\varphi^1$ and $\varphi^2$ on the input shares $\sh{s_A}_i, \sh{P}_i, \sh{Q}_i, \sh{a}_i, \sh{b}_i, \sh{c}_i$, producing $\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i$ as valid sharings of $\alpha, \beta, v$.
 
 We define the \texttt{input} as the tuple containing the MPC inputs:
 \begin{align*}
   \texttt{input} = (s_A, P, Q, a, b, c)
 \end{align*}
 
-Next, we compute \(\ell\) uniformly random coefficients \(\texttt{input\_coef} \in \mathbb{F}_q^{|\texttt{input}|}\) and determine the sharing:
+Next, we compute $\ell$ uniformly random coefficients $\texttt{input\_coef} \in \mathbb{F}_q^{|\texttt{input}|}$ and determine the sharing:
 \begin{align*}
   \sh{\texttt{input}}_i = \texttt{input} + \sum_{j=1}^\ell i^j \cdot \texttt{input\_coef}_j
 \end{align*}
 
-The MPC computation is then performed directly on the \texttt{input} and its \(\ell\) coefficients from the SSSS:
+The MPC computation is then performed directly on the \texttt{input} and its $\ell$ coefficients from the SSSS:
 \begin{align*}
   \texttt{input}            & \stackrel{\varphi^1, \varphi^2}{\longrightarrow} \texttt{broad}            \\
   \texttt{input\_coef}_1    & \stackrel{\varphi^1, \varphi^2}{\longrightarrow} \texttt{broad\_coef}_1    \\
@@ -972,30 +972,47 @@ Due to the linearity of the MPC computation, the output shares can be reconstruc
 \section{The Signature Protocol}\label{sec:sdith-signature}
 
 \subsubsection{PK setup}
-The nature of an SD instance allows the protocol to seamlessly transform into a \textit{public-key signature scheme}. Here, the pair \((H, y)\) acts as the public key, while the solution to the SD instance \(x\) serves as the private key. The keys is then expanded to $(H', y), (s_A, P, Q)$ following the transformations detailed in \autoref{sec:syndrome}. Furthermore, the public key can be optimised for communcation by instead sampling $H'$ from a seed $sd_H$ making the secret key $(sd_H, y)$.
+The nature of an SD instance allows the protocol to seamlessly transform into a \textit{public-key signature scheme}. Here, the pair $(H, y)$ acts as the public key, while the solution to the SD instance $x$ serves as the private key. The keys is then expanded to $(H', y), (s_A, P, Q)$ following the transformations detailed in \autoref{sec:syndrome}. Furthermore, the public key can be optimised for communcation by instead sampling $H'$ from a seed $sd_H$ making the secret key $(sd_H, y)$.
 
 \subsubsection{ZK-POK protocol}
-First, the MPC protocol \autoref{def:sdith-mpc} is transformed into a ZK-POK using the Threshold MPCitH protocols described by~\cite{feneuil2023threshold,feneuil2023threshold2}. While this transformation is interesting in it self, it is out of scope for this report and left for the appendix in \autoref{sec:sdith-zkpok}.
+First, the MPC protocol (\autoref{def:sdith-mpc}) is transformed into a Zero-Knowledge Proof of Knowledge (ZK-POK) using the Threshold MPCitH protocols described by~\cite{feneuil2023threshold,feneuil2023threshold2}. This transformation in full lies outside the scope of this report and is deferred to the appendix in \autoref{sec:sdith-zkpok}. Here we leave a short overview of the transformation~\cite{aguilarsyndrome11}.
 
-The soundness of the ZK-POK protocol relies on the binding property of the commitment scheme and the inability of the prover to simulate multiple inconsistent views of the MPC protocol. By leveraging the hash consistency checks and commitment verification, the ZK-POK protocol ensures that a cheating prover cannot deviate significantly from the honest execution. 
+\begin{protocol}[SD-in-the-Head ZK-POK protocol]
+  The protocol proceeds as follows:
+  \begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
+    \item The prover generates the input sharings and commits to the parties' shares.
+    \item The verifier challenges the prover with the randomness \(r, \varepsilon\) for the MPC protocol.
+    \item The prover executes the MPC protocol (in their head) and sends the broadcast values to the verifier.
+    \item The verifier challenges the prover to open all the parties in \(I \subset [1 : N]\).
+    \item The prover reveals the input shares of all the parties in \(I\).
+    \item The verifier verifies the consistency of the MPC computation for the revealed parties.
+  \end{enumerate}
+\end{protocol}
+
+The soundness of the ZK-POK protocol depends on the binding property of the commitment scheme and the inability of the prover to simulate multiple inconsistent views of the MPC protocol. By employing hash consistency checks and commitment verification, the ZK-POK protocol ensures that a cheating prover cannot deviate significantly from honest execution.
 
 \begin{lemma}[Soundness of \autoref{def:sdith-zkpok}]
-  The soundness error \(\epsilon\) is given by:
+  The soundness error $\epsilon$ is given by:
   \begin{align*}
-    \epsilon = p + \frac{1}{\binom{N}{\ell}} - p \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1}.
+    \epsilon = p + \frac{1}{\binom{N}{\ell}} - p \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1},
   \end{align*}
+  where $p$ denotes the false positive probability of the MPC protocol, $N$ is the total number of parties, and $\ell$ is the threshold parameter.
 \end{lemma}
 
-The threshold approach leaves the soundness of the protocol slightly degraded. To further strengthen the protocol against soundness error, \textit{parallel repetition} is employed. Specifically, the SD-in-the-Head protocol repeats the underlying ZK-POK protocol \(\tau\) times, where:
-\[
-  \tau = \left\lceil \log_2\left(\frac{1}{\epsilon}\right) \cdot \lambda \right\rceil.
-\]
-Here, \(\lambda\) denotes the security parameter, and \(2^{-\lambda}\) represents the desired soundness error. This parallel repetition ensures that the overall soundness error decreases exponentially with the number of repetitions, achieving a negligible error probability in practice.
+The threshold approach slightly degrades the soundness of the protocol. To mitigate this, \textit{parallel repetition} is employed to strengthen the protocol against soundness error. Specifically, the SD-in-the-Head protocol repeats the underlying ZK-POK protocol $\tau$ times, where:
+\begin{align*}
+  \tau = \left\lceil \log_2\left(\frac{1}{\epsilon}\right) \cdot \lambda \right\rceil,
+\end{align*}
+with $\lambda$ as the security parameter and $2^{-\lambda}$ as the target soundness error. This parallel repetition reduces the overall soundness error exponentially with the number of repetitions, achieving a negligible error probability in practice.
 
-We perform a slight tweak from the Limbo proof system~\cite{aguilarsyndrome11,delpech2021limbo} to the MPC computation input to accommodate the repetitions. We reuse the same MPC challenge $r, \varepsilon$ and set of Beaver triples
+To accommodate the repetitions, we incorporate a slight modification inspired by the Limbo proof system~\cite{aguilarsyndrome11,delpech2021limbo}. Specifically, we reuse the same MPC challenges $r$ and $\varepsilon$, as well as the Beaver triples, across all $\tau$ repetitions. This tweak allows us to modify the MPC computation input so that $\textit{broad}$ only needs to be computed once.
 
 \subsubsection{Fiat-Shamir transform}
-Next, we employ the \textit{Fiat-Shamir heuristic} and include the message \( m \) in the challenge generation process. This transformation allows the prover to independently derive the verifier's challenges in \textbf{Round 2} and \textbf{Round 4}.
+Next, we apply the \textit{Fiat-Shamir heuristic} to transform the challenges of the ZK-POK protocol into a non-interactive form. This is achieved by having the prover derive the challenges directly from the commitments of the MPC inputs and the outputs of the MPC computation.
+
+Additionally, we incorporate the message into the second hash, enabling the pre-computation of the first part of the signature independently of the message. This optimization improves efficiency by allowing some computations to be performed beforehand.
+
+Finally, we introduce a $\texttt{salt} \in \{0,1\}^{2\lambda}$, which serves as pseudo-randomness for commitments and seed generation. The use of $\texttt{salt}$ ensures that the protocol remains secure and avoids reliance on externally provided randomness.
 
 \begin{protocol}
   \setlength{\parindent}{0pt}
@@ -2774,7 +2791,7 @@ To implement this we utilized our field arithmetic and an array of pre computed 
 Due to the nature of the polynomial evaluation we created a manual example and checked that our function evaluated the polynomial correctly.
 
 \subsubsection{Complete and Truncate $\mathcal{Q}$}
-We can omit sending the leading coefficient since it is always going to be 1. For this we have created a function that can add the leading coefficient, as we also need to be able to add 0 for the leading coefficient for all the shares that are not the leading. As they need to sum to 1. Our implementation is a simple loop that will add an element that is going to be the leading coefficient. 
+We can omit sending the leading coefficient since it is always going to be 1. For this we have created a function that can add the leading coefficient, as we also need to be able to add 0 for the leading coefficient for all the shares that are not the leading. As they need to sum to 1. Our implementation is a simple loop that will add an element that is going to be the leading coefficient.
 
 \subsubsection{Beaver Triples}
 Generation of $\tau \cdot d$ Beaver triples for doing the \autoref{def:sacrifice}is done by first sampling $d$ field elements $a,b$, and then compute the correlated $c = a \cdot b$ elements. If the splitting factor $d=1$ the inner product is just simple multiplications, but if we have a higher splitting factor $d=2$ the $c_j$, where $j \in [1:\tau]$, value is computed as follows:
@@ -2814,23 +2831,23 @@ impl Challenge {
 \end{minted}
 
 \subsubsection{Party Computation}
-We now have all the required parts to build the MPC simulation, defined in\todo{Reference correct section} \autoref{def:sdith-mpc}. The way we implemented this was to use the same function to create the plain broadcast values as the broadcast values computed for the shares. Our first attempt at implementing this algorithm, we had a hard time following every step that was done, due to a lack in clarification on what every computation was supposed to do. Furthermore creating tests for this was quite difficult as this function relies heavily on the provided values. We also tried to compare our intermediate values with the values from the specification implementation, which also proved to be a challenge since there is a lot of values that are computed in the algorithm. 
+We now have all the required parts to build the MPC simulation, defined in\todo{Reference correct section} \autoref{def:sdith-mpc}. The way we implemented this was to use the same function to create the plain broadcast values as the broadcast values computed for the shares. Our first attempt at implementing this algorithm, we had a hard time following every step that was done, due to a lack in clarification on what every computation was supposed to do. Furthermore creating tests for this was quite difficult as this function relies heavily on the provided values. We also tried to compare our intermediate values with the values from the specification implementation, which also proved to be a challenge since there is a lot of values that are computed in the algorithm.
 The inputs to the function is as follows:
 \begin{itemize}
   \item \textit{input\_share\_plain}: The input share of the party
   \item chal: The challenge values $(r, \epsilon)$
   \item h\_prime: The matrix $H'$
-  \item y: The syndrome decoding instance $y$ 
+  \item y: The syndrome decoding instance $y$
   \item broadcast: The broadcast values
-  \item with\_offset: A boolean to indicate if the polynomial $S$ should be computed as $$s = (s_A|y+H's_A)$$ or $$s = (H's_A)$$ and if the polynomial Q should be $$Q = (Q|0)$$ or $$Q = (Q|1)$$. This is due to the fact that for multiplication in a MPC protocol it is only 1 party that needs to add the last part. 
+  \item with\_offset: A boolean to indicate if the polynomial $S$ should be computed as $$s = (s_A|y+H's_A)$$ or $$s = (H's_A)$$ and if the polynomial Q should be $$Q = (Q|0)$$ or $$Q = (Q|1)$$. This is due to the fact that for multiplication in a MPC protocol it is only 1 party that needs to add the last part.
   \item compute\_v: A boolean to indicate if the value $v$ in the MPC simulation should be computed, used to avoid unnecessary computation in the plain broadcast computatoin as $v = 0$.
 \end{itemize}
 The first part of the implementation is just parsing and extracting all the necessary values to do the MPC computations. Along with the computation of the polynomial $S$ and $Q$.
 For the $t$ iterations of the MPC simulation we compute the broadcast values $\alpha, \beta$ and $v$ based on the computation described in \autoref{def:sdith-mpc}.
 Recall the computation of the broadcast values:
 \begin{align*}
-  \sh{\alpha^j}  &= \varepsilon^j \cdot \sh{Q(r^j)} + \sh{a^j}\\
-  \sh{\beta^j}  &= \sh{S(r^j)} + \sh{b^j}\\
+  \sh{\alpha^j} & = \varepsilon^j \cdot \sh{Q(r^j)} + \sh{a^j} \\
+  \sh{\beta^j}  & = \sh{S(r^j)} + \sh{b^j}                     \\
 \end{align*}
 And the computation of the value $v$:
 \begin{align*}
@@ -2894,8 +2911,8 @@ This allows us to compute the plain broadcast shares by simply calling the MPC c
 When needing to verify the signature we need to be able to reverse the MPC computation in order to go back to the original beaver triple. So the implementation of the inverse is just the reverse of the above described function. But without the boolean for computing $v$ as we always want to compute $c$ in this case. We use these beaver triples to append them to the input shares. Of which is used to verify the signature by using them along with the authentication path to recompute the root of the merkle tree.
 
 \subsubsection{Testing the MPC Simulation}
-As this is one of the harder sections to test, as it is working on random looking data we have created the following tests to ensure that the MPC simulation is working correctly. 
-First we created simple tests that ensured that we could reverse the computation, this however proved to be rather useless in that the values of which the function should work upon was with some additional randomness that under the right computations would cancel out. 
+As this is one of the harder sections to test, as it is working on random looking data we have created the following tests to ensure that the MPC simulation is working correctly.
+First we created simple tests that ensured that we could reverse the computation, this however proved to be rather useless in that the values of which the function should work upon was with some additional randomness that under the right computations would cancel out.
 We then create a simple toy example computation that should be easier to follow due to the randomness being just 1, the computation is described in \autoref{app:toy_example}.
 \begin{minted}{rust}
         let (input, broadcast, chal, h_prime, y) = prepare();
@@ -2937,7 +2954,7 @@ We then create a simple toy example computation that should be easier to follow 
         assert_eq!(recomputed_input_share_triples.2, input_share.beaver.c);
 \end{minted}
 This however was still quite difficult to debug, because we still could not follow the calculation completely.
-So we ended up using the reference implementation to compare intermediate values in the computation in order to ensure that our implementation was correct. 
+So we ended up using the reference implementation to compare intermediate values in the computation in order to ensure that our implementation was correct.
 This led us to find that our implementation of the polynomial evaluation seemed to be wrong. So we created a test that would ensure that our polynomial relation was correct \autoref{eq:polynomial_representation}:
 \begin{minted}{rust}
     /// Test that for some random point r_k we have that S(r_k) * Q'(r_k) = F * P(r_k)
