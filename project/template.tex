@@ -2752,7 +2752,112 @@ impl Challenge {
 
 
 \paragraph{Party Computation}
+We now have all the required parts to build the MPC simulation, defined in\todo{Reference correct section} \autoref{def:sdith-mpc}. The way we implemented this was to use the same function to create the plain broadcast values as the broadcast values computed for the shares.
+\begin{minted}{rust}
+fn _party_computation(
+    input_share_plain: InputSharePlain,
+    chal: &Challenge,
+    h_prime: HPrimeMatrix,
+    y: [u8; PARAM_M_SUB_K],
+    broadcast: &Broadcast,
+    with_offset: bool,
+    compute_v: bool,
+) -> Result<BroadcastShare, String> {
+    let input_share = Input::parse(&input_share_plain)?;
+    let a = input_share.beaver.a;
+    let b = input_share.beaver.b;
+    let c = input_share.beaver.c;
+    let (s_a, q_poly, p_poly) = (
+        input_share.solution.s_a,
+        input_share.solution.q_poly,
+        input_share.solution.p_poly,
+    );
 
+    // Compute S
+    let s = compute_s(&s_a, &h_prime, if with_offset { Some(&y) } else { None });
+    if s.is_err() {
+        return Err("Failed to compute S".to_string());
+    }
+    let s_poly = compute_s_poly(s.unwrap());
+
+    // Complete Q
+    let q_poly_complete = complete_q(q_poly, if with_offset { 1u8 } else { 0u8 });
+
+    // Outputs
+    let mut alpha_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
+    let mut beta_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
+    let mut v = [FPoint::default(); PARAM_T];
+
+    for j in 0..PARAM_T {
+        // v[j] = -c[j]
+        if compute_v {
+            v[j] = c[j].field_neg();
+        }
+
+        let powers_of_r_j = chal.powers_of_r[j];
+
+        for d in 0..PARAM_SPLITTING_FACTOR {
+            let a = a[d][j];
+            let b = b[d][j];
+
+            // Challenge values
+
+            // α[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
+            let eval_q = polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
+            let eval_s = polynomial_evaluation(&s_poly[d], &powers_of_r_j);
+            alpha_share[d][j] = chal.eps[d][j].field_mul(eval_q).field_add(a);
+
+            // β[d][j] = Evaluate(S[d], r[j]) + b[d][j]
+            beta_share[d][j] = eval_s.field_add(b);
+
+            if compute_v {
+                // v[j] += ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
+                let eval_p = polynomial_evaluation(&p_poly[d], &powers_of_r_j);
+                v[j] = v[j].field_add(
+                    chal.f_poly_eval[j]
+                        .field_mul(eval_p)
+                        .field_mul(chal.eps[d][j]),
+                );
+                // v[j] += α'[d][j] ⊗ b[d][j] + β'[d][j] ⊗ a[d][j]
+                v[j] = v[j].field_add(broadcast.alpha[d][j].field_mul(b));
+                v[j] = v[j].field_add(broadcast.beta[d][j].field_mul(a));
+
+                if with_offset {
+                    // v[j] =+ -α[d][j] ⊗ β[d][j]
+                    v[j] =
+                        v[j].field_add(alpha_share[d][j].field_neg().field_mul(beta_share[d][j]));
+                }
+            }
+        }
+    }
+    Ok(BroadcastShare {
+        alpha: alpha_share,
+        beta: beta_share,
+        v,
+    })
+}
+\end{minted}
+This allows us to compute the plain broadcast shares by simply calling the MPC computation function:
+\begin{minted}{rust}
+    let broadcast_result = _party_computation(
+        input.serialise(),
+        chal,
+        h_prime,
+        y,
+        &Broadcast::default(),
+        true,
+        false,
+    );
+    if broadcast_result.is_err() {
+        return Err("Failed to compute broadcast".to_string());
+    }
+    let broadcast = broadcast_result.unwrap();
+
+    Ok(Broadcast {
+        alpha: broadcast.alpha,
+        beta: broadcast.beta,
+    })
+\end{minted}
 
 \paragraph{Inverse Party Computation}
 
