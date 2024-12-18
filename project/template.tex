@@ -1,6 +1,6 @@
 \documentclass[11pt]{report}
 
-\usepackage[latin1]{inputenc}
+\usepackage[utf8]{inputenc}
 \usepackage[american]{babel}
 \usepackage{a4}
 \usepackage{latexsym}
@@ -39,6 +39,7 @@
   {└}{{\smash{\raisebox{0.5ex}{\rule{1pt}{\dimexpr\baselineskip-1.5ex}}}\raisebox{0.5ex}{\rule{1ex}{1pt}}}}1 
   {│}{{\smash{\raisebox{-1ex}{\rule{1pt}{\baselineskip}}}\raisebox{0.5ex}{\rule{1ex}{0pt}}}}1 
 }
+
 \setlength{\parindent}{10pt} % indentation
 
 \usepackage{amsthm}
@@ -2870,29 +2871,23 @@ fn _party_computation(
             let b = b[d][j];
 
             // Challenge values
-
-            // α[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
             let eval_q = polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
             let eval_s = polynomial_evaluation(&s_poly[d], &powers_of_r_j);
             alpha_share[d][j] = chal.eps[d][j].field_mul(eval_q).field_add(a);
 
-            // β[d][j] = Evaluate(S[d], r[j]) + b[d][j]
             beta_share[d][j] = eval_s.field_add(b);
 
             if compute_v {
-                // v[j] += ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
                 let eval_p = polynomial_evaluation(&p_poly[d], &powers_of_r_j);
                 v[j] = v[j].field_add(
                     chal.f_poly_eval[j]
                         .field_mul(eval_p)
                         .field_mul(chal.eps[d][j]),
                 );
-                // v[j] += α'[d][j] ⊗ b[d][j] + β'[d][j] ⊗ a[d][j]
                 v[j] = v[j].field_add(broadcast.alpha[d][j].field_mul(b));
                 v[j] = v[j].field_add(broadcast.beta[d][j].field_mul(a));
 
                 if with_offset {
-                    // v[j] =+ -α[d][j] ⊗ β[d][j]
                     v[j] =
                         v[j].field_add(alpha_share[d][j].field_neg().field_mul(beta_share[d][j]));
                 }
