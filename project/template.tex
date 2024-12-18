@@ -2698,7 +2698,7 @@ Additionally we tested the correctness of the polynomial relation generation pro
 
 \subsection{MPC}\label{sub:mpc_algo}
 As the last thing, before we can implement the signing algorithm, we need the underlying MPC simulation sub routines described in \autoref{def:sdith-mpc}.
-First we go through the helper methods that are used to do the computations. Then we describe the creation of beaver triples and finally how we implmenented the MPC computations.
+First we go through the helper methods that are used to do the computations. Then we describe a set of structures that we created to make the MPC simulation easier to comprehend.
 
 \paragraph{Polynomial Evaluation}
 For polynomial evaluation in the algorithm, seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. 
@@ -2708,56 +2708,23 @@ For polynomial evaluation in the algorithm, seen in \autoref{sec:mpc}, we need t
 \end{align}
 
 To implement this we utilized our field arithmetic and an array of pre computed powers of the $r$, which we will cover in the section about the challenge generation. \todo{reference the correction section}
-
-\begin{minted}{rust}
-pub fn polynomial_evaluation(poly_d: &[u8], powers_of_r: &[FPoint]) -> FPoint {
-    assert!(powers_of_r.len() >= poly_d.len());
-    let mut sum = FPoint::default();
-    let degree = poly_d.len();
-    for i in 0..degree {
-        // sum += r_j^(i-1) * q_poly_d[i]
-        let mut r_i = powers_of_r[i];
-        gf256_mul_vector_by_scalar(&mut r_i, poly_d[i]);
-        sum = sum.field_add(r_i);
-    }
-    sum
-}
-\end{minted}
-
-\paragraph{Testing the Polynomial Evaluation}
 Due to the nature of the polynomial evaluation we created a manual example and checked that our function evaluated the polynomial correctly.
-\begin{minted}{rust}
-    fn test_polynomial_evaluation() {
-        let mut prg = PRG::init_base(&[2]);
-        let r = FPoint::field_sample(&mut prg); // r = [40, 106, 142, 69]
-
-        let mut powers_of_r = [FPoint::default(); PARAM_M + 1];
-        get_powers(r, &mut powers_of_r);
-
-        let q_poly = [vec![1, 2, 3]];
-
-        let q_eval = polynomial_evaluation(&q_poly[0], &powers_of_r); // r_0 =
-                                                                      // [1,0,0,0] * 1 + [40, 106, 142, 69] * 2 + [123, 29, 100, 186] * 3 = [220, 243, 171, 95]
-
-        let expected = FPoint::from([220, 243, 171, 95]); // q(r) = 1 + 2r + 3r^2
-        assert_eq!(q_eval, expected);
-    }
-\end{minted}
 
 \paragraph{Complete and Truncate $\mathcal{Q}$}
-For the sake of sending the least amount of data we will 
+
 
 \paragraph{Beaver Triples}
-Generation of $\tau \cdot d$ beaver triples for doing the \autoref{def:sacrifice}is done by first sampling $d$, $a,b$ field elements. If the splitting factor $d=1$ the inner product is just simple multiplications, but if we have a higher splitting factor $d=2$ the $c_j$, where $j \in [1:\tau]$, value is computed as follows:
+Generation of $\tau \cdot d$ beaver triples for doing the \autoref{def:sacrifice}is done by first sampling $d$ field elements $a,b$, and then compute the correlated $c = a \cdot b$ elements. If the splitting factor $d=1$ the inner product is just simple multiplications, but if we have a higher splitting factor $d=2$ the $c_j$, where $j \in [1:\tau]$, value is computed as follows:
 \begin{align}
-  c_j = \sum{i=1}{d} a_{ j,i } \cdot b_{j,i}
+  c_j = \sum_{i=1}^{d} a_{ j,i } \cdot b_{j,i}
 \end{align}
-We created tests to ensure that the generation of $a,b$ was correct along with the computed $c$. 
+We created tests to ensure that the generation of $a,b$ was correct along with the computed $c$.
 
-\paragraph{Broadcast}
-
+\paragraph{Challenge Generation}
+When transforming the MPC protocol using \autoref{sec:fiatshamir} into a ZK-POK we need to generate challenges based on public information. 
 
 \paragraph{Party Computation}
+
 
 \paragraph{Inverse Party Computation}
 
