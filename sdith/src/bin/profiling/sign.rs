@@ -11,7 +11,7 @@
 //!
 
 use rand::RngCore as _;
-use rsdith::constants::types::{Salt, Seed};
+use rsdith::constants::{params::PARAM_SALT_SIZE, types::Seed};
 use std::env;
 
 fn main() {
@@ -26,7 +26,7 @@ fn main() {
 
     let mut rng = rand::thread_rng();
     let mut seed = Seed::default();
-    let mut salt = Salt::default();
+    let mut salt = [0u8; PARAM_SALT_SIZE];
     rng.fill_bytes(&mut seed);
     rng.fill_bytes(&mut salt);
 

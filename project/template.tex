@@ -30,6 +30,7 @@
 \usepackage[a4paper, total={6in, 9in}, headsep=0.5in]{geometry}
 \usepackage{mdframed}
 \usepackage{listings}
+\usepackage{titlesec}
 \lstdefinestyle{tree}{
   literate=
   {├}{{\smash{\raisebox{-1ex}{\rule{1pt}{\baselineskip}}}\raisebox{0.5ex}{\rule{1ex}{1pt}}}}1 
@@ -108,7 +109,6 @@
 
 
 \begin{document}
-\newcommand{\rust}[1]{{\mintinline{rust}{#1}}}\
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -125,8 +125,9 @@
 \includegraphics[width=\textwidth]{images/titleimage.png}
 
 
-% A math share macro
+% macros
 \newcommand{\sh}[1] {\ensuremath{\llbracket #1 \rrbracket}}
+\newcommand{\rust}[1]{{\mintinline{rust}{#1}}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -268,7 +269,7 @@ Finite fields lays the basis for many cryptographic protocols and primitives. In
 \end{definition}
 
 \noindent
-The most commonly known finite fields are the prime fields $\mathbb{F}_p$, widely used in discrete logarithm cryptosystems, such as ECDSA and ElGamal. These fields can be extended into $\mathbb{F}_{p^n}$, containing $p^n$ elements which we will describe in \autoref{sub:field_extension}. However, prime fields are not efficient for iterating over large numbers, due to the modular reduction overhead, a common requirement in protocols such as SD-in-the-Head. For better efficiency, we require a field that can be represented using bits or bytes. One method to achieve this is by constructing fields commonly known as Galois fields. Consider the simplest prime field, also called binary field, $\mathbb{F}_2 = ({0,1}, \texttt{XOR}, \texttt{AND}, 0, 1)$. It is straightforward to verify that this field satisfies the properties outlined in \autoref{def:field}.
+The most commonly known finite fields are the prime fields $\mathbb{F}_p$, widely used in discrete logarithm cryptosystems, such as ECDSA and ElGamal. These fields can be extended into $\mathbb{F}_{p^n}$, containing $p^n$ elements which we will describe in \nameref{sub:field_extension}. However, prime fields are not efficient for iterating over large numbers, due to the modular reduction overhead, a common requirement in protocols such as SD-in-the-Head. For better efficiency, we require a field that can be represented using bits or bytes. One method to achieve this is by constructing fields commonly known as Galois fields. Consider the simplest prime field, also called binary field, $\mathbb{F}_2 = ({0,1}, \texttt{XOR}, \texttt{AND}, 0, 1)$. It is straightforward to verify that this field satisfies the properties outlined in \autoref{def:field}.
 
 The Galois field $\mathbb{F}{2^n}$ is an extension field of $\mathbb{F}2$, defined as $\mathbb{F}{2^n}$. This field is constructed by selecting an irreducible polynomial $f(x)$ of degree $n$ with coefficients in $\mathbb{F}2$. The elements of $\mathbb{F}{2^n}$ are represented as polynomials of degree at most $n-1$ with coefficients in $\mathbb{F}2$. Consequently, $\mathbb{F}{2^n}$ contains exactly $2^n$ elements. The polynomial $f(x)$ ensures that $\mathbb{F}_{2^n}$ forms a valid field as it defines the modular reduction in multiplication.
 
@@ -356,7 +357,8 @@ Furthermore, Alice cannot change her result $g$ without being able to find a dif
 \end{align*}
 which she can only do with negligible probability per \autoref{lem:collision}, ensuring \autoref{lem:binding}.
 
-\paragraph{Merkle Tree Commitment Scheme}\label{sub:merkle_tree_prelim}
+\paragraph{Merkle Tree Commitment Scheme}
+\label{sub:merkle_tree_prelim}
 A variant of such a scheme which allows for partial opening, meaning that the prover does not have to open the entire commitment, but can instead open a subset of the commitment, is the \textit{Merkle Tree Commitment scheme}~\cite{becker2008merkle}.
 
 Let $v_1, \dots, v_n$ be the values to be committed, and let $h$ denote a cryptographically secure hash function. The leaves of the Merkle tree, $a_{0,1}, \dots, a_{0,n}$, are initialized as the hash values of the input values:
@@ -435,7 +437,7 @@ A notable feature of this construction is that if the parties possess two shares
 \end{align*}
 This property enables us to easily produce Multi-Party Computation (MPC) (see \autoref{sec:mpc}) on top of such a SSS\@. However, to allow full arithmetic circuits, we need more elaborate protocols, which we will discuss in \autoref{sec:mpc_sacrificing}.
 
-\paragraph{Threshold SSS}\label{sec:threshold-sss}
+\paragraph{Threshold SSS}\label{sub:threshold-sss}
 
 In many situations such schemes are not sufficient. Imagine wanting to solve the the distribution of a secret (e.g. a password) among a set of locations to ensure that you do not have a single-point-of-failure. To solve this, we require a SSS that can reconstruct the secret from a a subset of shares up to a threshold $\ell$. This is called a $(\ell, n)$-threshold SSS\@.
 
@@ -449,7 +451,7 @@ In many situations such schemes are not sufficient. Imagine wanting to solve the
 
 In this case, the SSS described above would not suffice as loosing even one share would result in the loss of the secret. There are several ways to solve this problem. We could distribute more than one share to each location. If distributed correctly, we can ensure that only $t \leq N$ parties need to be available. However, there are also other more sophisticated schemes that can be used to ensure that the secret is not lost.
 
-\paragraph{Shamir's Secret Sharing}\label{sec:shamir}
+\paragraph{Shamir's Secret Sharing}\label{sub:shamir}
 
 One particular example, and the one utilized by the SD-in-the-Head protocol, is Shamir's Secret Sharing scheme~\cite{shamir1979share,cramer2015secure}. This $(\ell, n)$-private threshold SSS is based on polynomials over a finite field $\mathbb{F}$. A secret $s$ is shared by choosing a random polynomial $P_s$ of degree at most $\ell \geq 2$ with $s = P_s(0)$. For each participant $i \in [n]$, $P_i$, a share $s_i$ is generated by evaluating $P(i)$. The secret can then be reconstructed by interpolating the polynomial from a $\ell + 1$ shares and with $\ell$ or less shares we gain no information about the secret -- i.e. we have $\ell$-privacy. We can prove reconstruction, correctness and privacy using \textit{lagrange interpolation}.
 
@@ -724,7 +726,7 @@ Consider the cause where one of $\Delta_z$ or $\Delta_c$ is zero and the other i
 
 \section{Threshold Computation in the Head (TCitH)}\label{sec:threshold-mpc}
 
-A majority of constructions within the MPCitH framework~\cite{baum2020concretely,feneuil2022syndrome,katz2018improved} rely on $ (N-1, N) $ additive secret sharing schemes (SSS). Feneuil and Rivain~\cite{feneuil2023threshold,feneuil2023threshold2} explore the application of threshold secret sharing schemes (\autoref{sec:threshold-sss}). In addition to improving the soundness of the resulting zero-knowledge protocol, their approach reduces the computational overhead: the prover needs to emulate only $ \ell + 1 $ parties, while the verifier needs to verify and emulate just $ \ell $ parties. This optimization delivers significantly improved performance, particularly for low-threshold schemes.
+A majority of constructions within the MPCitH framework~\cite{baum2020concretely,feneuil2022syndrome,katz2018improved} rely on $ (N-1, N) $ additive secret sharing schemes (SSS). Feneuil and Rivain~\cite{feneuil2023threshold,feneuil2023threshold2} explore the application of threshold secret sharing schemes (\nameref{sub:threshold-sss}). In addition to improving the soundness of the resulting zero-knowledge protocol, their approach reduces the computational overhead: the prover needs to emulate only $ \ell + 1 $ parties, while the verifier needs to verify and emulate just $ \ell $ parties. This optimization delivers significantly improved performance, particularly for low-threshold schemes.
 
 \begin{table}[]
   \centering
@@ -737,11 +739,11 @@ A majority of constructions within the MPCitH framework~\cite{baum2020concretely
   \caption{Performance for prover and verifier for TCitH compared to MPCitH. I.e. the number of party emulations to achieve a soundness error of $2-\lambda$ (assuming a negligible false positive rate for the underlying MPC protocol). From \cite{feneuil2023threshold}}\label{tbl:tcith-performance}
 \end{table}
 
-We define a threshold MPC protocol, $ f_{thr} $, based on a $ (\ell, N) $-private SSS. In the context of the SD-in-the-Head protocol, this can be instantiated with Shamir's Secret Sharing (\autoref{sec:shamir}).
+We define a threshold MPC protocol, $ f_{thr} $, based on a $ (\ell, N) $-private SSS. In the context of the SD-in-the-Head protocol, this can be instantiated with Shamir's Secret Sharing (\nameref{sub:shamir}).
 
 On the other hand, the TCitH model described by~\cite{feneuil2023threshold} results in a slightly larger proof size due to the increased flexibility in the number of input shares the prover must open. While the prover still commits to all input sharings, only a subset of these needs to be opened during the protocol.
 
-To facilitate this, a Merkle Tree Commitment Scheme (\autoref{sub:merkle_tree_prelim}) is employed. This scheme enables the prover to efficiently prove the consistency of a subset of committed inputs by providing additionally the authentication path along with the tree root -- introducing the slight increase in communicational complexity.
+To facilitate this, a Merkle Tree Commitment Scheme (\nameref{sub:merkle_tree_prelim}) is employed. This scheme enables the prover to efficiently prove the consistency of a subset of committed inputs by providing additionally the authentication path along with the tree root -- introducing the slight increase in communicational complexity.
 
 \todo{Add protocol here}
 
@@ -807,7 +809,7 @@ The SD-in-the-Head protocol establishes a signature scheme by demonstrating the 
 
 The construction is highly modular, allowing flexibility and adaptability, as you can tweak the SD instance, the MPC protocol, the MPCitH and Fiat-Shamir transformations. The authors propose two distinct protocol variants: the \textit{hypercube} variant and the \textit{threshold} variant. For this work, we focus on the \textit{threshold} variant~\cite{aguilarsyndrome11,feneuil2023threshold,feneuil2023threshold2}, as it offers significant performance enhancements compared to both the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11,aguilar2023return,feneuil2023threshold2}, albeit at the cost of slightly larger signature sizes.
 
-This chapter presents a comprehensive specification of the SD-in-the-Head MPC protocol, its transformation into a signature scheme, and the specific implementation details of the threshold variant. Additionally, we describe key optimizations applied to the protocol, such as avoiding interpolation and utilizing the $d$-split variant of the SD instance. A detailed table summarizing the protocol parameters and security assumptions is provided in \autoref{tab:sdith-protocol-parameters}.
+This chapter presents a comprehensive specification of the SD-in-the-Head Signature Scheme in the Threshold variant. The construction is based on the SD-in-the-Head MPC protocol in \autoref{sec:sdith-mpc}, its transformation into ZK-POK using MPCitH (described in \autoref{sec:sdith-zkpok}) and finally transformation into a signature scheme in \autoref{sec:sdith-signature}. Additionally, we describe optimizations applied to the protocol, such as avoiding interpolation and utilizing the $d$-split variant of the SD instance. A detailed table summarizing the protocol parameters and security assumptions is provided in \autoref{tab:sdith-protocol-parameters}.
 
 \begin{table}[]
   \begin{tabular}{p{0.12\textwidth}p{0.78\textwidth}}
@@ -854,7 +856,7 @@ This chapter presents a comprehensive specification of the SD-in-the-Head MPC pr
   \caption{SDitH protocol parameters overview~\cite[Table 1]{aguilarsyndrome11}.}\label{tab:sdith-protocol-parameters}
 \end{table}
 
-\section{The MPC Protocol}
+\section{The MPC Protocol}\label{sec:sdith-mpc}
 
 The SD-in-the-Head protocol builds upon the \textit{Multi-Party Computation in the Head} (MPCitH) framework. As a first step, we describe the underlying MPC protocol, which is used to verify the polynomial relation of the SD instance as detailed in \autoref{sec:polynomial_representation}:
 \begin{align*}
@@ -864,7 +866,7 @@ The SD-in-the-Head protocol builds upon the \textit{Multi-Party Computation in t
 The foundations for secret sharing and multi-party computation (MPC) are presented in \autoref{sec:additive-sss} and \autoref{sec:mpc}, respectively. The SD-in-the-Head MPC protocol is constructed using the sacrificing protocol introduced by Baum and Nof~\cite{baum2020concretely}, as detailed in \autoref{sec:mpc_sacrificing}.
 
 \begin{protocol}[SD-in-the-Head MPC protocol]\label{def:sdith-mpc}
-  We assume the existence of a random oracle $R$ to sample values. This random oracle is later replaced by the verifier's challenge in the MPCitH framework. Given a public SD instance $(H, y)$, and the private sharings for each party $(\sh{x_A}, \sh{P}, \sh{Q})$, as well as $t$ sharings of random beaver triples $\sh{a}, \sh{b}, \sh{c}$, the protocol proceeds as follows:
+  We assume the existence of a random oracle $R$ to sample values. This random oracle is later replaced by the verifier's challenge in the MPCitH framework. Furthermore, assume a $N-1$-private secret sharing scheme. Given a public SD instance $(H, y)$, and the private sharings for each party $(\sh{x_A}, \sh{P}, \sh{Q})$, as well as $t$ sharings of random beaver triples $\sh{a}, \sh{b}, \sh{c}$, the protocol proceeds as follows:
   \begin{enumerate}
     \item Sample $r, \epsilon \in_R \mathbb{F}_{\text{points}}^t$ uniformly at random.
     \item For each party $P_i \in [1 : N]$:
@@ -887,95 +889,162 @@ The foundations for secret sharing and multi-party computation (MPC) are present
   \end{enumerate}
 \end{protocol}
 
-In its basic form, the MPC protocol is assumed to be a $(N-1, N)$-private MPC protocol. To analyze the security of the protocol, we define its false positive probability, denoted as $p$. The false positive probability quantifies the likelihood that the MPC protocol incorrectly accepts an invalid instance. The following lemma formally characterizes $p$:
+To analyze the security of the protocol, we define its false positive probability, denoted as $p$. The false positive probability quantifies the likelihood that the MPC protocol incorrectly accepts an invalid instance~\cite{feneuil2022syndrome,aguilarsyndrome11}.
 
-
-\begin{lemma}[False positive probability $p$ of \autoref{def:sdith-mpc}]
+\begin{lemma}[False positive probability $p$ of \autoref{def:sdith-mpc}]\label{lem:sdith-mpc-soundness}
   Let $x_A = \texttt{open}(\sh{x_A})$. If $x_A$ corresponds to a valid SD instance $(H', y)$ and if all sharings are correctly generated. Then \autoref{def:sdith-mpc} always outputs \texttt{Accept}.
   Otherwise, the probability of a false positive is bounded by
   \begin{align*}
-    p = \sum_{i=0}^t \left(\frac{m + w - 1}{|\mathbb{F}_{q^4}|}\right)^i \cdot \left(1 - \frac{m + w - 1}{|\mathbb{F}_{q^4}|}\right)^{t-i} \cdot \left(\frac{1}{|\mathbb{F}_q|}\right)^{t-i}
-  \end{align*} over the randomness $r$ and $\epsilon$.
+    p = \sum_{i=0}^t \frac{\max_{j \leq m + w -1} \{ \binom{j}{i} \binom{\Delta - j}{t-i} \}}{\binom{\Delta}{t}} \cdot \left(\frac{1}{\Delta}\right)^{t-i}
+  \end{align*} over the randomness $r$ and $\epsilon$ and $\Delta = |\mathbb{F}_{q^4}|$.
 \end{lemma}
 
-\section{ZK-POK Protocol}
+\paragraph{Threshold Variant Using Shamir's Secret Sharing.}
+The threshold variant of the MPC protocol (\autoref{def:sdith-mpc}) can be achieved by incorporating \textit{Shamir's secret sharing}, as described in \nameref{sub:shamir}. By replacing the additive secret sharing scheme with Shamir's polynomial-based scheme, the protocol is extended into a \((\ell, N)\)-threshold MPC protocol, where any \(\ell\) out of \(N\) parties can reconstruct the secret, while fewer than \(\ell\) parties gain no information about the secret.
 
-To obtain a signature scheme from the MPC protocol \autoref{def:sdith-mpc}, two transformations are needed. First, we will transform the MPC protocol into a zero-knowledge proof of knowledge (ZK-POK) using MPCitH. The ZK-POK described \autoref{def:sdith-zkpok} in is based on the verification by sacrificing triples strategy for MPCitH~\cite{baum2020concretely} detailed in \autoref{sec:mpc_sacrificing}. 
+\section{ZK-POK Protocol}\label{sec:sdith-zkpok}
+
+To obtain a signature scheme from \autoref{def:sdith-mpc}, two transformations are needed. First, we will transform the MPC protocol into a zero-knowledge proof of knowledge (ZK-POK) using MPCitH. The ZK-POK described \autoref{def:sdith-zkpok} in is based on the verification by sacrificing triples strategy for MPCitH~\cite{baum2020concretely} detailed in \autoref{sec:mpc_sacrificing} but has key changes to accommodate the threshold variant of the protocol~\cite{feneuil2023threshold,feneuil2023threshold2}.
 
 \begin{protocol}[ZK-POK from MPCitH~\cite{feneuil2022syndrome}]\label{def:sdith-zkpok}
-  Both the prover $\mathcal{P}$ and the verifier $\mathcal{V}$ hold public SD instance $(H,y)$. $\mathcal{P}$ holds $x$ such that $y = Hx$ and $\text{wt}(x)\ leq w$.
+  \setlength{\parskip}{5pt}
+  \setlength{\parindent}{0pt}
+  \titlespacing*{\paragraph}{0pt}{1pt}{1em}
+  Both the prover $\mathcal{P}$ and the verifier $\mathcal{V}$ hold public SD instance $(H,y)$. $\mathcal{P}$ holds $x$ such that $y = Hx$ and $\text{wt}(x) \leq w$. We assume a $(\ell, N)$-threshold secret sharing scheme.
 
-  \paragraph{Round 1} $\mathcal{P}$ computes the proof witness $(Q, S, P)$ from $x$ and public polynomial $F$.
+  $\mathcal{P}$ computes the proof witness $w = (x, Q, S, P)$ from $x$ and public polynomial $F$.
 
-  $\mathcal{P}$ prepares inputs for the MPC protocol: \\
-  Sample a root seed $sd$ and computes each party's seed $sd_i$ and commitment randomness $\rho_i$.\\
+  \paragraph{Round 1}
+  $\mathcal{P}$ prepares inputs for the MPC protocol. Sample a root seed $sd$ and construct $\psi = \texttt{PRG}(sd)$. The randomness is sequentially generated and each output is dependent on the previous output $\rho_i \leftarrow \psi_i(\{\rho_j\}_{j < i})$.
 
-  \noindent
-  For each party $i \in [N]$
-  \begin{itemize}[parsep=0pt, itemsep=0pt]
-    \item $\sh{a_j}_i, \sh{b_j}_i \leftarrow \texttt{PRG}(sd_i)$ for each $j \in [t]$
-    \item if $i \neq N$
-          \begin{itemize}
-            \item $\{ \sh{c_j}_i \}_{j \in [t]}, \sh{x_A}_i, \sh{Q}_i, \sh{P}_i \leftarrow \texttt{PRG}(sd_i)$
-            \item $\texttt{state}_i = sd_i$
-          \end{itemize}
-    \item else
-          \begin{itemize}
-            \item \( \sh{x_A}_N = x_A - \sum_{\ell \neq N} \sh{x_A}_\ell \)
-            \item \( \sh{Q}_N = Q - \sum_{\ell \neq N} \sh{Q}_\ell \)
-            \item \( \sh{P}_N = P - \sum_{\ell \neq N} \sh{P}_\ell \)
-            \item \( \sh{c_j}_N = \langle a_j, b_j \rangle - \sum_{\ell \neq N} \sh{c_j}_\ell \), for each \( j \in [t] \)
-            \item \(\texttt{aux} = \left( \sh{x_A}_N, \sh{Q}_N, \sh{P}_N, \{ \sh{c_j}_N \}_{j \in [t]} \right)\)
-            \item $\texttt{state}_N = sd_N\ ||\ \texttt{aux}$
-          \end{itemize}
-    \item Commit to the party state $c_i = \texttt{com}(\texttt{state}_i, \rho_i)$
+  \begin{itemize}[parsep=0pt, itemsep=0pt, topsep=0pt]
+    \item $\mathcal{P}$ generates random sharings $\sh{w}, \sh{a^j}, \sh{b^j}, \sh{c^j}$ s.t. $a^j, b^j \leftarrow \psi$ and $c^j = a^j \cdot b^j$ for $j \in [t]$
+    \item $\mathcal{P}$ computes the commitments for $i \in [N]$
+          \begin{align*}
+            \texttt{com}^j_i = \texttt{Commit}(\sh{w}_i, \{ \sh{a^j}_i, \sh{b^j}_i, \sh{c^j}_i \})
+          \end{align*}
+    \item $\mathcal{P}$ generates $\texttt{root}^j = \texttt{MerkleTree}(\texttt{com}^j_1, \ldots, \texttt{com}^j_N)$ and sends it to $\mathcal{V}$\footnote{see \nameref{sub:merkle_tree_prelim}}
   \end{itemize}
 
-  \noindent
-  The prover builds hash $h = \texttt{Hash}(c_1, \ldots, c_N)$ and sends $h$ to the verifier.
+  \paragraph{Round 2}
+  $\mathcal{V}$ samples for each $j \in [t]$ random points $r^j \in \mathbb{F}_{q^4}$ and $\epsilon^j \in \mathbb{F}_{q^4}$ and sends them to $\mathcal{P}$.
 
-  \paragraph{Round 2} $\mathcal{V}$ samples for each $j \in [t]$ random points $r_j \in \mathbb{F}_q^4$ and $\epsilon_j \in \mathbb{F}_q^4$ and sends them top $\mathcal{P}$.
-
-  \paragraph{Round 3} $\mathcal{P}$ simulates the MPC protocol \textit{in their head}.
+  \paragraph{Round 3} $\mathcal{P}$ simulates the MPC protocol \textit{in their head} for a subset $S \subseteq [N]$ of $\ell + 1$ parties
   \begin{align*}
-    \sh{\alpha_j}, \sh{\beta_j}, \sh{v_j} \leftarrow \texttt{MPC}(\sh{x_A}, \sh{Q}, \sh{P}, \sh{a}, \sh{b}, r_j, \epsilon_j) \quad \text{for }j \in [t]
+    \sh{\alpha^j}_i, \sh{\beta^j}_i, \sh{v^j}_i \leftarrow \texttt{MPC}(\sh{x_A}_i, \sh{Q}_i, \sh{P}_i, \sh{a}_i, \sh{b}_i, r^j, \epsilon^j) \\ \text{for }j \in [t] \text{ and } i \in S
   \end{align*}
-  $\mathcal{P}$ computes hash $h' = \texttt{Hash}(\sh{\alpha_j}, \sh{\beta_j}, \sh{v_j}, \dots \sh{\alpha_t}, \sh{\beta_t}, \sh{v_t})$ and sends $h'$ to $\mathcal{V}$.
 
-  \paragraph{Round 4} $\mathcal{V}$ uniformly samples $i^* \in [N], |i^*| = N-1$ and sends $i^*$ to $\mathcal{P}$.
+  $\mathcal{P}$ computes hash $h' = \texttt{Hash}(\sh{\alpha^t}_S, \sh{\beta^t}_S, \sh{v^t}_S)$ and sends $h'$ to $\mathcal{V}$.
+
+  \paragraph{Round 4} $\mathcal{V}$ uniformly samples $I \subset [N], |I| = \ell$ and sends $I$ to $\mathcal{P}$.
 
   \paragraph{Round 5}
-  The prover sends \( (\texttt{state}_i, \rho_i)_{i \neq i^*}, \texttt{com}_{i^*}, \{ \sh{\alpha_j}_{i^*} \}_{j \in [t]}, \{ \sh{\beta_j}_{i^*} \}_{j \in [t]} \).
+  The prover opens the parties in $I$ and sends $(\sh{w}_i, \sh{a^j}_i, \sh{b^j}_i, \sh{c^j}_i)_{i \in I}$ to $\mathcal{V}$. $\mathcal{P}$ further sends the \texttt{MerkleTree} authentication paths to $\mathcal{V}$ with
+  \begin{align*}
+    \texttt{auth}_j = \texttt{MerklePath}(\{\texttt{com}^j_i\}_{i \in I}) \quad \text{w.r.t. }\texttt{root}_j
+  \end{align*}
+  Lastly, $\mathcal{P}$ sends the broadcast shares $\sh{\alpha^t}_{i^*}, \sh{\beta^t}_{i^*}, \sh{v^t}_{i^*}$ of the unopened party $i^* \in S \backslash I$ to $\mathcal{V}$.
 
   \paragraph{Verification}
-  \begin{enumerate}
-    \item \textbf{Input Commitment Consistency:}
-          For each \( i \neq i^* \), $\mathcal{V}$ computes the commitments to the parties' states:
-          \[
-            \texttt{com}_i = \texttt{Com}(\texttt{state}_i; \rho_i).
-          \]
-          Then, she checks that the hash value \( h \) matches:
-          \[
-            h \stackrel{?}{=} \texttt{Hash}(\texttt{com}_1, \dots, \texttt{com}_N).
-          \]
+  For $i \in I$ $\mathcal{V}$ recomputes the commitments $\texttt{com}^j_i$ from the received inputs \\$\sh{w}_i, \sh{a^j}_i, \sh{b^j}_i, \sh{c^j}_i$. Furthermore $\mathcal{V}$ recomputes the MPC state $ (\sh{\alpha^j}_i, \sh{\beta^j}_i, \sh{v^j}_i)$. Finally $\mathcal{V}$ reconstructs the shares and hash $h'$
+    \begin{align*}
+      v^j              & = \texttt{open}(\{\sh{v^j}_i\}) \quad \text{for } i \in I \cup i^*                              \\
+      h'_{\mathcal{V}} & = \texttt{Hash}(\sh{\alpha^t}_i, \sh{\beta^t}_i, \sh{v^t}_i) \quad \text{for } i \in I \cup i^*
+    \end{align*}
 
-    \item \textbf{MPC state consistency:}
-          Using the states \( \{ \texttt{state}_i \}_{i \neq i^*} \), $\mathcal{V}$ simulates all the parties except for \( i^* \). From the recomputed shares, she checks the hash consistency:
-          \[
-            h' \stackrel{?}{=} \texttt{Hash}(\sh{\alpha_1}, \sh{\beta_1}, \sh{v_1}, \dots, \sh{\alpha_t}, \sh{\beta_t}, \sh{v_t}),
-          \]
-          where the missing shares \( \sh{v_j}_{i^*} \) are defined as:
-          \[
-            \sh{v_j}_{i^*} := - \sum_{i \neq i^*} \sh{v_j}_i \quad \text{for each } j \in [t].
-          \]
+  $\mathcal{V}$ outputs \texttt{Accept} if and only if
+
+  \begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
+    \item \textit{Verify input commitment consistency:} Recompute $\texttt{root}^j_{\mathcal{V}}$ and check that
+          \begin{align*}
+            \texttt{root}^j_{\mathcal{V}} \stackrel{?}{=} \texttt{root}^j
+          \end{align*}
+    \item \textit{Verify MPC protocol consistency:}
+          \begin{align*}
+            h'_{\mathcal{V}} \stackrel{?}{=} h'
+          \end{align*}
+    \item \textit{Verify that the output of the opened parties}:
+          \begin{align*}
+            v^1, \dots, v^t \stackrel{?}{=} 0
+          \end{align*}
   \end{enumerate}
-
-  \noindent
-  If both checks succeed, the verifier accepts. Otherwise, she rejects.
 \end{protocol}
 
-\paragraph{The Signature Protocol}
-Lastly, we need to turn the ZK-POK protocol into a signature protocol using the Fiat-Shamir heuristic and include the message $m$.
+\paragraph{Soundness}
+The soundness of the protocol relies on the binding property of the commitment scheme and the inability of the prover to simulate multiple inconsistent views of the MPC protocol. By leveraging the hash consistency checks and commitment verification, the protocol ensures that a cheating prover cannot deviate significantly from the honest execution.
+
+
+\begin{lemma}[Soundness of \autoref{def:sdith-zkpok}]
+  Suppose that there exists an efficient prover \(\widetilde{P}\) such that, on input \((H, y)\), it convinces the honest verifier \(V\) on input \(H, y\) to accept with probability:
+  \[
+    \widetilde{\varepsilon} := \Pr\left[ \langle \widetilde{P}, V \rangle(H, y) \to 1 \right] > \varepsilon,
+  \]
+  where the soundness error \(\varepsilon\) is given by:
+  \[
+    \varepsilon = p + \frac{1}{N} - p \cdot \frac{1}{N}.
+  \]
+  with \(p\) defined in \autoref{lem:sdith-mpc-soundness}. Then, there exists an efficient probabilistic extraction algorithm \(E\) that, given rewindable black-box access to \(\widetilde{P}\), produces either:
+  \begin{itemize}
+    \item a witness \( x := (x_1 \mid \dots \mid x_d) \) such that \( y = Hx \) and \(\forall j, \, \text{wt}(x_j) \leq w/d \), or
+    \item a commitment collision.
+  \end{itemize}
+  The average number of calls to \(\widetilde{P}\) made by \(E\) is upper bounded by:
+  \[
+    \frac{4}{\widetilde{\varepsilon} - \varepsilon} \cdot
+    \left( 1 + \widetilde{\varepsilon} \cdot \frac{2 \cdot \ln(2)}{\widetilde{\varepsilon} - \varepsilon} \right).
+  \]
+\end{lemma}
+
+To further strengthen the protocol against soundness error, \textbf{parallel repetition} is employed. Specifically, the SD-in-the-Head protocol repeats the underlying ZK-POK protocol \(\tau\) times, where:
+\[
+  \tau = \left\lceil \log_2\left(\frac{1}{\epsilon}\right) \cdot \lambda \right\rceil.
+\]
+Here, \(\lambda\) denotes the security parameter, and \(2^{-\lambda}\) represents the desired soundness error. This parallel repetition ensures that the overall soundness error decreases exponentially with the number of repetitions, achieving a negligible error probability in practice.
+
+\section{The Signature Protocol}\label{sec:sdith-signature}
+
+\paragraph{Public-Key Interpretation}
+Firstly, note that the public knowledge of an SD instance naturally transforms the protocol into a \textit{public-key signature scheme}. In this setting, the pair \((H, y)\) serves as the public key, while \(x\) functions as the corresponding private key.
+
+To limit the size of the public key, we introduce a seed \( \texttt{sd}_H \) which is used to generate the random matrix \(H\) deterministically via a pseudo-random generator (\(\texttt{PRG}\)). This reduces the storage cost significantly, as only the seed \( \texttt{sd}_H \) needs to be shared, while the full matrix \(H\) can be reconstructed on demand.
+
+\paragraph{Challenge Generation}
+To convert the ZK-POK protocol into a signature protocol, we employ the \textit{Fiat-Shamir heuristic} and include the message \( m \) in the challenge generation process. This transformation allows the prover to independently derive the verifier's challenges in \textbf{Round 2} and \textbf{Round 4}.
+
+We assume the existence of two hash functions, \(\texttt{Hash}_1\) and \(\texttt{Hash}_2\), and a pseudo-random generator (\(\texttt{PRG}\)).
+
+The prover generates the challenges as follows:
+
+\begin{enumerate}
+  \item \textbf{First Challenge (Randomness for MPC Protocol):}
+        Compute the hash \( h_1 \) based on the commitments:
+        \begin{align*}
+          h_1         & = \texttt{Hash}_1(\texttt{com}_1, \dots, \texttt{com}_N), \\
+          r, \epsilon & \leftarrow \texttt{PRG}(h_1).
+        \end{align*}
+
+  \item \textbf{Second Challenge (\( i^* \)):}
+        Include the message \( m \), along with salt, randomness, and MPC outputs into the second hash:
+        \begin{align*}
+          h_2 & = \texttt{Hash}_2(m, \texttt{salt}, h_1, \sh{\alpha}, \sh{\beta}, \sh{v}), \\
+          i^* & \leftarrow \texttt{PRG}(h_2).
+        \end{align*}
+\end{enumerate}
+
+\paragraph{Message Inclusion and Pre-Processing}
+It is important to note that the message \( m \) is only incorporated into the second hash function \( \texttt{Hash}_2 \). This design enables pre-processing of the first three rounds (\textbf{Round 1--3}) independently of the message, which allows for significant efficiency improvements in practical implementations.
+
+\paragraph{Signature Construction}
+The resulting signature consists of the following components:
+\begin{align*}
+  h_1, h_2, \sh{x_A}_i, \sh{P}_i, \sh{Q}_i, \sh{a}_i, \sh{b}_i, \sh{c}_i \quad \text{for } i \in I, \quad
+  \{ \texttt{com}_i, \sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i \}_{i \notin I}.
+\end{align*}
+
+
+\section{Threshold Variant}
+
+Omit $h_2$ from signature.
 
 \section{Optimisations}
 
@@ -1139,7 +1208,7 @@ Between the two systems, there exists a \textit{performance versus dynamism} tra
 
 This code demonstrates two data types being allocated. The first, \rust{a}, is a vector type, while the second, \rust{b}, is a fixed-size array type. The vector type is always allocated on the heap, whereas the fixed array is allocated on the stack. Pushing  and accessing the stack is faster than for on the heap. Therefore, keeping values on the stack tends to outperform heap allocations. This is because heap allocation involves searching for a suitable location in memory to store the data. Accessing data on the heap is slower as you have to follow a pointer from the stack to allocated data. Note that there are several optimisations you can do when allocating to the heap, like changing the allocator for specific use cases, instantiating the vector with a capacity or the \rust{SmallVec} that dynamically changes from the stack to the heap when allocation surpasses its defined capacity. See~\cite{rustlangPerformanceBook} for more.
 
-However, the vector type is far more dynamic. For instance, using the \rust{push} method, you can add more elements to a vector, and the allocator will automatically find additional space on the heap if needed. Conversely, stack allocations in Rust require that the size of the data be known at compile time, which imposes significant restrictions on how dynamic your code can be. This limitation became particularly evident when designing around the different category variants in \autoref{sub:categories}. However, this also ensures at compile time that you cannot access memory outside of the stack, a common vulnerability exposed in C and C++.
+However, the vector type is far more dynamic. For instance, using the \rust{push} method, you can add more elements to a vector, and the allocator will automatically find additional space on the heap if needed. Conversely, stack allocations in Rust require that the size of the data be known at compile time, which imposes significant restrictions on how dynamic your code can be. This limitation became particularly evident when designing around the different category variants in \nameref{sub:categories}. However, this also ensures at compile time that you cannot access memory outside of the stack, a common vulnerability exposed in C and C++.
 
 Additionally, the stack, due to its fixed-size structure, can only hold a limited amount of data. Attempting to allocate more memory than the stack can accommodate results in a \textit{stack overflow} error. In contrast, the heap offers virtually unlimited storage, as it can dynamically allocate memory as required.
 
@@ -1196,7 +1265,7 @@ However, for Case 2; The variable \rust{d} is instead a \textit{pointer} to a he
 
 Allowing \rust{d} to be used after the move could lead to undefined behavior. For one, due to the variable scoping, the runtime would drop the data for both \rust{d} and \rust{v}. As these would be pointing to the same data, this would case a \textit{double free} memory safety bug. Furthermore, if multiple pointers were allowed to simultaneously access or modify the heap-allocated data, it could result in data races. To avoid such risks and ensure memory safety, Rust enforces its ownership rules. If you need to continue using \rust{d} after a move, you must explicitly \textit{clone} the heap data before transferring ownership. This approach encourages developers to carefully manage how data is accessed and modified, promoting safe and predictable memory usage.
 
-\paragraph{Functions and ownership}\label{sec:rustlifetimes} % (fold)
+\paragraph{Functions and ownership}\label{sub:rustlifetimes} % (fold)
 Now that we have covered the basics of ownership, we explore how it interacts with functions. When passing a value to a function, the function takes ownership of the value. This means that the function takes over managing the \textit{lifetime} of the value, ensuring that it is not used after the function call, unless it is copied.
 \begin{minted}{rust}
   // Case 1: Stack allocated type
@@ -1326,7 +1395,7 @@ This overview only scratches the surface of the power and features that Rust off
 \subsection{Correctness (Types, Testing and Errors)}
 When creating and iterating on software, it is crucial that you develop in a way that you can continually deliver functional and correct code. There are many patterns that help ensuring this. Rust provides several. In this section we will describe two -- Types and Automated tests.
 
-\paragraph{The Type System}\label{sec:rusttypes}
+\paragraph{The Type System}\label{sub:rusttypes}
 Every value in Rust has a \textit{data type}. Programs written in Rust are \textit{statically typed}, meaning the type of each value must be determined at compile time. The type informs the compiler about what operations the value supports and helps catch errors before they reach runtime~\cite[ch.3.2]{rustlangRustProgramming}. Rust's compiler often infers types automatically, but if it cannot, you must explicitly annotate the type of the value. Consider the following example:
 
 \begin{minted}{rust} 
@@ -1379,7 +1448,7 @@ Crucially, this test allows us to continue developing or optimising the finite f
 
 Writing good tests is a subject extensive enough to warrant its own discussion, and delving into the theory behind it is beyond the scope of this report. From the outset, we designed our implementation with testing in mind. This approach ensures that we can iteratively develop each module and confirm that it adheres to theoretical expectations and the given specification.
 
-\paragraph{Error handling}\label{sec:rusterror} % https://www.lurklurk.org/effective-rust/panic.html
+\paragraph{Error handling}\label{sub:rusterror} % https://www.lurklurk.org/effective-rust/panic.html
 Testing that functions return the correct values based on \textit{correct} inputs are a crucial part of ensuring correctness. But what happens if you have unexpected inputs? For example on the inputs a user to a CLI\@? This can lead to errors. So how do Rust allow us to deal with errors? There are two ways:
 \begin{itemize}
   \item Using a \rust{panic}: Stopping the execution of the program.
@@ -1418,7 +1487,7 @@ There might be a number of reasons why a signature could not be generated, but a
 \subsection{Maintainable and readable code}
 One of the reasons for choosing Rust is that it provides several tools and features that make it easier to write code that is both maintainable and readable. In this section, we will discuss some of the features that we utilized in our implementation to achieve this goal.
 
-\paragraph{Code Documentation}\label{sec:code-documentation}
+\paragraph{Code Documentation}\label{sub:code-documentation}
 First things first, good written code should either be written in a way so that it is self-explanatory or supply the necessary documentation in order for the reader to quickly grasp the concepts and functionality. Often times you would want to supply documentation in the form of comments, above functions and values to explain what they do and how they work. Furthermore, you would want to supply the user with a \textit{manual} where the user can read about the exposed library.
 
 It can be hard to maintain both of these aspects separately. Rust enables the developer to write both at the same time. Consider the following code in a module
@@ -1441,7 +1510,7 @@ Adding a triple slash \rust{///} above a function or struct generates documentat
 
 While these comments enable developers to access documentation directly within the code, Rust also provides a powerful feature to automatically generate comprehensive documentation. By running \href{https://doc.rust-lang.org/cargo/commands/cargo-doc.html}{\texttt{cargo doc}}, you can create a webpage with detailed documentation for the project. The generated documentation for our implementation can be viewed here: \todo{link to the documentation}.
 
-\paragraph{Modules}\label{sec:rust_modules}
+\paragraph{Modules}\label{sub:rust_modules}
 Rust provides a module system that allow you to organize your code into logical units. Making it it easier to understand and maintain the codebase. A module is a collection of related items, such as functions, structs, and constants, that are grouped together.
 
 Modules can be nested, allowing for a hierarchical structure of code.
@@ -1872,7 +1941,7 @@ The protocol requires a lot of constants -- e.g. the size of the syndrome decodi
 
 The \rust{[T; N]} array type in Rust ensures that the value is stored on the stack but requires that \rust{T} and \rust{N} are known at compile time. We can rely on this property because \rust{const} (constants) in Rust define immutable values that are fully determined at compile time. However, one challenge arises from the need to adjust the digest size based on the NIST security categories. For instance, switching to category five might mean using SHA-512 and thus a 512-bit digest, which would require updating \rust{PARAM_DIGEST_SIZE} accordingly.
 
-There are multiple ways to address this issue. The simplest approach would be to switch from a stack-allocated array to a heap-allocated vector, \rust{Vec<T>}. However, this would likely reduce performance due to the overhead of dynamic allocation and retrieval. Instead, we adopted the feature-flag technique described in \autoref{sub:feature_flags}.
+There are multiple ways to address this issue. The simplest approach would be to switch from a stack-allocated array to a heap-allocated vector, \rust{Vec<T>}. However, this would likely reduce performance due to the overhead of dynamic allocation and retrieval. Instead, we adopted the feature-flag technique described in \nameref{sub:feature_flags}.
 
 We introduced three feature flags -- \texttt{category\_one}, \texttt{category\_three}, and \texttt{category\_five} -- and then structured our \texttt{crate::constants::params} module to load the appropriate parameters depending on which feature flag is enabled. This allows us to select the correct digest size at compile time while maintaining stack-based allocations and consistent performance.
 
@@ -2005,7 +2074,7 @@ We only made simple tests for this module, as we trusted the underlying library 
 
 \paragraph{Hashing}\label{sec:hashing} % (fold)
 As mentioned in the spec, we need a collision-resistant hash function. For this we also used the tiny-keccak crate. And again due to the different security categories, we had to be able to switch between different implementations of the underlying hash function.
-First, as mentioned in the \autoref{sub:constants}, we defined a primitive type for the Hash which we used to define a generic trait:
+First, as mentioned in the \nameref{sub:constants}, we defined a primitive type for the Hash which we used to define a generic trait:
 \begin{minted}{rust}
 pub trait SDitHHashTrait<T> {
     /// Get the hasher for the hash primitive
@@ -2020,7 +2089,7 @@ pub trait SDitHHashTrait<T> {
     fn update(&mut self, data: &[u8]);
 }
 \end{minted}
-We then implemented the trait, as was shown in \autoref{sub:prg}, for the following hash primitives SHA3-256, SHA3-384 and SHA3-512.
+We then implemented the trait, as was shown in \nameref{sub:prg}, for the following hash primitives SHA3-256, SHA3-384 and SHA3-512.
 
 \subsection{Commitments}
 To be able to commit to shares we use the hasher that we just defined. The commitment contains the following values:
@@ -2035,7 +2104,7 @@ We only create simple tests for this functionality as we rely on a hashing crate
 \subsection{Merkle Tree Implementation}\label{sub:merkle_tree_impl}
 \todo{Write the introduction for this section once the specification is complete.}
 
-The implementation of the Merkle tree presented challenges due to its one-dimensional array representation. However, we opted to retain this structure because of its performance benefits. In this design, the tree is stored in a single array, with the last half reserved for the commitments. During optimization, we experimented with a simpler structure, but since it yielded no tangible improvements, we decided to keep the more readable implementation. As the protocol specifies fixed-size trees for each category, we utilized constants from \autoref{sub:constants} to allocate the tree efficiently on the stack.
+The implementation of the Merkle tree presented challenges due to its one-dimensional array representation. However, we opted to retain this structure because of its performance benefits. In this design, the tree is stored in a single array, with the last half reserved for the commitments. During optimization, we experimented with a simpler structure, but since it yielded no tangible improvements, we decided to keep the more readable implementation. As the protocol specifies fixed-size trees for each category, we utilized constants from \nameref{sub:constants} to allocate the tree efficiently on the stack.
 
 We defined a trait for the Merkle tree with methods derived from the specification:
 \begin{itemize}
@@ -2091,7 +2160,7 @@ In order to test the correctness of the tree, we first check that the leaves cor
     }
 \end{minted}
 
-\paragraph{authPath and getAuthSize}\label{sec:auth_path}
+\paragraph{authPath and getAuthSize}\label{sub:auth_path}
 The initial \texttt{authPath} implementation iterated backward through the array, identifying missing nodes by checking parent-child relationships. For signature validation, we later adopted an optimized approach using \texttt{get\_revealed\_nodes}:
 \begin{minted}{rust}
 fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
@@ -2148,7 +2217,7 @@ Testing that we found the revealed nodes was done by doing the computation manua
     }
 \end{minted}
 
-\paragraph{getRootFromAuthPath}\label{sec:get_root_from_auth_path}
+\paragraph{getRootFromAuthPath}\label{sub:get_root_from_auth_path}
 Verification involves recomputing the root from the authentication path:
 \begin{minted}{rust}
     fn get_root_from_auth_path(
@@ -2265,7 +2334,7 @@ This test ensures that the field arithmetic implementation behaves correctly, pr
 \subsection{Field Extensions}\label{sub:field_extensions}
 After defining the trait and general setup for $GF(2)$ binary arithmetic, we proceeded to implement the methods for the $GF(q^2)$ and $GF(q^4)$ fields.
 
-\paragraph{First Simple Extension}\label{sec:first_simple_extension}
+\paragraph{First Simple Extension}\label{sub:first_simple_extension}
 
 For the $GF(q^2)$ field, we did not implement the functions as a trait, as they are solely used as sub-functions for the $GF(q^8)$ field. To represent an element in the $GF(q^2)$ field, we used a 2-byte array, representing $(a, b) = a + bX$. The field is an extension from the lower field $GF(q)$ by the irreducible polynomial $X^2 + X + 32$.
 
@@ -2346,7 +2415,7 @@ Now that we have the $GF(q^2)$ field we can implement the $GF(q^4)$ field arithm
   F_{q^4} = F_q[Z] / (Z^2 + Z + 32(X))
 \end{align}
 
-As mentioned before in the \autoref{sub:field_arithmetic} we have a trait for the required field operations, so we can implement those on the type $FPoint$.
+As mentioned before in the \nameref{sub:field_arithmetic} we have a trait for the required field operations, so we can implement those on the type $FPoint$.
 
 \paragraph{Addition in $GF(q^4)$}
 
@@ -2382,12 +2451,12 @@ fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
 We can describe a multiplication between 2 points in the extended field.
 For $u = (p,q) = p + qZ$ and $v = (r,s) = r + sZ$ we have:
 \begin{align}
-  u \cdot v &= (p + qZ) \cdot (r + sZ) \\
-        &= pr + psZ + qrZ + qsZ^2\\
-        &= pr + (ps + qr)Z + qs(Z + 32X) 
-        &= pr + (ps + qr)Z + qsZ + 32qsX\\ 
-        &= (pr + 32qsX) + (ps + qr + qs)Z\\
-        &= (pr + 32qsX) + ((p + q) \cdot (r + s) - pr)Z\\
+  u \cdot v & = (p + qZ) \cdot (r + sZ)                      \\
+            & = pr + psZ + qrZ + qsZ^2                       \\
+            & = pr + (ps + qr)Z + qs(Z + 32X)
+            & = pr + (ps + qr)Z + qsZ + 32qsX                \\
+            & = (pr + 32qsX) + (ps + qr + qs)Z               \\
+            & = (pr + 32qsX) + ((p + q) \cdot (r + s) - pr)Z \\
 \end{align}
 Note that we use the following fact in the multiplication: $Z^2 = Z + 32X$ This comes from the fact that it is $mod(2)$.
 
@@ -2411,7 +2480,7 @@ Our implementation follows the formula above:
 \end{minted}
 
 \paragraph{Testing the $GF(q^4)$ Field}
-We test the extended field arithmetic by using the same test as we defined for the trait in \autoref{sub:field_arithmetic}.
+We test the extended field arithmetic by using the same test as we defined for the trait in \nameref{sub:field_arithmetic}.
 
 
 \subsection{Field polynomials}\label{sub:field_polynomials} % (fold)
@@ -2649,7 +2718,7 @@ pub fn generate_instance_with_solution(master_seed: Seed) -> (Instance, Solution
 
 Here, we initialize the PRG to sample the $x$ vector and the seed for the $H'$ matrix. Using these components, we generate the witness and split it into an instance and a solution.
 
-\paragraph{Testing the Witness Generation}\label{sec:testing_our_witness_generation}
+\paragraph{Testing the Witness Generation}\label{sub:testing_our_witness_generation}
 
 To ensure correctness, we created several tests for the witness generation process.
 
@@ -2981,7 +3050,7 @@ This setup provided a diverse testing environment, ensuring our benchmarks accou
 
 \paragraph{Benchmarking test areas}\label{sub:bench_test_areas}
 
-We ran benchmarking tests for different areas of the codebase -- based on the api when they were specifically relevant to optimizations from \autoref{sub:rust_optimizations}. Furthermore, we ran benchmarks for different configurations, run through feature flags. We ran all benchmarks for both the baseline and release profiles and ran them on both Setup 1 and Setup 2 \autoref{sub:testing_setup}.
+We ran benchmarking tests for different areas of the codebase -- based on the api when they were specifically relevant to optimizations from \nameref{sub:rust_optimizations}. Furthermore, we ran benchmarks for different configurations, run through feature flags. We ran all benchmarks for both the baseline and release profiles and ran them on both Setup 1 and Setup 2 \nameref{sub:testing_setup}.
 
 \begin{figure}
   \begin{itemize}

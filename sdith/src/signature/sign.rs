@@ -88,7 +88,8 @@ impl Signature {
         // Commit shares
         let (commitments, merkle_trees) = Signature::commit_shares(&input_shares, salt);
 
-        // h1 = Hash1 (seedH , y, salt, com[1], . . . , com[τ ])
+        // Create MPC challenge
+        // h1 = Hash1 (seedH, y, salt, com[1], . . . , com[τ ])
         let h1 = Signature::gen_h1(&secret_key.seed_h, &secret_key.y, salt, commitments);
         let chal = Challenge::new(h1);
 

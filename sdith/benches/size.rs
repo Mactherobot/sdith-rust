@@ -22,7 +22,7 @@ pub(crate) fn proof_size_benchmark(_c: &mut Criterion) {
 
     let mut rng = NistPqcAes256CtrRng::from_seed(Seed::default());
     let mut root_seed = rsdith::constants::types::Seed::default();
-    let mut salt = rsdith::constants::types::Salt::default();
+    let mut salt = [0u8; rsdith::constants::params::PARAM_SALT_SIZE];
     rng.fill_bytes(&mut root_seed);
     rng.fill_bytes(&mut salt);
     let (_, sk) = keygen(root_seed);
