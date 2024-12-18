@@ -31,6 +31,7 @@ use crate::{
 use beaver::{BeaverA, BeaverB, BeaverC};
 use broadcast::{Broadcast, BroadcastShare};
 use challenge::Challenge;
+use clap::error::Result;
 
 /// Expands the view opening challenges based on the h1 hash
 pub fn expand_view_challenge_hash(h1: Hash) -> [[u16; PARAM_L]; PARAM_TAU] {
@@ -310,7 +311,7 @@ pub fn inverse_party_computation(
     y: [u8; PARAM_M_SUB_K],
     broadcast: &Broadcast,
     with_offset: bool,
-) -> (BeaverA, BeaverB, BeaverC) {
+) -> Result<(BeaverA, BeaverB, BeaverC), String> {
     let solution = Solution::parse(&solution_plain).unwrap();
     let (s_a, q_poly, p_poly) = (solution.s_a, solution.q_poly, solution.p_poly);
 
@@ -324,7 +325,7 @@ pub fn inverse_party_computation(
     // Compute S
     let s = compute_s(&s_a, &h_prime, if with_offset { Some(&y) } else { None });
     if s.is_err() {
-        panic!("Failed to compute S");
+        return Err("Failed to compute S".to_string());
     }
     let s_poly = compute_s_poly(s.unwrap());
 
@@ -376,7 +377,7 @@ pub fn inverse_party_computation(
             }
         }
     }
-    (a, b, c)
+    Ok((a, b, c))
 }
 
 #[cfg(test)]
@@ -525,7 +526,8 @@ mod mpc_tests {
             y,
             &broadcast,
             false,
-        );
+        )
+        .unwrap();
 
         let (a, b, c) = inverse_party_computation;
 
@@ -567,7 +569,8 @@ mod mpc_tests {
             y,
             &broadcast,
             true,
-        );
+        )
+        .unwrap();
 
         let input_share = Input::parse(&input_share).unwrap();
 

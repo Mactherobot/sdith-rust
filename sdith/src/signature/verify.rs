@@ -75,7 +75,7 @@ impl Signature {
                     public_key.y,
                     &broadcast,
                     with_offset,
-                );
+                )?;
 
                 let input_share = Input::append_beaver_triples(
                     wit_share[e][li],
