@@ -944,20 +944,20 @@ To accommodate the threshold variant, the inputs to the MPC protocol are modifie
 \end{align}
 such that each party locally computes $\varphi^1$ and $\varphi^2$ on the input shares $\sh{s_A}_i, \sh{P}_i, \sh{Q}_i, \sh{a}_i, \sh{b}_i, \sh{c}_i$, producing $\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i$ as valid sharings of $\alpha, \beta, v$.
 
-We define the \texttt{input} as the tuple containing the MPC inputs:
+We define the \texttt{input\_plain} as the tuple containing the MPC inputs:
 \begin{align*}
-  \texttt{input} = (s_A, P, Q, a, b, c)
+  \texttt{input\_plain} = (s_A, P, Q, a, b, c)
 \end{align*}
 
-Next, we compute $\ell$ uniformly random coefficients $\texttt{input\_coef} \in \mathbb{F}_q^{|\texttt{input}|}$ and compute the sharing with \textit{Share}:
+Next, we compute $\ell$ uniformly random coefficients $\texttt{input\_coef} \in \mathbb{F}_q^{|\texttt{input\_plain}|}$ and compute the sharing with \textit{Share}:
 \begin{align}
-  \sh{\texttt{input}}_i & = \text{Share}(i, \texttt{input}, \texttt{input\_coef}_1, \dots, \texttt{input\_coef}_\ell) \label{sdith-mpc-share} \\ \nonumber
-  &= \texttt{input} + \sum_{j=1}^\ell i^j \cdot \texttt{input\_coef}_j
+  \sh{\texttt{input\_plain}}_i & = \text{Share}(i, \texttt{input\_plain}, \texttt{input\_coef}_1, \dots, \texttt{input\_coef}_\ell) \label{sdith-mpc-share} \\ \nonumber
+                               & = \texttt{input\_plain} + \sum_{j=1}^\ell i^j \cdot \texttt{input\_coef}_j
 \end{align}
 
-The MPC computation is then performed directly on the \texttt{input} and its $\ell$ coefficients from the SSSS:
+The MPC computation is then performed directly on the \texttt{input\_plain} and its $\ell$ coefficients from the SSSS:
 \begin{align*}
-  \texttt{input}            & \stackrel{\varphi^1, \varphi^2}{\longrightarrow} \texttt{broad}            \\
+  \texttt{input\_plain}     & \stackrel{\varphi^1, \varphi^2}{\longrightarrow} \texttt{broad\_plain}     \\
   \texttt{input\_coef}_1    & \stackrel{\varphi^1, \varphi^2}{\longrightarrow} \texttt{broad\_coef}_1    \\
                             & \vdots                                                                     \\
   \texttt{input\_coef}_\ell & \stackrel{\varphi^1, \varphi^2}{\longrightarrow} \texttt{broad\_coef}_\ell
@@ -965,7 +965,7 @@ The MPC computation is then performed directly on the \texttt{input} and its $\e
 
 Due to the linearity of the MPC computation, the output shares can be reconstructed by running the sharing protocol on the broadcast shares:
 \begin{align}
-  (\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i) = \text{Share}(i, \texttt{broad}, \texttt{broad\_coef}_1, \dots, \texttt{broad\_coef}_\ell)
+  (\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i) = \text{Share}(i, \texttt{broad\_plain}, \texttt{broad\_coef}_1, \dots, \texttt{broad\_coef}_\ell)
 \end{align}
 
 \section{The Signature Protocol}\label{sec:sdith-signature}
@@ -1021,7 +1021,7 @@ Finally, we introduce a $\texttt{salt} \in \{0,1\}^{2\lambda}$, which serves as 
 
   \begin{itemize}[itemsep=0pt, topsep=0pt, parsep=0pt]
     \item security parameters $\lambda, \tau$
-    \item a $(\ell + 1, N)$-threshold MPC protocol \texttt{MPC} (\autoref{def:sdith-mpc}, \autoref{sec:mpc})
+    \item a $(\ell + 1, N)$-threshold MPC protocol $\varphi^1, \varphi^2$ (\autoref{def:sdith-mpc}, \autoref{sec:mpc})
     \item secure hash functions $\texttt{Hash}_n(d) \rightarrow \texttt{Hash}(n || d)$ (\autoref{sec:prelim_hash})
     \item and random oracle $\texttt{PRG}$ (\autoref{sec:prelim_hash})
     \item \texttt{XOF} (\autoref{sec:xof})
@@ -1037,25 +1037,35 @@ Finally, we introduce a $\texttt{salt} \in \{0,1\}^{2\lambda}$, which serves as 
   \paragraph{Phase 1} Prepare the MPCitH inputs.
 
   \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
-    \item Compute Beaver triples $\mathcal{B} = a^{j}, b^{j}, c^{j}$ for all $j \in t$ and construct $\texttt{input} = (sk, \mathcal{B})$
+    \item Compute Beaver triples $\mathcal{B} = a^{j}, b^{j}, c^{j}$ for all $j \in t$ and construct $\texttt{input\_plain} = (sk, \mathcal{B})$
     \item For each iteration $e \in [\tau]$
-          \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
-            \item compute $\texttt{input\_coef}_j^e \leftarrow \texttt{XOF}$ for each $j \in \ell$ 
-            \item compute $\sh{\texttt{input}}_i^e = \text{Share}(i, \texttt{input}, \texttt{input\_coef}_1^e, \dots, \texttt{input\_coef}_\ell^e)$
+          \begin{enumerate}[itemsep=0pt, topsep=2pt, parsep=0pt]
+            \item compute $\texttt{input\_coef}_j^e \leftarrow \texttt{XOF}$ for each $j \in \ell$
+            \item compute input shares for $i \in [N]$
+                  \begin{align*}
+                    \sh{\texttt{input\_plain}}_i^e =
+                    \begin{cases}
+                      \texttt{input\_coef}^e_{\ell} \quad i = 1 \\
+                      \text{Share}(i, \texttt{input\_plain}, \texttt{input\_coef}_1^e, \dots, \texttt{input\_coef}_\ell^e) \quad i > 1
+                    \end{cases}
+                  \end{align*}
             \item compute commitments for $i \in [N]$
-            \begin{align*}
-              \texttt{com}_i^{e} := \texttt{Hash}_0(\texttt{salt}, e, i, \sh{\texttt{input}}_i^e)
-            \end{align*}
+                  \begin{align*}
+                    \texttt{com}_i^{e} := \texttt{Hash}_0(\texttt{salt}, e, i, \sh{\texttt{input\_plain}}_i^e)
+                  \end{align*}
             \item compute the Merkle commitment
-            \begin{align*}
-              \texttt{root}^{e} = \texttt{MerkleTree}(\texttt{com}_1^{e}, \ldots, \texttt{com}_N^{e})
-            \end{align*}
+                  \begin{align*}
+                    \texttt{root}^{e} = \texttt{MerkleTree}(\texttt{com}_1^{e}, \ldots, \texttt{com}_N^{e})
+                  \end{align*}
           \end{enumerate}
   \end{enumerate}
 
   \paragraph{Phase 2} Compute first challenge
   \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
-    \item Compute $h_1 = \texttt{Hash}_1(pk, \texttt{salt}, \texttt{root}^{1}, \ldots, \texttt{root}^{\tau})$.
+    \item Compute the first hash
+          \begin{align*}
+            h_1 = \texttt{Hash}_1(pk, \texttt{salt}, \texttt{root}^{1}, \ldots, \texttt{root}^{\tau})
+          \end{align*}
     \item Generate first challenge (MPC randomness)
           \begin{align*}
             r, \varepsilon \leftarrow \texttt{PRG}(h_1)
@@ -1064,17 +1074,26 @@ Finally, we introduce a $\texttt{salt} \in \{0,1\}^{2\lambda}$, which serves as 
 
   \paragraph{Phase 3} Simulation of the MPC Protocol.
   \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
-    \item Compute plain broadcast $\alpha^{j}, \beta^{j} \leftarrow \texttt{MPC}(pk, \sh{a}^{j, e}, \sh{b}^{j, e}, \sh{c}^{j, e}, r, \varepsilon)$ for $j \in [t]$
-    \item For $i \in S$, compute:
+    \item Compute plain broadcast $\texttt{broad\_plain} \stackrel{\varphi^1}{\longleftarrow} \texttt{input\_plain}, r, \varepsilon$
+    \item For $e \in [\tau]$, compute broadcast shares
           \begin{align*}
-            \sh{\alpha^{e}}_i := \phi_{x, \epsilon^{e}}(\sh{sk^{e}}_i, \sh{\beta^{e}}_i),
+            \texttt{broad\_coef}_j^e \stackrel{\varphi^1, \varphi^2}{\longleftarrow} \texttt{input\_coef}_j^e, r, \varepsilon \quad \text{for each } j \in \ell
           \end{align*}
   \end{enumerate}
 
-  \paragraph{Phase 4} Second Challenge (Parties to be Opened)
+  \paragraph{Phase 4} Compute second challenge
+  \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
+    \item Compute the second hash
+          \begin{align*}
+            h_2 = \texttt{Hash}_2(m, \texttt{salt}, h_1, \texttt{broad\_plain}, \{\texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell\}_{e=1}^\tau)
+          \end{align*}
+    \item Compute the second challenge $I \subset [N] \leftarrow \texttt{PRG}(h_1)$ for $|I| = \ell$
+  \end{enumerate}
 
-  \paragraph{Phase 5} Building of the Signature
-  Output the signature $\sigma$ built as:
+  \paragraph{Phase 5} Building of the signature output the signature $\sigma$. For each $e \in [\tau]$ 
+  \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
+    \item Compute solution shares $
+  \end{enumerate}
 
 \end{protocol}
 
