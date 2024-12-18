@@ -35,7 +35,8 @@ use clap::error::Result;
 
 /// Expands the view opening challenges based on the h1 hash
 pub fn expand_view_challenge_hash(h2: Hash) -> [[u16; PARAM_L]; PARAM_TAU] {
-    // Initialize the XOF (extendable output function) context with the h1 hash
+    // Initialize the XOF (extendable output function) context with the second Fiat-Shamir
+    // transform hash
     let mut prg = PRG::init_base(&h2);
 
     // Define a mask for reducing the value range

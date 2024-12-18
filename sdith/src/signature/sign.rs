@@ -50,7 +50,7 @@ impl Signature {
                     *commitment = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
                 });
 
-            let merkle_tree = MerkleTree::new(commitments_prime, None); // TODO: I spec there is a salt here. In implementation there is not.
+            let merkle_tree = MerkleTree::new(commitments_prime, Some(salt));
             commitments[e] = merkle_tree.root();
             merkle_trees.push(merkle_tree);
         }
@@ -64,8 +64,6 @@ impl Signature {
         secret_key: &SecretKey,
         message: &Vec<u8>,
     ) -> Result<Self, String> {
-        // TODO: error handling
-
         // Expansion of the parity matrix H'
         let h_prime: HPrimeMatrix = gen_hmatrix(secret_key.seed_h);
 
@@ -100,7 +98,7 @@ impl Signature {
         }
         let broadcast = broadcast_result.unwrap();
         let broadcast_plain = broadcast.serialise();
-        
+
         // For each emulation (Tau) and each L parties, compute the broadcast shares
         let mut broadcast_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
         for e in 0..PARAM_TAU {
@@ -112,8 +110,7 @@ impl Signature {
                     secret_key.y,
                     &broadcast,
                     false,
-                )
-                .unwrap();
+                )?;
 
                 broadcast_shares[e][j] = broadcast_share.serialise();
             }
