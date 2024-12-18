@@ -2698,7 +2698,7 @@ Additionally we tested the correctness of the polynomial relation generation pro
 
 \subsection{MPC}\label{sub:mpc_algo}
 As the last thing, before we can implement the signing algorithm, we need the underlying MPC simulation sub routines described in \autoref{def:sdith-mpc}.
-First we go through the helper methods that are used to do the computations. Then we describe the creation of beaver triples and finally the whole MPC computations.
+First we go through the helper methods that are used to do the computations. Then we describe the creation of beaver triples and finally how we implmenented the MPC computations.
 
 \paragraph{Polynomial Evaluation}
 For polynomial evaluation in the algorithm, seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results. 
@@ -2744,11 +2744,18 @@ Due to the nature of the polynomial evaluation we created a manual example and c
     }
 \end{minted}
 
-\paragraph{Compute q}
+\paragraph{Complete and Truncate $\mathcal{Q}$}
+For the sake of sending the least amount of data we will 
 
 \paragraph{Beaver Triples}
+Generation of $\tau \cdot d$ beaver triples for doing the \autoref{def:sacrifice}is done by first sampling $d$, $a,b$ field elements. If the splitting factor $d=1$ the inner product is just simple multiplications, but if we have a higher splitting factor $d=2$ the $c_j$, where $j \in [1:\tau]$, value is computed as follows:
+\begin{align}
+  c_j = \sum{i=1}{d} a_{ j,i } \cdot b_{j,i}
+\end{align}
+We created tests to ensure that the generation of $a,b$ was correct along with the computed $c$. 
 
 \paragraph{Broadcast}
+
 
 \paragraph{Party Computation}
 
