@@ -2879,7 +2879,6 @@ impl Challenge {
 }
 \end{minted}
 
-
 \subsubsection{Party Computation}
 We now have all the required parts to build the MPC simulation, defined in\todo{Reference correct section} \autoref{def:sdith-mpc}. The way we implemented this was to use the same function to create the plain broadcast values as the broadcast values computed for the shares. Our first attempt at implementing this algorithm, we had a hard time following every step that was done, due to a lack in clarification on what every computation was supposed to do. Furthermore creating tests for this was quite difficult as this function relies heavily on the provided values. We also tried to compare our intermediate values with the values from the specification implementation, which also proved to be a challenge since there is a lot of values that are computed in the algorithm. 
 The inputs to the function is as follows:
@@ -2958,6 +2957,75 @@ This allows us to compute the plain broadcast shares by simply calling the MPC c
 \end{minted}
 
 \subsubsection{Inverse Party Computation}
+When needing to verify the signature we need to be able to reverse the MPC computation in order to go back to the original beaver triple. So the implementation of the inverse is just the reverse of the above described function. But without the boolean for computing $v$ as we always want to compute $c$ in this case. We use these beaver triples to append them to the input shares. Of which is used to verify the signature by using them along with the authentication path to recompute the root of the merkle tree.
+
+\subsection{Testing the MPC Simulation}
+As this is one of the harder sections to test, as it is working on random looking data we have created the following tests to ensure that the MPC simulation is working correctly. 
+First we created simple tests that ensured that we could reverse the computation, this however proved to be rather useless in that the values of which the function should work upon was with some additional randomness that under the right computations would cancel out. 
+We then create a simple toy example computation that should be easier to follow due to the randomness being just 1:
+\begin{minted}{rust}
+        let (input, broadcast, chal, h_prime, y) = prepare();
+        let random_input_plain: InputSharePlain = [1; INPUT_SIZE];
+
+        // Here N = 1, l = 1 so the shamir secret sharing
+
+        // input + random
+        let mut input_share = input.serialise();
+        gf256_add_vector(&mut input_share, &random_input_plain);
+
+        // compute shares of the randomness
+        let mut broadcast_share =
+            party_computation(random_input_plain, &chal, h_prime, y, &broadcast, false)
+                .unwrap()
+                .serialise();
+
+        // recompute shares of the randomness
+        // randomness_shares += (alpha, beta, v=0)
+        gf256_add_vector_with_padding(&mut broadcast_share, &broadcast.serialise());
+
+        let broadcast_shares = BroadcastShare::parse(&broadcast_share).unwrap();
+
+        let recomputed_input_share_triples = inverse_party_computation(
+            Input::truncate_beaver_triples(&input_share),
+            &broadcast_shares,
+            &chal,
+            h_prime,
+            y,
+            &broadcast,
+            true,
+        )
+        .unwrap();
+
+        let input_share = Input::parse(&input_share).unwrap();
+
+        assert_eq!(recomputed_input_share_triples.0, input_share.beaver.a);
+        assert_eq!(recomputed_input_share_triples.1, input_share.beaver.b);
+        assert_eq!(recomputed_input_share_triples.2, input_share.beaver.c);
+\end{minted}
+This however was still quite difficult to debug, because we still could not follow the calculation completely.
+So we ended up using the reference implementation to compare intermediate values in the computation in order to ensure that our implementation was correct. 
+This led us to find that our implementation of the polynomial evaluation seemed to be wrong. So we created a test that would ensure that our polynomial relation was correct \autoref{eq:polynomial_representation}:
+\begin{minted}{rust}
+    /// Test that for some random point r_k we have that S(r_k) * Q'(r_k) = F * P(r_k)
+    fn test_relation_sq_eq_pf() {
+        let (input, _broadcast, _chal, h_prime, y) = prepare();
+        let mut prg = PRG::init_base(&[2]);
+        let r = FPoint::field_sample(&mut prg);
+        let mut powers_of_r = [FPoint::default(); PARAM_M + 1];
+        get_powers(r, &mut powers_of_r);
+
+        let q_poly = complete_q(input.solution.q_poly, 1);
+        let s_poly = compute_s_poly(compute_s(&input.solution.s_a, &h_prime, Some(&y)).unwrap());
+
+        let q_eval = polynomial_evaluation(&q_poly[0], &powers_of_r);
+        let s_eval = polynomial_evaluation(&s_poly[0], &powers_of_r);
+
+        let f_eval = polynomial_evaluation(&PRECOMPUTED_F_POLY, &powers_of_r);
+        let p_eval = polynomial_evaluation(&input.solution.p_poly[0], &powers_of_r);
+
+        assert_eq!(q_eval.field_mul(s_eval), f_eval.field_mul(p_eval));
+    }
+\end{minted}
 
 
 \section{Categories}\label{sub:categories} % (fold)
