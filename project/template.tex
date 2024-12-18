@@ -698,14 +698,14 @@ The basic MPC-in-the-Head protocol serves as a foundation for constructing zero-
 
 To enhance the performance of MPCitH-based zero-knowledge protocols, Baum and Nof introduced a variant of the framework built around a specialized MPC protocol. This protocol efficiently verifies a product relation between three values, $  a \cdot b = c  $. Their contributions significantly improved the efficiency of MPCitH-based zero-knowledge protocols and laid the foundation for the SD-in-the-Head protocol, which is designed to prove the SD relation (\autoref{sec:syndrome}).
 
-The underlying MPC protocol is based on arithmetic circuits, where addition operations are straightforward to perform using any $ + $-homomorphic secret sharing scheme. However, performing multiplication -- which is required for the product relation -- is significantly more challenging. In this section, we describe the techniques and mechanisms used to address this challenge. The simplest idea would be to verify the relation by simply computing the product. A common technique is to use beaver triples.
+The underlying MPC protocol is based on arithmetic circuits, where addition operations are straightforward to perform using any $ + $-homomorphic secret sharing scheme. However, performing multiplication -- which is required for the product relation -- is significantly more challenging. In this section, we describe the techniques and mechanisms used to address this challenge. The simplest idea would be to verify the relation by simply computing the product. A common technique is to use Beaver triples.
 
-\begin{definition}[Beaver triple~\cite{beaver1992efficient}]\label{def:beaver}
+\begin{definition}[Beaver triple~\cite{Beaver1992efficient}]\label{def:Beaver}
   A Beaver triple is a tuple $ (a, b, c) $ such that $ a \cdot b = c $, where $ a, b, c \in \mathbb{F}_q $.
 \end{definition}
 
-\begin{protocol}[MPC Multiplication using beaver triples]\label{def:beaver-multiplication}
-  Given a $+$-homomorphic additive secret sharing scheme and a preprocessed random beaver triple $\sh{a}, \sh{b}, \sh{c} $, the parties do the following:
+\begin{protocol}[MPC Multiplication using Beaver triples]\label{def:Beaver-multiplication}
+  Given a $+$-homomorphic additive secret sharing scheme and a preprocessed random Beaver triple $\sh{a}, \sh{b}, \sh{c} $, the parties do the following:
   \begin{enumerate}
     \item The parties compute $ \sh{\alpha} = \sh{x} - \sh{a} $ and $ \sh{\beta} = \sh{y} - \sh{b} $.
     \item The parties run $ \text{open}(\sh{\alpha}) $ and $ \text{open}(\sh{\beta}) $ to obtain $ \alpha $ and $ \beta $.
@@ -714,14 +714,14 @@ The underlying MPC protocol is based on arithmetic circuits, where addition oper
 \end{protocol}
 
 
-The above is a well-known technique~\cite{beaver1992efficient} correctness follows from the fact that
+The above is a well-known technique~\cite{Beaver1992efficient} correctness follows from the fact that
 \begin{align*}
   \sh{z} & = \sh{c} - \alpha \cdot \sh{b} - \beta \cdot \sh{a} + \alpha \cdot \beta        \\
          & = \sh{ab} - (x - a) \cdot \sh{b} - (y - b) \cdot \sh{a} + (x - a) \cdot (y - b) \\
          & = \sh{xy}
 \end{align*}
 
-Proposals for zero-knowledge proofs -- such as the \textit{Cut-and-Choose} protocol~\cite{katz2018improved,baum2020concretely} -- utilize \autoref{def:beaver-multiplication}, combined with preprocessing techniques, to achieve promising results\footnote{See \autoref{sec:zk-cut-and-choose}}. Building upon these protocols, Baum and Nof~\cite{baum2020concretely} propose a variant that shifts the focus from simulating the computation of a product to simulating the \textit{verification} of the triple relation instead. This verification is achieved by sacrificing another triple, ensuring correctness while improving performance. Consider the following protocol, which is based on the MPC protocol described in~\cite{damgaard2012multiparty}.
+Proposals for zero-knowledge proofs -- such as the \textit{Cut-and-Choose} protocol~\cite{katz2018improved,baum2020concretely} -- utilize \autoref{def:Beaver-multiplication}, combined with preprocessing techniques, to achieve promising results\footnote{See \autoref{sec:zk-cut-and-choose}}. Building upon these protocols, Baum and Nof~\cite{baum2020concretely} propose a variant that shifts the focus from simulating the computation of a product to simulating the \textit{verification} of the triple relation instead. This verification is achieved by sacrificing another triple, ensuring correctness while improving performance. Consider the following protocol, which is based on the MPC protocol described in~\cite{damgaard2012multiparty}.
 
 \begin{protocol}[Verification of a multiplication triple by sacrificing another]\label{def:sacrifice}
   Given an input triple $(x,y,z) \in \mathbb{F}$ random shared triple $(\sh{a}, \sh{b}, \sh{c}) \in \mathbb{F}$, it is possible to verify the correctness of the statement $z = x \cdot y$ without revealing any information on either of the input. Define \texttt{open} according to \autoref{def:ss-share}.
@@ -903,7 +903,7 @@ The foundations for secret sharing and multi-party computation (MPC) are present
 Recall, that instead of sharing $x_A$, we tweak the SD instance to share $s_A$ instead allowing us to skip interpolation detailed in \autoref{sec:syndrome-avoid-interpolation}
 
 \begin{protocol}[SD-in-the-Head MPC protocol]\label{def:sdith-mpc}
-  We assume the existence of a random oracle $R$ to sample values. This random oracle is later replaced by the verifier's challenge in the MPCitH framework. Furthermore, assume a $N-1$-private secret sharing scheme. Given a public SD instance $(H, y)$, and the private sharings for each party $(\sh{s_A}, \sh{P}, \sh{Q})$, as well as $t$ sharings of random beaver triples $\sh{a}, \sh{b}, \sh{c}$, the protocol proceeds as follows:
+  We assume the existence of a random oracle $R$ to sample values. This random oracle is later replaced by the verifier's challenge in the MPCitH framework. Furthermore, assume a $N-1$-private secret sharing scheme. Given a public SD instance $(H, y)$, and the private sharings for each party $(\sh{s_A}, \sh{P}, \sh{Q})$, as well as $t$ sharings of random Beaver triples $\sh{a}, \sh{b}, \sh{c}$, the protocol proceeds as follows:
   \begin{enumerate}
     \item Sample $r^j, \varepsilon^j \in_R \mathbb{F}_{q^4}^t$ uniformly at random.
     \item For each party $P_i \in [1 : N]$:
@@ -935,196 +935,130 @@ To analyze the security of the protocol, we define its false positive probabilit
   \end{align*} over the randomness $r$ and $\varepsilon$ and $\Delta = |\mathbb{F}_{q^4}|$.
 \end{lemma}
 
-\subsubsection{Threshold Variant Using Shamir's Secret Sharing.}
-The threshold variant of the MPC protocol (\autoref{def:sdith-mpc}) can be achieved by incorporating \textit{Shamir's secret sharing}, as described in \autoref{sub:shamir}. By replacing the additive secret sharing scheme with Shamir's polynomial-based scheme, the protocol is extended into a \((\ell, N)\)-threshold MPC protocol, where any \(\ell\) out of \(N\) parties can reconstruct the secret, while fewer than \(\ell\) parties gain no information about the secret.
+\subsubsection{Threshold variant MPC protocol}\label{sub:sdith-threshold-sss}
 
-\section{ZK-POK Protocol}\label{sec:sdith-zkpok}
+The threshold variant of the MPC protocol (\autoref{def:sdith-mpc}) is obtained by incorporating \textit{Shamir's Secret Sharing Scheme} (SSSS), as described in \autoref{sub:shamir}. By replacing the additive secret sharing scheme with Shamir's polynomial-based scheme, the protocol is extended into a \((\ell, N)\)-threshold MPC protocol, where any \(\ell\) out of \(N\) parties can reconstruct the secret, while fewer than \(\ell\) parties gain no information about the secret.
 
-To obtain a signature scheme from \autoref{def:sdith-mpc}, two transformations are needed. First, we will transform the MPC protocol into a zero-knowledge proof of knowledge (ZK-POK) using MPCitH. The ZK-POK described \autoref{def:sdith-zkpok} in is based on the verification by sacrificing triples strategy for MPCitH~\cite{baum2020concretely} detailed in \autoref{sec:mpc_sacrificing} but has key changes to accommodate the threshold variant of the protocol~\cite{feneuil2023threshold,feneuil2023threshold2}.
+To accommodate the threshold variant, the inputs to the MPC protocol are modified. By the definition of the MPC protocol, there exist linear functions:
+\begin{align}
+  \varphi^1_{r,\varepsilon}                 & : (s_A, P, Q, a, b, c) \mapsto (\alpha, \beta), \\
+  \varphi^2_{r, \varepsilon, \alpha, \beta} & : (s_A, P, Q, a, b, c) \mapsto v,
+\end{align}
+such that each party locally computes \(\varphi^1\) and \(\varphi^2\) on the input shares \(\sh{s_A}_i, \sh{P}_i, \sh{Q}_i, \sh{a}_i, \sh{b}_i, \sh{c}_i\), producing \(\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i\) as valid sharings of \(\alpha, \beta, v\).
 
-\begin{protocol}[ZK-POK from MPCitH~\cite{feneuil2022syndrome}]\label{def:sdith-zkpok}
-  \setlength{\parskip}{5pt}
-  \setlength{\parindent}{0pt}
-  \titlespacing*{\paragraph}{0pt}{1pt}{1em}
-  Both the prover $\mathcal{P}$ and the verifier $\mathcal{V}$ hold the public SD instance $(H,y)$. $\mathcal{P}$ holds $x$ such that $y = Hx$ and $\text{wt}(x) \leq w$. We assume a $(\ell, N)$-threshold secret sharing scheme.
+We define the \texttt{input} as the tuple containing the MPC inputs:
+\begin{align*}
+  \texttt{input} = (s_A, P, Q, a, b, c)
+\end{align*}
 
-  $\mathcal{P}$ computes the proof witness $w = (s_A, Q, P)$ from $x$ and public polynomial $F$.
+Next, we compute \(\ell\) uniformly random coefficients \(\texttt{input\_coef} \in \mathbb{F}_q^{|\texttt{input}|}\) and determine the sharing:
+\begin{align*}
+  \sh{\texttt{input}}_i = \texttt{input} + \sum_{j=1}^\ell i^j \cdot \texttt{input\_coef}_j
+\end{align*}
 
-  \paragraph{Round 1}
-  $\mathcal{P}$ prepares inputs for the MPC protocol. Sample a root seed $sd$ and construct $\psi = \texttt{PRG}(sd)$. The randomness is sequentially generated and each output is dependent on the previous output $\rho_i \leftarrow \psi_i(\{\rho_j\}_{j < i})$.
+The MPC computation is then performed directly on the \texttt{input} and its \(\ell\) coefficients from the SSSS:
+\begin{align*}
+  \texttt{input}            & \stackrel{\varphi^1, \varphi^2}{\longrightarrow} \texttt{broad}            \\
+  \texttt{input\_coef}_1    & \stackrel{\varphi^1, \varphi^2}{\longrightarrow} \texttt{broad\_coef}_1    \\
+                            & \vdots                                                                     \\
+  \texttt{input\_coef}_\ell & \stackrel{\varphi^1, \varphi^2}{\longrightarrow} \texttt{broad\_coef}_\ell
+\end{align*}
 
-  \begin{itemize}[parsep=0pt, itemsep=0pt, topsep=0pt]
-    \item $\mathcal{P}$ generates random sharings $\psi \rightarrow \sh{w}, \sh{a^j}, \sh{b^j}, \sh{c^j}$ s.t. $c^j = a^j \cdot b^j$ for $j \in [t]$
-    \item $\mathcal{P}$ computes the commitments for $i \in [N]$
-          \begin{align*}
-            \texttt{com}^j_i = \texttt{Commit}(\sh{w}_i, \{ \sh{a^j}_i, \sh{b^j}_i, \sh{c^j}_i \})
-          \end{align*}
-    \item $\mathcal{P}$ generates $\texttt{root}^j = \texttt{MerkleTree}(\texttt{com}^j_1, \ldots, \texttt{com}^j_N)$ and sends it to $\mathcal{V}$\footnote{see \autoref{sub:merkle_tree_prelim}}
-  \end{itemize}
+Due to the linearity of the MPC computation, the output shares can be reconstructed by running the sharing protocol on the broadcast shares:
+\begin{align*}
+  (\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i) = \texttt{broad} + \sum_{j=1}^\ell i^j \cdot \texttt{broad\_coef}_j
+\end{align*}
 
-  \paragraph{Round 2}
-  $\mathcal{V}$ samples for each $j \in [t]$ random points $r^j \in \mathbb{F}_{q^4}$ and $\varepsilon^j \in \mathbb{F}_{q^4}$ and sends them to $\mathcal{P}$.
+\section{The Signature Protocol}\label{sec:sdith-signature}
 
-  \paragraph{Round 3} $\mathcal{P}$ simulates the MPC protocol \textit{in their head} for a subset $S \subseteq [N]$ of $\ell + 1$ parties
-  \begin{align*}
-    \sh{\alpha^j}_i, \sh{\beta^j}_i, \sh{v^j}_i \leftarrow \texttt{MPC}(\sh{w}_i, \sh{a^j}_i, \sh{b^j}_i,  \sh{c^j}_i, r^j, \varepsilon^j) \\ \text{for }j \in [t] \text{ and } i \in S
-  \end{align*}
+\subsubsection{PK setup}
+The nature of an SD instance allows the protocol to seamlessly transform into a \textit{public-key signature scheme}. Here, the pair \((H, y)\) acts as the public key, while the solution to the SD instance \(x\) serves as the private key. The keys is then expanded to $(H', y), (s_A, P, Q)$ following the transformations detailed in \autoref{sec:syndrome}. Furthermore, the public key can be optimised for communcation by instead sampling $H'$ from a seed $sd_H$ making the secret key $(sd_H, y)$.
 
-  $\mathcal{P}$ computes hash $h' = \texttt{Hash}(\sh{\alpha^t}_S, \sh{\beta^t}_S, \sh{v^t}_S)$ and sends $h'$ to $\mathcal{V}$.
+\subsubsection{ZK-POK protocol}
+First, the MPC protocol \autoref{def:sdith-mpc} is transformed into a ZK-POK using the Threshold MPCitH protocols described by~\cite{feneuil2023threshold,feneuil2023threshold2}. While this transformation is interesting in it self, it is out of scope for this report and left for the appendix in \autoref{sec:sdith-zkpok}.
 
-  \paragraph{Round 4} $\mathcal{V}$ uniformly samples $I \subset [N], |I| = \ell$ and sends $I$ to $\mathcal{P}$.
-
-  \paragraph{Round 5}
-  The prover opens the parties in $I$ and sends $(\sh{w}_i, \sh{a^j}_i, \sh{b^j}_i, \sh{c^j}_i)_{i \in I, j \in [t]}$ to $\mathcal{V}$. $\mathcal{P}$ further sends the \texttt{MerkleTree} authentication paths to $\mathcal{V}$ with
-  \begin{align*}
-    \texttt{auth}_j = \texttt{MerklePath}(\{\texttt{com}^j_i\}_{i \in I}) \quad \text{w.r.t. }\texttt{root}_j
-  \end{align*}
-  Lastly, $\mathcal{P}$ sends the broadcast shares $\sh{\alpha^t}_{i^*}, \sh{\beta^t}_{i^*}, \sh{v^t}_{i^*}$ of the unopened party $i^* \in S \backslash I$ to $\mathcal{V}$.
-
-  \paragraph{Verification}
-  For $i \in I$ $\mathcal{V}$ recomputes the commitments $\texttt{com}^j_i$ from the received inputs \\$\sh{w}_i, \sh{a^j}_i, \sh{b^j}_i, \sh{c^j}_i$. Furthermore $\mathcal{V}$ recomputes the MPC state $ (\sh{\alpha^j}_i, \sh{\beta^j}_i, \sh{v^j}_i)$. Finally $\mathcal{V}$ reconstructs the shares and hash $h'$
-    \begin{align*}
-      v^j              & = \texttt{open}(\{\sh{v^j}_i\}) \quad \text{for } i \in I \cup i^*                              \\
-      h'_{\mathcal{V}} & = \texttt{Hash}(\sh{\alpha^t}_i, \sh{\beta^t}_i, \sh{v^t}_i) \quad \text{for } i \in I \cup i^*
-    \end{align*}
-
-  $\mathcal{V}$ outputs \texttt{Accept} if and only if
-
-  \begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
-    \item \textit{Verify input commitment consistency:} Recompute $\texttt{root}^j_{\mathcal{V}}$ and check that
-          \begin{align*}
-            \texttt{root}^j_{\mathcal{V}} \stackrel{?}{=} \texttt{root}^j
-          \end{align*}
-    \item \textit{Verify MPC protocol consistency:}
-          \begin{align*}
-            h'_{\mathcal{V}} \stackrel{?}{=} h'
-          \end{align*}
-    \item \textit{Verify that the output of the opened parties}:
-          \begin{align*}
-            v^1, \dots, v^t \stackrel{?}{=} 0
-          \end{align*}
-  \end{enumerate}
-\end{protocol}
-
-\begin{lemma}[Completeness of \autoref{def:sdith-zkpok}]
-  Follows from the MPC completeness. Any prover $\mathcal{P}$ that follows the steps of the protocol always succeds in convincing the verifier.
-\end{lemma}
-
-\subsubsection{Soundness}
-The soundness of the protocol relies on the binding property of the commitment scheme and the inability of the prover to simulate multiple inconsistent views of the MPC protocol. By leveraging the hash consistency checks and commitment verification, the protocol ensures that a cheating prover cannot deviate significantly from the honest execution.
+The soundness of the ZK-POK protocol relies on the binding property of the commitment scheme and the inability of the prover to simulate multiple inconsistent views of the MPC protocol. By leveraging the hash consistency checks and commitment verification, the ZK-POK protocol ensures that a cheating prover cannot deviate significantly from the honest execution. 
 
 \begin{lemma}[Soundness of \autoref{def:sdith-zkpok}]
-  Assume a $(\ell + 1, N)$-threshold MPC protocol. Suppose that there exists an efficient prover \(\widetilde{P}\) such that, on input \((H, y)\), it convinces the honest verifier \(V\) on input \(H, y\) to accept with probability:
-  \begin{align*}
-    \widetilde{\epsilon} := \Pr\left[ \langle \widetilde{P}, V \rangle(H, y) \to 1 \right] > \epsilon,
-  \end{align*}
-  where the soundness error \(\epsilon\) is given by:
+  The soundness error \(\epsilon\) is given by:
   \begin{align*}
     \epsilon = p + \frac{1}{\binom{N}{\ell}} - p \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1}.
   \end{align*}
-  with \(p\) defined in \autoref{lem:sdith-mpc-soundness}. Then, there exists an efficient probabilistic extraction algorithm \(E\) that, given rewindable black-box access to \(\widetilde{P}\), produces either:
-  \begin{itemize}
-    \item a witness \( x := (x_1 \mid \dots \mid x_d) \) such that \( y = Hx \) and \(\forall j, \, \text{wt}(x_j) \leq w/d \), or
-    \item a commitment collision.
-  \end{itemize}
-  The average number of calls to \(\widetilde{P}\) made by \(E\) is upper bounded by:
-
-  \begin{align*}
-    \frac{4}{\widetilde{\epsilon} - \epsilon} \cdot
-    \left( 1 + \widetilde{\epsilon} \cdot \frac{8 \cdot (N-\ell)}{\widetilde{\epsilon} - \epsilon} \right).
-  \end{align*}
-
 \end{lemma}
 
-To further strengthen the protocol against soundness error, \textit{parallel repetition} is employed. Specifically, the SD-in-the-Head protocol repeats the underlying ZK-POK protocol \(\tau\) times, where:
+The threshold approach leaves the soundness of the protocol slightly degraded. To further strengthen the protocol against soundness error, \textit{parallel repetition} is employed. Specifically, the SD-in-the-Head protocol repeats the underlying ZK-POK protocol \(\tau\) times, where:
 \[
   \tau = \left\lceil \log_2\left(\frac{1}{\epsilon}\right) \cdot \lambda \right\rceil.
 \]
 Here, \(\lambda\) denotes the security parameter, and \(2^{-\lambda}\) represents the desired soundness error. This parallel repetition ensures that the overall soundness error decreases exponentially with the number of repetitions, achieving a negligible error probability in practice.
 
-\section{The Signature Protocol}\label{sec:sdith-signature}
+We perform a slight tweak from the Limbo proof system~\cite{aguilarsyndrome11,delpech2021limbo} to the MPC computation input to accommodate the repetitions. We reuse the same MPC challenge $r, \varepsilon$ and set of Beaver triples
 
-The public nature of an SD instance allows the protocol to seamlessly transform into a \textit{public-key signature scheme}. Here, the pair \((H, y)\) acts as the public key, while \(x\) serves as the private key.
-
-To minimize the size of the public key, a seed \( \texttt{sd}_H \) is introduced. This seed deterministically generates the random matrix \(H\) using a pseudo-random generator (\(\texttt{PRG}\)), significantly reducing storage requirements. Instead of sharing the full matrix \(H\), only the seed \( \texttt{sd}_H \) needs to be distributed, enabling on-demand reconstruction of \(H\).
-
-To convert the ZK-POK protocol into a signature protocol, we employ the \textit{Fiat-Shamir heuristic} and include the message \( m \) in the challenge generation process. This transformation allows the prover to independently derive the verifier's challenges in \textbf{Round 2} and \textbf{Round 4}.
+\subsubsection{Fiat-Shamir transform}
+Next, we employ the \textit{Fiat-Shamir heuristic} and include the message \( m \) in the challenge generation process. This transformation allows the prover to independently derive the verifier's challenges in \textbf{Round 2} and \textbf{Round 4}.
 
 \begin{protocol}
   \setlength{\parindent}{0pt}
   \setlength{\parskip}{5pt}
   \titlespacing*{\paragraph}{0pt}{1pt}{1em}
-  Given a public SD instance $(H, y)$, secret $w = (s_A, Q, P)$, message $m \in \{0,1\}^*$. Assume a $(\ell + 1, N)$-threshold MPC protocol \texttt{MPC} and security parameters $\lambda, \tau$.//
+  Given a public SD instance $pk = (H, y)$, secret $sk = (s_A, Q, P)$, message $m \in \{0,1\}^*$. Assume
 
-  We assume the existence of hash functions $\texttt{Hash}_n(d) \rightarrow \texttt{Hash}(n || d)$
+  \begin{itemize}[itemsep=0pt, topsep=0pt, parsep=0pt]
+    \item security parameters $\lambda, \tau$
+    \item a $(\ell + 1, N)$-threshold MPC protocol \texttt{MPC} (\autoref{def:sdith-mpc}, \autoref{sec:mpc}) and set $S \subset [N]$ s.t. $|S| \geq \ell + 1$
+    \item secure hash functions $\texttt{Hash}_n(d) \rightarrow \texttt{Hash}(n || d)$ (\autoref{sec:prelim_hash})
+    \item and random oracle $\texttt{PRG}$ (\autoref{sec:prelim_hash})
+    \item \texttt{XOF} (\autoref{sec:xof})
+  \end{itemize}
 
-  \paragraph{Phase 0: Initialise Entropy}
+  \paragraph{Phase 0} Initialise entropy
 
   \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
     \item Sample a random salt: $\texttt{salt} \leftarrow \{0, 1\}^{2\lambda}$.
     \item Sample a root seed: $sd \leftarrow \{0, 1\}^{\lambda}$.
-    \item Initialise \texttt{XOF} $\psi \leftarrow \texttt{PRG}(sd || \texttt{salt})$
+    \item Initialise \texttt{XOF} from $sd$, \texttt{salt}
   \end{enumerate}
-  \paragraph{Phase 1: Preparation of the MPC-in-the-Head Inputs}
-
-  For each iteration $e \in [\tau]$
+  \paragraph{Phase 1} Prepare the MPCitH inputs.
 
   \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
-    \item Compute random sharings of the secret and valid beaver triples from
-    \begin{align*}
-      \psi \rightarrow \sh{w}^{[e]}, \sh{a}^{[e]}, \sh{b}^{[e]}, \sh{c}^{[e]}
-    \end{align*}
-    \item Compute the commitments:
+    \item Compute Beaver triples $\mathcal{B} = a^{j}, b^{j}, c^{j}$ for all $j \in t$ and construct $\texttt{input} = (sk, \mathcal{B})$
+    \item For each iteration $e \in [\tau]$ compute random sharings of the secret and valid Beaver triples for each $j \in [t]$
           \begin{align*}
-            \texttt{com}_i^{[e]} := \texttt{Hash}_0(\texttt{salt}, e, i, \sh{w^{[e]}}_i, \sh{a}^{[e]}_i, \sh{b}^{[e]}_i, \sh{c}^{[e]}_i), \quad i \in [N]
+            \texttt{XOF} \rightarrow \sh{sk}^{e}, \sh{a}^{j, e}, \sh{b}^{j, e}, \sh{c}^{j, e}
+          \end{align*}
+    \item Compute the commitments for $i \in [N]$:
+          \begin{align*}
+            \texttt{com}_i^{e} := \texttt{Hash}_0(\texttt{salt}, e, i, \sh{sk^{e}}_i, \sh{a}^{j, e}_i, \sh{b}^{j, e}_i, \sh{c}^{j, e}_i) \quad j \in [t]
           \end{align*}
           and compute the Merkle root:
           \begin{align*}
-            \texttt{root}^{[e]} = \texttt{MerkleTree}(\texttt{com}_1^{[e]}, \ldots, \texttt{com}_N^{[e]})
+            \texttt{root}^{e} = \texttt{MerkleTree}(\texttt{com}_1^{e}, \ldots, \texttt{com}_N^{e})
           \end{align*}
   \end{enumerate}
 
-  \paragraph{Phase 2: First Challenge (Randomness for the MPC Protocol)}
-  \begin{enumerate}
-    \item 
+  \paragraph{Phase 2} Compute first challenge
+  \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
+    \item Compute $h_1 = \texttt{Hash}_1(pk, \texttt{salt}, \texttt{root}^{1}, \ldots, \texttt{root}^{\tau})$.
+    \item Generate first challenge (MPC randomness)
+          \begin{align*}
+            r, \varepsilon \leftarrow \texttt{PRG}(h_1)
+          \end{align*}
   \end{enumerate}
-  Compute:
-  \begin{align*}
-    h_1 = \texttt{Hash}_1(m, \texttt{salt}, \tilde{h}^{[1]}, \ldots, \tilde{h}^{[\tau]}).
-  \end{align*}
-  Expand $h_1$ as:
-  \begin{align*}
-    (\epsilon^{[e]})_{e \in [\tau]} \leftarrow \texttt{Expand}(h_1).
-  \end{align*}
 
-  \paragraph{Phase 3: Simulation of the MPC Protocol}
-  each iteration $e \in [\tau]$
-  For $i \in S$, compute:
-  \begin{align*}
-    \sh{\alpha^{[e]}}_i := \phi_{x, \epsilon^{[e]}}(\sh{w^{[e]}}_i, \sh{\beta^{[e]}}_i),
-  \end{align*}
-  and recompose $\alpha^{[e]}$.
-  Repeat this step as required in the MPC protocol.
+  \paragraph{Phase 3} Simulation of the MPC Protocol.
+  \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
+    \item Compute plain broadcast $\alpha^{j}, \beta^{j} \leftarrow \texttt{MPC}(pk, \sh{a}^{j, e}, \sh{b}^{j, e}, \sh{c}^{j, e}, r, \varepsilon)$ for $j \in [t]$
+    \item For $i \in S$, compute:
+          \begin{align*}
+            \sh{\alpha^{e}}_i := \phi_{x, \epsilon^{e}}(\sh{sk^{e}}_i, \sh{\beta^{e}}_i),
+          \end{align*}
+  \end{enumerate}
 
+  \paragraph{Phase 4} Second Challenge (Parties to be Opened)
 
-  \paragraph{Phase 4: Second Challenge (Parties to be Opened)}
-  Compute:
-  \begin{align*}
-    h_2 = \texttt{Hash}_2(\texttt{salt}, h_1, \sh{\alpha^{[1]}}_S, \ldots, \sh{\alpha^{[N]}}_S).
-  \end{align*}
-  Expand $h_2$ as:
-  \begin{align*}
-    (I^{[e]})_{e \in [\tau]} \leftarrow \texttt{Expand}(h_2),
-  \end{align*}
-  where, for each $e$, $I^{[e]} \subset [N]$ is a subset of $\ell$ parties (i.e., $|I^{[e]}| = \ell$).
-
-  \paragraph{Phase 5: Building of the Signature}
+  \paragraph{Phase 5} Building of the Signature
   Output the signature $\sigma$ built as:
-  \begin{align*}
-    \sigma = \texttt{salt} \mid h_1 \mid h_2 \mid
-    \big(\sh{w^{[e]}}_i, \sh{\beta^{[e]}}_i)_{i \in I}, \texttt{auth}^{[e]}, \sh{\alpha^{[e]}}_{i^*[e]} \big)_{e \in [\tau]},
-  \end{align*}
-  where $\texttt{auth}^{[e]}$ is the authentication path for $\{\texttt{com}_i^{[e]}\}_{i \in I}$ w.r.t. the Merkle root $\tilde{h}^{[e]}$, and $i^*[e] \in S \setminus I^{[e]}$.
+
 \end{protocol}
 
 \section{Optimisations}
@@ -2843,7 +2777,7 @@ Due to the nature of the polynomial evaluation we created a manual example and c
 We can omit sending the leading coefficient since it is always going to be 1. For this we have created a function that can add the leading coefficient, as we also need to be able to add 0 for the leading coefficient for all the shares that are not the leading. As they need to sum to 1. Our implementation is a simple loop that will add an element that is going to be the leading coefficient. 
 
 \subsubsection{Beaver Triples}
-Generation of $\tau \cdot d$ beaver triples for doing the \autoref{def:sacrifice}is done by first sampling $d$ field elements $a,b$, and then compute the correlated $c = a \cdot b$ elements. If the splitting factor $d=1$ the inner product is just simple multiplications, but if we have a higher splitting factor $d=2$ the $c_j$, where $j \in [1:\tau]$, value is computed as follows:
+Generation of $\tau \cdot d$ Beaver triples for doing the \autoref{def:sacrifice}is done by first sampling $d$ field elements $a,b$, and then compute the correlated $c = a \cdot b$ elements. If the splitting factor $d=1$ the inner product is just simple multiplications, but if we have a higher splitting factor $d=2$ the $c_j$, where $j \in [1:\tau]$, value is computed as follows:
 \begin{align}
   c_j = \sum_{i=1}^{d} a_{ j,i } \cdot b_{j,i}
 \end{align}
@@ -3323,7 +3257,7 @@ future work: Verkle trees optimisation
 
 \section{ZK from Cut-and-Choose}\label{sec:zk-cut-and-choose}
 
-Baum and Nof~\cite{baum2020concretely} outlines the fundamental concept of the cut-and-choose technique in their \textit{HVZKAoK Protocol using Cut and Choose}. For a detailed outline of the protocol see \cite[s3.2]{baum2020concretely}. Here we provide a high-level overview of the protocol. The underlying MPC protocol is based on beaver triples~\cite{beaver1992efficient} from \autoref{def:beaver} to enable multiplication circuits for additive $+$-homomorphic secret sharing schemes.
+Baum and Nof~\cite{baum2020concretely} outlines the fundamental concept of the cut-and-choose technique in their \textit{HVZKAoK Protocol using Cut and Choose}. For a detailed outline of the protocol see \cite[s3.2]{baum2020concretely}. Here we provide a high-level overview of the protocol. The underlying MPC protocol is based on Beaver triples~\cite{Beaver1992efficient} from \autoref{def:Beaver} to enable multiplication circuits for additive $+$-homomorphic secret sharing schemes.
 
 \begin{protocol}[MPC Cut-and-Choose]\label{def:mpc-cut-and-choose}
 
@@ -3490,7 +3424,7 @@ We chose to follow the definitions for the merkle tree provided in \cite{aguilar
 
 The computation is based on HVZKAoK Protocol using imperfect preprocessing and sacrificing. Section 3.3~\cite{baum2020concretely}.
 
-A toy example of the computation protocol computations, can be seen in~\autoref{fig:mpc}. We have the two computation methods. Here for 1 split and 1 evaluation point. This means that we have only value for each challenge and beaver triple. Note that any arithmetic is run in GF256, so addition and subtraction are both \texttt{XOR} and multiplication is modulus $x^8 + x^4 + x^3 + x + 1$. Furthermore, for negation we have that $-a = a$.
+A toy example of the computation protocol computations, can be seen in~\autoref{fig:mpc}. We have the two computation methods. Here for 1 split and 1 evaluation point. This means that we have only value for each challenge and Beaver triple. Note that any arithmetic is run in GF256, so addition and subtraction are both \texttt{XOR} and multiplication is modulus $x^8 + x^4 + x^3 + x + 1$. Furthermore, for negation we have that $-a = a$.
 
 \begin{figure}
   \makebox[\textwidth]{
@@ -3567,7 +3501,7 @@ We then compute a broadcast share from the randomness and the broadcast, as per 
   \alpha^*                 & = \varepsilon \cdot {Q^*}_0(r) + a^*                 \\
   \beta^*                  & =  {S^*}_0(r) + b^*
 \end{align*}
-This broadcast share is sent to the verifier along with the truncated input share (removing the beaver triples). The verifier then needs to recompute the input share beaver triples using the \texttt{InverseComputation} function. First we add the input share to the broadcast share as per Algorithm 13, line 8.
+This broadcast share is sent to the verifier along with the truncated input share (removing the Beaver triples). The verifier then needs to recompute the input share Beaver triples using the \texttt{InverseComputation} function. First we add the input share to the broadcast share as per Algorithm 13, line 8.
 \begin{align*}
   (\alpha', \beta', v') & = (\alpha^*, \beta^*, v^*) + (\overline{\alpha},\ \overline{\beta}, 0)
   = (\alpha^* + \overline{\alpha}, \beta^* + \overline{\beta}, v^* + 0)                          \\\\
@@ -3593,6 +3527,78 @@ Next, the verifier computes the inverse of the broadcast share to recompute $(\s
                & = \sh{b}                                                                                              &  & \autoref{eq:mpcpoly} \\
 \end{align*}
 \todo{Want to explain the above in a more detailed manner? Specifically ${Q^*}_0(r) - {\sh{Q}}_1(r) = Q_1(r)$}
+
+\section{ZK-POK Protocol}\label{sec:sdith-zkpok}
+
+To obtain a signature scheme from \autoref{def:sdith-mpc}, two transformations are needed. First, we will transform the MPC protocol into a zero-knowledge proof of knowledge (ZK-POK) using MPCitH. The ZK-POK described \autoref{def:sdith-zkpok} in is based on the verification by sacrificing triples strategy for MPCitH~\cite{baum2020concretely} detailed in \autoref{sec:mpc_sacrificing} but has key changes to accommodate the threshold variant of the protocol~\cite{feneuil2023threshold,feneuil2023threshold2}.
+
+\begin{protocol}[ZK-POK from MPCitH~\cite{feneuil2022syndrome}]\label{def:sdith-zkpok}
+  \setlength{\parskip}{5pt}
+  \setlength{\parindent}{0pt}
+  \titlespacing*{\paragraph}{0pt}{1pt}{1em}
+  Both the prover $\mathcal{P}$ and the verifier $\mathcal{V}$ hold public SD instance $(H,y)$. $\mathcal{P}$ holds $x$ such that $y = Hx$ and $\text{wt}(x) \leq w$. We assume a $(\ell + 1, N)$-threshold secret sharing scheme.
+
+  $\mathcal{P}$ computes the proof witness $w = (s_A, Q, P)$ from $x$ and public polynomial $F$.
+
+  \paragraph{Round 1}
+  $\mathcal{P}$ prepares inputs for the MPC protocol. Sample a root seed $sd$ and construct $\psi = \texttt{PRG}(sd)$. The randomness is sequentially generated and each output is dependent on the previous output $\rho_i \leftarrow \psi_i(\{\rho_j\}_{j < i})$.
+
+  \begin{itemize}[parsep=0pt, itemsep=0pt, topsep=0pt]
+    \item $\mathcal{P}$ generates random sharings $\psi \rightarrow \sh{w}, \sh{a^j}, \sh{b^j}, \sh{c^j}$ s.t. $c^j = a^j \cdot b^j$ for $j \in [t]$
+    \item $\mathcal{P}$ computes the commitments for $i \in [N]$
+          \begin{align*}
+            \texttt{com}^j_i = \texttt{Commit}(\sh{w}_i, \{ \sh{a^j}_i, \sh{b^j}_i, \sh{c^j}_i \})
+          \end{align*}
+    \item $\mathcal{P}$ generates $\texttt{root}^j = \texttt{MerkleTree}(\texttt{com}^j_1, \ldots, \texttt{com}^j_N)$ and sends it to $\mathcal{V}$\footnote{see \autoref{sub:merkle_tree_prelim}}
+  \end{itemize}
+
+  \paragraph{Round 2}
+  $\mathcal{V}$ samples for each $j \in [t]$ random points $r^j \in \mathbb{F}_{q^4}$ and $\varepsilon^j \in \mathbb{F}_{q^4}$ and sends them to $\mathcal{P}$.
+
+  \paragraph{Round 3} $\mathcal{P}$ simulates the MPC protocol \textit{in their head} for a subset $S \subseteq [N]$ of $\ell + 1$ parties
+  \begin{align*}
+    \sh{\alpha^j}_i, \sh{\beta^j}_i, \sh{v^j}_i \leftarrow \texttt{MPC}(\sh{w}_i, \sh{a^j}_i, \sh{b^j}_i,  \sh{c^j}_i, r^j, \varepsilon^j) \\ \text{for }j \in [t] \text{ and } i \in S
+  \end{align*}
+
+  $\mathcal{P}$ computes hash $h' = \texttt{Hash}(\sh{\alpha^t}_S, \sh{\beta^t}_S, \sh{v^t}_S)$ and sends $h'$ to $\mathcal{V}$.
+
+  \paragraph{Round 4} $\mathcal{V}$ uniformly samples $I \subset [N], |I| = \ell$ and sends $I$ to $\mathcal{P}$.
+
+  \paragraph{Round 5}
+  The prover opens the parties in $I$ and sends $(\sh{w}_i, \sh{a^j}_i, \sh{b^j}_i, \sh{c^j}_i)_{i \in I, j \in [t]}$ to $\mathcal{V}$. $\mathcal{P}$ further sends the \texttt{MerkleTree} authentication paths to $\mathcal{V}$ with
+  \begin{align*}
+    \texttt{auth}_j = \texttt{MerklePath}(\{\texttt{com}^j_i\}_{i \in I}) \quad \text{w.r.t. }\texttt{root}_j
+  \end{align*}
+  Lastly, $\mathcal{P}$ sends the broadcast shares $\sh{\alpha^t}_{i^*}, \sh{\beta^t}_{i^*}, \sh{v^t}_{i^*}$ of the unopened party $i^* \in S \backslash I$ to $\mathcal{V}$.
+
+  \paragraph{Verification}
+  For $i \in I$ $\mathcal{V}$ recomputes the commitments $\texttt{com}^j_i$ from the received inputs \\$\sh{w}_i, \sh{a^j}_i, \sh{b^j}_i, \sh{c^j}_i$. Furthermore $\mathcal{V}$ recomputes the MPC state $ (\sh{\alpha^j}_i, \sh{\beta^j}_i, \sh{v^j}_i)$. Finally $\mathcal{V}$ reconstructs the shares and hash $h'$
+    \begin{align*}
+      v^j              & = \texttt{open}(\{\sh{v^j}_i\}) \quad \text{for } i \in I \cup i^*                              \\
+      h'_{\mathcal{V}} & = \texttt{Hash}(\sh{\alpha^t}_i, \sh{\beta^t}_i, \sh{v^t}_i) \quad \text{for } i \in I \cup i^*
+    \end{align*}
+
+  $\mathcal{V}$ outputs \texttt{Accept} if and only if
+
+  \begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
+    \item \textit{Verify input commitment consistency:} Recompute $\texttt{root}^j_{\mathcal{V}}$ and check that
+          \begin{align*}
+            \texttt{root}^j_{\mathcal{V}} \stackrel{?}{=} \texttt{root}^j
+          \end{align*}
+    \item \textit{Verify MPC protocol consistency:}
+          \begin{align*}
+            h'_{\mathcal{V}} \stackrel{?}{=} h'
+          \end{align*}
+    \item \textit{Verify that the output of the opened parties}:
+          \begin{align*}
+            v^1, \dots, v^t \stackrel{?}{=} 0
+          \end{align*}
+  \end{enumerate}
+\end{protocol}
+
+\begin{lemma}[Completeness of \autoref{def:sdith-zkpok}]
+  Follows from the MPC completeness. Any prover $\mathcal{P}$ that follows the steps of the protocol always succeds in convincing the verifier.
+\end{lemma}
 
 
 \end{document}
