@@ -882,9 +882,7 @@ This chapter presents a comprehensive specification of the SD-in-the-Head Signat
     $\alpha, \beta, v$           & Broadcast values (coordinates in $\mathbb{F}_{\text{points}}$).                                        \\
     $i$                          & Index of a party in $[1 : N]$.                                                                         \\
     $\sh{v}$                     & Sharing of a value $v$.                                                                                \\
-    $p$                          & False positive probability of the MPC protocol.                                                        \\ \hline
-
-    \multicolumn{2}{l}{\textbf{Threshold variant}}                                                                                        \\
+    $p$                          & False positive probability of the MPC protocol.                                                        \\
     $\ell$                       & Privacy threshold (number of open parties).                                                            \\
     $I$                          & Set of open parties $(I \subseteq [1 : N], |I| = \ell)$.                                               \\
   \end{tabular}
@@ -951,10 +949,11 @@ We define the \texttt{input} as the tuple containing the MPC inputs:
   \texttt{input} = (s_A, P, Q, a, b, c)
 \end{align*}
 
-Next, we compute $\ell$ uniformly random coefficients $\texttt{input\_coef} \in \mathbb{F}_q^{|\texttt{input}|}$ and determine the sharing:
-\begin{align*}
-  \sh{\texttt{input}}_i = \texttt{input} + \sum_{j=1}^\ell i^j \cdot \texttt{input\_coef}_j
-\end{align*}
+Next, we compute $\ell$ uniformly random coefficients $\texttt{input\_coef} \in \mathbb{F}_q^{|\texttt{input}|}$ and compute the sharing with \textit{Share}:
+\begin{align}
+  \sh{\texttt{input}}_i & = \text{Share}(i, \texttt{input}, \texttt{input\_coef}_1, \dots, \texttt{input\_coef}_\ell) \label{sdith-mpc-share} \\ \nonumber
+  &= \texttt{input} + \sum_{j=1}^\ell i^j \cdot \texttt{input\_coef}_j
+\end{align}
 
 The MPC computation is then performed directly on the \texttt{input} and its $\ell$ coefficients from the SSSS:
 \begin{align*}
@@ -965,9 +964,9 @@ The MPC computation is then performed directly on the \texttt{input} and its $\e
 \end{align*}
 
 Due to the linearity of the MPC computation, the output shares can be reconstructed by running the sharing protocol on the broadcast shares:
-\begin{align*}
-  (\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i) = \texttt{broad} + \sum_{j=1}^\ell i^j \cdot \texttt{broad\_coef}_j
-\end{align*}
+\begin{align}
+  (\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i) = \text{Share}(i, \texttt{broad}, \texttt{broad\_coef}_1, \dots, \texttt{broad\_coef}_\ell)
+\end{align}
 
 \section{The Signature Protocol}\label{sec:sdith-signature}
 
@@ -1014,7 +1013,7 @@ Additionally, we incorporate the message into the second hash, enabling the pre-
 
 Finally, we introduce a $\texttt{salt} \in \{0,1\}^{2\lambda}$, which serves as pseudo-randomness for commitments and seed generation. The use of $\texttt{salt}$ ensures that the protocol remains secure and avoids reliance on externally provided randomness.
 
-\begin{protocol}
+\begin{protocol}[SD-in-the-Head Signing Protocol]
   \setlength{\parindent}{0pt}
   \setlength{\parskip}{5pt}
   \titlespacing*{\paragraph}{0pt}{1pt}{1em}
@@ -1022,7 +1021,7 @@ Finally, we introduce a $\texttt{salt} \in \{0,1\}^{2\lambda}$, which serves as 
 
   \begin{itemize}[itemsep=0pt, topsep=0pt, parsep=0pt]
     \item security parameters $\lambda, \tau$
-    \item a $(\ell + 1, N)$-threshold MPC protocol \texttt{MPC} (\autoref{def:sdith-mpc}, \autoref{sec:mpc}) and set $S \subset [N]$ s.t. $|S| \geq \ell + 1$
+    \item a $(\ell + 1, N)$-threshold MPC protocol \texttt{MPC} (\autoref{def:sdith-mpc}, \autoref{sec:mpc})
     \item secure hash functions $\texttt{Hash}_n(d) \rightarrow \texttt{Hash}(n || d)$ (\autoref{sec:prelim_hash})
     \item and random oracle $\texttt{PRG}$ (\autoref{sec:prelim_hash})
     \item \texttt{XOF} (\autoref{sec:xof})
@@ -1039,18 +1038,19 @@ Finally, we introduce a $\texttt{salt} \in \{0,1\}^{2\lambda}$, which serves as 
 
   \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
     \item Compute Beaver triples $\mathcal{B} = a^{j}, b^{j}, c^{j}$ for all $j \in t$ and construct $\texttt{input} = (sk, \mathcal{B})$
-    \item For each iteration $e \in [\tau]$ compute random sharings of the secret and valid Beaver triples for each $j \in [t]$
-          \begin{align*}
-            \texttt{XOF} \rightarrow \sh{sk}^{e}, \sh{a}^{j, e}, \sh{b}^{j, e}, \sh{c}^{j, e}
-          \end{align*}
-    \item Compute the commitments for $i \in [N]$:
-          \begin{align*}
-            \texttt{com}_i^{e} := \texttt{Hash}_0(\texttt{salt}, e, i, \sh{sk^{e}}_i, \sh{a}^{j, e}_i, \sh{b}^{j, e}_i, \sh{c}^{j, e}_i) \quad j \in [t]
-          \end{align*}
-          and compute the Merkle root:
-          \begin{align*}
-            \texttt{root}^{e} = \texttt{MerkleTree}(\texttt{com}_1^{e}, \ldots, \texttt{com}_N^{e})
-          \end{align*}
+    \item For each iteration $e \in [\tau]$
+          \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
+            \item compute $\texttt{input\_coef}_j^e \leftarrow \texttt{XOF}$ for each $j \in \ell$ 
+            \item compute $\sh{\texttt{input}}_i^e = \text{Share}(i, \texttt{input}, \texttt{input\_coef}_1^e, \dots, \texttt{input\_coef}_\ell^e)$
+            \item compute commitments for $i \in [N]$
+            \begin{align*}
+              \texttt{com}_i^{e} := \texttt{Hash}_0(\texttt{salt}, e, i, \sh{\texttt{input}}_i^e)
+            \end{align*}
+            \item compute the Merkle commitment
+            \begin{align*}
+              \texttt{root}^{e} = \texttt{MerkleTree}(\texttt{com}_1^{e}, \ldots, \texttt{com}_N^{e})
+            \end{align*}
+          \end{enumerate}
   \end{enumerate}
 
   \paragraph{Phase 2} Compute first challenge
