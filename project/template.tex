@@ -946,7 +946,7 @@ To obtain a signature scheme from \autoref{def:sdith-mpc}, two transformations a
   \setlength{\parskip}{5pt}
   \setlength{\parindent}{0pt}
   \titlespacing*{\paragraph}{0pt}{1pt}{1em}
-  Both the prover $\mathcal{P}$ and the verifier $\mathcal{V}$ hold public SD instance $(H,y)$. $\mathcal{P}$ holds $x$ such that $y = Hx$ and $\text{wt}(x) \leq w$. We assume a $(\ell + 1, N)$-threshold secret sharing scheme.
+  Both the prover $\mathcal{P}$ and the verifier $\mathcal{V}$ hold the public SD instance $(H,y)$. $\mathcal{P}$ holds $x$ such that $y = Hx$ and $\text{wt}(x) \leq w$. We assume a $(\ell, N)$-threshold secret sharing scheme.
 
   $\mathcal{P}$ computes the proof witness $w = (s_A, Q, P)$ from $x$ and public polynomial $F$.
 
@@ -1233,7 +1233,7 @@ Cargo is a command-line tool -- run through \texttt{cargo} -- that facilitates t
 
 
 \subsection{Memory safety}\label{sec:rustborrow} % mut references
-Rust guarantees both type safety (\autoref{sec:rusttypes}) and memory safety. While we will not delve into the details, significant progress has been made toward formal proofs of these guarantees~\cite{jung2017rustbelt}. Unlike many other languages that rely on sophisticated garbage collection mechanisms to ensure memory safety, Rust avoids the associated performance overhead through two key features: the \textit{ownership} and \textit{lifetimes}. Along with a compile time functionality called the \textit{borrow checker}, these features ensure the memory safety of Rust programs. While the borrow checker is often the biggest hurdle for new Rust developers, it is also the feature that makes Rust so powerful.
+Rust guarantees both type safety (\autoref{sub:rusttypes}) and memory safety. While we will not delve into the details, significant progress has been made toward formal proofs of these guarantees~\cite{jung2017rustbelt}. Unlike many other languages that rely on sophisticated garbage collection mechanisms to ensure memory safety, Rust avoids the associated performance overhead through two key features: the \textit{ownership} and \textit{lifetimes}. Along with a compile time functionality called the \textit{borrow checker}, these features ensure the memory safety of Rust programs. While the borrow checker is often the biggest hurdle for new Rust developers, it is also the feature that makes Rust so powerful.
 
 In this section, we will explore the fundamental aspects of how the borrow checker and ownership work. Only the most critical aspects will be discussed, as more comprehensive information is available in the official documentation~\cite{rustlangRustProgramming}.
 
@@ -1929,7 +1929,7 @@ fn simple_simd_vector_addition() -> [f32; 4] {
 % However, we were still able to utilize this to gain a performance increase in our implementation.
 
 \section{Structure}
-To maintain a clear separation of concerns, we have structured the codebase using Rust modules (\autoref{sec:rust_modules}), ensuring that each component of the protocol is well-organized. As illustrated in \autoref{fig:structure}, the root directory of our project contains several key files:
+To maintain a clear separation of concerns, we have structured the codebase using Rust modules (\autoref{sub:rust_modules}), ensuring that each component of the protocol is well-organized. As illustrated in \autoref{fig:structure}, the root directory of our project contains several key files:
 
 \begin{itemize}
   \item \texttt{Cargo.toml}: Defines the package metadata and its dependencies.
@@ -2101,7 +2101,7 @@ The base variant is implemented with Shake and can be adjusted depending on the 
   }
 \end{minted}
 
-In order to explore performance upgrades for the hashing we implemented a separate version of the \rust{SDitHXOF} struct that uses the \texttt{blake3} crate~\cite{blake3} as the underlying hash function.
+In order to explore performance upgrades for the hashing we implemented a separate version of the \rust{SDitHXOF} struct that uses the \texttt{blake3} crate~\cite{blakethree} as the underlying hash function.
 
 \begin{minted}{rust}
   impl SDitHXOFTrait<blake3::OutputReader> for SDitHXOF<blake3::OutputReader> {
@@ -2840,7 +2840,7 @@ To implement this we utilized our field arithmetic and an array of pre computed 
 Due to the nature of the polynomial evaluation we created a manual example and checked that our function evaluated the polynomial correctly.
 
 \subsubsection{Complete and Truncate $\mathcal{Q}$}
-
+We can omit sending the leading coefficient since it is always going to be 1. For this we have created a function that can add the leading coefficient, as we also need to be able to add 0 for the leading coefficient for all the shares that are not the leading. As they need to sum to 1. Our implementation is a simple loop that will add an element that is going to be the leading coefficient.
 
 \subsubsection{Beaver Triples}
 Generation of $\tau \cdot d$ beaver triples for doing the \autoref{def:sacrifice}is done by first sampling $d$ field elements $a,b$, and then compute the correlated $c = a \cdot b$ elements. If the splitting factor $d=1$ the inner product is just simple multiplications, but if we have a higher splitting factor $d=2$ the $c_j$, where $j \in [1:\tau]$, value is computed as follows:
@@ -2882,41 +2882,30 @@ impl Challenge {
 
 \subsubsection{Party Computation}
 We now have all the required parts to build the MPC simulation, defined in\todo{Reference correct section} \autoref{def:sdith-mpc}. The way we implemented this was to use the same function to create the plain broadcast values as the broadcast values computed for the shares.
+The inputs to the function is as follows:
+\begin{itemize}
+  \item \textit{input\_share\_plain}: The input share of the party
+  \item chal: The challenge values $(r, \epsilon)$
+  \item h\_prime: The matrix $H'$
+  \item y: The syndrome decoding instance $y$ 
+  \item broadcast: The broadcast values
+  \item with\_offset: A boolean to indicate if the polynomial $S$ should be computed as $$s = (s_A|y+H's_A)$$ or $$s = (H's_A)$$ and if the polynomial Q should be $$Q = (Q|0)$$ or $$Q = (Q|1)$$. This is due to the fact that for multiplication in a MPC protocol it is only 1 party that needs to add the last part. 
+  \item compute\_v: A boolean to indicate if the value $v$ in the MPC simulation should be computed, used to avoid unnecessary computation in the plain broadcast computatoin as $v = 0$.
+\end{itemize}
+The first part of the implementation is just parsing and extracting all the necessary values to do the MPC computations. Along with the computation of the polynomial $S$ and $Q$.
+For the $t$ iterations of the MPC simulation we compute the broadcast values $\alpha, \beta$ and $v$ based on the computation described in \autoref{def:sdith-mpc}.
+Recall the computation of the broadcast values:
+\begin{align*}
+  \sh{\alpha^j}  &= \varepsilon^j \cdot \sh{Q(r^j)} + \sh{a^j}\\
+  \sh{\beta^j}  &= \sh{S(r^j)} + \sh{b^j}\\
+\end{align*}
+And the computation of the value $v$:
+\begin{align*}
+  \sh{v^j} & = \varepsilon^j \cdot \sh{F \cdot P(r^j)} - \sh{c^j} + \alpha^j \cdot \sh{b^j} + \beta^j \cdot \sh{a^j} - \alpha^j \cdot \beta^j.
+\end{align*}
+
+Our implementation follows these computations closely, with the main loop being:
 \begin{minted}{rust}
-fn _party_computation(
-    input_share_plain: InputSharePlain,
-    chal: &Challenge,
-    h_prime: HPrimeMatrix,
-    y: [u8; PARAM_M_SUB_K],
-    broadcast: &Broadcast,
-    with_offset: bool,
-    compute_v: bool,
-) -> Result<BroadcastShare, String> {
-    let input_share = Input::parse(&input_share_plain)?;
-    let a = input_share.beaver.a;
-    let b = input_share.beaver.b;
-    let c = input_share.beaver.c;
-    let (s_a, q_poly, p_poly) = (
-        input_share.solution.s_a,
-        input_share.solution.q_poly,
-        input_share.solution.p_poly,
-    );
-
-    // Compute S
-    let s = compute_s(&s_a, &h_prime, if with_offset { Some(&y) } else { None });
-    if s.is_err() {
-        return Err("Failed to compute S".to_string());
-    }
-    let s_poly = compute_s_poly(s.unwrap());
-
-    // Complete Q
-    let q_poly_complete = complete_q(q_poly, if with_offset { 1u8 } else { 0u8 });
-
-    // Outputs
-    let mut alpha_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
-    let mut beta_share = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
-    let mut v = [FPoint::default(); PARAM_T];
-
     for j in 0..PARAM_T {
         // v[j] = -c[j]
         if compute_v {
@@ -2953,14 +2942,9 @@ fn _party_computation(
             }
         }
     }
-    Ok(BroadcastShare {
-        alpha: alpha_share,
-        beta: beta_share,
-        v,
-    })
-}
 \end{minted}
-This allows us to compute the plain broadcast shares by simply calling the MPC computation function:
+
+This allows us to compute the plain broadcast shares by simply calling the MPC computation function with a specific set of parameters:
 \begin{minted}{rust}
     let broadcast_result = _party_computation(
         input.serialise(),
@@ -2971,18 +2955,10 @@ This allows us to compute the plain broadcast shares by simply calling the MPC c
         true,
         false,
     );
-    if broadcast_result.is_err() {
-        return Err("Failed to compute broadcast".to_string());
-    }
-    let broadcast = broadcast_result.unwrap();
-
-    Ok(Broadcast {
-        alpha: broadcast.alpha,
-        beta: broadcast.beta,
-    })
 \end{minted}
 
 \subsubsection{Inverse Party Computation}
+
 
 \section{Categories}\label{sub:categories} % (fold)
 We tried reworking to use dynamically sized vectors instead of compile time sized arrays. Which proved to be a big rework and refactor. Benching showed slower running times. So instead we went with compile time script to set the constants.
