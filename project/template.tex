@@ -2721,7 +2721,34 @@ Generation of $\tau \cdot d$ beaver triples for doing the \autoref{def:sacrifice
 We created tests to ensure that the generation of $a,b$ was correct along with the computed $c$.
 
 \paragraph{Challenge Generation}
-When transforming the MPC protocol using \autoref{sec:fiatshamir} into a ZK-POK we need to generate challenges based on public information. In order to do the \autoref{sec:mpc_sacrificing} we need to have $\tau$ pairs $(r, \epsilon)$, that is used compute the broadcast values $\alpha, \beta$.
+When transforming the MPC protocol using \autoref{sec:fiatshamir} into a ZK-POK we need to generate challenges based on public information. In order to do the \autoref{sec:mpc_sacrificing} we need to have $\tau$ pairs $(r, \epsilon)$, that is used to compute the broadcast values $\alpha, \beta$.
+We chose to implement this as a struct that holds the values, to make it easier to use in the MPC simulation. We create the challenge based on the $h_1$ Fiat-Shamir Transform, allowing us to sample field elements and pre compute the powers of $r$ for use in the polynomial evaluation. We can do this because we have a known length for the coefficients.
+\begin{minted}{rust}
+/// Compute the powers of a point for fixed length. Used for precomputing the powers of r.
+pub fn get_powers(point: FPoint, out: &mut [FPoint]) {
+    out[0] = FPoint::field_mul_identity();
+    out[1] = point;
+    for i in 2..out.len() {
+        out[i] = out[i - 1].field_mul(point);
+    }
+}
+\end{minted}
+This also allows us to precompute the evaluations for the polynomial $F$ that is the vanishing polynomial used to proove the syndrome decoding relation. 
+\begin{minted}{rust}
+impl Challenge {
+    pub fn new(h1: Hash) -> Self {
+        // Sample r and e
+
+        for t in 0..PARAM_T {
+            powers_of_r[t][1] = r[t];
+            get_powers(r[t], &mut powers_of_r[t]);
+            f_poly_eval[t] = polynomial_evaluation(&PRECOMPUTED_F_POLY, &powers_of_r[t])
+        }
+
+        // Return the challenge struct
+    }
+}
+\end{minted}
 
 
 \paragraph{Party Computation}
