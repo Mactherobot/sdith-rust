@@ -2,7 +2,7 @@
 use criterion::black_box;
 use dudect_bencher::{ctbench_main, BenchRng, Class, CtRunner};
 use rand::Rng;
-use rsdith::arith::gf256::gf256_arith::{_mul_lookup, _mul_spec, _mul_wiki};
+use rsdith::subroutines::arith::gf256::gf256_arith::{_mul_lookup, _mul_spec, _mul_wiki};
 
 /// Benchmark multiplication in GF(256). We check if we keep `a` constant for a random `b` is there a notable difference
 /// in the time it takes to do the multiplication used for different implementations of multiplication

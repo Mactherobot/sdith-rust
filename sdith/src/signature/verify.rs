@@ -73,7 +73,7 @@ impl Signature {
 
                 // Verify the Merkle path
                 let broadcast_share = BroadcastShare::parse(&sh_broadcast[e][li])?;
-                let beaver_triples = reverse_party_computation(
+                let beaver_triples = inverse_party_computation(
                     wit_share[e][li],
                     &broadcast_share,
                     &chal,

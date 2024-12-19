@@ -300,7 +300,7 @@ mod test_witness {
         x.iter().fold(0, |a, b| a + (*b != 0) as u64)
     }
 
-    use crate::arith::gf256::gf256_poly::{
+    use crate::subroutines::arith::gf256::gf256_poly::{
         gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
     };
 
@@ -503,11 +503,14 @@ mod test_helpers {
     }
 
     use crate::{
-        arith::gf256::gf256_poly::{
-            gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
-        },
         constants::params::{PARAM_CHUNK_W, PARAM_SEED_SIZE, PARAM_W},
-        subroutines::{marshalling::_test_marhalling, prg::PRG},
+        subroutines::{
+            arith::gf256::gf256_poly::{
+                gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
+            },
+            marshalling::_test_marhalling,
+            prg::PRG,
+        },
     };
 
     use super::*;

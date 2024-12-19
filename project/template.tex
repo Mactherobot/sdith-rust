@@ -3172,7 +3172,7 @@ This led us to find that our implementation of the polynomial evaluation seemed 
 
 
 \section{Finishing the implementation}\label{sub:final}
-In this section we will discuss our process when finalizing the implementation. We had a few bugs that led us to setup our code to be comparable with the reference implementation. First we will discuss our implementations of the signing and verification algorithms, and then go into how we tested these. Lastly we will discuss how we used the reference implementation to iron out the bugs in our implementation.
+In this section we will discuss our process when finalizing the implementation. We had a few bugs that led us to setup our code to be comparable with the reference implementation. First we will discuss our implementations of the signing and verification algorithms, and how we used the reference implementation to iron out bugs from our own code. Lastly we will discuss how we went about testing our implementation.
 \subsection{Signing}\label{sub:signing}
 After implementing all the subroutines, we proceeded to develop the general signing algorithm described in \autoref{sec:sdith-signature}. 
 
@@ -3195,14 +3195,18 @@ After
 \paragraph{Verification}\label{sub:verification}
 As the last piece to the puzzle we implemented the verification algorithm. For this we followed the specification and used the KAT generated signatures to verify that we could parse and validate a signature. This would allow us to ensure that our parsing of the signature, inverse MPC computation and our merkle tree verification was correct. This was in the attempt not the case. Which led us to compare our implementation with the specification as described in \autoref{sub:comparison_with_spec_impl}.
 
+\section{Comparison with spec impl}\label{sub:comparison_with_spec_impl}
+To verify and debug our code, we configured our implementation to align with the reference implementation provided in C. This setup required us to execute the reference code to obtain intermediate data, which we then used to compare internal states between the two implementations.
+
+During this process, we identified a bug in the calculation of the view-opening challenges. Specifically, the reference implementation neglected to finalize the SHAKE function before squeezing, which posed an issue because the Tiny Keccak Rust library automatically performs this finalization when initializing a hash or XOF.
+
+Additionally, we discovered that, to produce identical outputs from the XOF, we needed to first rotate the permutation once by supplying an empty vector before invoking the function.
+
+
 \subsection{Testing our implementation}\label{sub:testing_our_implementation}
 
 
-\section{Comparison with spec impl}\label{sub:comparison_with_spec_impl}
-In order to verify and debug our own code we tried to setup our implementation to fit with the specification implementation in C, meaning we had to run their code in order to get the intermediate data in order to compare the internal states.
-Here we found a bug in the way the view-opening challenges was calculated, they had forgotten to finalize the Shake before squeezing, which was a problem because in the tiny keccak rust library this was always done when initializing a hash or xof.
-Furthermore we found that in order to generate the same output from the xof we needed to first rotate the permutation once by supplying an empty vector before actually using the function.
-We also found that the merkle tree was not using the salt.
+
 
 \section{Optimizations}
 

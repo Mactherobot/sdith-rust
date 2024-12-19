@@ -272,7 +272,7 @@ fn _party_computation(
             // α[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
             let eval_q = polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
             alpha_share[d][j] = chal.eps[d][j].field_mul(eval_q).field_add(a);
-            
+
             // β[d][j] = Evaluate(S[d], r[j]) + b[d][j]
             let eval_s = polynomial_evaluation(&s_poly[d], &powers_of_r_j);
             beta_share[d][j] = eval_s.field_add(b);
@@ -306,7 +306,7 @@ fn _party_computation(
 
 /// Computes the shares of the Beaver triples from the shares of the witness and the broadcast
 /// shares of a party.
-pub fn reverse_party_computation(
+pub fn inverse_party_computation(
     solution_plain: [u8; SOLUTION_PLAIN_SIZE],
     broadcast_share: &BroadcastShare,
     chal: &Challenge,
@@ -389,7 +389,6 @@ mod mpc_tests {
     use beaver::BeaverTriples;
 
     use crate::{
-        arith::gf256::gf256_vector::{gf256_add_vector, gf256_add_vector_with_padding},
         constants::{
             params::{
                 PARAM_DIGEST_SIZE, PARAM_M, PARAM_N, PARAM_SALT_SIZE, PARAM_SEED_SIZE,
@@ -397,8 +396,11 @@ mod mpc_tests {
             },
             types::{hash_default, Seed},
         },
-        mpc::{broadcast::BroadcastShare, challenge::get_powers},
         signature::input::INPUT_SIZE,
+        subroutines::{
+            arith::gf256::gf256_vector::{gf256_add_vector, gf256_add_vector_with_padding},
+            mpc::{broadcast::BroadcastShare, challenge::get_powers},
+        },
         witness::{generate_witness, sample_polynomial_relation},
     };
 
@@ -522,7 +524,7 @@ mod mpc_tests {
         let party_computation =
             party_computation(input.serialise(), &chal, h_prime, y, &broadcast, false).unwrap();
 
-        let inverse_party_computation = reverse_party_computation(
+        let inverse_party_computation = inverse_party_computation(
             Input::truncate_beaver_triples(&input.serialise()),
             &party_computation,
             &chal,
@@ -565,7 +567,7 @@ mod mpc_tests {
 
         let broadcast_shares = BroadcastShare::parse(&broadcast_share).unwrap();
 
-        let recomputed_input_share_triples = reverse_party_computation(
+        let recomputed_input_share_triples = inverse_party_computation(
             Input::truncate_beaver_triples(&input_share),
             &broadcast_shares,
             &chal,

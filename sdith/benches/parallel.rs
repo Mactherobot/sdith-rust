@@ -4,9 +4,8 @@ use nist_pqc_seeded_rng::{NistPqcAes256CtrRng, Seed};
 use rand::{RngCore as _, SeedableRng as _};
 use rsdith::{
     constants::params::{PARAM_N, PARAM_SALT_SIZE, PARAM_SEED_SIZE, PARAM_TAU},
-    mpc,
     signature::{input::INPUT_SIZE, Signature},
-    subroutines::prg::PRG,
+    subroutines::{mpc, prg::PRG},
 };
 
 /// Benchmarking functions that use parallel operations: commit shares, compute input shares

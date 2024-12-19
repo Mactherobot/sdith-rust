@@ -1,5 +1,8 @@
 #![allow(dead_code)]
-use std::{env, io::{stderr, Write}};
+use std::{
+    env,
+    io::{stderr, Write},
+};
 
 use colored::Colorize as _;
 use criterion::Criterion;
@@ -11,12 +14,9 @@ use stats_ci::{Confidence, StatisticsOps};
 const ITER: usize = 250;
 
 pub(crate) fn proof_size_benchmark(_c: &mut Criterion) {
-
     // Only run this benchmark if the "size" id is passed as an argument
     let mut args = env::args_os();
-    if !args.any(
-        |arg| arg == "size"
-    ) {
+    if !args.any(|arg| arg == "size") {
         return;
     }
 
@@ -38,7 +38,9 @@ pub(crate) fn proof_size_benchmark(_c: &mut Criterion) {
         rng.fill_bytes(&mut msg);
         let signature = signature::Signature::sign_message((root_seed, salt), &sk, &msg).unwrap();
         let bytes = signature.serialise().len();
-        stats.append(bytes as f64).expect("Could not append to stats");
+        stats
+            .append(bytes as f64)
+            .expect("Could not append to stats");
     });
     eprint!("\r{}", "\x1B[2K"); // Clear the line
 
@@ -46,7 +48,7 @@ pub(crate) fn proof_size_benchmark(_c: &mut Criterion) {
     let ci = stats.ci_mean(conf).unwrap();
 
     println!(
-        "{}{}size:   [{} B {} B {} B] {}", 
+        "{}{}size:   [{} B {} B {} B] {}",
         "size/signature".green(),
         " ".repeat(10),
         format!("{:.3}", ci.low().unwrap()).bright_black(),

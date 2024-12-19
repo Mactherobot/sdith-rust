@@ -180,7 +180,8 @@ mod ext32_tests {
     use super::*;
 
     use crate::{
-        arith::test_field_definitions, constants::params::PARAM_SEED_SIZE, subroutines::prg::PRG,
+        constants::params::PARAM_SEED_SIZE, subroutines::arith::test_field_definitions,
+        subroutines::prg::PRG,
     };
 
     #[test]

@@ -225,7 +225,8 @@ fn gf256_mul_inverse_lookup(a: u8) -> u8 {
 mod tests {
     use super::*;
     use crate::{
-        arith::test_field_definitions, constants::params::PARAM_SEED_SIZE, subroutines::prg::PRG,
+        constants::params::PARAM_SEED_SIZE, subroutines::arith::test_field_definitions,
+        subroutines::prg::PRG,
     };
 
     /// TODO: remove these tests when we have used the proper test vectors
