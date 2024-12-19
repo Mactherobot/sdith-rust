@@ -7,9 +7,12 @@
 use std::iter::zip;
 
 use crate::{
-    arith::{gf256::gf256_ext::FPoint, FieldArith as _},
     constants::params::{PARAM_ETA, PARAM_SPLITTING_FACTOR, PARAM_T},
-    subroutines::{marshalling::Marshalling, prg::PRG},
+    subroutines::{
+        arith::{gf256::gf256_ext::FPoint, FieldArith as _},
+        marshalling::Marshalling,
+        prg::PRG,
+    },
 };
 
 /// Beaver triple a sized array type

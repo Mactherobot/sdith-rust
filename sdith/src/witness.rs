@@ -8,14 +8,6 @@
 //! The instance is split into [`PARAM_SPLITTING_FACTOR`] according to a variant of the SD problem in the _d-split syndrome decoding problem_.
 
 use crate::{
-    arith::{
-        gf256::{
-            gf256_matrices::{gen_hmatrix, mul_hmatrix_vector, HPrimeMatrix},
-            gf256_poly::gf256_monic_polynomial_division,
-            gf256_vector::{gf256_add_vector, gf256_mul_vector_by_scalar},
-        },
-        FieldArith as _,
-    },
     constants::{
         params::{
             PARAM_CHUNK_M, PARAM_CHUNK_W, PARAM_K, PARAM_M, PARAM_M_SUB_K, PARAM_SALT_SIZE,
@@ -23,6 +15,14 @@ use crate::{
             PRECOMPUTED_LAGRANGE_INTERPOLATION_WEIGHTS,
         },
         types::Seed,
+    },
+    subroutines::arith::{
+        gf256::{
+            gf256_matrices::{gen_hmatrix, mul_hmatrix_vector, HPrimeMatrix},
+            gf256_poly::gf256_monic_polynomial_division,
+            gf256_vector::{gf256_add_vector, gf256_mul_vector_by_scalar},
+        },
+        FieldArith as _,
     },
     subroutines::{marshalling::Marshalling, prg::PRG},
 };
@@ -284,11 +284,7 @@ pub fn sample_polynomial_relation(
             gf256_add_vector(&mut s_poly[n_poly], &tmp_poly); // Transfer to s_poly
 
             // Compute P polynomial
-            gf256_monic_polynomial_division(
-                &mut tmp_poly, 
-                &q_poly[n_poly], 
-                PARAM_CHUNK_W, 
-                i as u8); // Compute the 
+            gf256_monic_polynomial_division(&mut tmp_poly, &q_poly[n_poly], PARAM_CHUNK_W, i as u8); // Compute the
             gf256_mul_vector_by_scalar(&mut tmp_poly, scalar);
             gf256_add_vector(&mut p_poly[n_poly], &tmp_poly);
         }

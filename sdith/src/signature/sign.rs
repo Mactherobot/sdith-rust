@@ -10,24 +10,26 @@
 //! 5. Based on the view opening challenges, compute merkle trees from the commitments
 //! 5. Build the signature, with the message, salt, h1 and the broadcast plain, broadcast shares, solution shares and auth paths
 
-use crate::arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix};
-use crate::mpc::beaver::BeaverTriples;
-use crate::mpc::{
-    compute_broadcast, compute_input_shares, expand_view_challenge_hash, party_computation,
-    ComputeInputSharesResult,
-};
-use crate::subroutines::marshalling::Marshalling;
-use crate::subroutines::merkle_tree::MerkleTreeTrait as _;
-use crate::utils::iterator::*;
-use crate::witness::SOLUTION_PLAIN_SIZE;
+use beaver::BeaverTriples;
+use broadcast::BROADCAST_SHARE_PLAIN_SIZE;
+use challenge::Challenge;
+
 use crate::{
     constants::{
         params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_N, PARAM_TAU},
         types::{Hash, Salt, Seed},
     },
     keygen::SecretKey,
-    mpc::{broadcast::BROADCAST_SHARE_PLAIN_SIZE, challenge::Challenge},
-    subroutines::{commitments::commit_share, merkle_tree::MerkleTree, prg::PRG},
+    subroutines::{
+        arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix},
+        commitments::commit_share,
+        marshalling::Marshalling,
+        merkle_tree::{MerkleTree, MerkleTreeTrait},
+        mpc::*,
+        prg::PRG,
+    },
+    utils::iterator::*,
+    witness::SOLUTION_PLAIN_SIZE,
 };
 
 use super::input::INPUT_SIZE;

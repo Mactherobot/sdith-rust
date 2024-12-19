@@ -2,8 +2,7 @@
 //!
 //! Implementations use Horner's method for polynomial evaluation for efficiency.
 
-use crate::arith::FieldArith as _;
-
+use crate::subroutines::arith::FieldArith as _;
 
 /// Evaluate a polynomial at a point using Horner's method.
 /// coeffs: Coefficients of the polynomial in increasing order of degree. e.g. [1, 2, 3] represents p(x) = 3x^2 + 2x + 1
@@ -30,9 +29,9 @@ pub fn gf256_evaluate_polynomial_horner_monic(coeffs: &[u8], x: u8) -> u8 {
     acc
 }
 
-/// Divide monic polynomial by linear factor (X-alpha). Returns the quotient polynomial. 
-/// Since the input polynomial is monic, 
-///  - the leading coefficient of the output is 1 
+/// Divide monic polynomial by linear factor (X-alpha). Returns the quotient polynomial.
+/// Since the input polynomial is monic,
+///  - the leading coefficient of the output is 1
 ///  - it has (X-alpha) as a factor and leaves no remainder.
 pub fn gf256_monic_polynomial_division(
     quotient_polynomial_out: &mut [u8],
@@ -44,7 +43,9 @@ pub fn gf256_monic_polynomial_division(
 
     // Start from the second last element
     for i in (0..=in_length - 2).rev() {
-        quotient_polynomial_out[i] = monic_polynomial_in[i + 1].field_add(alpha.field_mul(quotient_polynomial_out[i + 1])); // Q_i = P_i+1 + alpha * Q_i+1
+        quotient_polynomial_out[i] =
+            monic_polynomial_in[i + 1].field_add(alpha.field_mul(quotient_polynomial_out[i + 1]));
+        // Q_i = P_i+1 + alpha * Q_i+1
     }
 }
 

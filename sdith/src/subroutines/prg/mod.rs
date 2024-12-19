@@ -2,11 +2,11 @@
 //! Pseudo-randomness used in the SDitH protocol
 //!
 //! ## Hashing
-//! Hashing for Fiat-Shamir Heuristic, Commitments and [Merkle-Tree Commitment scheme](crate::subroutines::merkle_tree::MerkleTree) is 
+//! Hashing for Fiat-Shamir Heuristic, Commitments and [Merkle-Tree Commitment scheme](crate::subroutines::merkle_tree::MerkleTree) is
 //! implemented in the [`hashing`] module.
-//! 
+//!
 //! ## XOF
-//! Extendable Output Functions (XOFs) are used to generate pseudorandom values in the fields [F_q](crate::arith::gf256::FieldArith) 
+//! Extendable Output Functions (XOFs) are used to generate pseudorandom values in the fields [F_q](crate::arith::gf256::FieldArith)
 //! and [F_q^\eta](crate::arith::gf256::gf256_ext::FPoint).. The XOFs are implemented in the [`xof`] module.
 
 pub mod hashing;
@@ -15,11 +15,11 @@ pub mod xof;
 use xof::{SDitHXOF, SDitHXOFTrait as _};
 
 use crate::{
-    arith::gf256::gf256_ext::FPoint,
     constants::{
         params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
         types::Seed,
     },
+    subroutines::arith::gf256::gf256_ext::FPoint,
 };
 
 /// Pseudo Random Generator (PRG) struct

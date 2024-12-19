@@ -9,12 +9,14 @@ use core::fmt;
 use std::fmt::Formatter;
 
 use crate::{
-    arith::{gf256::gf256_ext::FPoint, FieldArith as _},
     constants::{
         params::{PARAM_CHUNK_M, PARAM_SPLITTING_FACTOR, PARAM_T, PRECOMPUTED_F_POLY},
         types::{hash_default, Hash},
     },
-    subroutines::prg::PRG,
+    subroutines::{
+        arith::{gf256::gf256_ext::FPoint, FieldArith as _},
+        prg::PRG,
+    },
 };
 
 use super::polynomial_evaluation;
@@ -25,7 +27,7 @@ pub struct Challenge {
     /// Challenge value r. The verifier challenges the prover in at several points to check the correctness of the
     /// polynomial relation.
     pub r: [FPoint; PARAM_T],
-    /// Challenge value epsilon. The idea from the Sacrificing Protocol by Baum and Nof and allows the 
+    /// Challenge value epsilon. The idea from the Sacrificing Protocol by Baum and Nof and allows the
     /// verifier to check the correctness of the randomly generated "pre-processed" beaver triples.
     pub eps: [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR],
     /// Pre-computed powers of r for each evaluation and splitting.

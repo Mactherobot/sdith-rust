@@ -19,12 +19,10 @@ static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 pub mod api;
-pub mod arith;
 pub mod constants;
 #[cfg(feature = "kat")]
 mod kat;
 pub mod keygen;
-pub mod mpc;
 pub mod signature;
 pub mod subroutines;
 pub(crate) mod utils;

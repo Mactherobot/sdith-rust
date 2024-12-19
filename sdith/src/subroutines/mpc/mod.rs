@@ -7,14 +7,6 @@ pub mod broadcast;
 pub mod challenge;
 
 use crate::{
-    arith::{
-        gf256::{
-            gf256_ext::FPoint,
-            gf256_matrices::HPrimeMatrix,
-            gf256_vector::{gf256_mul_scalar_add_vector, gf256_mul_vector_by_scalar},
-        },
-        FieldArith as _,
-    },
     constants::{
         params::{
             PARAM_L, PARAM_LOG_N, PARAM_M_SUB_K, PARAM_N, PARAM_SPLITTING_FACTOR, PARAM_T,
@@ -23,7 +15,18 @@ use crate::{
         types::Hash,
     },
     signature::input::{Input, InputSharePlain, INPUT_SIZE},
-    subroutines::{marshalling::Marshalling as _, prg::PRG},
+    subroutines::{
+        arith::{
+            gf256::{
+                gf256_ext::FPoint,
+                gf256_matrices::HPrimeMatrix,
+                gf256_vector::{gf256_mul_scalar_add_vector, gf256_mul_vector_by_scalar},
+            },
+            FieldArith as _,
+        },
+        marshalling::Marshalling as _,
+        prg::PRG,
+    },
     utils::iterator::*,
     witness::{complete_q, compute_s, compute_s_poly, Solution, SOLUTION_PLAIN_SIZE},
 };

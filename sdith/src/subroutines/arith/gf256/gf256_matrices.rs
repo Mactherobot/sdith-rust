@@ -1,7 +1,7 @@
 //! # GF(256) matrix operations
-//! 
+//!
 //! Matrix operations in GF(256) for the SD instance allowing for the calculation of the syndrome `y = H' * s`.
-//! 
+//!
 //! If the feature flag `simd` is enabled, the operations will be done in parallel using SIMD instructions for faster computation.
 
 use crate::{
@@ -39,7 +39,9 @@ pub fn field_mul_matrix_vector<const M: usize, const N: usize>(
     _n: usize,
     v: &[u8; N],
 ) {
-    use crate::arith::gf256::gf256_vector::{gf256_add_vector, gf256_mul_vector_by_scalar};
+    use crate::subroutines::arith::gf256::gf256_vector::{
+        gf256_add_vector, gf256_mul_vector_by_scalar,
+    };
 
     let mut offset = 0;
     for vi in v.iter() {
@@ -61,7 +63,7 @@ pub fn gen_hmatrix(seed: Seed) -> HPrimeMatrix {
 #[cfg(test)]
 mod tests {
 
-    use crate::arith::FieldArith as _;
+    use crate::subroutines::arith::FieldArith as _;
 
     use super::*;
 

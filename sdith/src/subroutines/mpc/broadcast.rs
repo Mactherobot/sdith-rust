@@ -8,9 +8,8 @@
 //! Also contains the functions for serialising and deserialising the broadcast values
 
 use crate::{
-    arith::gf256::gf256_ext::FPoint,
     constants::params::{PARAM_ETA, PARAM_SPLITTING_FACTOR, PARAM_T},
-    subroutines::marshalling::Marshalling,
+    subroutines::{arith::gf256::gf256_ext::FPoint, marshalling::Marshalling},
 };
 
 type BroadcastValue = [[FPoint; PARAM_T]; PARAM_SPLITTING_FACTOR];

@@ -5,8 +5,10 @@
 
 use crate::{
     constants::params::{PARAM_N, PARAM_TAU},
-    mpc::beaver::{BeaverTriples, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE},
-    subroutines::marshalling::Marshalling,
+    subroutines::{
+        marshalling::Marshalling,
+        mpc::beaver::{BeaverTriples, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE},
+    },
     witness::{Solution, SOLUTION_PLAIN_SIZE},
 };
 

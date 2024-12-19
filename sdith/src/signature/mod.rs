@@ -12,12 +12,14 @@ use crate::{
         params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_M_SUB_K, PARAM_SALT_SIZE, PARAM_TAU},
         types::{Hash, Salt, Seed},
     },
-    mpc::{
-        broadcast::{BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
-        expand_view_challenge_hash,
-    },
     subroutines::{
-        marshalling::Marshalling, merkle_tree::{MerkleTree, MerkleTreeTrait}, prg::hashing::{hash_1, hash_2}
+        marshalling::Marshalling,
+        merkle_tree::{MerkleTree, MerkleTreeTrait},
+        mpc::{
+            broadcast::{BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
+            expand_view_challenge_hash,
+        },
+        prg::hashing::{hash_1, hash_2},
     },
     witness::SOLUTION_PLAIN_SIZE,
 };

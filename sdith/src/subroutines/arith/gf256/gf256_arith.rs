@@ -2,7 +2,7 @@
 
 use std::num::Wrapping;
 
-use crate::{arith::FieldArith, subroutines::prg::PRG};
+use crate::subroutines::{arith::FieldArith, prg::PRG};
 
 /// The primitive polynomial x^4 + x^3 + x + 1 (0b0001_1011)
 #[allow(dead_code)]

@@ -2,7 +2,7 @@
 //!
 //! An element of the field is represented as a pair of bytes `(a,b)` corresponding to `a + bX`
 
-use crate::{arith::FieldArith, subroutines::prg::PRG};
+use crate::{subroutines::arith::FieldArith, subroutines::prg::PRG};
 
 const _GF256_16_ONE: [u8; 2] = [1, 0];
 const GF256_32_ONE: [u8; 4] = [1, 0, 0, 0];

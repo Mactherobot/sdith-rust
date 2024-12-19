@@ -4,15 +4,14 @@
 //!
 //! With the `simd` feature enabled, the operations are performed using SIMD instructions if possible.
 
+use crate::subroutines::arith::FieldArith as _;
 #[cfg(feature = "simd")]
 use std::simd::{num::SimdUint, u8x32};
-use crate::arith::FieldArith as _;
 
 #[cfg(not(feature = "simd"))]
 #[inline(always)]
 /// vz'[] = vz[] + vx[]
 pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
-
     assert!(vx.len() >= vz.len());
     let bytes = vz.len();
     for i in 0..bytes {

@@ -7,21 +7,27 @@
 //! 2. Computing the Merkle root from the computed commitments_prime and the authentication path using [`get_merkle_root_from_auth`].
 //! 3. Verifying the signature using the Merkle root.
 
-use crate::arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix};
-use crate::constants::params::PARAM_DIGEST_SIZE;
-use crate::keygen::PublicKey;
-use crate::mpc::beaver::BeaverTriples;
-use crate::mpc::broadcast::{Broadcast, BroadcastShare, BROADCAST_SHARE_PLAIN_SIZE_AB};
-use crate::mpc::{compute_share, reverse_party_computation};
-use crate::subroutines::marshalling::Marshalling;
-use crate::subroutines::merkle_tree::{MerkleTree, MerkleTreeTrait};
 use crate::{
     constants::{
-        params::{PARAM_L, PARAM_TAU},
+        params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_TAU},
         types::Hash,
     },
-    mpc::{broadcast::BROADCAST_SHARE_PLAIN_SIZE, challenge::Challenge},
-    subroutines::commitments::commit_share,
+    keygen::PublicKey,
+    subroutines::{
+        arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix},
+        commitments::commit_share,
+        marshalling::Marshalling,
+        merkle_tree::{MerkleTree, MerkleTreeTrait},
+        mpc::{
+            beaver::BeaverTriples,
+            broadcast::{
+                Broadcast, BroadcastShare, BROADCAST_SHARE_PLAIN_SIZE,
+                BROADCAST_SHARE_PLAIN_SIZE_AB,
+            },
+            challenge::Challenge,
+            compute_share, inverse_party_computation,
+        },
+    },
 };
 
 use super::{input::Input, Signature};

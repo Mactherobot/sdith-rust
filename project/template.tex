@@ -2046,12 +2046,16 @@ In addition to these files, the directory includes several subdirectories:
 Within the \texttt{src} directory, the code is further divided into submodules, each serving a distinct purpose:
 
 \begin{itemize}
-  \item \texttt{arith}: Implements arithmetic operations, including a \texttt{gf256} submodule for operations in the $GF(256)$ field.
   \item \texttt{constants}: Defines parameters and types used throughout the protocol.
   \item \texttt{kat}: Contains Known Answer Tests (KAT) for verifying implementation correctness.
-  \item \texttt{mpc}: Manages multi-party computation functionalities.
   \item \texttt{signature}: Implements the signature protocol.
   \item \texttt{subroutines}: Provides helper functions supporting various components of the protocol.
+    \begin{itemize}
+      \item Arith: Contains arithmetic operations for finite fields.
+      \item Merkle tree: Implements a Merkle tree commitment scheme
+      \item PRG: Implements a pseudo-random generator.
+      \item MPC: The MPC simulation for the protocol.
+    \end{itemize}
   \item \texttt{utils}: Offers utility functions used across the codebase.
 \end{itemize}
 
@@ -2069,14 +2073,11 @@ This modular design ensures that each aspect of the protocol is encapsulated wit
     .2 \color{teal}cli.rs.
     .2 \color{teal}keygen.rs.
     .2 \color{teal}witness.rs.
-    .2 arith/\dots.
-    .3 gf256/\dots.
     .2 constants/.
     .3 \color{teal}params.rs.
     .3 \color{teal}precomputed.rs.
     .3 \color{teal}types.rs.
     .2 kat/\dots.
-    .2 mpc/\dots.
     .2 signature/\dots.
     .2 subroutines/\dots.
     .3 prg/\dots.
@@ -2126,8 +2127,7 @@ We introduced three feature flags -- \texttt{category\_one}, \texttt{category\_t
 \end{minted}
 
 \section{Subroutines}\label{sub:subroutines}
-
-Due to the modularity of the SD-in-the-Head protocol, we were able to set about implementing the initial parts of the protocol as a set of subroutines; \textit{Pseudo-random Generator}, \textit{Commitment}, \textit{Hashing}, and \textit{Merkle tree Commitment Scheme}.
+Due to the modularity of the SD-in-the-Head protocol, we were able to set about implementing the initial parts of the protocol as a set of subroutines. In our initial implementation we focused on creating the subroutines based on just the specification. This however proved to be a challenge as some of the definitions were not clear on how to be implemented. So we instead took inspiration in how the reference implementation was structured.
 
 \subsection{PRG}\label{sub:prg}
 To begin our implementation, we started by developing a pseudo-random generator (PRG) using an extendable output function (XOF) as the underlying mechanism. Although building custom cryptographic components can be a complex effort in its own right -- and one that may limit certain manual optimizations -- we chose to rely on the \textit{tiny-keccak}~\cite{tinykeccak} crate for convenience and reliability. This library provides established implementations of Keccak-derived functions aligned with NIST FIPS 202, SP800-185, and KangarooTwelve standards, ensuring both proper compliance and a secure foundation for our PRG.
@@ -2267,10 +2267,10 @@ The implementation of the Merkle tree presented challenges due to its one-dimens
 
 We defined a trait for the Merkle tree with methods derived from the specification:
 \begin{itemize}
-  \item \texttt{new}: Builds a Merkle tree from a commitment array and salt.
-  \item \texttt{authPath}: Generates an authentication path for specific leaf indexes.
-  \item \texttt{getAuthSize}: Determines the size of the authentication path for serialization and signature parsing.
-  \item \texttt{getRootFromAuthPath}: Computes the root hash from commitments and an authentication path.
+  \item \rust{new}: Builds a Merkle tree from a commitment array and salt.
+  \item \rust{authPath}: Generates an authentication path for specific leaf indexes.
+  \item \rust{getAuthSize}: Determines the size of the authentication path for serialization and signature parsing.
+  \item \rust{getRootFromAuthPath}: Computes the root hash from commitments and an authentication path.
 \end{itemize}
 
 \subsubsection{new}\label{sec:new}
@@ -2283,35 +2283,9 @@ In order to test the correctness of the tree, we first check that the leaves cor
 \begin{minted}{rust}
     #[test]
     fn test_new_merkle_tree() {
-        let commitments = setup_test_commitments();
-        let tree = MerkleTree::new(commitments, None);
-
-        // Get the correct leaves.
-        for i in 0..PARAM_N {
-            assert_eq!(tree.leaf(i), commitments[i], "Leaf does not match");
-        }
-
-        // We are not zero index, so start from 1
-        for i in 1..=(tree.n_nodes() - tree.n_leaves()) {
-            let left = tree.node(i * 2);
-            let right = tree.node(i * 2 + 1);
-            assert_eq!(
-                tree.node(i),
-                merkle_hash(i, &left, &right, None),
-                "Failed at index {}",
-                i
-            );
-        }
+        // Setup the merkle tree
 
         // Check root
-        assert_eq!(
-            tree.root(),
-            [
-                199, 131, 242, 88, 170, 201, 178, 129, 245, 242, 187, 134, 115, 97, 225, 3, 107, 3,
-                181, 38, 31, 251, 54, 70, 65, 75, 186, 229, 200, 5, 128, 60
-            ],
-            "Root does not match"
-        );
 
         assert_eq!(tree.height, PARAM_MERKLE_TREE_HEIGHT as u32);
         assert_eq!(tree.n_leaves(), { PARAM_N });
@@ -2320,7 +2294,7 @@ In order to test the correctness of the tree, we first check that the leaves cor
 \end{minted}
 
 \subsubsection{authPath and getAuthSize}\label{sub:auth_path}
-The initial \texttt{authPath} implementation iterated backward through the array, identifying missing nodes by checking parent-child relationships. For signature validation, we later adopted an optimized approach using \texttt{get\_revealed\_nodes}:
+The initial \rust{authPath} implementation iterated backward through the array, identifying missing nodes by checking parent-child relationships. For signature validation, we later adopted an optimized approach using \rust{get\_revealed\_nodes}:
 \begin{minted}{rust}
 fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
         if selected_leaves.is_empty() {
@@ -2343,7 +2317,7 @@ fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
     }
 
 \end{minted}
-This function uses a queue to traverse the tree and identify revealed nodes. These nodes determine the size of the authentication path by multiplying their count by the hash digest size. The \texttt{authPath} method uses these revealed nodes to fetch their corresponding values:
+This function uses a queue to traverse the tree and identify revealed nodes. These nodes determine the size of the authentication path by multiplying their count by the hash digest size. The \rust{authPath} method uses these revealed nodes to fetch their corresponding values:
 \begin{minted}{rust}
 fn auth_path(&self, selected_leaves: &[u16]) -> Vec<Hash> {
     let revealed_nodes = Self::get_revealed_nodes(selected_leaves);
@@ -2361,18 +2335,7 @@ Testing that we found the revealed nodes was done by doing the computation manua
 
         // The auth path should have 7 nodes (one from each level)
         assert_eq!(auth.len(), PARAM_MERKLE_TREE_HEIGHT - 1);
-        assert_eq!(
-            auth,
-            vec![
-                tree.node(129),
-                tree.node(65),
-                tree.node(33),
-                tree.node(17),
-                tree.node(9),
-                tree.node(5),
-                tree.node(3),
-            ]
-        );
+        // Check that the auth path is correct
     }
 \end{minted}
 
@@ -2612,7 +2575,7 @@ For $u = (p,q) = p + qZ$ and $v = (r,s) = r + sZ$ we have:
 \begin{align}
   u \cdot v & = (p + qZ) \cdot (r + sZ)                      \\
             & = pr + psZ + qrZ + qsZ^2                       \\
-            & = pr + (ps + qr)Z + qs(Z + 32X)
+            & = pr + (ps + qr)Z + qs(Z + 32X)\\
             & = pr + (ps + qr)Z + qsZ + 32qsX                \\
             & = (pr + 32qsX) + (ps + qr + qs)Z               \\
             & = (pr + 32qsX) + ((p + q) \cdot (r + s) - pr)Z \\
@@ -2649,17 +2612,14 @@ This is done by first adding a 1 in the leading coefficient for the returned pol
   Q_i = P_{i+1} + alpha * Q_{i+1}
 \end{align}
 \begin{minted}{rust}
-/// Divide monic polynomial by linear factor (X-alpha). Returns the quotient polynomial. 
-/// Since the input polynomial is monic, 
-///  - the leading coefficient of the output is 1 
-///  - it has (X-alpha) as a factor and leaves no remainder.
 pub fn gf256_monic_polynomial_division(
     quotient_polynomial_out: &mut [u8],
     monic_polynomial_in: &[u8],
     in_length: usize,
     alpha: u8,
 ) {
-    quotient_polynomial_out[in_length - 1] = 1_u8; // Monic polynomial: a polynomial whose leading coefficient is 1; e.g. X^3 + 23X^2 + 34X + 45
+    // Monic polynomial: a polynomial whose leading coefficient is 1; e.g. X^3 + 23X^2 + 34X + 45
+    quotient_polynomial_out[in_length - 1] = 1_u8; 
 
     // Start from the second last element
     for i in (0..=in_length - 2).rev() {
@@ -3031,14 +2991,7 @@ We do this by first initializing the PRG with the $h_2$ hash, and then sampling 
 pub fn expand_view_challenge_hash(h2: Hash) -> [[u16; PARAM_L]; PARAM_TAU] {
     // Initialize the XOF (extendable output function) context with the second Fiat-Shamir
     // transform hash
-    let mut prg = PRG::init_base(&h2);
-
     // Define a mask for reducing the value range
-    let mask: u16 = (1 << PARAM_LOG_N) - 1;
-    let mut opened_views = [[0u16; PARAM_L]; PARAM_TAU]; // Array for storing the opened views
-
-    let mut tmp = [0u8; 2]; // Temporary buffer for sampled bytes
-    let mut value: u16; // The sampled value
 
     // Loop through all sets (PARAM_TAU sets)
     for i in 0..PARAM_TAU {
@@ -3074,13 +3027,13 @@ As this relies on random values we test that the output of the function follows 
 We now have all the required parts to build the MPC simulation, defined in\todo{Reference correct section} \autoref{def:sdith-mpc}. The way we implemented this was to use the same function to create the plain broadcast values as the broadcast values computed for the shares. Our first attempt at implementing this algorithm, we had a hard time following every step that was done, due to a lack in clarification on what every computation was supposed to do. Furthermore creating tests for this was quite difficult as this function relies heavily on the provided values. We also tried to compare our intermediate values with the values from the specification implementation, which also proved to be a challenge since there is a lot of values that are computed in the algorithm.
 The inputs to the function is as follows:
 \begin{itemize}
-  \item \textit{input\_share\_plain}: The input share of the party
-  \item chal: The challenge values $(r, \epsilon)$
-  \item h\_prime: The matrix $H'$
-  \item y: The syndrome decoding instance $y$
-  \item broadcast: The broadcast values
-  \item with\_offset: A boolean to indicate if the polynomial $S$ should be computed as $$s = (s_A|y+H's_A)$$ or $$s = (H's_A)$$ and if the polynomial Q should be $$Q = (Q|0)$$ or $$Q = (Q|1)$$. This is due to the fact that for multiplication in a MPC protocol it is only 1 party that needs to add the last part.
-  \item compute\_v: A boolean to indicate if the value $v$ in the MPC simulation should be computed, used to avoid unnecessary computation in the plain broadcast computatoin as $v = 0$.
+  \item \rust{input\_share\_plain}: The input share of the party
+  \item \rust{chal}: The challenge values $(r, \epsilon)$
+  \item \rust{h\_prime}: The matrix $H'$
+  \item \rust{y}: The syndrome decoding instance $y$
+  \item \rust{broadcast}: The broadcast values
+  \item \rust{with\_offset}: A boolean to indicate if the polynomial $S$ should be computed as $$s = (s_A|y+H's_A)$$ or $$s = (H's_A)$$ and if the polynomial Q should be $$Q = (Q|0)$$ or $$Q = (Q|1)$$. This is due to the fact that for multiplication in a MPC protocol it is only 1 party that needs to add the last part.
+  \item \rust{compute\_v}: A boolean to indicate if the value $v$ in the MPC simulation should be computed, used to avoid unnecessary computation in the plain broadcast computation as $v = 0$.
 \end{itemize}
 The first part of the implementation is just parsing and extracting all the necessary values to do the MPC computations. Along with the computation of the polynomial $S$ and $Q$.
 For the $t$ iterations of the MPC simulation we compute the broadcast values $\alpha, \beta$ and $v$ based on the computation described in \autoref{def:sdith-mpc}.
@@ -3126,8 +3079,7 @@ Our implementation follows these computations closely, with the main loop being:
                 v[j] = v[j].field_add(broadcast.beta[d][j].field_mul(a));
 
                 if with_offset {
-                    v[j] =
-                        v[j].field_add(alpha_share[d][j].field_neg().field_mul(beta_share[d][j]));
+                    v[j] = v[j].field_add(alpha_share[d][j].field_neg().field_mul(beta_share[d][j]));
                 }
             }
         }
@@ -3219,105 +3171,30 @@ This led us to find that our implementation of the polynomial evaluation seemed 
 \end{minted}
 
 
-
 \subsection{Signing}\label{sub:signing}
-After creating all the subroutines, we implemented the general signing algorithm described in \autoref{sec:sdith-signature}.
-We started by implementing all the sampling needed. This entailed creating the $H'$ matrix, the beaver triples and then defining based on the secret key, the inputs to the MPC simulation.
-This led us to create a function to compute the input shares based on the PRG and the plain input shares.
-\begin{minted}{rust}
-    pub fn sign_message(
-        entropy: (Seed, Salt),
-        secret_key: &SecretKey,
-        message: &Vec<u8>,
-    ) -> Result<Self, String> {
-        // Expansion of the parity matrix H'
-        let h_prime: HPrimeMatrix = gen_hmatrix(secret_key.seed_h);
+After implementing all the subroutines, we proceeded to develop the general signing algorithm described in \autoref{sec:sdith-signature}. 
 
-        // Randomness generation for the Beaver triples and the shares
-        let (mseed, salt) = entropy;
-        let mut prg = PRG::init(&mseed, Some(&salt));
-        let beaver = BeaverTriples::generate(&mut prg);
+We began by implementing all the necessary sampling procedures. This included generating the $H'$ matrix, creating the Beaver triples, and computing the inputs required for the MPC simulation. After committing to the input shares, we constructed the MPC challenge using the first Fiat-Shamir hash:
 
-        // Create the input
-        let input = Input {
-            solution: secret_key.solution,
-            beaver,
-        };
+\[
+h_1 = H'(seed_h, y, \text{salt}, \text{commitments}).
+\]
 
-        // Compute input shares for the MPC
-        let input_plain = input.serialise();
-        let ComputeInputSharesResult(input_shares, input_coefs): ComputeInputSharesResult =
-            compute_input_shares(&input_plain, &mut prg);
+This hash is subsequently used to derive the challenges $(r, \epsilon)^t$. With these challenges in place, we executed the MPC simulation to compute the broadcast values $\alpha$, $\beta$, and $v$. These values were then used to generate their corresponding shares by invoking the MPC function \rust{party_computation}.
 
-        // Commit shares
-        let (commitments, merkle_trees) = Signature::commit_shares(&input_shares, salt);
+Next, we computed the second Fiat-Shamir hash:
 
-        // Create MPC challenge
-        let h1 = Signature::gen_h1(&secret_key.seed_h, &secret_key.y, salt, commitments);
-        let chal = Challenge::new(h1);
+\[
+h_2 = H'(message, \text{salt}, h_1, \text{broadcast}, \text{broadcast\_shares}).
+\]
 
-        // MPC Simulation
-        let broadcast_result = compute_broadcast(input, &chal, h_prime, secret_key.y);
-        if broadcast_result.is_err() {
-            return Err("MPC Simulation failed".to_string());
-        }
-        let broadcast = broadcast_result.unwrap();
-        let broadcast_plain = broadcast.serialise();
+The second hash $h_2$ is used to generate the view-opening challenges, which define the witness shares and are utilized to compute the authentication path in the Merkle tree.
 
-        // For each emulation (Tau) and each L parties, compute the broadcast shares
-        let mut broadcast_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
-        for e in 0..PARAM_TAU {
-            for j in 0..PARAM_L {
-                let broadcast_share = party_computation(
-                    input_coefs[e][j],
-                    &chal,
-                    h_prime,
-                    secret_key.y,
-                    &broadcast,
-                    false,
-                )?;
-
-                broadcast_shares[e][j] = broadcast_share.serialise();
-            }
-        }
-
-        // Second challenge (view-opening challenge)
-        let h2 = Signature::gen_h2(message, &salt, &h1, &broadcast_plain, &broadcast_shares);
-
-        // Create the set of view-opening challenges
-        let view_opening_challenges = expand_view_challenge_hash(h2);
-
-        // Signature building
-        let mut solution_share = [[[0u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
-        let mut auth: [Vec<Hash>; PARAM_TAU] = Default::default();
-        for e in 0..PARAM_TAU {
-            auth[e] = merkle_trees[e].auth_path(&view_opening_challenges[e]);
-            for (li, i) in view_opening_challenges[e].iter().enumerate() {
-                // Truncate witness share by removing beaver triples from the plain value
-                solution_share[e][li] =
-                    Input::truncate_beaver_triples(&input_shares[e][(*i) as usize]);
-            }
-        }
-
-        // Build the signature
-        let signature = Signature {
-            message: message.clone(),
-            salt,
-            h1,
-            broadcast_plain,
-            broadcast_shares,
-            auth,
-            solution_share,
-            view_opening_challenges,
-        };
-
-        Ok(signature)
-    }
-  
-\end{minted}
 
 \subsection{Verification}\label{sub:verification}
 
+
+\subsection{Testing our implementation}\label{sub:testing_our_implementation}
 
 
 \section{Comparison with spec impl}\label{sub:comparison_with_spec_impl}
