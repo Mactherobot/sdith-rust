@@ -988,9 +988,9 @@ First, the MPC protocol (\autoref{def:sdith-mpc}) is transformed into a Zero-Kno
   For a $(\ell + 1, N)$-threshold MPC protocol
   \begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
     \item The prover generates the input sharings and commits to the parties' shares in $h_1$
-    \item The verifier challenges the prover with the randomness \(r, \varepsilon\) for the MPC protocol.
+    \item The verifier challenges the prover with the randomness \(r, \varepsilon\) for the MPC protocol. This is called the \textit{MPC challenge}.
     \item The prover executes the MPC protocol (in their head) and sends the broadcast values to the verifier in $h_2$
-    \item The verifier challenges the prover to open all the parties in \(I \subset [N]\) for $|I| = \ell$.
+    \item The verifier challenges the prover to open all the parties in \(I \subset [N]\) for $|I| = \ell$. This is called the \textit{viewchallenge}.
     \item The prover reveals the input shares of all the parties in \(I\).
     \item The verifier verifies the consistency of the MPC computation for the revealed parties.
   \end{enumerate}
@@ -1003,16 +1003,16 @@ Zero-knowledge of the protocol is held by the fact that the verifier only receiv
   \begin{align*}
     \epsilon = p + \frac{1}{\binom{N}{\ell}} - p \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1},
   \end{align*}
-  where $p$ denotes the false positive probability of the MPC protocol, $N$ is the total number of parties, and $\ell$ is the threshold parameter.
+  where $p$ denotes the false positive probability of the MPC protocol, $N$ is the total number of parties, and $\ell$ is the threshold parameter~\cite{feneuil2023threshold}.
 \end{lemma}
 
 The threshold approach slightly degrades the soundness of the protocol. To mitigate this, \textit{parallel repetition} is employed to strengthen the soundness signature protocol. Specifically, the SD-in-the-Head protocol repeats the underlying ZK-POK protocol $\tau$ times, where:
 \begin{align*}
   \tau = \left\lceil \log_2\left(\frac{1}{\epsilon}\right) \cdot \lambda \right\rceil,
 \end{align*}
-with $\lambda$ as the security parameter and $2^{-\lambda}$ as the target soundness error. This parallel repetition reduces the overall soundness error exponentially with the number of repetitions, achieving a negligible error probability in practice.
+with $\lambda$ as the security parameter and $2^{-\lambda}$ as the target soundness error~\cite{aguilarsyndrome11}. This parallel repetition reduces the overall soundness error exponentially with the number of repetitions, achieving a negligible error probability in practice.
 
-To accommodate the repetitions, the authors~\cite{aguilarsyndrome11} incorporate a slight modification inspired by the Limbo proof system~\cite{delpech2021limbo}. Specifically, we reuse the same MPC challenges $r$ and $\varepsilon$, as well as the Beaver triples, across all $\tau$ repetitions. This tweak allows us to modify the MPC computation input so that $\textit{broad}$ only needs to be computed once.
+To accommodate the repetitions, the authors incorporate a slight modification inspired by the Limbo proof system~\cite{delpech2021limbo}. Specifically, we reuse the same MPC challenges $r$ and $\varepsilon$, as well as the Beaver triples, across all $\tau$ repetitions. This tweak allows us to modify the MPC computation input so that $\textit{broad}$ only needs to be computed once.
 
 \subsubsection{Fiat-Shamir transform}
 Next, we apply the \textit{Fiat-Shamir heuristic} -- detailed in \autoref{sec:fiatshamir} -- to transform the challenges of the ZK-POK protocol into a non-interactive form. This transformation is achieved by having the prover derive the challenges for MPC randomness and opening challenge directly from the commitments of the MPC inputs and the outputs of the MPC computation in the hashes $h_1, h_2$ computed from secure hash functions~\autoref{sec:prelim_hash}.
@@ -1044,7 +1044,7 @@ To avoid this interpolation, we note that $\mathcal{E}$ is fully determined by t
 
 Following from \autoref{thm:sdith-mpc-linear}, for every party $i$, there exists a direct linear relationship between the Beaver triple shares $\sh{a}_i, \sh{b}_i, \sh{c}_i$ and the broadcast shares $\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i$. This observation enables the removal of Beaver triples within the signature. Instead, the verifier can compute these triples directly using the shares of the witness, $(\sh{s_A}_i, \sh{P}_i, \sh{Q}_i)$, along with the broadcast shares $(\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i)$ for $i \in I$. We denote a function \textit{TruncateBeaver}
 \begin{align}
-  \text{TruncateBeaver} : \sh{\texttt{input}}_i = (\sh{s_A}_i, \sh{P}_i, \sh{Q}_i, \sh{a}_i, \sh{b}_i, \sh{c}_i) \mapsto (\sh{s_A}_i, \sh{P}_i, \sh{Q}_i) = \sh{\texttt{wit}}_i
+  \text{TruncateBeaver} : \sh{\texttt{input}}_i = (\sh{s_A}_i, \sh{P}_i, \sh{Q}_i, \sh{a}_i, \sh{b}_i, \sh{c}_i) \mapsto (\sh{s_A}_i, \sh{P}_i, \sh{Q}_i) = \sh{\texttt{wit}}_i\label{eq:truncate_beaver}
 \end{align}
 This process is referred to as \textit{reverse MPC computation}
 
@@ -1130,7 +1130,7 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
           \end{enumerate}
   \end{enumerate}
 
-  \paragraph{Phase 2} Compute first challenge
+  \paragraph{Phase 2} Compute first challenge (\textit{MPC challenge})
   \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
     \item Compute the first hash
           \begin{align*}
@@ -1151,7 +1151,7 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
           \end{align*}
   \end{enumerate}
 
-  \paragraph{Phase 4} Compute second challenge
+  \paragraph{Phase 4} Compute second challenge (\textit{View opening challenge})
   \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
     \item Compute the second hash
           \begin{align*}
@@ -1239,32 +1239,69 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
 
 \section{Security}
 
-
-
 The security analysis of the SD-in-the-Head signature scheme is based on the proposed standardization requirements from the 2022 NIST call for proposals of non-lattice based signature schemes~\cite{nistcall}. Therefore, as a preliminary, we will describe the reasoning and requirements of the NIST standardization process.
 
-With the development of new quantum algorithms and unknowns in the capacities of the future quantum computers, there remain large uncertainties in estimating the security of the algorithms. To combat these uncertainties, NIST proposed for the 2022 stadardization effort, to define the security of submissions in a range of five categories. Each, with an easy-to-analyze cryptographic primitive providing the lower bound for a variety of metrics deemed relevant to practical security. The SD-in-the-Head specification provides security parameters adhering to categories one, three and five.
+With the development of new quantum algorithms and unknowns in the capacities of the future quantum computers, there remain large uncertainties in estimating the security of the algorithms. To combat these uncertainties, NIST proposed for the 2022 stadardization effort, to define the security of submissions in a range of five categories. Each, with an easy-to-analyze cryptographic primitive providing the lower bound for a variety of metrics deemed relevant to practical security.
 
 \begin{definition}\label{def:nistsec}
-  Any attack that breaks the relevant security definition must require computational resources comparable to or greater than those required for key search on a block cipher with a 128-bit (e.g. AES-128), 192-bit (e.g. AES-192) and 256-bit (e.g. AES-256) for categories one, three and five respectively.
+  Any attack that breaks the relevant security definition must require computational resources comparable to or greater than those required for key search on a block cipher with a 128-bit (e.g. AES-128), 192-bit (e.g. AES-192) and 256-bit (e.g. AES-256) for categories \textbf{one}, \textbf{three} and \textbf{five} respectively.
 \end{definition}
 
-In terms of quantum security, the complexity and capability of quantum algorithms are measured in terms of quantum circuit size, i.e. the number of quantum gates in the quantum circuit. In order to estimate the quantum security of the signature protocols, circuit size can be compared to the resources required to break the security of \autoref{def:nistsec}. Therefore,
-according to the proposal by NIST, the SD-in-the-Head specification provides security metrics in terms of quantum circuit depth to optimal key recovery for AES-128, AES-192 and AES-256 for categories one, three and five respectively. These are estimated to be $2^{143}$, $2^{207}$ and $2^{272}$ classical gates~\cite{nistcall}.
+In terms of quantum security, the complexity and capability of quantum algorithms are measured in terms of quantum circuit size, i.e. the number of quantum gates in the quantum circuit. In order to estimate the quantum security of the signature protocols, circuit size can be compared to the resources required to break the security of \autoref{def:nistsec}.
 
-\subsection{Security Definition}
+\subsubsection{NIST Categories}
 
-The SD-in-the-Head signature scheme upholds the \textbf{E}xistential \textbf{U}n\textbf{f}orgeability under \textbf{C}hosen \textbf{M}essage \textbf{A}ttack (EUF-CMA) security property for digital signature schemes as this is the type of attack that NIST will evaluate signature proposals~\cite{nistcall,aguilarsyndrome11}. EUF-CMA works as the following game:
+The SD-in-the-Head specification provides security parameters adhering to categories one, three and five. Therefore, according to the proposal by NIST, the SD-in-the-Head specification provides security metrics in terms of quantum circuit depth to optimal key recovery for AES-128, AES-192 and AES-256 for categories \textbf{one}, \textbf{three} and \textbf{five} respectively. These are estimated to be $2^{143}$, $2^{207}$ and $2^{272}$ classical gates~\cite{nistcall}.
 
+\subsubsection{Signature Forgery Attack}
+
+The SD-in-the-Head signature scheme ensures \textbf{E}xistential \textbf{U}nforgeability under \textbf{C}hosen \textbf{M}essage \textbf{A}ttack (EUF-CMA), a key security property evaluated by NIST~\cite{nistcall,aguilarsyndrome11}. In the EUF-CMA game, a challenger generates a key pair $(pk, sk)$ and provides $pk$ to the adversary, who can query a signing oracle for up to $2^{64}$ chosen messages $(m_1, \dots, m_r)$, receiving corresponding valid signatures $(\sigma_1, \dots, \sigma_r)$. The adversary wins if it produces a valid signature $(m^*, \sigma^*)$ for a message $m^*$ not queried to the signing oracle.
+
+We analyze the generic forgery attack on Fiat-Shamir transformed signature protocols as described by~\cite{kales2020attack}. This attack seeks to minimize the effective cost of a forgery attempt. For the threshold-based SD-in-the-Head protocol, the adversary can choose between two strategies:
 \begin{enumerate}
-  \item The challenger generates seeds $sd_{e,i}$ for each $i \in [N]$ using $\Pi_C$.a key pair $(pk, sk)$ and sends $pk$ to the adversary.
-  \item The adversary is then allowed to query a signing oracle for signatures of chosen messages $(m_1, \dots, m_r)$ and receives valid signatures $(\sigma_1, \dots, \sigma_r)$. For the NIST evaluation it is assumed that the adversary can query the signing oracle for up to $2^{64}$ chosen messages according to the adversary's running time. However, there is no requirement on the timing of the queries.
-  \item The adversary then outputs a pair $(m^*, \sigma^*)$. The adversary wins if the following holds
-        \begin{enumerate}
-          \item $m^*$ has not been queried to the signing oracle.
-          \item The pair $(m^*, \sigma^*)$ is a valid signature for $m^*$ under $pk$.
-        \end{enumerate}
+  \item \label{item:guessing-mpc-challenge} Guessing the unique MPC challenge.
+  \item \label{item:guessing-view-challenge} Guessing the view-opening challenges for each of the $\tau$ executions.
 \end{enumerate}
+
+In strategy~\ref*{item:guessing-mpc-challenge}, the adversary attempts to exploit false positives in the MPC protocol. This is lower bounded by the cost of obtaining a false positive for one truncated input share (see \autoref{eq:truncate_beaver}) in one of the $\tau$ executions, where the share is encoded by a subset $I \subset [N]$:
+\begin{align*}
+  \frac{1}{1 - (1-p)^{\tau \cdot \binom{N}{\ell + 1}}}.
+\end{align*}
+
+Due to the tweak in MPC input generation detailed in \autoref{sub:sdith-threshold-sss}, the adversary cannot use invalid shares to reduce the cost in strategy~\ref*{item:guessing-view-challenge}, as any such inconsistency will be detected by the verifier. Thus, the cost of this strategy corresponds to plain guessing:
+\begin{align*}
+  \binom{N}{\ell}^\tau.
+\end{align*}
+
+Therefore, the total cost of a forgery attack is the maximum of the two strategies:
+\begin{align}
+  \max \left\{ \frac{1}{1 - (1-p)^{\tau \cdot \binom{N}{\ell + 1}}}, \binom{N}{\ell}^\tau \right\}\label{eq:forgery_attack_cost}
+\end{align}
+
+\subsubsection{$d$-split Syndrome Decoding Problem}
+
+Categories three and five rely on a variant of the syndrome decoding problem, referred to as the \textit{$d$-split syndrome decoding problem}. This variant introduces the splitting parameter $d$, which partitions the witness $x$ into $d$ chunks:
+\begin{align*}
+  x & = x_1 \| \dots \| x_d \in \mathbb{F}_q^{m/d} \quad \text{wt}(x_j) = w/d
+\end{align*}
+In this formulation, the MPC protocol is executed $d$ times in parallel. Consequently, the polynomial relations $Q$, $P$, $S$, and $F$ are divided into $d$ corresponding polynomials, e.g.,
+\begin{align*}
+  \textbf{Q} & = Q_1, \dots, Q_d.
+\end{align*}
+Similarly, the Beaver triples $a$ and $b$ are adjusted for the $d$-split as follows:
+\begin{align*}
+  c_j & = \sum_{i=1}^d a_{i,j} \cdot b_{i,j}, \quad j \in [\tau].
+\end{align*}
+
+While the $d$-split variant introduces a slight reduction in security compared to the standard SD problem, this is mitigated by a small increase in the security parameters $m$, and $w$. The primary advantage of this variant lies in its flexibility, enabling improved performance trade-offs~\cite{aguilarsyndrome11}. The increase in parameters are given by
+\begin{align}
+  \varepsilon_1 \geq \frac{\binom{m/d}{w/d}}{\binom{m}{w}} \cdot \epsilon_d\label{eq:d_split_epsilon}
+\end{align}
+a proof of this can be found in~\cite[p27]{feneuil2022syndrome}
+
+\subsubsection{Parameters for the SD-in-the-Head protocol}
+
+The parameters for the SD-in-the-Head protocol are given in \autoref{tab:secparam} and \autoref{tab:hashparam} are given by \autoref{eq:forgery_attack_cost} and \autoref{eq:d_split_epsilon}
 
 \begin{table}[ht]\label{tab:secparam}
   \centering
@@ -1292,14 +1329,10 @@ The SD-in-the-Head signature scheme upholds the \textbf{E}xistential \textbf{U}n
   \caption{Hash and XOF functions used in the SDitH protocol for categories one, three and five~\cite{aguilarsyndrome11}.}
 \end{table}
 
-\subsection{Assumptions}\label{sec:assumptions}
+\subsubsection{Assumptions}\label{sec:assumptions}
 The SD-in-the-Head protocol is secure under the following assumptions:
 
-Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search (see \autoref{def:nistsec}) in terms of quantum circuit size. For this, $\kappa$ is defined as $143$, $207$ and $272$ for the categories~\cite{nistcall}. Furthermore, the XOF primitive used is secure with 128-bit, 192-bit, 256-bit security levels for each of the categories respectively. Finally, the Hash function used \textit{behaves as random oracle}. Specifically, security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM).
-
-\subsection{Security of the Syndrome Detection Problem}\label{sec:sdsec}
-
-Recall the definition of the syndrome detection problem from \autoref{def:syndrome}. The hardness of the SD problem is well established and the coset variant used in the SD-in-the-Head signature scheme, has been shown to be \textit{NP-complete}~\cite{berlekamp1978inherent,aguilarsyndrome11}. Furthermore, a brute force attack of guessing $x$ would require finding a unique correct solution in $\binom{m}{w} q^w$ which is infeasible for the parameters outlined in the specification. As an example, for category one, the number of possible solutions are $\approx 7.7 \times 10^{276}$. There exists more sophisticated algorithms for solving the SD problem, such as the Generalized Birthday Algorithms (GBA) and Information Set Decoding (ISD)~\cite{prange1962use}.
+Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search (see \autoref{def:nistsec}) in terms of quantum circuit size. For this, $\kappa$ is defined as $143$, $207$ and $272$ for the categories~\cite{nistcall}. Furthermore, the XOF primitive used is secure with 128-bit, 192-bit, 256-bit security levels for each of the categories respectively. Finally, the Hash function used \textit{behaves as random oracle}. Specifically, security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM)~\cite{aguilarsyndrome11}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2889,7 +2922,7 @@ As the last thing, before we implemented the signing algorithm, we need the unde
 First we go through the helper methods that are used to do the computations. Then we describe a set of structures that we created to make the MPC simulation easier to comprehend. And how we tried to test and verify the correctness of the computations.
 
 \paragraph{Input shares}
-When implementing the signing algorithm, we needed to generate a set of input shares for the MPC simulation. Since this functionality is logically related to the MPC simulation, we decided to implement it within the MPC subroutine. 
+When implementing the signing algorithm, we needed to generate a set of input shares for the MPC simulation. Since this functionality is logically related to the MPC simulation, we decided to implement it within the MPC subroutine.
 
 The function takes as input a Pseudo-Random Generator (PRG) and the plain input value. It begins by sampling random coefficients, which are used to compute the input shares. Each share is computed as defined in \autoref{sec:sdith-signature}. Our implementation of this computation is as follows:
 
@@ -3448,27 +3481,44 @@ no turbo boost (max 2.6 GHz)
 cycles per bytes
 compare ours to the optimised reference
 
+dudect: Found little in lookup for zero. Hard to find $x$ with known weight, but can learn positions of $x$ however, x is only used in keygen (not considered too much).
+
+lookup slower alone, but faster in full protocol.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \chapter{Conclusion}\label{ch:conclusion}
 
-wrap up and pose future work
-what should people continue with
+conclude on the problem statement from the introduction
+
+Talk about the advantages and limitations of the SD-in-the-Head protocol and threshold variant.
+
+Talk about the advantageous and limitations of rust implemementation.
+
+conclude on the benchmarks.
+
 point to round 2 NIST
-work in context of timeline
-Future work is looking into constant time code. This relates to dudect(Dude is my code constant time)
 
-Idea: We could add subroutines as parameters to the API. Then the developer could just add their own subroutines defined by our traits.
+future work: 
 
-\todo{conclude on the problem statement from the introduction}
+- Collaborate with the authors (talk about issues we found in the spec and in implemementing the spec) 
+- We could add subroutines as parameters to the API. Then the developer could just add their own subroutines defined by our traits.
+- dynamic parameters created by users of the crate ("parameter sets tailored to different use cases") we could use build script with feature flag to exchange cat import in param.rs for custom file.
+- Verkle trees Optimisation
+- custom parallelisation outside of Rayon? data structures that allow for independent parallelisation in the MPC computation?
+- Explore optimisations that go away from the spec. Both code wise and parameter wise (we follow theirs a lot. Can we do better?)
+  - e.g. Blake3
+- Analyse the code binary for compiler optimisations
+- hypercube implemementation and generalisation to accommodate it
+- gf251 implementation
+- \cite[p26]{feneuil2023threshold} Batching Proofs with Shamir's Secret Sharing for communication saving
 
-future work: Verkle trees optimisation
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \cleardoublepage
 \addcontentsline{toc}{chapter}{Bibliography}
-\bibliographystyle{plain}
+\bibliographystyle{alpha}
 \bibliography{refs}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
