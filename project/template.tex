@@ -3171,6 +3171,8 @@ This led us to find that our implementation of the polynomial evaluation seemed 
 \end{minted}
 
 
+\section{Finishing the implementation}\label{sub:final}
+In this section we will discuss our process when finalizing the implementation. We had a few bugs that led us to setup our code to be comparable with the reference implementation. First we will discuss our implementations of the signing and verification algorithms, and then go into how we tested these. Lastly we will discuss how we used the reference implementation to iron out the bugs in our implementation.
 \subsection{Signing}\label{sub:signing}
 After implementing all the subroutines, we proceeded to develop the general signing algorithm described in \autoref{sec:sdith-signature}. 
 
@@ -3179,7 +3181,6 @@ We began by implementing all the necessary sampling procedures. This included ge
 \[
 h_1 = H'(seed_h, y, \text{salt}, \text{commitments}).
 \]
-
 This hash is subsequently used to derive the challenges $(r, \epsilon)^t$. With these challenges in place, we executed the MPC simulation to compute the broadcast values $\alpha$, $\beta$, and $v$. These values were then used to generate their corresponding shares by invoking the MPC function \rust{party_computation}.
 
 Next, we computed the second Fiat-Shamir hash:
@@ -3190,9 +3191,9 @@ h_2 = H'(message, \text{salt}, h_1, \text{broadcast}, \text{broadcast\_shares}).
 
 The second hash $h_2$ is used to generate the view-opening challenges, which define the witness shares and are utilized to compute the authentication path in the Merkle tree.
 
-
-\subsection{Verification}\label{sub:verification}
-
+After 
+\paragraph{Verification}\label{sub:verification}
+As the last piece to the puzzle we implemented the verification algorithm. For this we followed the specification and used the KAT generated signatures to verify that we could parse and validate a signature. This would allow us to ensure that our parsing of the signature, inverse MPC computation and our merkle tree verification was correct. This was in the attempt not the case. Which led us to compare our implementation with the specification as described in \autoref{sub:comparison_with_spec_impl}.
 
 \subsection{Testing our implementation}\label{sub:testing_our_implementation}
 
