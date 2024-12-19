@@ -3060,13 +3060,13 @@ As this relies on random values we test that the output of the function follows 
 We now have all the required parts to build the MPC simulation, defined in\todo{Reference correct section} \autoref{def:sdith-mpc}. The way we implemented this was to use the same function to create the plain broadcast values as the broadcast values computed for the shares. Our first attempt at implementing this algorithm, we had a hard time following every step that was done, due to a lack in clarification on what every computation was supposed to do. Furthermore creating tests for this was quite difficult as this function relies heavily on the provided values. We also tried to compare our intermediate values with the values from the specification implementation, which also proved to be a challenge since there is a lot of values that are computed in the algorithm.
 The inputs to the function is as follows:
 \begin{itemize}
-  \item \rust{input\_share\_plain}: The input share of the party
+  \item \rust{input_share_plain}: The input share of the party
   \item \rust{chal}: The challenge values $(r, \epsilon)$
-  \item \rust{h\_prime}: The matrix $H'$
+  \item \rust{h_prime}: The matrix $H'$
   \item \rust{y}: The syndrome decoding instance $y$
   \item \rust{broadcast}: The broadcast values
-  \item \rust{with\_offset}: A boolean to indicate if the polynomial $S$ should be computed as $$s = (s_A|y+H's_A)$$ or $$s = (H's_A)$$ and if the polynomial Q should be $$Q = (Q|0)$$ or $$Q = (Q|1)$$. This is due to the fact that for multiplication in a MPC protocol it is only 1 party that needs to add the last part.
-  \item \rust{compute\_v}: A boolean to indicate if the value $v$ in the MPC simulation should be computed, used to avoid unnecessary computation in the plain broadcast computation as $v = 0$.
+  \item \rust{with_offset}: A boolean to indicate if the polynomial $S$ should be computed as $$s = (s_A|y+H's_A)$$ or $$s = (H's_A)$$ and if the polynomial Q should be $$Q = (Q|0)$$ or $$Q = (Q|1)$$. This is due to the fact that for multiplication in a MPC protocol it is only 1 party that needs to add the last part.
+  \item \rust{compute_v}: A boolean to indicate if the value $v$ in the MPC simulation should be computed, used to avoid unnecessary computation in the plain broadcast computation as $v = 0$.
 \end{itemize}
 The first part of the implementation is just parsing and extracting all the necessary values to do the MPC computations. Along with the computation of the polynomial $S$ and $Q$.
 For the $t$ iterations of the MPC simulation we compute the broadcast values $\alpha, \beta$ and $v$ based on the computation described in \autoref{def:sdith-mpc}.
