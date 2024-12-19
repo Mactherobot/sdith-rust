@@ -12,7 +12,7 @@ use crate::constants::params::PARAM_DIGEST_SIZE;
 use crate::keygen::PublicKey;
 use crate::mpc::beaver::BeaverTriples;
 use crate::mpc::broadcast::{Broadcast, BroadcastShare, BROADCAST_SHARE_PLAIN_SIZE_AB};
-use crate::mpc::{compute_share, inverse_party_computation};
+use crate::mpc::{compute_share, reverse_party_computation};
 use crate::subroutines::marshalling::Marshalling;
 use crate::subroutines::merkle_tree::{MerkleTree, MerkleTreeTrait};
 use crate::{
@@ -67,7 +67,7 @@ impl Signature {
 
                 // Verify the Merkle path
                 let broadcast_share = BroadcastShare::parse(&sh_broadcast[e][li])?;
-                let beaver_triples = inverse_party_computation(
+                let beaver_triples = reverse_party_computation(
                     wit_share[e][li],
                     &broadcast_share,
                     &chal,

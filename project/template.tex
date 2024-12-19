@@ -57,6 +57,8 @@
 \newtheorem{proposition}{Proposition}[section]
 \newcommand{\propositionautorefname}{Proposition}
 
+\newtheorem{theorem}{Theorem}[section]
+
 \theoremstyle{plain}
 \newtheorem{lemma}{Lemma}[section]
 
@@ -826,6 +828,8 @@ Within the context of the SD-in-the-Head protocol, the transformation from a ZK 
 
 \chapter{Specification}\label{ch:spec}
 
+\todo{Should we remove "we's" and use something that underlines that we are not the authors or designers? We could also have a pre-emptive disclaimer}
+
 The SD-in-the-Head protocol is founded on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field, as described in \autoref{sec:syndrome}. To recall, the problem is formally stated:
 \begin{quote}
   Given a parity-check matrix $H \in \mathbb{F}_q^{(m-k) \times m}$ in standard form and a syndrome $y \in \mathbb{F}_q^{m-k}$, the challenge is to find a vector $x \in \mathbb{F}_q^m$ such that $Hx = y$ and $wt(x) \leq w$, where $wt(x)$ denotes the Hamming weight of $x$. This can be expressed as:
@@ -933,25 +937,31 @@ To analyze the security of the protocol, we define its false positive probabilit
   \end{align*} over the randomness $r$ and $\varepsilon$ and $\Delta = |\mathbb{F}_{q^4}|$.
 \end{lemma}
 
-\subsubsection{Threshold variant MPC protocol}\label{sub:sdith-threshold-sss}
+\section{The Threshold Signature Protocol}\label{sec:sdith-signature}
+
+The initial protocol for the SD-in-the-Head signature scheme is seen in~\cite[Figure 1]{aguilarsyndrome11} and was first introduced in~\cite[Figure 1, p19]{feneuil2022syndrome}.
+
+\subsubsection{Threshold variant}\label{sub:sdith-threshold-sss}
 
 The threshold variant of the MPC protocol (\autoref{def:sdith-mpc}) is obtained by incorporating \textit{Shamir's Secret Sharing Scheme} (SSSS), as described in \autoref{sub:shamir}. By replacing the additive secret sharing scheme with Shamir's polynomial-based scheme, the protocol is extended into a $(\ell, N)$-threshold MPC protocol, where any $\ell$ out of $N$ parties can reconstruct the secret, while fewer than $\ell$ parties gain no information about the secret.
 
-To accommodate the threshold variant, the inputs to the MPC protocol are modified. By the definition of the MPC protocol, there exist linear functions:
-\begin{align}
-  \varphi^1_{r,\varepsilon}                 & : (s_A, P, Q, a, b, c) \mapsto (\alpha, \beta), \\
-  \varphi^2_{r, \varepsilon, \alpha, \beta} & : (s_A, P, Q, a, b, c) \mapsto v,
-\end{align}
-such that each party locally computes $\varphi^1$ and $\varphi^2$ on the input shares $\sh{s_A}_i, \sh{P}_i, \sh{Q}_i, \sh{a}_i, \sh{b}_i, \sh{c}_i$, producing $\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i$ as valid sharings of $\alpha, \beta, v$.
+\begin{theorem}[Linear functions of \autoref{def:sdith-mpc}]\label{thm:sdith-mpc-linear}
+  By the definition of the MPC protocol \autoref{def:sdith-mpc}, there exist linear functions
+  \begin{align}
+    \varphi^1_{r,\varepsilon}                 & : (s_A, P, Q, a, b, c) \mapsto (\alpha, \beta), \\
+    \varphi^2_{r, \varepsilon, \alpha, \beta} & : (s_A, P, Q, a, b, c) \mapsto v,
+  \end{align}
+  such that each party locally computes $\varphi^1$ and $\varphi^2$ on the input shares $\sh{s_A}_i, \sh{P}_i, \sh{Q}_i, \sh{a}_i, \sh{b}_i, \sh{c}_i$, and randomnes $r, \varepsilon$ producing $\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i$ as valid sharings of $\alpha, \beta, v$.
+\end{theorem}
 
-We define the \texttt{input\_plain} as the tuple containing the MPC inputs:
+We tweak the MPC input generation in the following way: Define the \texttt{input\_plain} as the tuple containing the MPC inputs:
 \begin{align*}
   \texttt{input\_plain} = (s_A, P, Q, a, b, c)
 \end{align*}
 
 Next, we compute $\ell$ uniformly random coefficients $\texttt{input\_coef} \in \mathbb{F}_q^{|\texttt{input\_plain}|}$ and compute the sharing with \textit{Share}:
 \begin{align}
-  \sh{\texttt{input\_plain}}_i & = \text{Share}(i, \texttt{input\_plain}, \texttt{input\_coef}_1, \dots, \texttt{input\_coef}_\ell) \label{sdith-mpc-share} \\ \nonumber
+  \sh{\texttt{input\_plain}}_i & = \text{Share}(i, \texttt{input\_plain}, \texttt{input\_coef}_1, \dots, \texttt{input\_coef}_\ell) \label{eq:sdith-mpc-share} \\ \nonumber
                                & = \texttt{input\_plain} + \sum_{j=1}^\ell i^j \cdot \texttt{input\_coef}_j
 \end{align}
 
@@ -968,8 +978,6 @@ Due to the linearity of the MPC computation, the output shares can be reconstruc
   (\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i) = \text{Share}(i, \texttt{broad\_plain}, \texttt{broad\_coef}_1, \dots, \texttt{broad\_coef}_\ell)
 \end{align}
 
-\section{The Signature Protocol}\label{sec:sdith-signature}
-
 \subsubsection{PK setup}
 The nature of an SD instance allows the protocol to seamlessly transform into a \textit{public-key signature scheme}. Here, the pair $(H, y)$ acts as the public key, while the solution to the SD instance $x$ serves as the private key. The keys is then expanded to $(H', y), (s_A, P, Q)$ following the transformations detailed in \autoref{sec:syndrome}. Furthermore, the public key can be optimised for communcation by instead sampling $H'$ from a seed $sd_H$ making the secret key $(sd_H, y)$.
 
@@ -977,18 +985,18 @@ The nature of an SD instance allows the protocol to seamlessly transform into a 
 First, the MPC protocol (\autoref{def:sdith-mpc}) is transformed into a Zero-Knowledge Proof of Knowledge (ZK-POK) using the Threshold MPCitH protocols described by~\cite{feneuil2023threshold,feneuil2023threshold2}. This transformation in full lies outside the scope of this report and is deferred to the appendix in \autoref{sec:sdith-zkpok}. Here we leave a short overview of the transformation~\cite{aguilarsyndrome11}.
 
 \begin{protocol}[SD-in-the-Head ZK-POK protocol]
-  The protocol proceeds as follows:
+  For a $(\ell + 1, N)$-threshold MPC protocol
   \begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
-    \item The prover generates the input sharings and commits to the parties' shares.
+    \item The prover generates the input sharings and commits to the parties' shares in $h_1$
     \item The verifier challenges the prover with the randomness \(r, \varepsilon\) for the MPC protocol.
-    \item The prover executes the MPC protocol (in their head) and sends the broadcast values to the verifier.
-    \item The verifier challenges the prover to open all the parties in \(I \subset [1 : N]\).
+    \item The prover executes the MPC protocol (in their head) and sends the broadcast values to the verifier in $h_2$
+    \item The verifier challenges the prover to open all the parties in \(I \subset [N]\) for $|I| = \ell$.
     \item The prover reveals the input shares of all the parties in \(I\).
     \item The verifier verifies the consistency of the MPC computation for the revealed parties.
   \end{enumerate}
 \end{protocol}
 
-The soundness of the ZK-POK protocol depends on the binding property of the commitment scheme and the inability of the prover to simulate multiple inconsistent views of the MPC protocol. By employing hash consistency checks and commitment verification, the ZK-POK protocol ensures that a cheating prover cannot deviate significantly from honest execution.
+Zero-knowledge of the protocol is held by the fact that the verifier only receives $\ell$ shares to a $\ell + 1$-private SSS. The soundness of the ZK-POK protocol depends on the binding property of the commitment scheme and the inability of the prover to simulate multiple inconsistent views of the MPC protocol. By employing hash consistency checks and commitment verification, the ZK-POK protocol ensures that a cheating prover cannot deviate significantly from honest execution.
 
 \begin{lemma}[Soundness of \autoref{def:sdith-zkpok}]
   The soundness error $\epsilon$ is given by:
@@ -998,34 +1006,94 @@ The soundness of the ZK-POK protocol depends on the binding property of the comm
   where $p$ denotes the false positive probability of the MPC protocol, $N$ is the total number of parties, and $\ell$ is the threshold parameter.
 \end{lemma}
 
-The threshold approach slightly degrades the soundness of the protocol. To mitigate this, \textit{parallel repetition} is employed to strengthen the protocol against soundness error. Specifically, the SD-in-the-Head protocol repeats the underlying ZK-POK protocol $\tau$ times, where:
+The threshold approach slightly degrades the soundness of the protocol. To mitigate this, \textit{parallel repetition} is employed to strengthen the soundness signature protocol. Specifically, the SD-in-the-Head protocol repeats the underlying ZK-POK protocol $\tau$ times, where:
 \begin{align*}
   \tau = \left\lceil \log_2\left(\frac{1}{\epsilon}\right) \cdot \lambda \right\rceil,
 \end{align*}
 with $\lambda$ as the security parameter and $2^{-\lambda}$ as the target soundness error. This parallel repetition reduces the overall soundness error exponentially with the number of repetitions, achieving a negligible error probability in practice.
 
-To accommodate the repetitions, we incorporate a slight modification inspired by the Limbo proof system~\cite{aguilarsyndrome11,delpech2021limbo}. Specifically, we reuse the same MPC challenges $r$ and $\varepsilon$, as well as the Beaver triples, across all $\tau$ repetitions. This tweak allows us to modify the MPC computation input so that $\textit{broad}$ only needs to be computed once.
+To accommodate the repetitions, the authors~\cite{aguilarsyndrome11} incorporate a slight modification inspired by the Limbo proof system~\cite{delpech2021limbo}. Specifically, we reuse the same MPC challenges $r$ and $\varepsilon$, as well as the Beaver triples, across all $\tau$ repetitions. This tweak allows us to modify the MPC computation input so that $\textit{broad}$ only needs to be computed once.
 
 \subsubsection{Fiat-Shamir transform}
-Next, we apply the \textit{Fiat-Shamir heuristic} to transform the challenges of the ZK-POK protocol into a non-interactive form. This is achieved by having the prover derive the challenges directly from the commitments of the MPC inputs and the outputs of the MPC computation.
+Next, we apply the \textit{Fiat-Shamir heuristic} -- detailed in \autoref{sec:fiatshamir} -- to transform the challenges of the ZK-POK protocol into a non-interactive form. This transformation is achieved by having the prover derive the challenges for MPC randomness and opening challenge directly from the commitments of the MPC inputs and the outputs of the MPC computation in the hashes $h_1, h_2$ computed from secure hash functions~\autoref{sec:prelim_hash}.
+\begin{align}
+  h_n = \texttt{Hash}_n(d) \rightarrow \texttt{Hash}(n || d)\label{eq:fiatshamirhash}
+\end{align}
 
-Additionally, we incorporate the message into the second hash, enabling the pre-computation of the first part of the signature independently of the message. This optimization improves efficiency by allowing some computations to be performed beforehand.
+Additionally, we incorporate the message into the second hash, enabling the pre-computation of the first part of the signature independently of the message. This optimization enhances efficiency by allowing some computations to be performed beforehand.
 
 Finally, we introduce a $\texttt{salt} \in \{0,1\}^{2\lambda}$, which serves as pseudo-randomness for commitments and seed generation. The use of $\texttt{salt}$ ensures that the protocol remains secure and avoids reliance on externally provided randomness.
 
-\begin{protocol}[SD-in-the-Head Signing Protocol]
+\subsubsection{Optimizing Signature Size and Verification}
+In the original SD-in-the-Head protocol~\cite[Figure 1]{aguilarsyndrome11} -- without threshold SSS -- the signature includes both hashes $h_1, h_2$ and all input shares in $I$. To verify the signature, the verifier recomputes the commitments for each share in $I$, and along with the extra commitment $\texttt{com}_i$ for $i \notin I$, reconstructs $h_1$. The verifier then executes the MPC protocol for the opened shares and recomputes $h_2$ from the resulting output shares.
+
+\begin{theorem}[Sharing Redundancy of Shamir's Secret Sharing Scheme]
+  The full set of broadcast shares $\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i$ for $i \in N$ can be deduced from $\ell + 1$ broadcast shares. That is, the full sharing forms a Reed-Solomon code word.
+\end{theorem}
+
+\noindent
+For the threshold variant, however, we can optimize this process by selecting a predefined set
+\begin{align*}
+  \mathcal{E} = \{\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i\}_{i \in E},
+\end{align*}
+where $E \subseteq N$ and $|E| = \ell + 1$. We then set $h_2 = \texttt{Hash}_2(\mathcal{E})$. In this case, the signature includes the input shares $\{\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i\}_{i \in I}$, plus a single broadcast share, allowing the verifier to recompute $h_2$. However, this approach requires the verifier to interpolate the sharing coefficients
+\begin{align}
+  \texttt{broad\_plain}, \texttt{broad\_coef}_1, \dots, \texttt{broad\_coef}_\ell.\label{eq:mpc_shamir_coeffs}
+\end{align}
+To avoid this interpolation, we note that $\mathcal{E}$ is fully determined by the coefficients. Therefore, we can instead use these as the input of $h_2$, enabling the signer to bypass the computation of $\mathcal{E}$. Furthermore, the signature can include \autoref{eq:mpc_shamir_coeffs} instead of $h_2$. This allows the verifier to compute $h_2$ and evaluate $\{\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i\}_{i \in I}$ directly, avoiding the need for interpolation.
+
+Following from \autoref{thm:sdith-mpc-linear}, for every party $i$, there exists a direct linear relationship between the Beaver triple shares $\sh{a}_i, \sh{b}_i, \sh{c}_i$ and the broadcast shares $\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i$. This observation enables the removal of Beaver triples within the signature. Instead, the verifier can compute these triples directly using the shares of the witness, $(\sh{s_A}_i, \sh{P}_i, \sh{Q}_i)$, along with the broadcast shares $(\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i)$ for $i \in I$. We denote a function \textit{TruncateBeaver}
+\begin{align}
+  \text{TruncateBeaver} : \sh{\texttt{input}}_i = (\sh{s_A}_i, \sh{P}_i, \sh{Q}_i, \sh{a}_i, \sh{b}_i, \sh{c}_i) \mapsto (\sh{s_A}_i, \sh{P}_i, \sh{Q}_i) = \sh{\texttt{wit}}_i
+\end{align}
+This process is referred to as \textit{reverse MPC computation}
+
+\begin{theorem}[Reverse MPC computation]\label{thm:mpc_reverse}
+  For a MPC protocol \autoref{thm:sdith-mpc-linear} we have a reverse MPC computation with two functions
+  \begin{align}
+    \phi^1_{r,\varepsilon}        & : (s_A, P, Q, \alpha, \beta, v) \mapsto (a, b), \\
+    \phi^2_{r, \varepsilon, a, b} & : (s_A, P, Q, \alpha, \beta, v) \mapsto c,
+  \end{align}
+
+  We have that for any $(a,b,c) \stackrel{\phi^1, \phi^2}{\longleftarrow} (s_A, P, Q, \alpha, \beta, v, r, \varepsilon)$, then
+  \begin{align*}
+    (s_A, P, Q, a, b, c, r, \varepsilon) \stackrel{\varphi^1, \varphi^2}{\longrightarrow} (\alpha, \beta, v)
+  \end{align*}
+\end{theorem}
+
+To formalize the approach, we introduce the following notations:
+
+Denote $Q'$ as the witness polynomial $Q$ with its leading coefficient removed. Additionally, let $\sh{Q^0}$ represent the polynomial with a leading coefficient of $0$, and $\sh{Q^1}$ the polynomial with a leading coefficient of $1$.
+
+Define two reconstructions of $S$ as:
+\begin{align*}
+  S_1 & = (s_A, y - H \cdot s_A), \\
+  S_0 & = (s_A, H \cdot s_A).
+\end{align*}
+
+These two updates enable the reverse MPC computation by ensuring that the constant parts of the affine functions are introduced for one party and therefore not removed during the reverse MPC computation.
+
+Therefore, we include an input parameter \texttt{with\_offset} in the MPC protocol \autoref{def:sdith-mpc}, denoted $\varphi^1_{\texttt{with\_offset}}$. This parameter determines whether $S_{\texttt{with\_offset}}, Q_{\texttt{with\_offset}}$ is used. Similarly, $\varphi^2_{\texttt{with\_offset}}$ indicates whether the constant derived from the plain outputs, $-\alpha \cdot \beta$, is added to $v$.
+
+The same applies to $\phi^1$ and $\phi^2$ for the reverse MPC computation. For further clarity, a \textit{toy example} illustrating the reverse MPC computation is provided in \autoref{app:toy_example}.
+
+\subsubsection{The protocols}
+We introduce the signing and verification protocols in \autoref{def:sdith-sign} and \autoref{def:sdith-verify}, respectively.
+
+\begin{protocol}[SD-in-the-Head Signing Protocol]\label{def:sdith-sign}
   \setlength{\parindent}{0pt}
   \setlength{\parskip}{5pt}
   \titlespacing*{\paragraph}{0pt}{1pt}{1em}
-  Given a public SD instance $pk = (H, y)$, secret $sk = (s_A, Q, P)$, message $m \in \{0,1\}^*$. Assume
+  Given a public SD instance $pk = (H, y)$, secret $sk = (s_A, Q, P)$, message $m \in \{0,1\}^*$ and security parameters $\lambda, \tau$
+
+  \paragraph{Assumptions} We assume the following
 
   \begin{itemize}[itemsep=0pt, topsep=0pt, parsep=0pt]
-    \item security parameters $\lambda, \tau$
-    \item a $(\ell + 1, N)$-threshold MPC protocol $\varphi^1, \varphi^2$ (\autoref{def:sdith-mpc}, \autoref{sec:mpc})
-    \item secure hash functions $\texttt{Hash}_n(d) \rightarrow \texttt{Hash}(n || d)$ (\autoref{sec:prelim_hash})
-    \item and random oracle $\texttt{PRG}$ (\autoref{sec:prelim_hash})
-    \item \texttt{XOF} (\autoref{sec:xof})
+    \item a $(\ell + 1, N)$-threshold MPC protocol $\varphi^1, \varphi^2$ (\autoref{def:sdith-mpc}, \autoref{sec:mpc}) with a sharing function \texttt{Share}
     \item A Merkle Tree Commitment Scheme: \texttt{MerkleTree} and \texttt{MerkleAuthPath} (\autoref{sub:merkle_tree_prelim})
+    \item secure hash functions $\texttt{Hash}_n$ (\autoref{eq:fiatshamirhash})
+    \item and random oracle $\texttt{PRG}$ (\autoref{sec:prelim_hash})
+    \item a extendable output hash function \texttt{XOF} (\autoref{sec:xof})
   \end{itemize}
 
   \paragraph{Phase 0} Initialise entropy
@@ -1046,9 +1114,9 @@ Finally, we introduce a $\texttt{salt} \in \{0,1\}^{2\lambda}$, which serves as 
                   \begin{align*}
                     \sh{\texttt{input\_plain}}_i^e =
                     \begin{cases}
-                      \texttt{input\_coef}^e_{\ell} &\quad i = 1 \\
-                      \text{Share}(  i, \texttt{input\_plain},  \\
-                      \quad \quad \quad \texttt{input\_coef}_1^e, \dots, \texttt{input\_coef}_\ell^e) &\quad i > 1
+                      \texttt{input\_coef}^e_{\ell}                                                   & \quad i = 1 \\
+                      \texttt{Share}(  i, \texttt{input\_plain},                                                    \\
+                      \quad \quad \quad \texttt{input\_coef}_1^e, \dots, \texttt{input\_coef}_\ell^e) & \quad i > 1
                     \end{cases}
                   \end{align*}
             \item compute commitments for $i \in [N]$
@@ -1076,10 +1144,10 @@ Finally, we introduce a $\texttt{salt} \in \{0,1\}^{2\lambda}$, which serves as 
 
   \paragraph{Phase 3} Simulation of the MPC Protocol.
   \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
-    \item Compute plain broadcast $\texttt{broad\_plain} \stackrel{\varphi^1}{\longleftarrow} \texttt{input\_plain}, r, \varepsilon$
+    \item Compute plain broadcast $\texttt{broad\_plain} \stackrel{\varphi^1_1}{\longleftarrow} \texttt{input\_plain}, r, \varepsilon$\footnote{$\varphi^2$ is skipped as $v = 0$ for an honest execution.}
     \item For $e \in [\tau]$, compute broadcast shares
           \begin{align*}
-            \texttt{broad\_coef}_j^e \stackrel{\varphi^1, \varphi^2}{\longleftarrow} \texttt{input\_coef}_j^e, r, \varepsilon \quad \text{for each } j \in \ell
+            \texttt{broad\_coef}_j^e \stackrel{\varphi^1_0, \varphi^2_0}{\longleftarrow} \texttt{input\_coef}_j^e, r, \varepsilon \quad \text{for each } j \in \ell
           \end{align*}
   \end{enumerate}
 
@@ -1092,34 +1160,86 @@ Finally, we introduce a $\texttt{salt} \in \{0,1\}^{2\lambda}$, which serves as 
     \item Compute the second challenge $I \subset [N] \leftarrow \texttt{PRG}(h_2)$ for $|I| = \ell$
   \end{enumerate}
 
-  \paragraph{Phase 5} Building of the signature output the signature $\sigma$.
+  \paragraph{Phase 5} Building of the signature output the signature $\sigma$ for $e \in [\tau]$ and $i \in I$
   \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
-    \item Compute authentication paths for each $e \in [\tau]$
+    \item Compute authentication paths
           \begin{align*}
             \texttt{auth}^e = \texttt{MerkleAuthPath}(\{\texttt{com}^e_i\}_{i \in I})
           \end{align*}
+    \item Compute witness shares
+          \begin{align*}
+            \sh{\texttt{wit}}_i^e = \text{TruncateBeaver}(\texttt{input}^e_i)
+          \end{align*}
     \item Build the signature
           \begin{align*}
-            \sigma = & m, \texttt{salt}, h_1,                                                            \\
-                     & \texttt{broad\_plain},                                                            \\
-                     & \{\texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \}_{e \in [\tau]}, \\
-                     & \{\texttt{auth}^e \}_{e \in [\tau]},                                              \\
-                     & \{\sh{\texttt{input}}_i^e\}_{e \in [\tau], i \in I},                              \\
-                     & I  \
+            \sigma = & \ (\ m\ |\ \texttt{salt}\ |\ h_1                                  \\
+                     & \ |\ \texttt{broad\_plain}                                        \\
+                     & \ |\ \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \\
+                     & \ |\ \texttt{auth}^e                                              \\
+                     & \ |\ \sh{\texttt{wit}}_i^e                                        \\
+                     & \ |\ I\ )
           \end{align*}
   \end{enumerate}
+\end{protocol}
+
+\begin{protocol}[SD-in-the-Head Verification Protocol]\label{def:sdith-verify}
+  \setlength{\parindent}{0pt}
+  \setlength{\parskip}{5pt}
+  \titlespacing*{\paragraph}{0pt}{1pt}{1em}
+  Given a public SD instance $pk = (H, y)$, security parameters $\lambda, \tau$, and a signature
+  \begin{align*}
+    \sigma = & \ (\ m\ |\ \texttt{salt}\ |\ h_1                                  \\
+             & \ |\ \texttt{broad\_plain}                                        \\
+             & \ |\ \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \\
+             & \ |\ \texttt{auth}^e                                              \\
+             & \ |\ \sh{\texttt{wit}}_i^e                                        \\
+             & \ |\ I\ )
+  \end{align*}
+
+  \paragraph{Assumptions} We assume the following
+  \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
+    \item a $(\ell + 1, N)$-threshold MPC protocol with reverse computation $\phi^1, \phi^2$ (\autoref{def:sdith-mpc}, \autoref{thm:mpc_reverse}, \autoref{sec:mpc}) and sharing function \texttt{Share}
+    \item A Merkle Tree Commitment Scheme: \texttt{MerkleRootFromAuthPath} (\autoref{sub:merkle_tree_prelim})
+    \item secure hash functions $\texttt{Hash}_n$ (\autoref{eq:fiatshamirhash})
+    \item and random oracle $\texttt{PRG}$ (\autoref{sec:prelim_hash})
+    \item a extendable output hash function \texttt{XOF} (\autoref{sec:xof})
+  \end{enumerate}
+
+  \paragraph{Protocol} The protocol proceeds as follows for $e \in [\tau]$ and $i \in I$:
+  \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
+    \item Recompute the first challenge $r, \varepsilon \leftarrow \texttt{PRG}(h_1)$
+    \item Compute broadcast shares
+          \begin{align*}
+            \mathcal{B'}_i = \sh{\alpha^e}_i, \sh{\beta^e}_i, \sh{v^e}_i =
+            \begin{cases}
+              \texttt{broad\_coef}^e_\ell                                                     & \quad i = 1 \\
+              \texttt{Share}(i, \texttt{broad\_plain},                                                      \\
+              \quad \quad \quad \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell) & \quad i > 1
+            \end{cases}
+          \end{align*}
+    \item Recompute Beaver triples
+          \begin{align*}
+            \sh{a}_i, \sh{b}_i, \sh{c}_i \stackrel{\phi^1_{i > 1}, \phi^2_{i > 1}}{\longrightarrow} (pk, \texttt{broad\_plain}, \sh{\texttt{wit}}_i^e, \mathcal{B'}_i, r, \varepsilon)
+          \end{align*}
+          Set $\texttt{input}^e_i = (\texttt{wit}_i^e, \mathcal{B'}_i)$
+    \item Recompute commitments
+          \begin{align*}
+            \texttt{com}^e_i = \texttt{Hash}_0(\texttt{salt}, e, i, \sh{\texttt{input}^e_i})
+          \end{align*}
+    \item Recompute Merkle tree roots
+          \begin{align*}
+            \texttt{root}^e = \texttt{MerkleAuthPath}(\texttt{auth}^e,\{\texttt{com}^e_i\}_{i \in I})
+          \end{align*}
+    \item Recompute $\tilde{h_1} = \texttt{Hash}_1(pk, \texttt{salt}, \texttt{root}^e, \ldots, \texttt{root}^{\tau})$
+  \end{enumerate}
+
+  Output \texttt{Accept} if and only if $h_1 \stackrel{?}{=} \tilde{h_1}$, and \texttt{Reject} otherwise.
 
 \end{protocol}
 
-\subsubsection{Verification}
-
-\todo{We can truncate beaver triples as they can be calculated from the input through inverse MPC}
-
-\todo{Talk about inverse MPC instead of interpolation}
-
-\todo{the protocol}
-
 \section{Security}
+
+
 
 The security analysis of the SD-in-the-Head signature scheme is based on the proposed standardization requirements from the 2022 NIST call for proposals of non-lattice based signature schemes~\cite{nistcall}. Therefore, as a preliminary, we will describe the reasoning and requirements of the NIST standardization process.
 
@@ -3650,7 +3770,7 @@ The computation is based on HVZKAoK Protocol using imperfect preprocessing and s
 
 A toy example of the computation protocol computations, can be seen in~\autoref{fig:mpc}. We have the two computation methods. Here for 1 split and 1 evaluation point. This means that we have only value for each challenge and Beaver triple. Note that any arithmetic is run in GF256, so addition and subtraction are both \texttt{XOR} and multiplication is modulus $x^8 + x^4 + x^3 + x + 1$. Furthermore, for negation we have that $-a = a$.
 
-\begin{figure}
+\begin{figure}[H]
   \makebox[\textwidth]{
     \fbox{\begin{minipage}[t]{.45\textwidth}
         \noindent \texttt{PartyComputation}
