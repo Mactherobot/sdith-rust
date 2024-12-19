@@ -3196,11 +3196,8 @@ After
 As the last piece to the puzzle we implemented the verification algorithm. For this we followed the specification and used the KAT generated signatures to verify that we could parse and validate a signature. This would allow us to ensure that our parsing of the signature, inverse MPC computation and our merkle tree verification was correct. This was in the attempt not the case. Which led us to compare our implementation with the specification as described in \autoref{sub:comparison_with_spec_impl}.
 
 \section{Comparison with spec impl}\label{sub:comparison_with_spec_impl}
-To verify and debug our code, we configured our implementation to align with the reference implementation provided in C. This setup required us to execute the reference code to obtain intermediate data, which we then used to compare internal states between the two implementations.
-
-During this process, we identified a bug in the calculation of the view-opening challenges. Specifically, the reference implementation neglected to finalize the SHAKE function before squeezing, which posed an issue because the Tiny Keccak Rust library automatically performs this finalization when initializing a hash or XOF.
-
-Additionally, we discovered that, to produce identical outputs from the XOF, we needed to first rotate the permutation once by supplying an empty vector before invoking the function.
+To verify and debug our code, we configured our implementation to align with the reference implementation provided in C. This setup required us to execute the reference code to obtain intermediate data, which we then used to compare internal states between the two implementations. In order to get this to work we ran into the following problems. First we had to setup the same random byte generator to allow our randomness to be the same. Furthermore, during this process, we identified a bug in the calculation of the view-opening challenges. Specifically, the reference implementation neglected to finalize the SHAKE function before squeezing, which posed an issue because the Tiny Keccak Rust library automatically performs this finalization when initializing a hash or XOF. 
+Additionally, we discovered that, to produce identical outputs from the XOF, we needed to first rotate the permutation once by supplying an empty vector before invoking the function. 
 
 
 \subsection{Testing our implementation}\label{sub:testing_our_implementation}
