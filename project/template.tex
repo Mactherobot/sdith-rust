@@ -2805,8 +2805,54 @@ Additionally we tested the correctness of the polynomial relation generation pro
 \end{minted}
 
 \subsection{MPC}\label{sub:mpc_algo}
-As the last thing, before we can implement the signing algorithm, we need the underlying MPC simulation sub routines described in \autoref{def:sdith-mpc}.
-First we go through the helper methods that are used to do the computations. Then we describe a set of structures that we created to make the MPC simulation easier to comprehend.
+As the last thing, before we implemented the signing algorithm, we need the underlying MPC simulation sub routines described in \autoref{def:sdith-mpc}.
+First we go through the helper methods that are used to do the computations. Then we describe a set of structures that we created to make the MPC simulation easier to comprehend. And how we tried to test and verify the correctness of the computations.
+
+\paragraph{Input shares}
+When implementing the signing algorithm, we needed to generate a set of input shares for the MPC simulation. Since this functionality is logically related to the MPC simulation, we decided to implement it within the MPC subroutine. 
+
+The function takes as input a Pseudo-Random Generator (PRG) and the plain input value. It begins by sampling random coefficients, which are used to compute the input shares. Each share is computed as defined in \autoref{sec:sdith-signature}. Our implementation of this computation is as follows:
+
+\begin{minted}{rust}
+pub fn compute_share<const SIZE: usize>(
+    plain: &[u8; SIZE],
+    rnd_coefs: &[[u8; SIZE]],
+    fi: u8,
+    skip_loop: bool,
+) -> [u8; SIZE] {
+    // We need to compute the following:
+    // input_share[e][i] = input_plain + sum^l_(j=1) fi^j · input_coef[e][j]
+    let mut share = *rnd_coefs.last().unwrap();
+
+    // Compute the inner sum
+    // sum^l_(j=1) fi^j · coef[j]
+    // Horner method
+    if !skip_loop {
+        for j in (0..(rnd_coefs.len() - 1)).rev() {
+            gf256_mul_scalar_add_vector(&mut share, &rnd_coefs[j], fi);
+        }
+
+        // Add the plain to the share
+        gf256_mul_scalar_add_vector(&mut share, plain, fi);
+    }
+
+    share
+}
+\end{minted}
+In this implementation, we start by initializing the share to the last coefficient. Then, depending on whether we are computing the first share, we may skip adding the plain input and all subsequent terms in the sum.
+We can then create a loop that computes the input share from the generated coefficients. This can be done in parallel, which we will discuss in \autoref{sec:optimizations}.
+\begin{minted}{rust}
+for e in 0..PARAM_TAU {
+    get_iterator(&mut input_shares[e])
+        .enumerate()
+        .for_each(|(i, share)| {
+            *share = compute_share(input_plain, &input_coefs[e], i as u8, i == 0);
+        });
+}
+
+ComputeInputSharesResult(input_shares, input_coefs)
+\end{minted}
+
 
 \subsubsection{Polynomial Evaluation}
 For polynomial evaluation in the algorithm, seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results.
@@ -2902,7 +2948,7 @@ pub fn expand_view_challenge_hash(h2: Hash) -> [[u16; PARAM_L]; PARAM_TAU] {
     opened_views
 }
 \end{minted}
-As this relies on the PRG to sample the values, we have a test that ensures that the values are unique and within the correct range.
+As this relies on random values we test that the output of the function follows the specifications, such as uniqueness and length.
 
 \subsubsection{Party Computation}
 We now have all the required parts to build the MPC simulation, defined in\todo{Reference correct section} \autoref{def:sdith-mpc}. The way we implemented this was to use the same function to create the plain broadcast values as the broadcast values computed for the shares. Our first attempt at implementing this algorithm, we had a hard time following every step that was done, due to a lack in clarification on what every computation was supposed to do. Furthermore creating tests for this was quite difficult as this function relies heavily on the provided values. We also tried to compare our intermediate values with the values from the specification implementation, which also proved to be a challenge since there is a lot of values that are computed in the algorithm.
@@ -3053,43 +3099,11 @@ This led us to find that our implementation of the polynomial evaluation seemed 
 \end{minted}
 
 
-\section{Categories}\label{sub:categories} % (fold)
-We tried reworking to use dynamically sized vectors instead of compile time sized arrays. Which proved to be a big rework and refactor. Benching showed slower running times. So instead we went with compile time script to set the constants.
-
-After implementing the environment variables, we realised that we could also use feature flags to change the category. This is done by adding the following to the Cargo.toml file.
-\begin{minted}{rust}
-[features]
-default = ["category_one", "optimized"]
-
-# Categories
-category_one = []
-category_three = []
-category_five= []
-\end{minted}
-Where we state the default category to be one, and the optimized flag to be enabled.
-Now in the build.rs file we can change the category based on the feature flag in the following way:
-\begin{minted}{rust}
-fn get_feature_flag_category() -> Result<Category, String> {
-    if cfg!(feature = "category_one") {
-        Ok(CATEGORY_ONE)
-    } else if cfg!(feature = "category_three") {
-        Ok(CATEGORY_THREE)
-    } else if cfg!(feature = "category_five") {
-        Ok(CATEGORY_FIVE)
-    } else {
-        Err("No category feature flag set".to_string())
-    }
-}
-\end{minted}
-One can now invoke the benchmarking for category one by running the following command:
-\begin{minted}{bash}
-  ~$ cargo bench --features category_one
-\end{minted}
 
 \subsection{Signing}\label{sub:signing}
-We sepee
-\todo{Write about the expand view challenge hash, and the compute share methods}
 After creating all the subroutines, we implemented the general signing algorithm described in \autoref{sec:sdith-signature}.
+We started by implementing all the sampling needed. This entailed creating the $H'$ matrix, the beaver triples and then defining based on the secret key, the inputs to the MPC simulation.
+This led us to create a function to compute the input shares based on the PRG and the plain input shares.
 \begin{minted}{rust}
     pub fn sign_message(
         entropy: (Seed, Salt),
@@ -3192,9 +3206,40 @@ Here we found a bug in the way the view-opening challenges was calculated, they 
 Furthermore we found that in order to generate the same output from the xof we needed to first rotate the permutation once by supplying an empty vector before actually using the function.
 We also found that the merkle tree was not using the salt.
 
-
 \section{Optimizations}
 
+\section{Categories}\label{sub:categories} % (fold)
+We tried reworking to use dynamically sized vectors instead of compile time sized arrays. Which proved to be a big rework and refactor. Benching showed slower running times. So instead we went with compile time script to set the constants.
+
+After implementing the environment variables, we realised that we could also use feature flags to change the category. This is done by adding the following to the Cargo.toml file.
+\begin{minted}{rust}
+[features]
+default = ["category_one", "optimized"]
+
+# Categories
+category_one = []
+category_three = []
+category_five= []
+\end{minted}
+Where we state the default category to be one, and the optimized flag to be enabled.
+Now in the build.rs file we can change the category based on the feature flag in the following way:
+\begin{minted}{rust}
+fn get_feature_flag_category() -> Result<Category, String> {
+    if cfg!(feature = "category_one") {
+        Ok(CATEGORY_ONE)
+    } else if cfg!(feature = "category_three") {
+        Ok(CATEGORY_THREE)
+    } else if cfg!(feature = "category_five") {
+        Ok(CATEGORY_FIVE)
+    } else {
+        Err("No category feature flag set".to_string())
+    }
+}
+\end{minted}
+One can now invoke the benchmarking for category one by running the following command:
+\begin{minted}{bash}
+  ~$ cargo bench --features category_one
+\end{minted}
 
 \subsection{Parallelisation}\label{sub:rayon} % (fold)
 
