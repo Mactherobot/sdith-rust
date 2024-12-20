@@ -257,6 +257,9 @@ Next, we delve into the Syndrome Decoding (SD) problem, which forms the backbone
 
 Building upon these foundations, we lay the groundwork for the construction of the SD-in-the-Head protocol. First, we discuss the \textbf{Multi-Party-Computation-in-the-Head} (MPCitH) paradigm, explaining how it is leveraged to construct efficient ZK proofs~\cite{ishai2007zero}. Additionally we detail the role of the MPC preprocessing~\cite{baum2020concretely} and linear secret-sharing scheme~\cite{feneuil2023threshold}, which dramatically improve the efficiency of the MPCitH construction, and verification. Next, we introduce the \textbf{Fiat-Shamir heuristic}, a powerful tool that transforms an interactive ZK protocol into a non-interactive signature scheme~\cite{fiat1986prove}.
 
+Finally, we outline the reasons and benefits of using the Rust programming language as the foundation for implementing the SD-in-the-Head protocol.
+
+
 \section{Galois Finite Field}\label{sec:gf256}
 Finite fields lays the basis for many cryptographic protocols and primitives. In essence, finite field theory describes the relation and properties between numbers, while disregarding the numbers themselves. In order to define finite fields, we first need to define a \textit{group} and a \textit{finite field} (\autoref{def:group} and \autoref{def:field}, respectively).
 
@@ -2045,7 +2048,7 @@ We set out to implement the SD-in-the-Head Protocol using a modern, well-maintai
 
 Initially, we aimed to base our implementation solely on the specification. However, this approach proved challenging due to ambiguities in some of the definitions, making it unclear how certain elements should be implemented and making testing the outcomes hard. To address this, we instead aligned our implementation with the reference implementation. This provided a valuable tool for debugging and figuring out these ambiguities.
 
-This section provides a detailed overview of our implementation. We begin with an introduction to the Rust programming language, explaining our rationale for choosing it and highlighting specific features that are relevant to the subsequent sections. Following this, we present a brief walkthrough of each module in our implementation, detailing how the code aligns with the SD-in-the-Head specification. Additionally, we describe the steps taken to test and optimize these modules and discuss the challenges encountered during their development.
+This section provides a detailed overview of our implementation. We present a brief walkthrough of the structure and each module in our implementation, detailing how the code aligns with the SD-in-the-Head specification. Additionally, we describe the steps taken to test and optimize these modules and discuss the challenges encountered during their development.
 
 % Talk about this in benchmarking chapter
 % We can now use the before mentioned criterion package to benchmark the different implementations and see the performance difference:
@@ -2081,12 +2084,12 @@ Within the \texttt{src} directory, the code is further divided into submodules, 
   \item \texttt{kat}: Contains Known Answer Tests (KAT) for verifying implementation correctness.
   \item \texttt{signature}: Implements the signature protocol.
   \item \texttt{subroutines}: Provides helper functions supporting various components of the protocol.
-    \begin{itemize}
-      \item Arith: Contains arithmetic operations for finite fields.
-      \item Merkle tree: Implements a Merkle tree commitment scheme
-      \item PRG: Implements a pseudo-random generator.
-      \item MPC: The MPC simulation for the protocol.
-    \end{itemize}
+        \begin{itemize}
+          \item Arith: Contains arithmetic operations for finite fields.
+          \item Merkle tree: Implements a Merkle tree commitment scheme
+          \item PRG: Implements a pseudo-random generator.
+          \item MPC: The MPC simulation for the protocol.
+        \end{itemize}
   \item \texttt{utils}: Offers utility functions used across the codebase.
 \end{itemize}
 
@@ -2261,8 +2264,8 @@ We only made simple tests for this module, as we trusted the underlying library 
   }
 \end{minted}
 
-\subsubsection{Hashing}\label{sec:hashing} % (fold)
-As mentioned in the spec, we need a collision-resistant hash function. For this we also used the tiny-keccak crate. And again due to the different security categories, we had to be able to switch between different implementations of the underlying hash function.
+\subsection{Hashing}\label{sec:hashing} % (fold)
+As mentioned in the \nameref{def:sdith-sign}, we need a collision-resistant hash function. For this we also used the tiny-keccak crate. And again due to the different security categories, we had to be able to switch between different implementations of the underlying hash function.
 First, as mentioned in the \autoref{sub:constants}, we defined a primitive type for the Hash which we used to define a generic trait:
 \begin{minted}{rust}
 pub trait SDitHHashTrait<T> {
@@ -2278,17 +2281,21 @@ pub trait SDitHHashTrait<T> {
     fn update(&mut self, data: &[u8]);
 }
 \end{minted}
-We then implemented the trait, as was shown in \autoref{sub:prg}, for the following hash primitives SHA3-256, SHA3-384 and SHA3-512.
+We then implemented the trait, as was shown in \autoref{sub:prg}, for the following hash primitives \texttt{SHA3-256}, \texttt{SHA3-384} and \texttt{SHA3-512}.
 
 \subsection{Commitments}
-To be able to commit to shares we use the hasher that we just defined. The commitment contains the following values:
-\begin{itemize}
-  \item Salt, a random value to ensure that the commitment is unique.
-  \item $e$, the execution index.
-  \item $i$, the party index.
-  \item $share$, the share that is being committed to.
-\end{itemize}
-We only create simple tests for this functionality as we rely on a hashing crate. We just test that the output of the function is the same base on the same input. And that if given a different salt the output is not the same.
+
+For the commitment scheme and in order to commit to shares, we utilized the hasher defined earlier.
+\begin{align*}
+  &\texttt{commit\_share}(\texttt{salt}, e, i, \sh{\texttt{share}}) = \texttt{Hash}(0 || salt || e_0 || e_1 || i_0 || i_1 || \sh{\texttt{share}})
+\end{align*}
+for
+\begin{align*}
+  e = e_0 + 256 * e_1\\
+  i = i_0 + 256 * i_1
+  \end{align*}
+
+For this functionality, we implemented simple tests to verify correctness. Specifically, we checked that the output remains consistent for identical inputs and that altering the salt produces a different output. These tests rely on the correctness of the underlying hashing crate.
 
 \subsection{Merkle Tree Implementation}\label{sub:merkle_tree_impl}
 \todo{Write the introduction for this section once the specification is complete.}
@@ -2605,7 +2612,7 @@ For $u = (p,q) = p + qZ$ and $v = (r,s) = r + sZ$ we have:
 \begin{align}
   u \cdot v & = (p + qZ) \cdot (r + sZ)                      \\
             & = pr + psZ + qrZ + qsZ^2                       \\
-            & = pr + (ps + qr)Z + qs(Z + 32X)\\
+            & = pr + (ps + qr)Z + qs(Z + 32X)                \\
             & = pr + (ps + qr)Z + qsZ + 32qsX                \\
             & = (pr + 32qsX) + (ps + qr + qs)Z               \\
             & = (pr + 32qsX) + ((p + q) \cdot (r + s) - pr)Z \\
@@ -2971,8 +2978,8 @@ ComputeInputSharesResult(input_shares, input_coefs)
 \subsubsection{Polynomial Evaluation}
 For polynomial evaluation in the algorithm, seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results.
 \begin{align}
-\textstyle\bigcup_{|Q|}(F_q)^{|Q|} \times F_q^\eta & \rightarrow F_q^\eta                 \nonumber                                                    \\
-Q(r)                                               & = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1} &  & Q_i \in F_q, r \in F_q^\eta\label{eq:mpcpoly}
+  \textstyle\bigcup_{|Q|}(F_q)^{|Q|} \times F_q^\eta & \rightarrow F_q^\eta                 \nonumber                                                    \\
+  Q(r)                                               & = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1} &  & Q_i \in F_q, r \in F_q^\eta\label{eq:mpcpoly}
 \end{align}
 
 To implement this we utilized our field arithmetic and an array of pre computed powers of the $r$, which we will cover in the section about the challenge generation. \todo{reference the correction section}
@@ -3207,30 +3214,30 @@ This led us to find that our implementation of the polynomial evaluation seemed 
 \section{Finishing the implementation}\label{sub:final}
 In this section we will discuss our process when finalizing the implementation. We had a few bugs that led us to setup our code to be comparable with the reference implementation. First we will discuss our implementations of the signing and verification algorithms, and how we used the reference implementation to iron out bugs from our own code. Lastly we will discuss how we went about testing our implementation.
 \subsection{Signing}\label{sub:signing}
-After implementing all the subroutines, we proceeded to develop the general signing algorithm described in \autoref{sec:sdith-signature}. 
+After implementing all the subroutines, we proceeded to develop the general signing algorithm described in \autoref{sec:sdith-signature}.
 
 We began by implementing all the necessary sampling procedures. This included generating the $H'$ matrix, creating the Beaver triples, and computing the inputs required for the MPC simulation. After committing to the input shares, we constructed the MPC challenge using the first Fiat-Shamir hash:
 
 \[
-h_1 = H'(seed_h, y, \text{salt}, \text{commitments}).
+  h_1 = H'(seed_h, y, \text{salt}, \text{commitments}).
 \]
 This hash is subsequently used to derive the challenges $(r, \epsilon)^t$. With these challenges in place, we executed the MPC simulation to compute the broadcast values $\alpha$, $\beta$, and $v$. These values were then used to generate their corresponding shares by invoking the MPC function \rust{party_computation}.
 
 Next, we computed the second Fiat-Shamir hash:
 
 \[
-h_2 = H'(message, \text{salt}, h_1, \text{broadcast}, \text{broadcast\_shares}).
+  h_2 = H'(message, \text{salt}, h_1, \text{broadcast}, \text{broadcast\_shares}).
 \]
 
 The second hash $h_2$ is used to generate the view-opening challenges, which define the witness shares and are utilized to compute the authentication path in the Merkle tree.
 
-After 
+After
 \paragraph{Verification}\label{sub:verification}
 As the last piece to the puzzle we implemented the verification algorithm. For this we followed the specification and used the KAT generated signatures to verify that we could parse and validate a signature. This would allow us to ensure that our parsing of the signature, inverse MPC computation and our merkle tree verification was correct. This was in the attempt not the case. Which led us to compare our implementation with the specification as described in \autoref{sub:comparison_with_spec_impl}.
 
 \section{Comparison with spec impl}\label{sub:comparison_with_spec_impl}
-To verify and debug our code, we configured our implementation to align with the reference implementation provided in C. This setup required us to execute the reference code to obtain intermediate data, which we then used to compare internal states between the two implementations. In order to get this to work we ran into the following problems. First we had to setup the same random byte generator to allow our randomness to be the same. Furthermore, during this process, we identified a bug in the calculation of the view-opening challenges. Specifically, the reference implementation neglected to finalize the SHAKE function before squeezing, which posed an issue because the Tiny Keccak Rust library automatically performs this finalization when initializing a hash or XOF. 
-Additionally, we discovered that, to produce identical outputs from the XOF, we needed to first rotate the permutation once by supplying an empty vector before invoking the function. 
+To verify and debug our code, we configured our implementation to align with the reference implementation provided in C. This setup required us to execute the reference code to obtain intermediate data, which we then used to compare internal states between the two implementations. In order to get this to work we ran into the following problems. First we had to setup the same random byte generator to allow our randomness to be the same. Furthermore, during this process, we identified a bug in the calculation of the view-opening challenges. Specifically, the reference implementation neglected to finalize the SHAKE function before squeezing, which posed an issue because the Tiny Keccak Rust library automatically performs this finalization when initializing a hash or XOF.
+Additionally, we discovered that, to produce identical outputs from the XOF, we needed to first rotate the permutation once by supplying an empty vector before invoking the function.
 
 
 \subsection{Testing our implementation}\label{sub:testing_our_implementation}
@@ -3499,15 +3506,15 @@ conclude on the benchmarks.
 
 point to round 2 NIST
 
-future work: 
+future work:
 
-- Collaborate with the authors (talk about issues we found in the spec and in implemementing the spec) 
+- Collaborate with the authors (talk about issues we found in the spec and in implemementing the spec)
 - We could add subroutines as parameters to the API. Then the developer could just add their own subroutines defined by our traits.
 - dynamic parameters created by users of the crate ("parameter sets tailored to different use cases") we could use build script with feature flag to exchange cat import in param.rs for custom file.
 - Verkle trees Optimisation
 - custom parallelisation outside of Rayon? data structures that allow for independent parallelisation in the MPC computation?
 - Explore optimisations that go away from the spec. Both code wise and parameter wise (we follow theirs a lot. Can we do better?)
-  - e.g. Blake3
+- e.g. Blake3
 - Analyse the code binary for compiler optimisations
 - hypercube implemementation and generalisation to accommodate it
 - gf251 implementation
