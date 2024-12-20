@@ -2352,7 +2352,7 @@ We defined a trait for the Merkle tree with methods derived from the specificati
 
 We implemented the tree using a bottom-up approach, where child nodes are hashed, and parent nodes are updated iteratively. The root hash is stored at the first index of the array and returned as the global commitment.
 
-To validate the correctness of the Merkle tree implementation, we perform the following steps (see test \rust{fn test_new_merkle_tree} in \texttt{src/subroutines/merkle\_tree.rs}):
+To validate the correctness of the Merkle tree implementation, we perform the following steps
 
 \begin{enumerate}[parsep=0pt, itemsep=0pt]
   \item Verify that the leaves of the tree correspond to the expected commitments.
@@ -3286,43 +3286,11 @@ Additionally, we discovered that, to produce identical outputs from the XOF, we 
 
 \subsection{Testing our implementation}\label{sub:testing_our_implementation}
 
-
-
+reused tests in marshalling and for field arithmetic
 
 \section{Optimizations}
 
-\section{Categories}\label{sub:categories} % (fold)
-We tried reworking to use dynamically sized vectors instead of compile time sized arrays. Which proved to be a big rework and refactor. Benching showed slower running times. So instead we went with compile time script to set the constants.
-
-After implementing the environment variables, we realised that we could also use feature flags to change the category. This is done by adding the following to the Cargo.toml file.
-\begin{minted}{rust}
-[features]
-default = ["category_one", "optimized"]
-
-# Categories
-category_one = []
-category_three = []
-category_five= []
-\end{minted}
-Where we state the default category to be one, and the optimized flag to be enabled.
-Now in the build.rs file we can change the category based on the feature flag in the following way:
-\begin{minted}{rust}
-fn get_feature_flag_category() -> Result<Category, String> {
-    if cfg!(feature = "category_one") {
-        Ok(CATEGORY_ONE)
-    } else if cfg!(feature = "category_three") {
-        Ok(CATEGORY_THREE)
-    } else if cfg!(feature = "category_five") {
-        Ok(CATEGORY_FIVE)
-    } else {
-        Err("No category feature flag set".to_string())
-    }
-}
-\end{minted}
-One can now invoke the benchmarking for category one by running the following command:
-\begin{minted}{bash}
-  ~$ cargo bench --features category_one
-\end{minted}
+Re-iterate on optimisations
 
 \subsection{Parallelisation}\label{sub:rayon} % (fold)
 
