@@ -5,20 +5,19 @@
 //! This module contains constants for the three categories of the SDitH Signature Scheme.
 //! Each category is conditionally compiled using the `category_one`, `category_three`, and `category_five` feature flags.
 
-#[cfg(not(any(feature = "category_three", feature = "category_five")))]
-mod cat1;
-#[cfg(not(any(feature = "category_three", feature = "category_five")))]
-use cat1 as cat;
+#[cfg(not(feature = "category_custom"))]
+#[cfg_attr(
+    not(any(feature = "category_three", feature = "category_five",)),
+    path = "params/cat1.rs"
+)]
+#[cfg_attr(feature = "category_three", path = "params/cat3.rs")]
+#[cfg_attr(feature = "category_five", path = "params/cat5.rs")]
+mod cat;
 
-#[cfg(feature = "category_three")]
-mod cat3;
-#[cfg(feature = "category_three")]
-use cat3 as cat;
-
-#[cfg(feature = "category_five")]
-mod cat5;
-#[cfg(feature = "category_five")]
-use cat5 as cat;
+#[cfg(feature = "category_custom")]
+mod cat {
+    include!(env!("SDITH_CUSTOM_PARAMS_PATH"));
+}
 
 use super::types::{Categories, HashPrimitive, XOFPrimitive};
 
@@ -85,7 +84,7 @@ pub const PARAM_M_CEIL32: usize = ((PARAM_M + 31) >> 5) << 5;
 /// Precomputed public polynomial F
 pub const PRECOMPUTED_F_POLY: [u8; PARAM_CHUNK_M + 1] = cat::PRECOMPUTED_F_POLY;
 /// Lagrange scalar coefficients for computing S
-/// 
+///
 /// 1 / ∏_{j \neq i}(alpha_i - alpha_j)
 pub const PRECOMPUTED_LAGRANGE_INTERPOLATION_WEIGHTS: [u8; PARAM_CHUNK_M] =
     cat::PRECOMPUTED_LAGRANGE_INTERPOLATION_WEIGHTS;

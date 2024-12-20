@@ -13,6 +13,7 @@ Categories
 - `category_one`: Use the 143-bit security level (default)
 - `category_three`: Use the 207-bit security level
 - `category_five`: Use the 272-bit security level
+- `category_custom`: Custom parameter profile set with environment variable `SDITH_CUSTOM_PARAMS_PATH`
 
 Optimizations
 
@@ -43,6 +44,12 @@ You can set the category by the feature flag `category_#`.
 ```bash
 # Set the category through the feature flag
 cargo build --features category_three
+```
+
+For a custom parameter profile, create a custom parameter file `path/custom_cat.rs`. Use feature flag `category_custom` and set the environment variable `SDITH_CUSTOM_PARAMS_PATH` to the path of the custom file. Check the [base category 1 file](src/constants/params/cat1.rs) for an example of the needed constants.
+
+```bash
+SDITH_CUSTOM_PARAMS_PATH=path/custom_cat.rs cargo build --features category_custom
 ```
 
 ### Optimisations

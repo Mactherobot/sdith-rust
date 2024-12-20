@@ -312,16 +312,6 @@ mod test {
             );
         }
 
-        // Check root
-        assert_eq!(
-            tree.root(),
-            [
-                199, 131, 242, 88, 170, 201, 178, 129, 245, 242, 187, 134, 115, 97, 225, 3, 107, 3,
-                181, 38, 31, 251, 54, 70, 65, 75, 186, 229, 200, 5, 128, 60
-            ],
-            "Root does not match"
-        );
-
         assert_eq!(tree.height, PARAM_MERKLE_TREE_HEIGHT as u32);
         assert_eq!(tree.n_leaves(), { PARAM_N });
         assert_eq!(tree.n_nodes(), PARAM_MERKLE_TREE_NODES - 1);

@@ -464,8 +464,7 @@ mod mpc_tests {
 
     #[test]
     fn test_polynomial_evaluation() {
-        let mut prg = PRG::init_base(&[2]);
-        let r = FPoint::field_sample(&mut prg); // r = [40, 106, 142, 69]
+        let r = [40,106,142, 69];
 
         let mut powers_of_r = [FPoint::default(); PARAM_M + 1];
         get_powers(r, &mut powers_of_r);

@@ -2045,7 +2045,7 @@ fn simple_simd_vector_addition() -> [f32; 4] {
 
     // SIMD operation
     let z = x + y; // z = [5.0, 5.0, 5.0, 5.0]
-    z.to_array()
+    z.to_array() 
 }
 \end{minted}
 
@@ -2125,7 +2125,7 @@ This modular design ensures that each aspect of the protocol is encapsulated wit
 \end{figure}
 
 \section{Constants}\label{sub:constants}
-The protocol requires a lot of constants -- e.g. the size of the syndrome decoding problem. Consider a simple example in the size of the Hash output \rust{PARAM_DIGEST_SIZE}. The type output of a hash function would be a and array of bytes. We would simply type it a follows
+The protocol requires a lot of constants. Consider a simple example in the size of the Hash output \rust{PARAM_DIGEST_SIZE}. The type output of a hash function would be a and array of bytes. We would simply type it a follows
 
 \begin{minted}{rust}
   const PARAM_DIGEST_SIZE: usize = 256 / 8;
@@ -2139,16 +2139,10 @@ There are multiple ways to address this issue. The simplest approach would be to
 We introduced three feature flags -- \texttt{category\_one}, \texttt{category\_three}, and \texttt{category\_five} -- and then structured our \texttt{crate::constants::params} module to load the appropriate parameters depending on which feature flag is enabled. This allows us to select the correct digest size at compile time while maintaining stack-based allocations and consistent performance.
 
 \begin{minted}{rust}
-  // src/constants/params.rs
-  #[cfg(feature = "category_one")]
-  mod cat1;
-  #[cfg(feature = "category_one")]
-  use cat1 as cat;
-
-  #[cfg(feature = "category_three")]
-  mod cat3;
-  #[cfg(feature = "category_three")]
-  use cat3 as cat;
+  // src/constants/params.rs 
+  #[cfg_attr(feature = "category_one", path = "params/cat1.rs")]
+  #[cfg_attr(feature = "category_three", path = "params/cat3.rs")]
+  mod cat; 
 
   pub const PARAM_DIGEST_SIZE: usize = cat::PARAM_DIGEST_SIZE / 8;
 
@@ -2158,6 +2152,15 @@ We introduced three feature flags -- \texttt{category\_one}, \texttt{category\_t
   // src/constants/params/cat3.rs
   pub(super) const PARAM_DIGEST_SIZE: usize = 384;
 \end{minted}
+
+This technique comes in handy as we can also allow the user to specify a custom set of parameters. We do this by introducing an extra feature flag, \texttt{category\_custom}. Connected with an environment variable, \texttt{SDITH\_CUSTOM\_PARAMS\_PATH}, we can conditionally load the custom parameters file
+
+% \begin{minted}{rust}
+%   #[cfg(feature = "category_custom")]
+%   mod cat {
+%       include!(env!("SDITH_CUSTOM_PARAMS_PATH"));
+%   }
+% \end{minted}
 
 \section{Subroutines}\label{sub:subroutines}
 Due to the modularity of the SD-in-the-Head protocol, we were able to set about implementing the initial parts of the protocol as a set of subroutines. In our initial implementation we focused on creating the subroutines based on just the specification. This however proved to be a challenge as some of the definitions were not clear on how to be implemented. So we instead took inspiration in how the reference implementation was structured.
@@ -2934,11 +2937,11 @@ pub fn compute_share<const SIZE: usize>(
     skip_loop: bool,
 ) -> [u8; SIZE] {
     // We need to compute the following:
-    // input_share[e][i] = input_plain + sum^l_(j=1) fi^j · input_coef[e][j]
+    // input_share[e][i] = input_plain + sum^l_(j=1) fi^j * input_coef[e][j]
     let mut share = *rnd_coefs.last().unwrap();
 
     // Compute the inner sum
-    // sum^l_(j=1) fi^j · coef[j]
+    // sum^l_(j=1) fi^j * coef[j]
     // Horner method
     if !skip_loop {
         for j in (0..(rnd_coefs.len() - 1)).rev() {

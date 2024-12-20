@@ -8,12 +8,24 @@ fn main() {
         "three"
     } else if cfg!(feature = "category_five") {
         "five"
+    } else if cfg!(feature = "category_custom") {
+        "custom"
     } else {
         "one"
     };
 
     // Notify the user of the category being used
     println!("cargo:warning=Running with category {cat}");
+
+    if cat == "custom" {
+        let filepath = std::env::var("SDITH_CUSTOM_PARAMS_PATH");
+        println!("cargo::rerun-if-env-changed=SDITH_CUSTOM_PARAMS_PATH");
+        if let Ok(path) = filepath {
+            println!("cargo:warning=Getting parameters from {path}")
+        } else {
+            panic!("Missing environment variable \"SDITH_CUSTOM_PARAMS_PATH\" for custom category")
+        }
+    }
 
     if cfg!(feature = "xof_blake3") || cfg!(feature = "hash_blake3") {
         println!("cargo:warning=Blake3 enabled");

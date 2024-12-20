@@ -107,6 +107,7 @@ default = ["optimized"]
 category_one = []   # This is the default category.
 category_three = []
 category_five = []
+category_custom = [] # Use in conjunction with `SDITH_CUSTOM_PARAMS_PATH` environment variable
 
 # Optimization features
 optimized = ["simd", "parallel", "merkle_batching"]
