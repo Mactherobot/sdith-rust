@@ -12,7 +12,7 @@ use rsdith::{
     },
     keygen::{self, PublicKey, SecretKey},
     signature::Signature,
-    subroutines::marshalling::Marshalling as _,
+    utils::marshalling::Marshalling as _,
 };
 
 macro_rules! clap_err_result {

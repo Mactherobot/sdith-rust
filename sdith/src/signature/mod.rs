@@ -11,17 +11,14 @@ use crate::{
     constants::{
         params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_M_SUB_K, PARAM_SALT_SIZE, PARAM_TAU},
         types::{Hash, Salt, Seed},
-    },
-    subroutines::{
-        marshalling::Marshalling,
+    }, subroutines::{
         merkle_tree::{MerkleTree, MerkleTreeTrait},
         mpc::{
             broadcast::{BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
             expand_view_challenge_hash,
         },
         prg::hashing::{hash_1, hash_2},
-    },
-    witness::SOLUTION_PLAIN_SIZE,
+    }, utils::marshalling::Marshalling, witness::SOLUTION_PLAIN_SIZE
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -238,7 +235,7 @@ mod signature_tests {
         let signature1 = Signature::sign_message(entropy, &sk1, &message).unwrap();
         let signature2 = Signature::sign_message(entropy, &sk2, &message).unwrap();
 
-        crate::subroutines::marshalling::_test_marhalling(signature1, signature2);
+        crate::utils::marshalling::_test_marhalling(signature1, signature2);
     }
 
     use crate::{
@@ -246,7 +243,7 @@ mod signature_tests {
             params::{PARAM_K, PARAM_M_SUB_K, PARAM_SALT_SIZE},
             types::Seed,
         },
-        subroutines::marshalling::Marshalling,
+        utils::marshalling::Marshalling,
     };
 
     #[test]

@@ -6,7 +6,7 @@ use rsdith::{
     constants::params::{PARAM_DIGEST_SIZE, PARAM_SEED_SIZE},
     keygen::keygen,
     signature::Signature,
-    subroutines::marshalling::Marshalling as _,
+    utils::marshalling::Marshalling as _,
 };
 
 /// Benchmarking api functions, i.e. keygen, signing and verification

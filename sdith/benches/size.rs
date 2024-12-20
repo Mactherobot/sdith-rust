@@ -8,7 +8,7 @@ use colored::Colorize as _;
 use criterion::Criterion;
 use nist_pqc_seeded_rng::{NistPqcAes256CtrRng, Seed};
 use rand::{RngCore as _, SeedableRng as _};
-use rsdith::{keygen::keygen, signature, subroutines::marshalling::Marshalling as _};
+use rsdith::{keygen::keygen, signature, utils::marshalling::Marshalling as _};
 use stats_ci::{Confidence, StatisticsOps};
 
 const ITER: usize = 250;

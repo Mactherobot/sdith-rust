@@ -25,7 +25,7 @@ mod kat;
 pub mod keygen;
 pub mod signature;
 pub mod subroutines;
-pub(crate) mod utils;
+pub mod utils;
 pub mod witness;
 
 #[cfg(test)]

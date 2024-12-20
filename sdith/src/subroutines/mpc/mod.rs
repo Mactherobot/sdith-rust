@@ -24,10 +24,9 @@ use crate::{
             },
             FieldArith as _,
         },
-        marshalling::Marshalling as _,
         prg::PRG,
     },
-    utils::iterator::*,
+    utils::{iterator::*, marshalling::Marshalling},
     witness::{complete_q, compute_s, compute_s_poly, Solution, SOLUTION_PLAIN_SIZE},
 };
 
@@ -464,7 +463,7 @@ mod mpc_tests {
 
     #[test]
     fn test_polynomial_evaluation() {
-        let r = [40,106,142, 69];
+        let r = [40, 106, 142, 69];
 
         let mut powers_of_r = [FPoint::default(); PARAM_M + 1];
         get_powers(r, &mut powers_of_r);

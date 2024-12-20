@@ -16,7 +16,6 @@ use crate::{
     subroutines::{
         arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix},
         commitments::commit_share,
-        marshalling::Marshalling,
         merkle_tree::{MerkleTree, MerkleTreeTrait},
         mpc::{
             beaver::BeaverTriples,
@@ -28,6 +27,7 @@ use crate::{
             compute_share, inverse_party_computation,
         },
     },
+    utils::marshalling::Marshalling,
 };
 
 use super::{input::Input, Signature};

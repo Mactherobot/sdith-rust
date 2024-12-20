@@ -10,9 +10,8 @@ use crate::{
     constants::params::{PARAM_ETA, PARAM_SPLITTING_FACTOR, PARAM_T},
     subroutines::{
         arith::{gf256::gf256_ext::FPoint, FieldArith as _},
-        marshalling::Marshalling,
         prg::PRG,
-    },
+    }, utils::marshalling::Marshalling,
 };
 
 /// Beaver triple a sized array type
@@ -219,6 +218,6 @@ mod beaver_tests {
         let bt1 = BeaverTriples::generate(&mut PRG::init(&seed1, Some(&[0u8; PARAM_SALT_SIZE])));
         let bt2 = BeaverTriples::generate(&mut PRG::init(&seed2, Some(&[0u8; PARAM_SALT_SIZE])));
 
-        crate::subroutines::marshalling::_test_marhalling(bt1, bt2);
+        crate::utils::marshalling::_test_marhalling(bt1, bt2);
     }
 }

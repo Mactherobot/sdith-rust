@@ -23,12 +23,11 @@ use crate::{
     subroutines::{
         arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix},
         commitments::commit_share,
-        marshalling::Marshalling,
         merkle_tree::{MerkleTree, MerkleTreeTrait},
         mpc::*,
         prg::PRG,
     },
-    utils::iterator::*,
+    utils::{iterator::*, marshalling::Marshalling},
     witness::SOLUTION_PLAIN_SIZE,
 };
 

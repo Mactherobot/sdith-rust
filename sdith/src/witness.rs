@@ -24,7 +24,8 @@ use crate::{
         },
         FieldArith as _,
     },
-    subroutines::{marshalling::Marshalling, prg::PRG},
+    subroutines::prg::PRG,
+    utils::marshalling::Marshalling,
 };
 
 // Polynomial types
@@ -508,9 +509,9 @@ mod test_helpers {
             arith::gf256::gf256_poly::{
                 gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
             },
-            marshalling::_test_marhalling,
             prg::PRG,
         },
+        utils::marshalling::_test_marhalling,
     };
 
     use super::*;

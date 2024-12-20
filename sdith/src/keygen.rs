@@ -1,12 +1,12 @@
 //! # Key generation
-//! 
+//!
 //! Public and Secret key structs for the signature protocol.
-//! 
-//! Generating a keypair involves generating a random SD instance along with witness polynomials that 
-//! satisfy the relation 
-//! 
-//! `S * Q = P * F`. 
-//! 
+//!
+//! Generating a keypair involves generating a random SD instance along with witness polynomials that
+//! satisfy the relation
+//!
+//! `S * Q = P * F`.
+//!
 //! Actual generation functions are located in the [`crate::witness`] module.
 
 use crate::{
@@ -14,7 +14,7 @@ use crate::{
         params::{PARAM_M_SUB_K, PARAM_SEED_SIZE},
         types::Seed,
     },
-    subroutines::marshalling::Marshalling,
+    utils::marshalling::Marshalling,
     witness::{generate_instance_with_solution, Solution, SOLUTION_PLAIN_SIZE},
 };
 
@@ -125,9 +125,9 @@ mod keygen_tests {
         let keys2 = super::keygen(seed2);
 
         // Test marshalling for PublicKey
-        crate::subroutines::marshalling::_test_marhalling(*keys1.0, *keys2.0);
+        crate::utils::marshalling::_test_marhalling(*keys1.0, *keys2.0);
 
         // Test marshalling for SecretKey
-        crate::subroutines::marshalling::_test_marhalling(*keys1.1, *keys2.1);
+        crate::utils::marshalling::_test_marhalling(*keys1.1, *keys2.1);
     }
 }
