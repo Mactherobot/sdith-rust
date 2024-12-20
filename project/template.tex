@@ -2153,14 +2153,16 @@ We introduced three feature flags -- \texttt{category\_one}, \texttt{category\_t
   pub(super) const PARAM_DIGEST_SIZE: usize = 384;
 \end{minted}
 
-This technique comes in handy as we can also allow the user to specify a custom set of parameters. We do this by introducing an extra feature flag, \texttt{category\_custom}. Connected with an environment variable, \texttt{SDITH\_CUSTOM\_PARAMS\_PATH}, we can conditionally load the custom parameters file
+This technique is particularly useful as it allows users to specify a custom set of parameters. To enable this, we introduce an additional feature flag, \texttt{category\_custom}. This flag, in combination with an environment variable \texttt{SDITH\_CUSTOM\_PARAMS\_PATH}, enables conditional loading of a custom parameters file:
 
-% \begin{minted}{rust}
-%   #[cfg(feature = "category_custom")]
-%   mod cat {
-%       include!(env!("SDITH_CUSTOM_PARAMS_PATH"));
-%   }
-% \end{minted}
+\begin{minted}{rust}
+#[cfg(feature = "category_custom")]
+mod cat {
+    include!(env!("SDITH_CUSTOM_PARAMS_PATH"));
+}
+\end{minted}
+
+This implementation makes the adaptability and tunability of the protocol available, providing users with greater flexibility to tailor the parameters to their specific needs.
 
 \section{Subroutines}\label{sub:subroutines}
 Due to the modularity of the SD-in-the-Head protocol, we were able to set about implementing the initial parts of the protocol as a set of subroutines. In our initial implementation we focused on creating the subroutines based on just the specification. This however proved to be a challenge as some of the definitions were not clear on how to be implemented. So we instead took inspiration in how the reference implementation was structured.
@@ -2643,9 +2645,10 @@ We test the extended field arithmetic by using the same test as we defined for t
 
 \subsection{Field polynomials}\label{sub:field_polynomials} % (fold)
 In order to compute the witness, we need to be able to divide a monic polynomial by some linear factor in order to create the Lagrange basis polynomials.
-This is done by first adding a 1 in the leading coefficient for the returned polynomial. Then we iterate through the polynomial in reverse order and compute the coefficients using the formula:
+This is done by first adding a $1$ as the leading coefficient for the returned polynomial. Then we iterate through the polynomial in reverse order and compute the coefficients using the formula:
+\todo{move to witness polynomials}
 \begin{align}
-  Q_i = P_{i+1} + alpha * Q_{i+1}
+  Q_i = P_{i+1} + \alpha * Q_{i+1}
 \end{align}
 \begin{minted}{rust}
 pub fn gf256_monic_polynomial_division(
@@ -2654,12 +2657,15 @@ pub fn gf256_monic_polynomial_division(
     in_length: usize,
     alpha: u8,
 ) {
-    // Monic polynomial: a polynomial whose leading coefficient is 1; e.g. X^3 + 23X^2 + 34X + 45
+    // Monic polynomial: a polynomial whose leading coefficient is 1;
+    // e.g. X^3 + 23X^2 + 34X + 45
     quotient_polynomial_out[in_length - 1] = 1_u8; 
 
     // Start from the second last element
     for i in (0..=in_length - 2).rev() {
-        quotient_polynomial_out[i] = monic_polynomial_in[i + 1].field_add(alpha.field_mul(quotient_polynomial_out[i + 1])); // Q_i = P_i+1 + alpha * Q_i+1
+        quotient_polynomial_out[i] = monic_polynomial_in[i + 1].
+        // Q_i = P_i+1 + alpha * Q_i+1
+        field_add(alpha.field_mul(quotient_polynomial_out[i + 1])); 
     }
 }
 \end{minted}
@@ -2973,8 +2979,8 @@ ComputeInputSharesResult(input_shares, input_coefs)
 \subsubsection{Polynomial Evaluation}
 For polynomial evaluation in the algorithm, seen in \autoref{sec:mpc}, we need to evaluate a polynomial $P(x)$ at a point $r \in F_q^\eta$. This is done by evaluating the polynomial at each coefficient and summing the results.
 \begin{align}
-  \textstyle\bigcup_{|Q|}(F_q)^{|Q|} \times F_q^\eta & \rightarrow F_q^\eta                 \nonumber                                                    \\
-  Q(r)                                               & = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1} &  & Q_i \in F_q, r \in F_q^\eta\label{eq:mpcpoly}
+\textstyle\bigcup_{|Q|}(F_q)^{|Q|} \times F_q^\eta & \rightarrow F_q^\eta                 \nonumber                                                    \\
+Q(r)                                               & = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1} &  & Q_i \in F_q, r \in F_q^\eta\label{eq:mpcpoly}
 \end{align}
 
 To implement this we utilized our field arithmetic and an array of pre computed powers of the $r$, which we will cover in the section about the challenge generation. \todo{reference the correction section}
@@ -3185,7 +3191,6 @@ This however was still quite difficult to debug, because we still could not foll
 So we ended up using the reference implementation to compare intermediate values in the computation in order to ensure that our implementation was correct.
 This led us to find that our implementation of the polynomial evaluation seemed to be wrong. So we created a test that would ensure that our polynomial relation was correct \autoref{eq:polynomial_representation}:
 \begin{minted}{rust}
-    /// Test that for some random point r_k we have that S(r_k) * Q'(r_k) = F * P(r_k)
     fn test_relation_sq_eq_pf() {
         let (input, _broadcast, _chal, h_prime, y) = prepare();
         let mut prg = PRG::init_base(&[2]);
