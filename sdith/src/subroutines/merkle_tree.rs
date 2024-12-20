@@ -52,7 +52,7 @@ pub trait MerkleTreeTrait {
     /// Creates a new Merkle tree from a list of commitments (i.e. pre-hashed leaves in [`CommitmentsArray`]).
     ///
     /// The `salt` is optionally added to the hashing of parent nodes.
-    fn new(commitments: CommitmentsArray, salt: Option<Hash>) -> Self;
+    fn new(commitments: CommitmentsArray, salt: Option<Salt>) -> Self;
 
     /// Returns the root of the Merkle tree.
     fn root(&self) -> Hash;

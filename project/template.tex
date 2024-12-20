@@ -2287,48 +2287,79 @@ We then implemented the trait, as was shown in \autoref{sub:prg}, for the follow
 
 For the commitment scheme and in order to commit to shares, we utilized the hasher defined earlier.
 \begin{align*}
-  &\texttt{commit\_share}(\texttt{salt}, e, i, \sh{\texttt{share}}) = \texttt{Hash}(0 || salt || e_0 || e_1 || i_0 || i_1 || \sh{\texttt{share}})
+   & \texttt{commit\_share}(\texttt{salt}, e, i, \sh{\texttt{share}}) = \texttt{Hash}(0 || salt || e_0 || e_1 || i_0 || i_1 || \sh{\texttt{share}})
 \end{align*}
 for
 \begin{align*}
-  e = e_0 + 256 * e_1\\
+  e = e_0 + 256 * e_1 \\
   i = i_0 + 256 * i_1
-  \end{align*}
+\end{align*}
 
 For this functionality, we implemented simple tests to verify correctness. Specifically, we checked that the output remains consistent for identical inputs and that altering the salt produces a different output. These tests rely on the correctness of the underlying hashing crate.
 
 \subsection{Merkle Tree Implementation}\label{sub:merkle_tree_impl}
-\todo{Write the introduction for this section once the specification is complete.}
 
-The implementation of the Merkle tree presented challenges due to its one-dimensional array representation. However, we opted to retain this structure because of its performance benefits. In this design, the tree is stored in a single array, with the last half reserved for the commitments. During optimization, we experimented with a simpler structure, but since it yielded no tangible improvements, we decided to keep the more readable implementation. As the protocol specifies fixed-size trees for each category, we utilized constants from \autoref{sub:constants} to allocate the tree efficiently on the stack.
+The authors of the protocol present a Merkle tree implementation that is represented as a one-dimensional array of nodes, with the last half reserved for the $N$ party input commitments
+\begin{align*}
+  \texttt{nodes} = [\texttt{node}_1, \dots, \texttt{node}_{\log_2(2N)}, \texttt{node}_{\log_2(2N)+1}, \texttt{com}_1, \dots, \texttt{com}_N]
+\end{align*}
+for a hash $\texttt{Hash}_3$ (\autoref{eq:fiatshamirhash})
+\begin{align*}
+  \texttt{node}_i = \texttt{Hash}_3(i, \texttt{node}_{2i}, \texttt{node}_{2i + 1})\text{ and } |\texttt{nodes}| = 2N
+\end{align*}
+While we might have increased legibility by implementing a \textit{pointer based} structure, we experimented with these and it yielded no tangible improvements. Therefore, we opted to retain the array because of its performance benefits and alignment with the specification. 
 
-We defined a trait for the Merkle tree with methods derived from the specification:
-\begin{itemize}
-  \item \rust{new}: Builds a Merkle tree from a commitment array and salt.
-  \item \rust{authPath}: Generates an authentication path for specific leaf indexes.
-  \item \rust{getAuthSize}: Determines the size of the authentication path for serialization and signature parsing.
-  \item \rust{getRootFromAuthPath}: Computes the root hash from commitments and an authentication path.
-\end{itemize}
+As the protocol specifies fixed-size trees for each category, we utilized constants from \autoref{sub:constants} to allocate the tree efficiently on the stack.
 
-\subsubsection{new}\label{sec:new}
-We initially implemented the tree with a simple bottom-up approach, hashing child nodes and updating parent nodes. The root hash is stored at the array's first index and returned as the global commitment. A subsequent optimization introduced batching, inspired by a C++ implementation, where four parent hashes are computed simultaneously:
+We defined a trait for the Merkle tree with methods derived from the specification
 \begin{minted}{rust}
-merkle_hash_x4(parent_indexes, left_child_hashes, right_child_hashes, salt);
+  pub trait MerkleTreeTrait {
+    /// Creates a new Merkle tree from the given commitments and optional salt.
+    fn new(commitments: [Hash; PARAM_N], salt: Option<Salt>) -> Self;
+
+    /// Returns the path from the leaf at the given index to the root.
+    fn auth_path(&self, selected_leaves: &[u16]) -> Vec<Hash>;
+
+    /// Returns the size of the auth path in bytes.
+    fn get_auth_size(selected_leaves: &[u16]) -> usize;
+
+    /// Recalculates the merkle root from the commitments and the authentication path
+    fn get_root_from_auth_path(
+        auth_path: &mut Vec<Hash>,
+        commitments: &[Hash],
+        selected_leaves: &[u16],
+        salt: Option<Hash>,
+    ) -> Result<Hash, &'static str> {
+      // Default implementation
+    };
+  }
 \end{minted}
-This provided a minor speed improvement, discussed further in \autoref{ch:bench}. \todo{Consider discussing attempts at parallelization.}
-In order to test the correctness of the tree, we first check that the leaves correspond to the correct commitments. Then we run through parent nodes and recompute the hashes up until the root. We then check that the root becomes the correct value.
+
+\subsubsection{Generating the Merkle Tree}\label{sec:new}
+
+We implemented the tree using a bottom-up approach, where child nodes are hashed, and parent nodes are updated iteratively. The root hash is stored at the first index of the array and returned as the global commitment.
+
+To validate the correctness of the Merkle tree implementation, we perform the following steps (see test \rust{fn test_new_merkle_tree} in \texttt{src/subroutines/merkle\_tree.rs}):
+
+\begin{enumerate}[parsep=0pt, topsep=0pt, itemsep=0pt]
+  \item Verify that the leaves of the tree correspond to the expected commitments.
+  \item Traverse the internal nodes of the tree, recomputing the hashes iteratively from the leaf level up to the root.
+  \item Confirm that the computed root matches the expected value, ensuring the integrity of the tree structure.
+\end{enumerate}
+
+Our initial design adheres to Algorithm~5 described in~\cite[p31]{aguilarsyndrome11}. However, through optimization efforts, it became apparent that the Merkle tree construction presented a significant performance bottleneck during the signing process. Profiling results revealed that this stage consumed approximately $52\%$ of the execution time on the main thread, highlighting the need for further optimization.
+
+First, we introduced batching in the tree construction, inspired by the C++ reference implementation. In this approach, four parent hashes are computed simultaneously, improving efficiency during tree-building.
+
 \begin{minted}{rust}
-    #[test]
-    fn test_new_merkle_tree() {
-        // Setup the merkle tree
-
-        // Check root
-
-        assert_eq!(tree.height, PARAM_MERKLE_TREE_HEIGHT as u32);
-        assert_eq!(tree.n_leaves(), { PARAM_N });
-        assert_eq!(tree.n_nodes(), PARAM_MERKLE_TREE_NODES - 1);
-    }
+fn merkle_hash_x4(parent_indexes, left_child_hashes, right_child_hashes, salt);
 \end{minted}
+
+As per usual by now, we implemented this as a feature flag \texttt{merkle\_batching} and conditionally compiled it in. The batching approach yielded a modest performance improvement.
+
+We further investigated the possibility of parallelizing the construction of parent hashes, enabled through the feature flag \texttt{merkle\_parallel}. Theoretically, this would allow independent computation of each parent hash, potentially improving efficiency. However, this approach significantly increased implementation complexity and introduced substantial thread allocation overhead, ultimately resulting in a performance regression. Consequently, we decided to retain the sequential approach for its simplicity and better overall performance.
+
+In addition, we explored the use of alternative hash functions. The \texttt{SHA3} implementation required by NIST~\cite{nistcall}, while highly secure, is not optimal in terms of performance due to the numerous rounds required to ensure its robustness. To address this, we introduced a feature flag, \texttt{blake3}, enabling the use of the more efficient \texttt{Blake3} hash function. This change resulted in dramatic performance improvements. However, the SD-in-the-Head protocol, being heavily reliant on the security of its commitment scheme due to its MPCitH nature, depends critically on the strength of the underlying hash function. Therefore, the \texttt{blake3} feature is restricted to Category I security levels and intended strictly for exploratory purposes.
 
 \subsubsection{authPath and getAuthSize}\label{sub:auth_path}
 The initial \rust{authPath} implementation iterated backward through the array, identifying missing nodes by checking parent-child relationships. For signature validation, we later adopted an optimized approach using \rust{get\_revealed\_nodes}:
@@ -3399,7 +3430,7 @@ We ran benchmarking tests for different areas of the codebase -- based on the ap
 We measured performance in both cycles per byte and time. Furthermore we measured the binary size for each benchmark using \texttt{cargo size}. We compared our implementation to the optimised NIST submissions.
 
 \subsection{Benchmark of specification}
-To compare our implemementation to the one from the NIST submission, we ran the same benchmarks for both implementations. This had to be done for both the Dell and Macbook. On the Macbook we ran into problems with running the optimised version of the specification implementation, so we had to run against the reference implementation instead. It was built with the following cc:
+To compare our implementation to the one from the NIST submission, we ran the same benchmarks for both implementations. This had to be done for both the Dell and Macbook. On the Macbook we ran into problems with running the optimised version of the specification implementation, so we had to run against the reference implementation instead. It was built with the following cc:
 \begin{itemize}
   \item Apple clang version 16.0.0 (clang-1600.0.26.4)
   \item Target: arm64-apple-darwin24.1.0
@@ -3500,7 +3531,7 @@ conclude on the problem statement from the introduction
 
 Talk about the advantages and limitations of the SD-in-the-Head protocol and threshold variant.
 
-Talk about the advantageous and limitations of rust implemementation.
+Talk about the advantageous and limitations of rust implementation.
 
 conclude on the benchmarks.
 
@@ -3508,7 +3539,7 @@ point to round 2 NIST
 
 future work:
 
-- Collaborate with the authors (talk about issues we found in the spec and in implemementing the spec)
+- Collaborate with the authors (talk about issues we found in the spec and in implementing the spec)
 - We could add subroutines as parameters to the API. Then the developer could just add their own subroutines defined by our traits.
 - dynamic parameters created by users of the crate ("parameter sets tailored to different use cases") we could use build script with feature flag to exchange cat import in param.rs for custom file.
 - Verkle trees Optimisation
@@ -3516,7 +3547,7 @@ future work:
 - Explore optimisations that go away from the spec. Both code wise and parameter wise (we follow theirs a lot. Can we do better?)
 - e.g. Blake3
 - Analyse the code binary for compiler optimisations
-- hypercube implemementation and generalisation to accommodate it
+- hypercube implementation and generalisation to accommodate it
 - gf251 implementation
 - \cite[p26]{feneuil2023threshold} Batching Proofs with Shamir's Secret Sharing for communication saving
 
