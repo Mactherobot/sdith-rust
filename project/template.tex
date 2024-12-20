@@ -2099,18 +2099,20 @@ Within the \texttt{src} directory, the code is further divided into submodules, 
   \item \texttt{utils}: Offers utility functions used across the codebase.
 \end{itemize}
 
-This modular design ensures that each aspect of the protocol is encapsulated within its respective submodule, making the codebase easier to understand, maintain, and extend.
+This modular design ensures that each aspect of the protocol is encapsulated within its respective submodule, making the codebase easier to understand, maintain, and extend. \todo{Update}
 \begin{figure}[H]
   \dirtree{%
     .1 \color{orange}Cargo.toml.
     .1 \color{orange}build.rs.
     .1 \color{orange}README.md.
-    .1 ./benches/.
-    .1 ./src/.
-    .2 \color{orange}main.rs.
+    .1 benches/.
+    .1 examples/.
+    .1 src/.
+    .2 bin/.
+    .3 cli/\color{orange}cli.rs.
+    .3 profiling/sign.rs.
     .2 \color{orange}lib.rs.
     .2 \color{teal}api.rs.
-    .2 \color{teal}cli.rs.
     .2 \color{teal}keygen.rs.
     .2 \color{teal}witness.rs.
     .2 constants/.
@@ -2119,13 +2121,18 @@ This modular design ensures that each aspect of the protocol is encapsulated wit
     .3 \color{teal}types.rs.
     .2 kat/\dots.
     .2 signature/\dots.
+    .3 \color{teal}input.rs.
+    .3 \color{teal}sign.rs.
+    .3 \color{teal}verify.rs.
     .2 subroutines/\dots.
     .3 prg/\dots.
+    .3 mpc/\dots.
     .3 \color{teal}commitments.rs.
     .3 \color{teal}hashing.rs.
     .3 \color{teal}merkle\_tree.rs.
     .2 utils/.
     .3 \color{teal}iterator.rs.
+    .3 \color{teal}marshalling.rs.
   }
   \caption{The directory structure of the project. \texttt{mod.rs} files are omitted for brevity.}
   \label{fig:structure}
@@ -2347,7 +2354,7 @@ We implemented the tree using a bottom-up approach, where child nodes are hashed
 
 To validate the correctness of the Merkle tree implementation, we perform the following steps (see test \rust{fn test_new_merkle_tree} in \texttt{src/subroutines/merkle\_tree.rs}):
 
-\begin{enumerate}[parsep=0pt, topsep=0pt, itemsep=0pt]
+\begin{enumerate}[parsep=0pt, itemsep=0pt]
   \item Verify that the leaves of the tree correspond to the expected commitments.
   \item Traverse the internal nodes of the tree, recomputing the hashes iteratively from the leaf level up to the root.
   \item Confirm that the computed root matches the expected value, ensuring the integrity of the tree structure.
@@ -2361,7 +2368,7 @@ First, we introduced batching in the tree construction, inspired by the C++ refe
 fn merkle_hash_x4(parent_indexes, left_child_hashes, right_child_hashes, salt);
 \end{minted}
 
-As per usual by now, we implemented this as a feature flag \texttt{merkle\_batching} and conditionally compiled it in. The batching approach yielded a modest performance improvement.
+As has become standard in our approach, we implemented this functionality as a feature flag, \texttt{merkle\_batching}, and conditionally compiled it into the codebase. The batching approach provided a modest improvement in performance.
 
 We further investigated the possibility of parallelizing the construction of parent hashes, enabled through the feature flag \texttt{merkle\_parallel}. Theoretically, this would allow independent computation of each parent hash, potentially improving efficiency. However, this approach significantly increased implementation complexity and introduced substantial thread allocation overhead, ultimately resulting in a performance regression. Consequently, we decided to retain the sequential approach for its simplicity and better overall performance.
 
