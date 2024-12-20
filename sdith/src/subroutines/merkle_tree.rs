@@ -133,8 +133,7 @@ pub trait MerkleTreeTrait {
 
             if is_left_child && index == last_index {
                 // If the node is isolated then add it to the queue
-                let add = q.add((node, index >> 1));
-                if add.is_err() {
+                if q.add((node, index >> 1)).is_err() {
                     return Err("Could not add element to queue");
                 }
             } else {
@@ -168,8 +167,7 @@ pub trait MerkleTreeTrait {
                 // Generate the parent hash from current node and next node
                 let parent = merkle_hash(parent_index, &node, &_next_node, salt);
 
-                let add = q.add((parent, parent_index));
-                if add.is_err() {
+                if q.add((parent, parent_index)).is_err() {
                     return Err("Could not add element to queue");
                 }
             }
@@ -195,9 +193,7 @@ pub trait MerkleTreeTrait {
         // Add the commitments to the queue but with the correct index in the tree
         for selected_leaf in selected_leaves.iter() {
             let val = (1 << PARAM_MERKLE_TREE_HEIGHT) + *selected_leaf as usize;
-            let add = q.add(val);
-
-            if add.is_err() {
+            if q.add(val).is_err() {
                 panic!("Could not add element to queue");
             }
         }
@@ -237,8 +233,7 @@ pub trait MerkleTreeTrait {
                 }
             }
             let parent_index = index >> 1;
-            let add = q.add(parent_index);
-            if add.is_err() {
+            if q.add(parent_index).is_err() {
                 panic!("Could not add element to queue");
             }
         }
@@ -524,15 +519,15 @@ mod test {
         }
 
         let mut auth = tree.auth_path(&selected_leaves);
-        let Ok(root) = MerkleTree::get_root_from_auth_path(
+        let root = MerkleTree::get_root_from_auth_path(
             &mut auth,
             &commitments_tau,
             &selected_leaves,
             None,
-        ) else {
-            panic!("Could not get merkle root from auth")
-        };
-        assert_ne!(tree.root(), root);
+        );
+        
+        assert!(root.is_ok());
+        assert_ne!(tree.root(), root.unwrap());
     }
 
     #[test]

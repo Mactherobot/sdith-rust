@@ -2374,38 +2374,44 @@ We further investigated the possibility of parallelizing the construction of par
 
 In addition, we explored the use of alternative hash functions. The \texttt{SHA3} implementation required by NIST~\cite{nistcall}, while highly secure, is not optimal in terms of performance due to the numerous rounds required to ensure its robustness. To address this, we introduced a feature flag, \texttt{blake3}, enabling the use of the more efficient \texttt{Blake3} hash function. This change resulted in dramatic performance improvements. However, the SD-in-the-Head protocol, being heavily reliant on the security of its commitment scheme due to its MPCitH nature, depends critically on the strength of the underlying hash function. Therefore, the \texttt{blake3} feature is restricted to Category I security levels and intended strictly for exploratory purposes.
 
-\subsubsection{authPath and getAuthSize}\label{sub:auth_path}
-The initial \rust{authPath} implementation iterated backward through the array, identifying missing nodes by checking parent-child relationships. For signature validation, we later adopted an optimized approach using \rust{get\_revealed\_nodes}:
+\subsubsection{Computing the authentication paths}\label{sub:auth_path}
+The initial implementation traversed the array in reverse order, identifying missing nodes by verifying parent-child relationships. This approach followed the structure outlined in Algorithm~6 of~\cite[p30]{aguilarsyndrome11}. Ultimately, however, we transitioned to a \textit{queue}-based method implemented in \rust{get_revealed_nodes}:
+
 \begin{minted}{rust}
 fn get_revealed_nodes(selected_leaves: &[u16]) -> Vec<u16> {
-        if selected_leaves.is_empty() {
-            return vec![];
-        }
-
-        // Initialize
-        let mut revealed_nodes = vec![];
-        let mut q: Queue<usize> = queue![];
-
-        for selected_leaf in selected_leaves.iter() {
-          // Add the selected leaves to the queue
-        }
-
-        while q.peek().unwrap() != 1 {
-          // Walk up the tree and add the parent to the queue collecting all the revealed nodes on the way
-        }
-
-        revealed_nodes
+    if selected_leaves.is_empty() {
+        return vec![];
     }
 
+    // Initialize
+    let mut revealed_nodes = vec![];
+    let (mut height_index, mut last_index) = 
+      (1 << PARAM_MERKLE_TREE_HEIGHT, PARAM_MERKLE_TREE_NODES - 1);
+    let mut q: Queue<usize> = queue![];
+
+    for selected_leaf in selected_leaves.iter() {
+      // Add the selected leaves to the queue
+    }
+
+    while q.peek().unwrap() != 1 {
+      // Walk up the tree and add the parent to the queue collecting all the revealed nodes on the way
+    }
+
+    revealed_nodes
+}
 \end{minted}
-This function uses a queue to traverse the tree and identify revealed nodes. These nodes determine the size of the authentication path by multiplying their count by the hash digest size. The \rust{authPath} method uses these revealed nodes to fetch their corresponding values:
+
+This function employs a queue to traverse the tree and identify the revealed nodes. The identified nodes are then used to compute the size of the authentication path by multiplying their count by the hash digest size. The \rust{auth_path} method utilizes the indices of these revealed nodes to fetch their corresponding values.
+
 \begin{minted}{rust}
 fn auth_path(&self, selected_leaves: &[u16]) -> Vec<Hash> {
     let revealed_nodes = Self::get_revealed_nodes(selected_leaves);
     revealed_nodes.iter().map(|&idx| self.nodes[idx as usize]).collect()
 }
 \end{minted}
-Testing that we found the revealed nodes was done by doing the computation manually and then use the found authentication path nodes as check. We created several cases to ensure that it works for different types of inputs. Even though the protocol has a constant number of leaves and nodes:
+
+The correctness of the revealed nodes was verified by manually computing the expected results and then using the identified authentication path nodes as a basis for comparison. To ensure robustness, we tested this process with various input cases, covering different scenarios. For example:
+
 \begin{minted}{rust}
     #[test]
     fn test_merkle_two_selected_neighboring_leaves() {
@@ -2416,66 +2422,75 @@ Testing that we found the revealed nodes was done by doing the computation manua
 
         // The auth path should have 7 nodes (one from each level)
         assert_eq!(auth.len(), PARAM_MERKLE_TREE_HEIGHT - 1);
-        // Check that the auth path is correct
     }
 \end{minted}
 
-\subsubsection{getRootFromAuthPath}\label{sub:get_root_from_auth_path}
-Verification involves recomputing the root from the authentication path:
+\subsubsection{Computing Merkle tree root from authentication path}\label{sub:get_root_from_auth_path}
+Verification involves recomputing the root from the authentication path. This is done by traversing the tree from the selected leaves to the root and recomputing the hashes. The function is implemented with the same \textit{queue}-based approach as the \rust{auth_path} method:
+
+The following function, \rust{get_root_from_auth_path}, iteratively recomputes hashes by traversing the tree from the selected leaves to the root. To simplify the presentation, we have omitted less relevant details and focused on the two main loops, which utilize the queue structure to iterate from the selected leaves up to the root:
+
 \begin{minted}{rust}
-    fn get_root_from_auth_path(
-        auth_path: &mut Vec<Hash>,
-        commitments: &[Hash],
-        selected_leaves: &[u16],
-        salt: Option<Hash>,
-    ) -> Result<Hash, &'static str> {
+fn get_root_from_auth_path(
+    auth_path: &mut Vec<Hash>,
+    commitments: &[Hash],
+    selected_leaves: &[u16],
+    salt: Option<Hash>,
+) -> Result<Hash, &'static str> {
 
-        // Create the queue
-        let mut q: Queue<(Hash, usize)> = queue![];
+    // Create the queue
+    let mut q: Queue<(Hash, usize)> = queue![];
 
-        for (i, selected_leaf) in selected_leaves.iter().enumerate() {
-          // Add the commitments to the queue
-        }
-        while q.peek().unwrap().1 != 1 {
-          // Traverse the tree from the selected leafs to the root and recompute the hashes
-          // If we recompute a parent put this into the queue to walk one step up in the tree
-        }
-        let (root, _) = q.remove().unwrap();
-
-        Ok(root)
+    for (i, selected_leaf) in selected_leaves.iter().enumerate() {
+        // Add the commitments to the queue
     }
-\end{minted}
-This function iteratively recomputes hashes by traversing the tree from the selected leaves to the root. We have stripped all the non-interesting parts, and left the 2 main loops using the queue structure to iterate from the selected leaves up to the root.
+    while q.peek().unwrap().1 != 1 {
+        // Traverse the tree from the selected leaves to the root and recompute the hashes
 
-As above we created several tests to ensure that the function adhered correctly to normal input. But we also tested against several odd inputs to make sure that we caught if the function failed in some edge cases or if the function was not implemented correctly.
+        ...
+
+        // If we recompute a parent, add it to the queue to progress upward in the tree
+        if q.add((parent, parent_index)).is_err() {
+            return Err("Could not add element to queue");
+        }
+    }
+    let (root, _) = q.remove().unwrap();
+
+    Ok(root)
+}
+\end{minted}
+
+This implementation highlights the use of a queue to manage traversal, ensuring efficient recomputation of hashes as the function progresses from the leaves to the root. Additionally, it is noteworthy that this implementation employs the \rust{Result} type for error handling. This approach allows the function to gracefully handle errors and return them for further management by the caller. The following example illustrates this using the \rust{?} operator:
+
 \begin{minted}{rust}
-    #[test]
-    fn test_merkle_root_from_auth_wrong_commitments() {
-        let mut commitments = setup_test_commitments();
-
-        let mut prg = PRG::init_base(&[1]);
-        (0..PARAM_N).for_each(|i| prg.sample_field_fq_non_zero(&mut commitments[i]));
-        let tree = MerkleTree::new(commitments, None);
-
-        let selected_leaves = [233u16, 234u16, 235u16];
-        let mut commitments_tau = [[1_u8; PARAM_DIGEST_SIZE]; PARAM_L];
-        for i in selected_leaves {
-            commitments_tau[(i - 233) as usize] = commitments[0];
-        }
-
-        let mut auth = tree.auth_path(&selected_leaves);
-        let Ok(root) = MerkleTree::get_root_from_auth_path(
-            &mut auth,
-            &commitments_tau,
-            &selected_leaves,
-            None,
-        ) else {
-            panic!("Could not get merkle root from auth")
-        };
-        assert_ne!(tree.root(), root);
-    }
+fn caller(...) -> Result<(), &'static str> {
+    let root = get_root_from_auth_path(...)?;
+    // do something with root
+}
 \end{minted}
-In this example we check that based on wrong inputs the function fails.
+
+As with the \rust{auth_path} function, we manually constructed several test cases to verify that the function behaves correctly under normal input conditions. Additionally, we designed tests with various unusual or edge-case inputs -- often called \textit{negative testing} -- to ensure that the function correctly handles unexpected scenarios. In the example below, we check that based on wrong inputs the function fails.
+
+\begin{minted}{rust}
+  #[test]
+  fn test_merkle_root_from_auth_remove_wrong() {
+      let commitments = setup_test_commitments();
+      let tree = MerkleTree::new(commitments, None);
+
+      let selected_leaves = [233u16, 234u16, 235u16];
+      let commitments_tau = [[1_u8; PARAM_DIGEST_SIZE]; PARAM_L];
+      let mut auth = tree.auth_path(&selected_leaves);
+      auth.remove(0);
+      let result = MerkleTree::get_root_from_auth_path(
+          &mut auth,
+          &commitments_tau,
+          &selected_leaves,
+          None,
+      );
+      assert!(result.is_err());
+      assert_eq!(result.unwrap_err(), "Auth path is too short");
+  }
+\end{minted}
 
 \subsection{Field Arithmetic Implementation}\label{sub:field_arithmetic}
 To ensure full control over the underlying field arithmetic and avoid reliance on external crates, we implemented the Galois field arithmetic ourselves. This decision allowed us to tailor the implementation to our specific requirements.
