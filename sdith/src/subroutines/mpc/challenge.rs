@@ -14,12 +14,13 @@ use crate::{
         types::{hash_default, Hash},
     },
     subroutines::{
-        arith::{gf256::gf256_ext::FPoint, FieldArith as _},
+        arith::{
+            gf256::gf256_ext::{gf256_polynomial_evaluation_in_point_r, FPoint},
+            FieldArith as _,
+        },
         prg::PRG,
     },
 };
-
-use super::polynomial_evaluation;
 
 /// Challenge pair `(r, e) ∈ F_point^t, (F_point^t)^d`
 #[derive(Clone)]
@@ -57,7 +58,7 @@ impl Challenge {
         for t in 0..PARAM_T {
             powers_of_r[t][1] = r[t];
             get_powers(r[t], &mut powers_of_r[t]);
-            f_poly_eval[t] = polynomial_evaluation(&PRECOMPUTED_F_POLY, &powers_of_r[t])
+            f_poly_eval[t] = gf256_polynomial_evaluation_in_point_r(&PRECOMPUTED_F_POLY, &powers_of_r[t])
         }
 
         Self {

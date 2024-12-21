@@ -18,9 +18,9 @@ use crate::{
     subroutines::{
         arith::{
             gf256::{
-                gf256_ext::FPoint,
+                gf256_ext::{gf256_polynomial_evaluation_in_point_r, FPoint},
                 gf256_matrices::HPrimeMatrix,
-                gf256_vector::{gf256_mul_scalar_add_vector, gf256_mul_vector_by_scalar},
+                gf256_vector::gf256_mul_scalar_add_vector,
             },
             FieldArith as _,
         },
@@ -142,24 +142,6 @@ pub fn compute_input_shares(
     ComputeInputSharesResult(input_shares, input_coefs)
 }
 
-/// Evaluate the polynomial at a given point in FPoint. See p. 20 of the specification.
-/// Q(r) = Σ_{i=0}^{ℓ-1} q_i · r^i
-///
-/// # Arguments
-/// * `poly_d` - The polynomial to evaluate coefficients in order [1, 2, 3] represents p(x) = 3x^2 + 2x + 1
-pub fn polynomial_evaluation(poly_d: &[u8], powers_of_r: &[FPoint]) -> FPoint {
-    assert!(powers_of_r.len() >= poly_d.len());
-    let mut sum = FPoint::default();
-    let degree = poly_d.len();
-    for i in 0..degree {
-        // sum += r_j^(i-1) * q_poly_d[i]
-        let mut r_i = powers_of_r[i];
-        gf256_mul_vector_by_scalar(&mut r_i, poly_d[i]);
-        sum = sum.field_add(r_i);
-    }
-    sum
-}
-
 /// Computes the publicly recomputed values of the MPC protocol (i.e. the plain
 /// values corresponding to the broadcasted shares).
 ///
@@ -269,16 +251,17 @@ fn _party_computation(
             // Challenge values
 
             // α[d][j] = ε[d][j] ⊗ Evaluate(Q[d], r[j]) + a[d][j]
-            let eval_q = polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
+            let eval_q =
+                gf256_polynomial_evaluation_in_point_r(&q_poly_complete[d], &powers_of_r_j);
             alpha_share[d][j] = chal.eps[d][j].field_mul(eval_q).field_add(a);
 
             // β[d][j] = Evaluate(S[d], r[j]) + b[d][j]
-            let eval_s = polynomial_evaluation(&s_poly[d], &powers_of_r_j);
+            let eval_s = gf256_polynomial_evaluation_in_point_r(&s_poly[d], &powers_of_r_j);
             beta_share[d][j] = eval_s.field_add(b);
 
             if compute_v {
                 // v[j] += ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
-                let eval_p = polynomial_evaluation(&p_poly[d], &powers_of_r_j);
+                let eval_p = gf256_polynomial_evaluation_in_point_r(&p_poly[d], &powers_of_r_j);
                 v[j] = v[j].field_add(
                     chal.f_poly_eval[j]
                         .field_mul(eval_p)
@@ -351,15 +334,16 @@ pub fn inverse_party_computation(
             // Challenge values
 
             // a[d][j] = α[d][j] - ε[d][j] ⊗ Evaluate(Q[d], r[j])
-            let eval_q = polynomial_evaluation(&q_poly_complete[d], &powers_of_r_j);
+            let eval_q =
+                gf256_polynomial_evaluation_in_point_r(&q_poly_complete[d], &powers_of_r_j);
             a[d][j] = alpha_share.field_sub(chal.eps[d][j].field_mul(eval_q));
 
             // b[d][j] = β[d][j] - Evaluate(S[d], r[j])
-            let eval_s = polynomial_evaluation(&s_poly[d], &powers_of_r_j);
+            let eval_s = gf256_polynomial_evaluation_in_point_r(&s_poly[d], &powers_of_r_j);
             b[d][j] = beta_share.field_sub(eval_s);
 
             // c[j] +=  ε[d][j] ⊗ Evaluate(F, r[j]) ⊗ Evaluate(P[d], r[j])
-            let eval_p = polynomial_evaluation(&p_poly[d], &powers_of_r_j);
+            let eval_p = gf256_polynomial_evaluation_in_point_r(&p_poly[d], &powers_of_r_j);
             c[j] = c[j].field_add(
                 chal.f_poly_eval[j]
                     .field_mul(eval_p)
@@ -470,8 +454,8 @@ mod mpc_tests {
 
         let q_poly = [vec![1, 2, 3]];
 
-        let q_eval = polynomial_evaluation(&q_poly[0], &powers_of_r); // r_0 =
-                                                                      // [1,0,0,0] * 1 + [40, 106, 142, 69] * 2 + [123, 29, 100, 186] * 3 = [220, 243, 171, 95]
+        let q_eval = gf256_polynomial_evaluation_in_point_r(&q_poly[0], &powers_of_r); // r_0 =
+                                                                                       // [1,0,0,0] * 1 + [40, 106, 142, 69] * 2 + [123, 29, 100, 186] * 3 = [220, 243, 171, 95]
 
         let expected = FPoint::from([220, 243, 171, 95]); // q(r) = 1 + 2r + 3r^2
         assert_eq!(q_eval, expected);
@@ -595,11 +579,12 @@ mod mpc_tests {
         let q_poly = complete_q(input.solution.q_poly, 1);
         let s_poly = compute_s_poly(compute_s(&input.solution.s_a, &h_prime, Some(&y)).unwrap());
 
-        let q_eval = polynomial_evaluation(&q_poly[0], &powers_of_r);
-        let s_eval = polynomial_evaluation(&s_poly[0], &powers_of_r);
+        let q_eval = gf256_polynomial_evaluation_in_point_r(&q_poly[0], &powers_of_r);
+        let s_eval = gf256_polynomial_evaluation_in_point_r(&s_poly[0], &powers_of_r);
 
-        let f_eval = polynomial_evaluation(&PRECOMPUTED_F_POLY, &powers_of_r);
-        let p_eval = polynomial_evaluation(&input.solution.p_poly[0], &powers_of_r);
+        let f_eval = gf256_polynomial_evaluation_in_point_r(&PRECOMPUTED_F_POLY, &powers_of_r);
+        let p_eval =
+            gf256_polynomial_evaluation_in_point_r(&input.solution.p_poly[0], &powers_of_r);
 
         assert_eq!(q_eval.field_mul(s_eval), f_eval.field_mul(p_eval));
     }
