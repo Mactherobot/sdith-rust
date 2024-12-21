@@ -21,7 +21,7 @@ pub(crate) fn get_iterator_mut<V: Send>(array: &mut [V]) -> rayon::slice::IterMu
 #[cfg(not(feature = "parallel"))]
 /// Get an iterator for the array
 pub(crate) fn get_iterator<V>(array: &mut [V]) -> std::slice::Iter<'_, V> {
-    array.iter_mut()
+    array.iter()
 }
 
 #[cfg(feature = "parallel")]
