@@ -2621,7 +2621,7 @@ mod tests {
 \end{minted}
 
 \subsection{Field Extensions}\label{sub:field_extensions}
-The field extensions were built using a \textit{tower structure} as we first implemented the base field $\mathbb{F}_{q}$ for $q=2^8$ -- also called Rijndael's field. Then, we proceeded to implement trait for the first extension from \rust{u8} to \rust{[u8; 2]} in $\mathbb{F}_{q^2}$ and next to $\mathbb{F}_{q^4}$.
+The field extensions were built using a \textit{tower structure} as we first implemented the base field $\mathbb{F}_{q}$ for $q=2^8$ -- also called Rijndael's field. Then, we proceeded to implement a trait for the first extension from \rust{u8} to \rust{[u8; 2]} in $\mathbb{F}_{q^2}$ and next to $\mathbb{F}_{q^4}$.
 
 \subsubsection{Tower construction}
 
@@ -2651,7 +2651,7 @@ Multiplication is more intricate. Given two elements $(a, b)$ and $(c, d)$, we c
   (a + bX) \cdot (c + dX) & = ac + (ad + bc)  X + bd  X^2                        \\
                           & = ac + (ad + bc)  X + bd  (X + 32)                   \\
                           & = (ac + bd \cdot 32) + (ad + bc + bd)X               \\
-                          & = (ac + bd \cdot 32) + ((a + b) \cdot (c + d) - ac)X \\
+                          & = (ac + bd \cdot 32) + ((a + b) \cdot (c + d) - ac)X
 \end{align}
 The Rust implementation of this operation is as follows:
 
