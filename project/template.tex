@@ -178,33 +178,29 @@
 
 \chapter{Introduction}\label{ch:intro}
 
-few pages. Introduce what we have done and how the paper is structured
-
-\section{Post-Quantum Cryptography}\label{sec:quantum}
-
 Digital signatures are essential for ensuring a secure internet. As our collective reliance on the internet grows, they play a critical role in identifying and verifying the authenticity of the sources we interact with over the network. Digital signatures ensure that software or web pages come from trusted sources and have not been tampered with, forming a cornerstone of IT security. They also enable the verification of the signer's identity and help detect unauthorized changes to data. Additionally, digital signatures support non-repudiation, meaning they provide proof to a third party that a signature was genuinely created by the signer.
 
 The most widely used digital signature schemes rely on public-key cryptography. Each signer has a public and a private key. The private key allows the signer to sign messages, while the public key is used to verify the signature. The security of a signature is grounded in the computational complexity of solving specific mathematical problems. Standardization efforts in the early 2000s~\cite{pub2000digital} led to the adoption of algorithms such as RSA, DSA, and ECDSA, which leverage intractability of factoring large integers and solving discrete logarithms to ensure robust protection.
 
-\subsection{NIST call to action}
+\section{NIST call to action}
 
-In 1994, the discovery of Shor's algorithm~\cite{shor1997} introduced a polynomial-time method for solving these problems using quantum computing. At that time, quantum computers were theoretical constructs. However, in 2001, Chuang et al.~\cite{vandersypen2001experimental,buchmann2004post} successfully implemented Shor's algorithm on a 7-qubit quantum computer. Two decades later, significant advancements in quantum technology, have brought us closer to the point where quantum computers could be a reality.
-\todo{Add some examples of the significant advancements in quantum technology.}
+In 1994, the discovery of Shor's algorithm~\cite{shor1997} introduced a polynomial-time method for solving these problems using quantum computing. At that time, quantum computers were theoretical constructs. However, in 2001, Chuang et al.~\cite{vandersypen2001experimental,buchmann2004post} successfully implemented Shor's algorithm on a 7-qubit quantum computer. Two decades later, significant advancements in quantum technology have brought us closer to the point where quantum computers could be a reality. The most recent advancements including the Willow chip from Google~\cite{blogMeetWillow}. Reducing the errors exponentially as they scale up using more qubits. 
+\todo{Add some examples of the significant advancements in quantum technology. Willow chip from google}
 
 A necessary pre-requisite for a post-quantum secure signature scheme is the existence of a problem that is intractable for quantum computers. Several candidates from the family of NP-hard problems within complexity theory have been proposed. These are problems that can not be solved in polynomial-time by any classical or quantum computer.
 
 In 2016, the National Institute of Standards and Technology (NIST) initiated a call for quantum-resistant public-key cryptosystems~\cite{nistcall}. This effort led to the standardization of three signature schemes: Dilithium~\cite{ducas2018crystals}, Falcon~\cite{fouque2018falcon}, and SPHINCS+~\cite{bernstein2019sphincs+}. Dilithium and Falcon are lattice-based schemes that rely on the hardness of structured lattice problems. They offer efficient key generation, signing, and verification, making them practical for many applications. However, their shared dependence on the same mathematical assumption poses a risk if this assumption is broken.
 
-In contrast, SPHINCS+ is a hash-based signature scheme, relying solely on the security of cryptographic hash functions rather than lattice-based problems. This makes it an important alternative, providing diversity in case lattice assumptions are compromised. Despite its robustness, SPHINCS+ is significantly slower than Dilithium and Falcon, with high computational costs and larger signature sizes, which limits its suitability for real-world applications.
+In contrast, SPHINCS+ is a hash-based signature scheme, relying solely on the security of cryptographic hash functions rather than lattice-based problems. This makes it an important alternative, providing diversity in case lattice assumptions are compromised. Despite its robustness, SPHINCS+ is significantly slower than Dilithium and Falcon, with high computational costs and larger signature sizes, which limits its suitability for real-world applications, other than those that require less frequent signatures. Eg. Hardware signing.
 
 To mitigate the risks of relying heavily on lattice-based schemes, NIST issued a second call in 2022 for quantum-resistant signature schemes based on alternative assumptions, ensuring a more diversified and resilient set of standards for the future.
 
 
-\subsection{Code-based problems}
+\section{Code-based problems}
 
 With the introduction of public-key cryptosystems by Diffie and Hellman in 1976, we saw the introduction to schemes like RSA, that is based on factoring of large integers and ElGamal which is based on the discrete logarithm problem. While less known, there exists schemes based on coding theory -- its own discipline within information theory which predates the introduction of public-key cryptography. In 1978, McEliece introduced a PK scheme based on coding theory~\cite{mceliece1978public} -- only two years later -- based on the hardness of decoding random linear codes~\cite{berlekamp1978inherent}.
 
-While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based crypto-schemes has seen a resurgence as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent developments in code-based cryptosystems have shown that the performance needed for code based cryptographic schemes practically is within reach. Introductions of linear based codes on finite fields and MPCitH (Multi-Party Computation in the Head) threshold schemes~\cite{baum2020concretely} show promising results. With the SD-in-the-Head scheme~\cite{aguilarsyndrome11,feneuil2023threshold} presented in this report, such techniques are combined to define an efficient post-quantum secure signature scheme.
+While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based crypto-schemes has seen a resurgence as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent developments in code-based cryptosystems have shown that the performance needed for code based cryptographic schemes practically is within reach, one such scheme is BIKE~\cite{BIKE_Spec_2024} from the first NIST PQC call. Introductions of linear based codes on finite fields and MPCitH (Multi-Party Computation in the Head) threshold schemes~\cite{baum2020concretely} show promising results. With the SD-in-the-Head scheme~\cite{aguilarsyndrome11,feneuil2023threshold} presented in this report, such techniques are combined to define an efficient post-quantum secure signature scheme.
 
 \section{Our contributions}
 
@@ -229,7 +225,7 @@ Finally, this project serves as an opportunity learn about post-quantum signatur
 \subsection{Choosing the SD-in-the-Head protocol}
 The SD-in-the-Head protocol offers a highly modular design, enabling extensive configurability and support for various subroutines. This flexibility is particularly evident in the two variants included in the specification~\cite{aguilarsyndrome11}: the \textit{hypercube} and \textit{threshold} variants, both of which demonstrate significant performance improvements over the original protocol~\cite{feneuil2022syndrome,aguilar2023return,feneuil2023threshold}.
 
-The threshold variant, in particular, provides an opportunity to explore and implement several cryptographic primitives, including Merkle Trees~\cite{becker2008merkle}, Linear Secret Sharing (Shamir), and Multi-Party Computation in the Head (MPCitH)~\cite{baum2020concretely}. Along with Galois Fields~\cite{brownadvanced}.
+The threshold variant, in particular, provides an opportunity to explore and implement several cryptographic primitives, including Merkle Trees~\cite{becker2008merkle}, Linear Secret Sharing (Shamir) -- requiring an implementation of Galois Fields~\cite{brownadvanced} -- and Multi-Party Computation in the Head (MPCitH)~\cite{baum2020concretely}. 
 
 Additionally, the authors supply a detailed and well-crafted specification, along with a reference implementation in C++, which serves as a robust starting point for our work.
 
@@ -250,7 +246,7 @@ We chose to implement the SD-in-the-Head protocol in Rust for several compelling
 
 Furthermore, our choice of Rust was driven by a desire to investigate its strengths and limitations in the context of implementing and optimizing cryptographic protocols. To this end, our report will include an overview of the features that Rust provides (\autoref{sec:rust}).
 
-We prioritized code readability and maintainability in which Rust offers a string advantage. We incorporated its included testing framework and benchmarking tools to validate the correctness and efficiency of the implementation. These measures also facilitate meaningful comparisons with alternative signature schemes.
+We prioritized code readability and maintainability in which Rust offers a strong advantage. We incorporated its included testing framework and benchmarking tools to validate the correctness and efficiency of the implementation. These measures also facilitate meaningful comparisons with alternative signature schemes.
 
 For readability, we emphasized clear, well-documented, and logically structured code supported by Rust's documentation and modular structure.
 
@@ -271,7 +267,7 @@ In this section, we outline the mathematical and cryptographic foundations neces
 
 We begin by introducing the essential subroutines that underpin the SD-in-the-Head protocol. This includes \textbf{Galois Finite Fields}~\cite{martinez2023syndromes, reed1960polynomial, brownadvanced} along with cryptographic primitives; \textbf{collision-resistant hash functions} and \textbf{Merkle tree commitment scheme}~\cite{becker2008merkle}. In addition, we provide short introductions to the foundational protocols of \textbf{Secure Multi-Party Computation} (MPC) and \textbf{Zero-Knowledge} (ZK) proofs, which serve as the underlying cryptographic protocols.
 
-Next, we delve into the Syndrome Decoding (SD) problem, which forms the backbone of the SD-in-the-Head protocol. This includes an overview of the problem definition~\cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}, and its polynomial representation. This will support an understanding of how the protocol operates on hard instances of the SD problem.
+Next, we explain the Syndrome Decoding (SD) problem, which forms the backbone of the SD-in-the-Head protocol. This includes an overview of the problem definition~\cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}, and its polynomial representation. This will support an understanding of how the protocol operates on hard instances of the SD problem.
 
 Building upon these foundations, we lay the groundwork for the construction of the SD-in-the-Head protocol. First, we discuss the \textbf{Multi-Party-Computation-in-the-Head} (MPCitH) paradigm, explaining how it is leveraged to construct efficient ZK proofs~\cite{ishai2007zero}. Additionally we detail the role of the MPC preprocessing~\cite{baum2020concretely} and linear secret-sharing scheme~\cite{feneuil2023threshold}, which dramatically improve the efficiency of the MPCitH construction, and verification. Next, we introduce the \textbf{Fiat-Shamir heuristic}, a powerful tool that transforms an interactive ZK protocol into a non-interactive signature scheme~\cite{fiat1986prove}.
 
@@ -279,10 +275,10 @@ Finally, we outline the reasons and benefits of using the Rust programming langu
 
 
 \section{Galois Finite Field}\label{sec:gf256}
-Finite fields lays the basis for many cryptographic protocols and primitives. In essence, finite field theory describes the relation and properties between numbers, while disregarding the numbers themselves. In order to define finite fields, we first need to define a \textit{group} and a \textit{finite field} (\autoref{def:group} and \autoref{def:field}, respectively).
+Finite fields lay the basis for many cryptographic protocols and primitives. In essence, finite field theory describes the relation and properties between numbers, while disregarding the numbers themselves. In order to define finite fields, we first need to define a \textit{group} (\autoref{def:group}).
 
 \begin{definition}\label{def:group}
-  A group $\mathbb{G}$ is a tuple $(\mathbb{G}, \times, 1)$ where, $\mathbb{G}$ is the set of elements in the group, $\times$ is a binary operator, and $1$ is the multiplicative identity. The group $\mathbb{G}$ must satisfy the following properties:
+  A group $\mathbb{G}$ is a tuple $(\mathbb{G}, \times, 1)$ where $\mathbb{G}$ is the set of elements in the group, $\times$ is a binary operator, and $1$ is the multiplicative identity. The group $\mathbb{G}$ must satisfy the following properties:
   \begin{enumerate}
     \item $\mathbb{G}$ is \textbf{closed} under $\times$. For all $a,b \in \mathbb{G}$, $a \times b \in \mathbb{G}$.
     \item $\mathbb{G}$ is \textbf{associative} under $\times$. For all $a,b,c \in \mathbb{G}$, $(a \times b) \times c = a \times (b \times c)$.
@@ -306,9 +302,9 @@ Finite fields lays the basis for many cryptographic protocols and primitives. In
 \end{definition}
 
 \noindent
-The most commonly known finite fields are the prime fields $\mathbb{F}_p$, widely used in discrete logarithm cryptosystems, such as ECDSA and ElGamal. These fields can be extended into $\mathbb{F}_{p^n}$, containing $p^n$ elements which we will describe in \autoref{sub:field_extension}. However, prime fields are not efficient for iterating over large numbers, due to the modular reduction overhead, a common requirement in protocols such as SD-in-the-Head. For better efficiency, we require a field that can be represented using bits or bytes. One method to achieve this is by constructing fields commonly known as Galois fields. Consider the simplest prime field, also called binary field, $\mathbb{F}_2 = ({0,1}, \texttt{XOR}, \texttt{AND}, 0, 1)$. It is straightforward to verify that this field satisfies the properties outlined in \autoref{def:field}.
+The most commonly known finite fields are the prime fields $\mathbb{F}_p$, widely used in discrete logarithm cryptosystems, such as ECDSA and ElGamal. These fields can be extended into $\mathbb{F}_{p^n}$, containing $p^n$ elements which we will describe in \autoref{sub:field_extension}. However, prime fields are not efficient for large numbers, due to the modular reduction overhead, a common requirement in protocols such as SD-in-the-Head. For better efficiency, we require a field that can be represented using low amounts of bits or bytes. One method to achieve this is by constructing fields commonly known as Galois fields. Consider the simplest prime field, also called binary field, $\mathbb{F}_2 = ({0,1}, \texttt{XOR}, \texttt{AND}, 0, 1)$. It is straightforward to verify that this field satisfies the properties outlined in \autoref{def:field}.
 
-The Galois field $\mathbb{F}{2^n}$ is an extension field of $\mathbb{F}2$, defined as $\mathbb{F}{2^n}$. This field is constructed by selecting an irreducible polynomial $f(x)$ of degree $n$ with coefficients in $\mathbb{F}2$. The elements of $\mathbb{F}{2^n}$ are represented as polynomials of degree at most $n-1$ with coefficients in $\mathbb{F}2$. Consequently, $\mathbb{F}{2^n}$ contains exactly $2^n$ elements. The polynomial $f(x)$ ensures that $\mathbb{F}_{2^n}$ forms a valid field as it defines the modular reduction in multiplication.
+The Galois field $\mathbb{F}_{2^n}$ is an extension field of $\mathbb{F}_2$, defined as $\mathbb{F}_{2^n}$. This field is constructed by selecting an irreducible polynomial $f(x)$ of degree $n$ with coefficients in $\mathbb{F}_2$. The elements of $\mathbb{F}_{2^n}$ are represented as polynomials of degree at most $n-1$ with coefficients in $\mathbb{F}_2$. Consequently, $\mathbb{F}_{2^n}$ contains exactly $2^n$ elements. The polynomial $f(x)$ ensures that $\mathbb{F}_{2^n}$ forms a valid field as it defines the modular reduction in multiplication.
 
 Each element in $\mathbb{F}_{2^n}$ is represented as a polynomial of degree at most $n-1$ with coefficients in $\mathbb{F}_2$.
 
@@ -317,18 +313,18 @@ Each element in $\mathbb{F}_{2^n}$ is represented as a polynomial of degree at m
 \end{align*}
 
 \noindent
-where $a_i \in \mathbb{F}_2$ This corresponds directly into the 8-bit binary representation $a_{n-1}a_{n-2}\dots a_1a_0$. The addition and multiplication operations within $\mathbb{F}{2^n}$ are defined as follows:
+where $a_i \in \mathbb{F}_2$ This corresponds directly into the 8-bit binary representation $a_{n-1}a_{n-2}\dots a_1a_0$. The addition and multiplication operations within $\mathbb{F}_{2^n}$ are defined as follows:
 
 \begin{itemize}
-  \item \textbf{Addition}: The addition of two elements $a,b \in \mathbb{F}_{2^n}$ is defined as the bitwise XOR of the two elements. Due to the fact that it corresponds to addition modulo $2$.
+  \item \textbf{Addition}: The addition of two elements $a,b \in \mathbb{F}_{2^n}$ is defined as the bitwise XOR of the two elements, due to the fact that it corresponds to addition modulo $2$.
   \item \textbf{Multiplication}: The multiplication of two elements $a,b \in \mathbb{F}_{2^n}$ is defined as the multiplication of the two polynomials modulo the irreducible polynomial $p(x)$.
 \end{itemize}
 
-A common choice for the irreducible polynomial is the Rijndael polynomial $p(x) = x^8 + x^4 + x^3 + x + 1$ used in the AES protocol~\cite{brownadvanced}. This field is commonly known as $\mathbb{F}_{2^8}$. The size of the field allows us to represent elements as bytes, which is efficient for iterating over large numbers of digits and it contains all the elements of a byte.
+A common choice for the irreducible polynomial is the Rijndael polynomial $p(x) = x^8 + x^4 + x^3 + x + 1$ used in the AES protocol~\cite{brownadvanced}. This field is commonly known as $\mathbb{F}_{2^8}$. The size of the field allows us to represent elements as bytes, which is efficient for large numbers and it contains all the elements of a byte.
 
 \subsubsection{Field extension}\label{sub:field_extension}
 
-An advantageous property of Galois fields is that they can easily be extended, like $\mathbb{F}_{2}$ to $\mathbb{F}_{2^8}$. To ensure security in the SD-in-the-Head protocol, the field $\mathbb{F}_{2^8}$, which we shall denote as $\mathbb{F}_q$ is extended to encompass the field 32-bit unsigned integers. This can be done as a \textit{tower extension} by first building a degree-2 extension to $\mathbb{F}_{q^2}$ using the irreducible polynomial $F_{q^2} = F_q[X] / (X^2 + X + 32)$ and finally extending this field to $\mathbb{F}_{q^4}$ using the irreducible polynomial $F_{q^4} = F_q[Z] / (Z^2 + Z + 32(X))$. While you could create the final field independently, the tower extension allows us to reuse the construction of the intermediate field. Addition and multiplication in the extension fields are represented as the following
+An advantageous property of Galois fields is that they can easily be extended, like $\mathbb{F}_{2}$ to $\mathbb{F}_{2^8}$. To ensure security in the SD-in-the-Head protocol, the field $\mathbb{F}_{2^8}$, which we shall denote as $\mathbb{F}_q$ is extended to encompass the field of 32-bit unsigned integers. This can be done as a \textit{tower extension} by first building a degree-2 extension to $\mathbb{F}_{q^2}$ using the irreducible polynomial $F_{q^2} = F_q[X] / (X^2 + X + 32)$ and finally extending this field to $\mathbb{F}_{q^4}$ using the irreducible polynomial $F_{q^4} = F_q[Z] / (Z^2 + Z + 32(X))$. While you could create the final field independently, the tower extension allows us to reuse the construction of the intermediate field. Addition and multiplication in the extension fields are represented as the following
 
 \begin{align*}
   a         & = a_0 + a_1x                                               &  & a \in \mathbb{F}_{q^\eta}, a_0, a_1 \in \mathbb{F}_q \\
@@ -356,10 +352,15 @@ We denote a hash function by a generator $\mathcal{H}$ which on input of a secur
 
 The consensus among researchers indicates that for collision and preimage resistance, quantum computing is expected to reduce the security level from $k$ to $k/2$ through approaches like Grover's algorithm~\cite{nielsen2010quantumgrover}. In contrast, no known methods have been proposed to reduce the security level for collision resistance. Consequently, protocols that depend on collision-resistant hash functions, such as Merkle Signature or SD-in-the-Head, remain a viable choice for post-quantum secure protocols.
 
-In proving the security of hash functions, researchers often resort to models like the Quantum Random Oracle Model (QROM), while there is significant work being done to further prove the future security of hash functions~\cite{dtuPostquantumSecurity}.
+In proving the security of hash functions, researchers often resort to models like the Quantum Random Oracle Model (QROM), this approach however suffers form the fact that it abstracts the hash functions as ideal even when evaluated in a superposition. While there is significant work being done to further prove the future security of hash functions~\cite{dtuPostquantumSecurity}.
+\todo{Read through the article i sent to Diego}
 
 \subsubsection{Extendable-output (hash) functions (XOF)}\label{sec:xof}
 \todo{Give a short introduction to XOF}
+
+\subsubsection{Random Oracle Model (ROM)}
+
+\subsubsection{Quantum Random Oracle Model (QROM)}
 
 \subsection{Commitment Schemes}
 A commitment scheme allows a \textit{prover} to \textit{commit} to a value and later \textit{open} or reveal the value to a \textit{verifier}. It satisfies the following two properties:
@@ -444,15 +445,15 @@ This property is particularly advantageous in protocols like the SD-in-the-Head 
 Secret Sharing Schemes (SSS) are a class of cryptographic primitives that allow a secret to be dispersed into multiple \textit{shares}, each of which can be distributed to different parties. These shares can then be recombined to reconstruct the original secret. SSS was initially invented~\cite{shamir1979share} to alleviate the single-point-of-failure problem for storage. Below we supply a definition of a secret sharing scheme~\cite{cramer2015secure} and the notation used in this report.
 
 \begin{definition}[Secret Sharing Scheme (SSS)]\label{def:ss-share}
-  We denote a SSS be a system of ``dispersing'' a secret $s$ into a sequence of $N$ pieces of data $\sh{s} = [s_1, \dots, s_n]$, called \emph{shares}, such that we have the following properties:
-  \begin{itemize}[parsep=0pt, itemsep=0pt]
-    \item \textit{$(N-1)$-privacy}: An adversary holding $l < N$ shares learns nothing about the secret $s$.
-    \item \textit{Reconstruction}: Given a subset of shares $s_i$ of size $\ell$, the scheme can reconstruct the secret $s = \texttt{open}(s_i)$.
-  \end{itemize}
-  We denote the following notation:
+  We denote a SSS to be a system that ``disperses'' a secret $s$ into a sequence of $N$ pieces of data $\sh{s} = [s_1, \dots, s_n]$, called \emph{shares}, with the following functions:
   \begin{itemize}
-    \item \texttt{share}: We denote a the function \texttt{share}$_n(s) \rightarrow \sh{s}$ to be a function that takes a secret $s$ and returns a sharing $\sh{s}$ consisting of $n$ shares $s_i$ such that \texttt{open}$(\sh{s}) = s$.
+    \item \texttt{share}: We denote a function \texttt{share}$_n(s) \rightarrow \sh{s}$ to be a function that takes a secret $s$ and returns a sharing $\sh{s}$ consisting of $n$ shares $s_i$ such that \texttt{open}$(\sh{s}) = s$.
     \item \texttt{open}: We denote a function \texttt{open}$(\sh{s}) \rightarrow s$ to be the opening of the shared value $\sh{s}$ where each party $P_i$ broadcasts its share $s_i$ allowing all participants to recover the secret value $s$.
+  \end{itemize}
+  such that we have the following properties:
+  \begin{itemize}[parsep=0pt, itemsep=0pt]
+    \item \textit{$(N-1)$-privacy}: An adversary holding $\ell < N$ shares learns nothing about the secret $s$.
+    \item \textit{Reconstruction}: Given a subset of shares $s_i$ of size $\ell$, the scheme can reconstruct the secret $s = \texttt{open}(s_i)$.
   \end{itemize}
 \end{definition}
 
@@ -476,21 +477,20 @@ This property enables us to easily produce Multi-Party Computation (MPC) (see \a
 
 \subsubsection{Threshold SSS}\label{sub:threshold-sss}
 
-In many situations such schemes are not sufficient. Imagine wanting to solve the the distribution of a secret (e.g. a password) among a set of locations to ensure that you do not have a single-point-of-failure. To solve this, we require a SSS that can reconstruct the secret from a a subset of shares up to a threshold $\ell$. This is called a $(\ell + 1, N)$-threshold SSS\@.
+In many situations such schemes are not sufficient. Imagine wanting to solve the distribution of a secret (e.g. a password) among a set of locations to ensure that you do not have a single-point-of-failure. To solve this, we require a SSS that can reconstruct the secret from a subset of shares up to a threshold $\ell$. This is called a $(\ell + 1, N)$-threshold SSS\@. 
+In this case, the SSS described above would not suffice as losing even one share would result in the loss of the secret. There are several ways to solve this problem. We could distribute more than one share to each location. If distributed correctly, we can ensure that only $t \leq N$ parties need to be available. However, there are also other more sophisticated schemes that can be used to ensure that the secret is not lost.
 
 \begin{definition}[$(\ell + 1)$-private (threshold) SSS]\label{def:mpc-ss-threshold}
   A $(\ell + 1, N)$-threshold SSS~\cite{cramer2015secure}, where $\ell, n$ are integers with $0 \leq \ell < n$, denotes a SSS such that:
   \begin{itemize}[parsep=0pt, itemsep=0pt]
-    \item \textit{$\ell$-privacy}: Any $\leq t$ shares jointly give no information on the secret $s$. Namely,
-    \item \textit{Reconstruction}: Any $\geq t + 1$ of these shares jointly determine the secret $s$ uniquely (\textit{$(\ell + 1)$-opening}).
+    \item \textit{$\ell$-privacy}: Any $\leq t$ shares jointly give no information on the secret $s$. 
+    \item \textit{Reconstruction}: Any $\geq t + 1$ shares jointly determine the secret $s$ uniquely (\textit{$(\ell + 1)$-opening}).
   \end{itemize}
 \end{definition}
 
-In this case, the SSS described above would not suffice as loosing even one share would result in the loss of the secret. There are several ways to solve this problem. We could distribute more than one share to each location. If distributed correctly, we can ensure that only $t \leq N$ parties need to be available. However, there are also other more sophisticated schemes that can be used to ensure that the secret is not lost.
-
 \subsubsection{Shamir's Secret Sharing}\label{sub:shamir}
 
-One particular example, and the one utilized by the SD-in-the-Head protocol, is Shamir's Secret Sharing scheme~\cite{shamir1979share,cramer2015secure}. This $(\ell + 1, N)$-threshold SSS is based on polynomials over a finite field $\mathbb{F}$. A secret $s$ is shared by choosing a random polynomial $P_s$ of degree at most $\ell \geq 2$ with $s = P_s(0)$. For each participant $i \in [n]$, $P_i$, a share $s_i$ is generated by evaluating $P(i)$. The secret can then be reconstructed by interpolating the polynomial from a $\ell + 1$ shares and with $\ell$ or less shares we gain no information about the secret -- i.e. we have $\ell$-privacy. We can prove reconstruction, correctness and privacy using \textit{lagrange interpolation}.
+One particular example, and the one utilized by the SD-in-the-Head protocol, is Shamir's Secret Sharing scheme~\cite{shamir1979share,cramer2015secure}. This $(\ell + 1, N)$-threshold SSS is based on polynomials over a finite field $\mathbb{F}$. A secret $s$ is shared by choosing a random polynomial $P_s$ of degree at most $\ell \geq 2$ with $s = P_s(0)$. For each participant $i \in [n]$, $P_i$, a share $s_i$ is generated by evaluating $P(i)$. The secret can then be reconstructed by interpolating the polynomial from $\ell + 1$ shares and with $\ell$ or less shares we gain no information about the secret -- i.e. we have $\ell$-privacy. We can prove reconstruction, correctness and privacy using \textit{Lagrange interpolation}.
 
 \begin{definition}[Lagrange interpolation]\label{def:lagrange}
   If $h(X)$ is a polynomial over $\mathbb{F}$ of degree at most $\ell$ and if $C$ is a subset of $\mathbb{F}$ with $|C| = \ell + 1$, then
@@ -511,9 +511,9 @@ One particular example, and the one utilized by the SD-in-the-Head protocol, is 
   \noindent and that all coefficients of this polynomial can be efficiently computed from $S$.
 \end{lemma}
 
-It from \autoref{def:lagrange} and \autoref{eq:lagrange1} that the secret can be easily \textit{reconstructed}. Furthermore, if there existed two solution polynomials $h, h'$ then $h(x) - h'(x)$ would be a non-zero polynomial of degree at most $\ell$ and would have at least $\ell + 1$ roots, which cannot exist. This gives use \textit{correctness}
+It follows from \autoref{def:lagrange} and \autoref{eq:lagrange1} that the secret can be easily \textit{reconstructed}. Furthermore, if there existed two solution polynomials $h, h'$ then $h(x) - h'(x)$ would be a non-zero polynomial of degree at most $\ell$ and would have at least $\ell + 1$ roots, which cannot exist. 
 
-For \textit{$(\ell)$-privacy}, consider an index set $I$ with $|I| \leq \ell$. For a sharing of a secret $s$ and the resulting polynomial $h(x)$, where $h(0) = s$, it evaluates to a set of shares $\{h(i) \mid i \in I\}$.
+For \textit{$\ell$-privacy}, consider an index set $I$ with $|I| \leq \ell$. For a sharing of a secret $s$ and the resulting polynomial $h(x)$, where $h(0) = s$, it evaluates to a set of shares $\{h(i) \mid i \in I\}$.
 Conversely, consider a random set of shares $A = \{s_i \mid i \in I\}$. It follows from \autoref{lem:lagrange} that there exists exactly one polynomial $h_A(x)$ such that
 \begin{align*}
   h_A(0) & = s,                                 \\
@@ -535,10 +535,10 @@ Furthermore, the $(\ell + 1, N)$ the scheme is $(+, +)$-homomorphic. This follow
 
 \subsection{Secure Multi-Party Computation}\label{sec:mpc}
 
-Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following, sections we will denote a MPC protocol by $f$ for an $n$-party functionality $f(x, w_1, \dots, w_n)$, a public input $x$ and secret inputs $w_i$ of the party $P_i$. The goal is to compute the function $f$ on the inputs of the $n$ parties while upholding the following properties~\cite{cramer2015secure}
+Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following sections we will denote a MPC protocol by $f$ for an $n$-party functionality $f(x, w_1, \dots, w_n)$, a public input $x$ and secret inputs $w_i$ of the party $P_i$. The goal is to compute the function $f$ on the inputs of the $n$ parties while upholding the following properties~\cite{cramer2015secure}
 
 \begin{definition}[Correctness]\label{def:mpc-correctness}
-  We say that $\Pi$ realizes a deterministic $n$-party functionality $f(x, w_1, \dots, w_n)$ with perfect (resp., statistical) correctness if for all inputs $x, w_1, \dots, w_n$, the probability that the output of some player is different from the output of $f$ is $0$ (resp., negligible in $k$), where the probability is over the independent choices of the random inputs $r_1, \dots, r_n$.
+  We say that $\Pi$ realizes a deterministic $n$-party functionality $f(x, w_1, \dots, w_n)$ with perfect (resp., statistical) correctness if for all inputs $x, w_1, \dots, w_n$, the probability that the output of some player is different from the output of $f$ is $0$ (resp., negligible in the security parameter $k$), where the probability is over the independent choices of the random inputs $r_1, \dots, r_n$.
 \end{definition}
 
 \begin{definition}[Privacy]\label{def:mpc-privacy}
@@ -546,20 +546,20 @@ Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling
 \end{definition}
 
 \begin{definition}[$\ell$-privacy]\label{def:mpc-ell-privacy}
-  The MPC protocol has privacy up to $\ell$ malicious parties.\footnote{Most often achieved by using a $(\ell + 1, N)$-threshold secret sharing scheme \autoref{def:mpc-ss-threshold}}
+  The MPC protocol has privacy up to $\ell$ malicious parties.\footnote{Most often achieved by using an $(\ell + 1, N)$-threshold secret sharing scheme \autoref{def:mpc-ss-threshold}}
 \end{definition}
 
 In terms of security needed for the SD-in-the-Head protocol, we define the following security requirements for the MPC protocol $f$
 
 \begin{itemize}
   \item \textbf{Semi-honest security}: The protocol is secure against semi-honest adversaries, where parties follow the protocol but may attempt to learn information from the messages they receive.
-  \item \textbf{Low-threshold security}: The protocol is secure against a coalition of up to $\ell$ parties, where $\ell$ is the threshold. This is also known as a $\ell$-private MPC protocol.
+  \item \textbf{Low-threshold security}: The protocol is secure against a coalition of up to $\ell$ parties, where $\ell$ is the threshold. This is also known as an $\ell$-private MPC protocol.
 \end{itemize}
 
 In order to prove the validity of a MPC protocol that have been run in the head, we define the following notion of \textit{consistency}~\cite{ishai2007zero}.
 
 \begin{definition}[MPC view]\label{def:mpc-view}
-  We denote the view $V_i$ of a party $P_i$ in the protocol as $(i, x, r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share, and $(m_1, \dots, m_j)$ is the messages received by $P_i$ in the first $j$ rounds of the protocol. Note that the messages sent by the parties can be inferred from the $V_i$ by invoking $\Pi$.
+  We denote the view $V_i$ of a party $P_i$ in the protocol as $(i, x, r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share, and $(m_1, \dots, m_j)$ are the messages received by $P_i$ in the first $j$ rounds of the protocol. Note that the messages sent by the parties can be inferred from the $V_i$ by invoking $\Pi$.
 \end{definition}
 
 \begin{definition}[Consistent views]\label{def:mpc-consistent-view}
@@ -575,9 +575,9 @@ In order to prove the validity of a MPC protocol that have been run in the head,
 The \textit{only if} direction is shown by the following. Consider $n$ pairwise consistent views $V_1, \dots, V_n$ \autoref{def:mpc-view}. Let us define an MPC protocol $\Pi$ by its \textit{next sent message} function $\Pi_j(i,x,w_i,r_i, (m_1, \dots, m_j)) = m_{j+1}$. The pairwise consistency, \autoref{def:mpc-consistent-view} and $\Pi_j$ implies, by induction that after $d$ rounds, that the actual view of all parties $P_i$ is the same as the view of $P_i$ in the first $d$ rounds. It follows that the views $V_i, \dots, V_n$ are consistent with the full execution of $\Pi$. \qed
 
 \subsection{Zero-Knowledge Proofs}\label{sec:zk}
-This section will give a brief introduction to \textit{two-party interactive} Zero-Knowledge (ZK) schemes for a \textit{prover} and a \textit{verifier}. The intuition behind a Zero-Knowledge proof of knowledge is that the prover can convince the verifier that they know a secret $w$, such that $x$ is true, without revealing the secret $w$ to the verifier. This could be someone wanting to prove that they are above the age of 18 without revealing their age. We denote a ZK $\Pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$. Let $x$ be a public statement in \textbf{NP} and $w$ be a witness such that $(x, w) \in \mathcal{R}$~\cite{feneuil2023threshold}.
-\todo{Use the ivan reference}
+The intuition behind a Zero-Knowledge proof of knowledge is that the prover can convince the verifier that they know a secret $w$, such that $x$ is true, without revealing the secret $w$ to the verifier. This could be someone wanting to prove that they are above the age of 18 without revealing their age. 
 
+We denote a ZK $\Pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$. Let $x$ be a public statement in \textbf{NP} and $w$ be a witness such that $(x, w) \in \mathcal{R}$~\cite{feneuil2023threshold}.
 \begin{definition}
   Let $x$ be a statement of language $L$ in \textbf{NP}, and $W(x)$ the set of witnesses for $x$ such that the following relation holds:
   \begin{align*}
@@ -589,7 +589,7 @@ This section will give a brief introduction to \textit{two-party interactive} Ze
 
 The SD-in-the-Head protocol is built on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field (see \autoref{sec:gf256}). This protocol uses a variant of the SD problem, referred to as the \textit{coset weights} problem, first introduced by Berlekamp and McEliece in 1978~\cite{berlekamp1978inherent}. The problem is defined as follows:
 \begin{definition}\label{def:syndrome}
-  Given $H \in \mathbb{F}^{(m-k)\times m}_q$ and $y \in \mathbb{F}^{m-k}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t.\ wt$(x) \leq w$ such that $Hx = y$.
+  Given $H \in \mathbb{F}^{(m-k)\times m}_q$ and $y \in \mathbb{F}^{m-k}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t.\ wt$(x) \leq w$ and $Hx = y$.
 \end{definition}
 Generating such an instance is straightforward: one can construct a uniformly random parity-check matrix $H$ and a codeword $x$ (with $wt(x) \leq w$), and then compute the syndrome $y = Hx$. In the SD-in-the-Head protocol, the values of the matrix $H$ and the syndrome $y$ are elements of the finite field $\mathbb{F}_q$ explained previously in \autoref{sec:gf256}. The SD problem is well-known to be NP-complete for random instances~\cite{berlekamp1978inherent} also referred to as the general decoding problem.To illustrate the computational difficulty, solving the problem using brute force would require $O(\binom{m}{w} q^w)$ operations, which is computationally infeasible for large $m$ and $k$.
 
@@ -601,7 +601,7 @@ To improve the performance and reduce the key size of the protocol, its possible
 with $x = (x_A | x_B)$. This improves the performance of the algorithms used in the SD-in-the-Head protocol in the following ways
 \begin{itemize}
   \item At the MPC layer, we only need to reveal one share $x_A$. Due to the fact that the other share $x_B$ can simply be recomputed by $x_B = y - H'x_A$.
-  \item By linearity of the above relation one only needs to send $x_A$ in order to recover $Hx = H'x_A + x_B$ the Syndrome decoding instance. So from a sharing of $x_A$ one can check the correctness of the SD instance.
+  \item By linearity of the above relation one only needs to send $x_A$ in order to recover $Hx = H'x_A + x_B$, the Syndrome decoding instance. So from a sharing of $x_A$ one can check the correctness of the SD instance.
 \end{itemize}
 
 \subsubsection{Polynomial representation of SD}\label{sec:polynomial_representation}
@@ -611,7 +611,7 @@ The SD-in-the-Head MPC protocol must prove that the SD problem $ y = Hx $ is sat
 In addition to this, we need to verify that the Hamming weight condition $ \text{wt}(x) \leq w $ holds. To achieve this, the prover constructs three polynomials $ S $, $ Q $, and $ P $, alongside one public polynomial $ F $. These polynomials play a critical role in ensuring the weight condition is satisfied while preserving the zero-knowledge property of the protocol. The polynomials are defined as follows:
 
 \begin{definition}[SD-in-the-Head polynomials representation]\label{def:sdith-polynomials}
-  Let $f_1,\dots, f_q$ denote all the elements of $\mathbb{F}_q$ and $x\in \mathbb{F}^m_q$ is a binary vector with hamming weight $wt(x) /leq w$, then the polynomials are defined as:
+  Let $f_1,\dots, f_q$ denote all the elements of $\mathbb{F}_q$ and $x\in \mathbb{F}^m_q$ is a binary vector with Hamming weight $wt(x) \leq w$, then the polynomials are defined as:
   \begin{itemize}
     \item $S\in \mathbb{F}_q[X]$ is the Lagrange interpolation of the coordinates of $x$, such that it matches $S(f_i) = x_i$ for $i\in [1:m]$ and has degree $\text{deg}(S) \leq m-1$
     \item $Q\in \mathbb{F}_q[X]$ is defined by $Q(X) = \prod_{i\in E}(X - f_i)$. $E \subset [1:m]$ with order $|E| = w$, such that $E$ contains the non-zero coordinates of $x$. $Q$ has degree $\text{deg}(Q) = w$.
@@ -626,11 +626,11 @@ We can now look at the relation
   S\cdot Q = P\cdot F\label{eq:polynomial_representation}
 \end{equation}
 
-If we look at the left-hand side, which has the following property by design $S\cdot Q(f_i) = 0 \ \forall\ f_i \in [1:m]$. This comes from the fact that the polynomial $S(f_i) = 0$ whenever $x_i = 0$, as it is the lagrange interpolation of $x$. Furthermore, the polynomial $Q(f_i)$ is zero whenever $f_i$ is a non-zero coordinate of $x$, which follows from the definition of $Q$.
+If we look at the left-hand side, which has the following property by design $S\cdot Q(f_i) = 0 \ \forall\ f_i \in [1:m]$. This comes from the fact that the polynomial $S(f_i) = 0$ whenever $x_i = 0$, as it is the Lagrange interpolation of $x$. Furthermore, the polynomial $Q(f_i)$ is zero whenever $f_i$ is a non-zero coordinate of $x$, which follows from the definition of $Q$.
 
 For the right-hand side, the polynomial $F$ is the vanishing polynomial for the set ${f_1, \dots, f_m}$, so $F(f_i) = 0\ \forall\ f_i \in [1:m]$. The polynomial $P$ is needed to match the degree of $S \cdot Q$. As the degree of $F$ is $m \leq \text{deg}(S\cdot Q) \leq m + w - 1$.
 
-It is now apparent that if the prover can convince the verifier that they know of polynomials $P,Q$ such that $S\cdot Q = F \cdot P = 0$ at all points $f_i \in [1:m]$. The following must hold, either $S(f_i) = x_i = 0$ or $Q(f_i) = 0$. However, the polynomial $Q$ can be zero in at most $w$ points based on the degree, this means that S is non-zero in at most $w$ points, based on the construction, which in turn implies that $\text{wt}(x) \leq w$.
+It is now apparent that if the prover can convince the verifier that they know of polynomials $P,Q$ such that $S\cdot Q = F \cdot P = 0$ at all points $f_i \in [1:m]$. The following must hold, either $S(f_i) = x_i = 0$ or $Q(f_i) = 0$. However, the polynomial $Q$ can be zero in at most $w$ points based on the degree, this means that $S$ is non-zero in at most $w$ points, based on the construction, which in turn implies that $wt(x) \leq w$.
 
 With this, we can define the soundness of the language for ZKP as follows:
 \begin{equation}
@@ -645,7 +645,7 @@ The equality test from \autoref{eq:polynomial_representation} has a small probab
 \end{lemma}
 
 \subsubsection{Avoiding interpolations for $S$}\label{sec:syndrome-avoid-interpolation}
-Recall the sharing of the witness $\sh{x_A}$ for $x = (x_A | x_B)$ detailed in \autoref{sec:syndrome}. We would have to use interpolation to compute $\sh{S}$ for each share $\sh{x_A}$. However, interpolation is computationally expensive. To mitigate this, we redefine the SD instance as follows:
+Recall the sharing of the witness $\sh{x_A}$ for $x = (x_A | x_B)$ detailed in \autoref{sec:syndrome}. We would have to use interpolation to compute $\sh{S}$ for each share $\sh{x_A}$. However, interpolation is of quadratic complexity and therefore not suitable for MPC. To mitigate this, we redefine the SD instance as follows:
 
 \begin{definition}[Redefined SD instance $y = Hx$]
   Let $s$ represent the coefficients of the polynomial $S$ in \autoref{eq:polynomial_representation}, and let $V$ be a matrix such that:
@@ -737,7 +737,7 @@ The underlying MPC protocol is based on arithmetic circuits, where addition oper
 \end{protocol}
 
 
-The above is a well-known technique~\cite{Beaver1992efficient} correctness follows from the fact that
+The above is a well-known technique from~\cite{Beaver1992efficient} where the correctness follows from the fact that
 \begin{align*}
   \sh{z} & = \sh{c} - \alpha \cdot \sh{b} - \beta \cdot \sh{a} + \alpha \cdot \beta        \\
          & = \sh{ab} - (x - a) \cdot \sh{b} - (y - b) \cdot \sh{a} + (x - a) \cdot (y - b) \\
@@ -794,7 +794,7 @@ A majority of constructions within the MPCitH framework~\cite{baum2020concretely
     Prover    & $ \approx \lambda \frac{N}{\log_2 N}$   & $ \approx \lambda \frac{\ell + 1}{\log_2 \binom{N}{\ell}}$ \\ \arrayrulecolor{lightgray}\hline
     Verifier  & $ \approx \lambda \frac{N-1}{\log_2 N}$ & $ \approx \lambda \frac{\ell + 1}{\log_2 \binom{N}{\ell}}$ \\ \arrayrulecolor{darkgray}\hline
   \end{tabular}
-  \caption{Performance for prover and verifier for TCitH compared to MPCitH. I.e. the number of party emulations to achieve a soundness error of $2-\lambda$ (assuming a negligible false positive rate for the underlying MPC protocol). From \cite{feneuil2023threshold}}\label{tbl:tcith-performance}
+  \caption{Performance for prover and verifier for TCitH compared to MPCitH. I.e. the number of party emulations to achieve a soundness error of $2-\lambda$ (assuming a negligible false positive rate for the underlying MPC protocol). This table is from \cite{feneuil2023threshold}.}\label{tbl:tcith-performance}
 \end{table}
 
 We define a threshold MPC protocol, $ f_{thr} $, based on a $ (\ell, N) $-private SSS. In the context of the SD-in-the-Head protocol, this can be instantiated with Shamir's Secret Sharing (\autoref{sub:shamir}).
@@ -848,8 +848,7 @@ To adapt a zero-knowledge protocol into a signature scheme, the prover must elim
 Within the context of the SD-in-the-Head protocol, the transformation from a ZK to a signature scheme is accomplished by substituting the verifier's challenge with the output of hash functions, where these hash functions take as input the prover's prior communications.
 
 \section{The Rust Programming language}\label{sec:rust}
-
-Before delving into the specifics of our implementation, we need to answer the question: ``Why is Rust a good choice for our implementation?''.
+As a preliminary to our implementation, we need to answer the question: ``Why is Rust a good choice for PQC?''.
 
 In 2024, the government of the United States of America took a stance on the future of cyber secure programming languages~\cite{whitehouse2024memorysafe}. In their report, they underline the need for secure building blocks when developing secure software. They point to the fact that \textit{Common Weakness Enumeration} (CWE) data highlights \textit{memory safety vulnerabilities} (MSV) as one of the most pervasive classes of vulnerabilities. MSV's exploit how memory can be accessed, written, allocated, or deallocated in ways that are beyond the scope of the program. Common examples of programming languages that are vulnerable include C and C++, which are widely used due to their high performance. To prevent such vulnerabilities, the report emphasizes the importance of using programming languages that inherently provide memory safety and does not require the developers to manually ensure security.
 
@@ -1551,8 +1550,6 @@ fn simple_simd_vector_addition() -> [f32; 4] {
 
 \chapter{Specification}\label{ch:spec}
 
-\todo{Should we remove "we's" and use something that underlines that we are not the authors or designers? We could also have a pre-emptive disclaimer}
-
 The SD-in-the-Head protocol is founded on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field, as described in \autoref{sec:syndrome}. To recall, the problem is formally stated:
 \begin{quote}
   Given a parity-check matrix $H \in \mathbb{F}_q^{(m-k) \times m}$ in standard form and a syndrome $y \in \mathbb{F}_q^{m-k}$, the challenge is to find a vector $x \in \mathbb{F}_q^m$ such that $Hx = y$ and $wt(x) \leq w$, where $wt(x)$ denotes the Hamming weight of $x$. This can be expressed as:
@@ -1623,7 +1620,7 @@ The SD-in-the-Head protocol builds upon the \textit{Multi-Party Computation in t
   S \cdot Q = P \cdot F, \quad \text{where } S, Q, P, F \in \mathbb{F}_q[X].
 \end{align*}
 
-The foundations for secret sharing and multi-party computation (MPC) are presented in \autoref{sec:additive-sss} and \autoref{sec:mpc}, respectively. The SD-in-the-Head MPC protocol is constructed using the sacrificing protocol introduced by Baum and Nof~\cite{baum2020concretely}, as detailed in \cref{sec:mpc_sacrificing}.
+The foundations for secret sharing and multi-party computation (MPC) are presented in \autoref{sec:additive-sss} and \autoref{sec:mpc}, respectively. The SD-in-the-Head MPC protocol is constructed using the sacrificing protocol introduced by Baum and Nof~\cite{baum2020concretely}, as detailed in \autoref{sec:mpc_sacrificing}.
 
 Recall, that instead of sharing $x_A$, we tweak the SD instance to share $s_A$ instead allowing us to skip interpolation detailed in \autoref{sec:syndrome-avoid-interpolation}
 
@@ -1649,8 +1646,13 @@ Recall, that instead of sharing $x_A$, we tweak the SD instance to share $s_A$ i
           \end{enumerate}
   \end{enumerate}
 \end{protocol}
+Note that the protocol requires the evaluation of a polynomial $P \in \mathbb{F}_q^{\deg(P)}$ at a point $r \in \mathbb{F}_q^\eta$, where the coefficients of $P$ lie in $\mathbb{F}_q$ and the evaluation point $r$ is in the field extension $\mathbb{F}q^\eta$. Formally, we define the polynomial evaluation as follows:
 
-To analyze the security of the protocol, we denote $p$ as the false positive probability. $p$ quantifies the likelihood that the MPC protocol incorrectly accepts an invalid instance~\cite{feneuil2022syndrome,aguilarsyndrome11}.
+\begin{align}
+  Q(r)  = \textstyle\sum{i=0}^{|Q|} Q_i \cdot r^{i-1}  \quad Q_i \in F_q, r \in F_q^\eta\label{eq:sdith_mpc_polynomial_eval}
+\end{align}
+\todo{Check no funny brake business here}
+To analyze the security of the protocol, we denote $p$ as the false positive probability which quantifies the likelihood that the MPC protocol incorrectly accepts an invalid instance~\cite{feneuil2022syndrome,aguilarsyndrome11}.
 
 \begin{lemma}[False positive probability $p$ of \autoref{def:sdith-mpc}]\label{lem:sdith-mpc-soundness}
   Let $x_A = \texttt{open}(\sh{x_A})$. If $x_A$ corresponds to a valid SD instance $(H', y)$ and if all sharings are correctly generated. Then \autoref{def:sdith-mpc} always outputs \texttt{Accept}.
@@ -1682,7 +1684,7 @@ The authors suggest a tweak to the MPC input generation in the following way: De
   \texttt{input\_plain} = (s_A, P, Q, a, b, c)
 \end{align*}
 
-Next, compute $\ell$ uniformly random coefficients $\texttt{input\_coef} \in \mathbb{F}_q^{|\texttt{input\_plain}|}$ and compute the i'th sharing of the \texttt{input\_plain}:
+Next, compute $\ell$ uniformly random coefficients $\texttt{input\_coef} \in \mathbb{F}_q^{|\texttt{input\_plain}|}$ and compute the $i$'th sharing of the \texttt{input\_plain}:
 \begin{align}\label{equation:input_sharing}
   \sh{\texttt{input\_plain}}_i = \texttt{input\_plain} + \sum_{j=1}^\ell f_i^j \cdot \texttt{input\_coef}_j
 \end{align}
@@ -1776,7 +1778,7 @@ Following from \autoref{thm:sdith-mpc-linear}, for every party $i$, there exists
 \begin{align}
   \text{TruncateBeaver} : \sh{\texttt{input}}_i = (\sh{s_A}_i, \sh{P}_i, \sh{Q}_i, \sh{a}_i, \sh{b}_i, \sh{c}_i) \mapsto (\sh{s_A}_i, \sh{P}_i, \sh{Q}_i) = \sh{\texttt{wit}}_i\label{eq:truncate_beaver}
 \end{align}
-This process is referred to as \textit{reverse MPC computation}
+This process is referred to as \textit{reverse MPC computation}.
 
 \begin{theorem}[Reverse MPC computation]\label{thm:mpc_reverse}
   For a MPC protocol \autoref{thm:sdith-mpc-linear} we have a reverse MPC computation with two functions
@@ -2060,7 +2062,7 @@ The parameters for the SD-in-the-Head protocol are given in \autoref{tab:secpara
 \subsubsection{Assumptions}\label{sec:assumptions}
 The SD-in-the-Head protocol is secure under the following assumptions:
 
-Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search (see \autoref{def:nistsec}) in terms of quantum circuit size. For this, $\kappa$ is defined as $143$, $207$ and $272$ for the categories~\cite{nistcall}. Furthermore, the XOF primitive used is secure with 128-bit, 192-bit, 256-bit security levels for each of the categories respectively. Finally, the Hash function used \textit{behaves as random oracle}. Specifically, security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM)~\cite{aguilarsyndrome11}.
+Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search (see \autoref{def:nistsec}) in terms of quantum circuit size. For this, $\kappa$ is defined as $143$, $207$ and $272$ for the categories~\cite{nistcall}. Furthermore, the XOF primitive used is secure with 128-bit, 192-bit, 256-bit security levels for each of the categories respectively. Finally, the Hash function used \textit{behaves as a random oracle}. Specifically, security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM)~\cite{aguilarsyndrome11}.
 
 
 
