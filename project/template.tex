@@ -356,11 +356,50 @@ In proving the security of hash functions, researchers often resort to models li
 \todo{Read through the article i sent to Diego}
 
 \subsubsection{Extendable-output (hash) functions (XOF)}\label{sec:xof}
-\todo{Give a short introduction to XOF}
+An \textit{extendable-output function} is a function that takes a bit string (also called a message) $\{0,1\}^*$ as input and can produce any desirable length output. Meaning that it can be used to generate an arbitrary amount of pseudorandom data. This is useful in cryptographic protocols where a seeded randomness is needed. 
+It is formally defined in FIPS 204~\cite{FIPS204_2024}:
+\begin{definition}
+  A function on bit strings in which the output can be extended to any desired length. The approved XOFs from FIPS 202~\cite{FIPS202_2015} are designed to satisfy the following properties:
+  \begin{itemize}
+    \item \textbf{One-way}: It is computationally infeasible to invert the function on any output.
+    \item \textbf{Collision-resistant}: It is computationally infeasible to find two different inputs that produce the same output.
+  \end{itemize}
+\end{definition}
 
 \subsubsection{Random Oracle Model (ROM)}
 
-\subsubsection{Quantum Random Oracle Model (QROM)}
+When arguing about the security of cryptographic protocols that makes use of hash functions it is extremely useful to relax the assumption of the chosen hash function.
+Such a relaxation paradigm was suggested by bellare~\cite{bellare1993random}, this is known as the \textit{Random Oracle Model} (ROM). In this model they assumes that the hash function $h$ is instead a random oracle $O$. This allows for a more intuitive and simpler security analysis of a protocol.
+
+They describe the paradigm by the following steps:
+\begin{definition}[Random oracle model paradigm]
+  Suppose one has a protocol problem $\Pi$ where the problem is independent from the choice of $h$. In order to devise a good protocol $P$ for $\Pi$:
+  \begin{itemize}
+    \item Find a formal definition for $\Pi$ in the model of computation in which all parties -- good and bad alike -- shares the random oracle $O$
+    \item Design a protocol $P$ that is secure in the ROM
+    \item Prove that $P$ is secure in the ROM
+    \item Replace the random oracle with a hash function $h$ and prove that the protocol is secure in the ROM
+  \end{itemize}
+\end{definition}
+We will formally define the \textit{classical} ROM as follows:
+\begin{definition}[Random Oracle Model (ROM)]
+  The adversary is given access to a random hash function through an oracle $O: \{0,1\}^* \rightarrow \{0,1\}^*$. The adversary can query the oracle $O(x)$ and receive the output. The oracle is stateless and the same input will always yield the same output.
+\end{definition}
+This would later be replaced by the concrete hash function, enabling a quantum attacker to query $h$ based on quantum states.
+
+\subsubsection{Quantum-accessible Random Oracle Model (QROM)}
+Since we are implementing post-quantum secure protocols, it is relevant to consider the \textit{Quantum Random Oracle Model} (QROM). The extension of the ROM model, defined in~\cite{boneh2011random}, is that we allow the quantum adversary to evaluate the random oracle in superpositions, meaning that the adversary can query with quantum states $|x \rangle = \sum \alpha_x |x \rangle$ and receive back the evaluated state $\sum\alpha_x |O(x)\rangle$. This is called the \textit{quantum(-accessible) random oracle model} (QROM).
+
+We define the QROM as follows:
+\begin{definition}[Quantum Oracle Model (QROM)]
+  Given a random oracle $O$, the associated quantum random oracle $O_Q$ maps a superposition of bit-strings to the superposition of its values when evaluated with $O$.\\
+  For every basis vector:
+  $$
+  O_Q(\langle x,y \rangle) = \langle x,y\xor O(x) \rangle
+  $$
+\end{definition}
+One problem with this approach is the fact that we assume that the hash function becomes a evaluation at a superposition. This can be shown that for certain schemes this will yield to insecure protocols under any choice of hash function.
+For the sake of this paper we will only be using the ROM and QROM and not describe the further security analysis.
 
 \subsection{Commitment Schemes}
 A commitment scheme allows a \textit{prover} to \textit{commit} to a value and later \textit{open} or reveal the value to a \textit{verifier}. It satisfies the following two properties:
