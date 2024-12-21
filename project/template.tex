@@ -208,16 +208,23 @@ While the scheme never saw widespread adoption due to its large key sizes, the i
 
 \section{Our contributions}
 
-\todo{describe how we progressed through the project in an interesting way. What did we set out to do, what were the hurdles.}
+In this report, we present an implementation of the SD-in-the-Head protocol in the Rust programming language. While the NIST standardization has an overarching goal of \textit{selecting a number of acceptable candidate cryptosystems for standardization}~\cite{nistcall}, they also state that the goal of the submitted reference implementation is to promote understanding of the submitted algorithm. 
 
-In this report, we present an implementation of the SD-in-the-Head protocol in Rust. While the NIST standardization process initially prioritizes selecting the appropriate protocols, the ultimate goal is to produce a well-documented specification that enables implementors to safely and accurately reproduce the chosen protocols.
+One challenge of supporting both the \textit{hypercube} and \textit{threshold} variants of the protocol is the added complexity in implementation. Managing distinct definitions for the original protocol~\cite{feneuil2022syndrome} alongside these variants complicates the development process -- we experienced this ourselves in the development process. To address this, we opted to concentrate exclusively on the threshold variant, allowing us to present a more detailed and comprehensive specification of this version of the protocol.
 
-To this end, it is crucial for both NIST and the authors to provide an in-depth specification accompanied by clear, well-documented examples to facilitate a smooth transition to the new standard.
+Therefore, our objectives include delivering an implementation that provides
 
-Our objectives include delivering a high-performance, thoroughly documented implementation, complemented by extensive test coverage to ensure correctness and security. Additionally, we aim to identify and address potential pitfalls and challenges encountered during the implementation process in order to provide this feedback to the authors. Furthermore, we will attempt to condense the literature behind the \emph{SD-in-the-Head} protocol and present a comprehensive report on the protocol and its prerequisites.
+\begin{itemize}
+  \item High-performance and well explored in terms of optimisations
+  \item Thorough documentation that links well to our report and the original specification~\cite{aguilarsyndrome11}
+  \item Extensive test coverage to ensure correctness but also to provide debugging feedback
+\end{itemize}
 
-Finally, this project serves as an opportunity to test our capabilities by implementing a cutting-edge cryptographic protocol in a modern, memory-safe language like Rust. As the final product, we will deliver this report alongside a Rust library and a client implementation for the SD-in-the-Head protocol.
+We aim to identify and address potential pitfalls and challenges encountered during the implementation process in order to provide feedback to the authors so that they might clarify their specification. 
 
+We believe that a reference implementation in a modern programming language, such as Rust, will provide future developers with deeper insights into the algorithm's structure and mappings. To support this effort, we aim to condense the literature on the \emph{SD-in-the-Head} protocol and deliver a comprehensive report focused on the threshold variant, along with its necessary prerequisites.
+
+Finally, this project serves as an opportunity learn about post-quantum signature schemes and to test our skill by implementing a cutting-edge cryptographic protocol in a modern, memory-safe language like Rust. As the final product, we will deliver this report alongside a Rust library and a \textit{Command-Line} application for the SD-in-the-Head protocol threshold variant.
 
 \subsection{Choosing the SD-in-the-Head protocol}
 The SD-in-the-Head protocol offers a highly modular design, enabling extensive configurability and support for various subroutines. This flexibility is particularly evident in the two variants included in the specification~\cite{aguilarsyndrome11}: the \textit{hypercube} and \textit{threshold} variants, both of which demonstrate significant performance improvements over the original protocol~\cite{feneuil2022syndrome,aguilar2023return,feneuil2023threshold}.
@@ -226,6 +233,17 @@ The threshold variant, in particular, provides an opportunity to explore and imp
 
 Additionally, the authors supply a detailed and well-crafted specification, along with a reference implementation in C++, which serves as a robust starting point for our work.
 
+Of course, selfishly, a key consideration in our work was the belief that the protocol could be a strong contender for selection as the final ``winner'' in the NIST additional round~\cite{nistcall}. This belief was introduced by our supervisor, a trust that appears to have been well-placed. As we were developing our implementation, the NIST process advanced to the second round, with the \emph{SD-in-the-Head} protocol successfully moving forward. The NIST internal report highlights certain features which are valued by the NIST committee of the protocol, such as its flexibility  -- a promising indication for the future of the protocol.
+ 
+\begin{quote}
+  \textit{NIST prefers candidate algorithms with greater flexibility (e.g., those capable of running efficiently on a wide variety of platforms and those that used parallelism or instruction set extensions to achieve higher performance) and simple and elegant designs that reflect the submission team's understanding and confidence.}
+\end{quote}
+
+\begin{quote}
+  \textit{The overall performance of SDitH can be seen as outperforming SLH-DSA but not ML-DSA or Falcon. SDitH features very small keys with signature sizes that fall between the SLH-DSA ``small'' and ``fast'' parameter sets. Although SDitH is closely related to a known NP-hard problem, NIST believes SDitH can benefit from more security analysis. Overall, SDitH is competitive with the other MPCitH candidates.}
+\end{quote}
+
+From the NIST second round internal report~\cite{alagic2024status}.
 
 \subsection{Choosing Rust}
 We chose to implement the SD-in-the-Head protocol in Rust for several compelling reasons. Rust, as a modern systems programming language, offers inherent memory and thread safety without compromising performance. Its strong safety guarantees\cite{jung2017rustbelt} are a key reason why Rust is included in the NIST list of safer programming languages~\cite{nistsaferlanguages}. These properties are particularly critical when implementing cryptographic primitives, where memory safety and robustness against concurrency issues are foundational to secure software development. Additionally, Rust provides fine-grained control over hardware resources, enabling the optimization of performance -- an essential consideration in cryptographic implementations
@@ -2630,14 +2648,14 @@ with $bd \cdot 0x20$ accounting for the reduction modulo the irreducible polynom
 
 The field $\mathbb{F}_{q^2}$ serves as a building block for constructing the next extension $\mathbb{F}_{q^4}$, which is defined as:
 \begin{align}
-    \mathbb{F}_{q^4} = \mathbb{F}_q[Z] / (Z^2 + Z + 32(X))\label{eq:fq4}
+  \mathbb{F}_{q^4} = \mathbb{F}_q[Z] / (Z^2 + Z + 32(X))\label{eq:fq4}
 \end{align}
-Consequently, multiplication in $\mathbb{F}_{q^4}$ involves the operation $a \cdot 32 \in \mathbb{F}_{q^2}$. 
+Consequently, multiplication in $\mathbb{F}_{q^4}$ involves the operation $a \cdot 32 \in \mathbb{F}_{q^2}$.
 To achieve optimal performance, this multiplication can be expressed as:
 \begin{align*}
-    (a + bX) \cdot (0 + 32X) &= (a \cdot 32)X + (b \cdot 32)X^2 \\
-                             &= (a \cdot 32)X + (b \cdot 32)(X + 32) \\
-                             &= b(32^2) + 32(a + b)X,
+  (a + bX) \cdot (0 + 32X) & = (a \cdot 32)X + (b \cdot 32)X^2      \\
+                           & = (a \cdot 32)X + (b \cdot 32)(X + 32) \\
+                           & = b(32^2) + 32(a + b)X,
 \end{align*}
 which simplifies the computation from the regular multiplication to the corresponding implementation in Rust:
 \begin{minted}{rust}
