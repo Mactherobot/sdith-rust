@@ -3341,6 +3341,20 @@ Blake3, Haraka v2, KangarooTwelve, Xoodyak
 
 \chapter{Benchmarking}\label{ch:bench}
 
+tests:
+
+\begin{itemize}
+  \item spec implementation results
+  \item no features, simd, parallel, parallel and simd - TB off for all
+  \item run theirs and ours full optimisation with TB
+  \item nightly vs stable
+  \item multiplication algorithms: Individually and in whole protocol
+  \item dudect bench (bunch of times to get a good average)
+  \item blake3 vs keccak
+  \item signature size
+\end{itemize}
+
+
 We utilized the Criterion.rs~\cite{criterion} package benchmarking. Criterion.rs is a statistics-driven benchmarking library for Rust, offering robust tools to measure and analyze performance reliably.
 
 \subsection{Benchmark setup}
