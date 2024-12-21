@@ -184,7 +184,7 @@ The most widely used digital signature schemes rely on public-key cryptography. 
 
 \section{NIST call to action}
 
-In 1994, the discovery of Shor's algorithm~\cite{shor1997} introduced a polynomial-time method for solving these problems using quantum computing. At that time, quantum computers were theoretical constructs. However, in 2001, Chuang et al.~\cite{vandersypen2001experimental,buchmann2004post} successfully implemented Shor's algorithm on a 7-qubit quantum computer. Two decades later, significant advancements in quantum technology have brought us closer to the point where quantum computers could be a reality. The most recent advancements including the Willow chip from Google~\cite{blogMeetWillow}. Reducing the errors exponentially as they scale up using more qubits. 
+In 1994, the discovery of Shor's algorithm~\cite{shor1997} introduced a polynomial-time method for solving these problems using quantum computing. At that time, quantum computers were theoretical constructs. However, in 2001, Chuang et al.~\cite{vandersypen2001experimental,buchmann2004post} successfully implemented Shor's algorithm on a 7-qubit quantum computer. Two decades later, significant advancements in quantum technology have brought us closer to the point where quantum computers could be a reality. The most recent advancements including the Willow chip from Google~\cite{blogMeetWillow}. Reducing the errors exponentially as they scale up using more qubits.
 \todo{Add some examples of the significant advancements in quantum technology. Willow chip from google}
 
 A necessary pre-requisite for a post-quantum secure signature scheme is the existence of a problem that is intractable for quantum computers. Several candidates from the family of NP-hard problems within complexity theory have been proposed. These are problems that can not be solved in polynomial-time by any classical or quantum computer.
@@ -225,7 +225,7 @@ Finally, this project serves as an opportunity learn about post-quantum signatur
 \subsection{Choosing the SD-in-the-Head protocol}
 The SD-in-the-Head protocol offers a highly modular design, enabling extensive configurability and support for various subroutines. This flexibility is particularly evident in the two variants included in the specification~\cite{aguilarsyndrome11}: the \textit{hypercube} and \textit{threshold} variants, both of which demonstrate significant performance improvements over the original protocol~\cite{feneuil2022syndrome,aguilar2023return,feneuil2023threshold}.
 
-The threshold variant, in particular, provides an opportunity to explore and implement several cryptographic primitives, including Merkle Trees~\cite{becker2008merkle}, Linear Secret Sharing (Shamir) -- requiring an implementation of Galois Fields~\cite{brownadvanced} -- and Multi-Party Computation in the Head (MPCitH)~\cite{baum2020concretely}. 
+The threshold variant, in particular, provides an opportunity to explore and implement several cryptographic primitives, including Merkle Trees~\cite{becker2008merkle}, Linear Secret Sharing (Shamir) -- requiring an implementation of Galois Fields~\cite{brownadvanced} -- and Multi-Party Computation in the Head (MPCitH)~\cite{baum2020concretely}.
 
 Additionally, the authors supply a detailed and well-crafted specification, along with a reference implementation in C++, which serves as a robust starting point for our work.
 
@@ -356,7 +356,7 @@ In proving the security of hash functions, researchers often resort to models li
 \todo{Read through the article i sent to Diego}
 
 \subsubsection{Extendable-output (hash) functions (XOF)}\label{sec:xof}
-An \textit{extendable-output function} is a function that takes a bit string (also called a message) $\{0,1\}^*$ as input and can produce any desirable length output. Meaning that it can be used to generate an arbitrary amount of pseudorandom data. This is useful in cryptographic protocols where a seeded randomness is needed. 
+An \textit{extendable-output function} is a function that takes a bit string (also called a message) $\{0,1\}^*$ as input and can produce any desirable length output. Meaning that it can be used to generate an arbitrary amount of pseudorandom data. This is useful in cryptographic protocols where a seeded randomness is needed.
 It is formally defined in FIPS 204~\cite{FIPS204_2024}:
 \begin{definition}
   A function on bit strings in which the output can be extended to any desired length. The approved XOFs from FIPS 202~\cite{FIPS202_2015} are designed to satisfy the following properties:
@@ -394,9 +394,9 @@ We define the QROM as follows:
 \begin{definition}[Quantum Oracle Model (QROM)]
   Given a random oracle $O$, the associated quantum random oracle $O_Q$ maps a superposition of bit-strings to the superposition of its values when evaluated with $O$.\\
   For every basis vector:
-  $$
-  O_Q(\langle x,y \rangle) = \langle x,y\xor O(x) \rangle
-  $$
+  \begin{align}
+    O_Q(\langle x,y \rangle) = \langle x,y \oplus O(x) \rangle
+  \end{align}
 \end{definition}
 One problem with this approach is the fact that we assume that the hash function becomes a evaluation at a superposition. This can be shown that for certain schemes this will yield to insecure protocols under any choice of hash function.
 For the sake of this paper we will only be using the ROM and QROM and not describe the further security analysis.
@@ -516,13 +516,13 @@ This property enables us to easily produce Multi-Party Computation (MPC) (see \a
 
 \subsubsection{Threshold SSS}\label{sub:threshold-sss}
 
-In many situations such schemes are not sufficient. Imagine wanting to solve the distribution of a secret (e.g. a password) among a set of locations to ensure that you do not have a single-point-of-failure. To solve this, we require a SSS that can reconstruct the secret from a subset of shares up to a threshold $\ell$. This is called a $(\ell + 1, N)$-threshold SSS\@. 
+In many situations such schemes are not sufficient. Imagine wanting to solve the distribution of a secret (e.g. a password) among a set of locations to ensure that you do not have a single-point-of-failure. To solve this, we require a SSS that can reconstruct the secret from a subset of shares up to a threshold $\ell$. This is called a $(\ell + 1, N)$-threshold SSS\@.
 In this case, the SSS described above would not suffice as losing even one share would result in the loss of the secret. There are several ways to solve this problem. We could distribute more than one share to each location. If distributed correctly, we can ensure that only $t \leq N$ parties need to be available. However, there are also other more sophisticated schemes that can be used to ensure that the secret is not lost.
 
 \begin{definition}[$(\ell + 1)$-private (threshold) SSS]\label{def:mpc-ss-threshold}
   A $(\ell + 1, N)$-threshold SSS~\cite{cramer2015secure}, where $\ell, n$ are integers with $0 \leq \ell < n$, denotes a SSS such that:
   \begin{itemize}[parsep=0pt, itemsep=0pt]
-    \item \textit{$\ell$-privacy}: Any $\leq t$ shares jointly give no information on the secret $s$. 
+    \item \textit{$\ell$-privacy}: Any $\leq t$ shares jointly give no information on the secret $s$.
     \item \textit{Reconstruction}: Any $\geq t + 1$ shares jointly determine the secret $s$ uniquely (\textit{$(\ell + 1)$-opening}).
   \end{itemize}
 \end{definition}
@@ -550,7 +550,7 @@ One particular example, and the one utilized by the SD-in-the-Head protocol, is 
   \noindent and that all coefficients of this polynomial can be efficiently computed from $S$.
 \end{lemma}
 
-It follows from \autoref{def:lagrange} and \autoref{eq:lagrange1} that the secret can be easily \textit{reconstructed}. Furthermore, if there existed two solution polynomials $h, h'$ then $h(x) - h'(x)$ would be a non-zero polynomial of degree at most $\ell$ and would have at least $\ell + 1$ roots, which cannot exist. 
+It follows from \autoref{def:lagrange} and \autoref{eq:lagrange1} that the secret can be easily \textit{reconstructed}. Furthermore, if there existed two solution polynomials $h, h'$ then $h(x) - h'(x)$ would be a non-zero polynomial of degree at most $\ell$ and would have at least $\ell + 1$ roots, which cannot exist.
 
 For \textit{$\ell$-privacy}, consider an index set $I$ with $|I| \leq \ell$. For a sharing of a secret $s$ and the resulting polynomial $h(x)$, where $h(0) = s$, it evaluates to a set of shares $\{h(i) \mid i \in I\}$.
 Conversely, consider a random set of shares $A = \{s_i \mid i \in I\}$. It follows from \autoref{lem:lagrange} that there exists exactly one polynomial $h_A(x)$ such that
@@ -614,7 +614,7 @@ In order to prove the validity of a MPC protocol that have been run in the head,
 The \textit{only if} direction is shown by the following. Consider $n$ pairwise consistent views $V_1, \dots, V_n$ \autoref{def:mpc-view}. Let us define an MPC protocol $\Pi$ by its \textit{next sent message} function $\Pi_j(i,x,w_i,r_i, (m_1, \dots, m_j)) = m_{j+1}$. The pairwise consistency, \autoref{def:mpc-consistent-view} and $\Pi_j$ implies, by induction that after $d$ rounds, that the actual view of all parties $P_i$ is the same as the view of $P_i$ in the first $d$ rounds. It follows that the views $V_i, \dots, V_n$ are consistent with the full execution of $\Pi$. \qed
 
 \subsection{Zero-Knowledge Proofs}\label{sec:zk}
-The intuition behind a Zero-Knowledge proof of knowledge is that the prover can convince the verifier that they know a secret $w$, such that $x$ is true, without revealing the secret $w$ to the verifier. This could be someone wanting to prove that they are above the age of 18 without revealing their age. 
+The intuition behind a Zero-Knowledge proof of knowledge is that the prover can convince the verifier that they know a secret $w$, such that $x$ is true, without revealing the secret $w$ to the verifier. This could be someone wanting to prove that they are above the age of 18 without revealing their age.
 
 We denote a ZK $\Pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$. Let $x$ be a public statement in \textbf{NP} and $w$ be a witness such that $(x, w) \in \mathcal{R}$~\cite{feneuil2023threshold}.
 \begin{definition}
@@ -2761,7 +2761,7 @@ Initially, we implemented polynomial evaluations using Horner's method. However,
 After defining the field arithmetic, we implemented the necessary vector operations for the $\mathbb{F}_{q^4}$ field. These operations are essential for the polynomial interpolation and MPC computations in the protocol.
 We first implemented the simple version of the functions, where you just iterate through the vector and use the field arithmetic between each value. We also went on to implement SIMD versions of each function to improve performance.
 
-\subsection{Sampling SD polynomial relation}\label{sub:witness_generation}
+\section{Keygen -- Sampling SD instance}\label{sub:witness_generation}
 
 To create a public and private key pair, we need a witness for the ZK in the form of a syndrome decoding (SD) instance $y = Hx$.
 
@@ -2996,11 +2996,12 @@ Additionally we tested the correctness of the polynomial relation generation pro
   assert_eq!(s_q, p_f);
 \end{minted}
 
-\subsection{MPC}\label{sub:mpc_algo}
-As the last thing, before we implemented the signing algorithm, we need the underlying MPC simulation sub routines described in \autoref{def:sdith-mpc}.
-First we go through the helper methods that are used to do the computations. Then we describe a set of structures that we created to make the MPC simulation easier to comprehend. And how we tried to test and verify the correctness of the computations.
+\section{MPC computation}\label{sub:mpc_algo}
+Before implementing the rest of the protocol, signing and verification, it was necessary to first develop the underlying MPC simulation subroutine detailed in \autoref{sec:sdith-mpc} -- including the generation of inputs, Beaver triples, and the MPC challenge. Following this, we detail the party computation subroutine, as well as its inverse, which form the core components of the MPC simulation.
 
-\paragraph{Input shares}
+We designed the MPC subroutine around a central \rust{MPC} struct, making it more comprehensible and modular. Lastly, we focused on testing and verifying the correctness of the computations to ensure the reliability of the implementation.
+
+\subsubsection{Input shares}
 When implementing the signing algorithm, we needed to generate a set of input shares for the MPC simulation. Since this functionality is logically related to the MPC simulation, we decided to implement it within the MPC subroutine.
 
 The function takes as input a Pseudo-Random Generator (PRG) and the plain input value. It begins by sampling random coefficients, which are used to compute the input shares. Each share is computed as defined in \autoref{sec:sdith-signature}. Our implementation of this computation is as follows:
@@ -3084,45 +3085,6 @@ impl Challenge {
     }
 }
 \end{minted}
-
-\subsubsection{Expansion of view-opening Challenge}
-To complete the Fiat-Shamir transform into a Signature scheme we need to pick the opened views described in \autoref{def:mpcinth_basic} based on the second hash computed on the message, salt, the first Fiat-Shamir hash, and the broadcast values.
-We do this by first initializing the PRG with the $h_2$ hash, and then sampling field elements until we have $l$ unique indices for each of the $\tau$ sets. We then sort the values to ensure that the views are ordered correctly.
-\begin{minted}{rust}
-pub fn expand_view_challenge_hash(h2: Hash) -> [[u16; PARAM_L]; PARAM_TAU] {
-    // Initialize the XOF (extendable output function) context with the second Fiat-Shamir
-    // transform hash
-    // Define a mask for reducing the value range
-
-    // Loop through all sets (PARAM_TAU sets)
-    for i in 0..PARAM_TAU {
-        let mut unique_values = std::collections::HashSet::new(); // To ensure uniqueness within a set
-
-        // Generate unique values for the set (PARAM_L values per set)
-        for j in 0..PARAM_L {
-            loop {
-                // Sample bytes from entropy and convert to u16 (handling endianness)
-                prg.sample_field_fq_elements(&mut tmp);
-                value = (tmp[0] as u16) | ((tmp[1] as u16) << 8);
-                value &= mask; // Apply mask to limit value range
-
-                // Ensure the value is within valid range and is unique
-                if value < PARAM_N as u16 && unique_values.insert(value) {
-                    break;
-                }
-            }
-
-            // Store the unique value in the output array
-            opened_views[i][j] = value;
-        }
-        // Sort the values in the set
-        opened_views[i].sort();
-    }
-    // Return the resulting array of opened views
-    opened_views
-}
-\end{minted}
-As this relies on random values we test that the output of the function follows the specifications, such as uniqueness and length.
 
 \subsubsection{Party Computation}
 We now have all the required parts to build the MPC simulation, defined in\todo{Reference correct section} \autoref{def:sdith-mpc}. The way we implemented this was to use the same function to create the plain broadcast values as the broadcast values computed for the shares. Our first attempt at implementing this algorithm, we had a hard time following every step that was done, due to a lack in clarification on what every computation was supposed to do. Furthermore creating tests for this was quite difficult as this function relies heavily on the provided values. We also tried to compare our intermediate values with the values from the specification implementation, which also proved to be a challenge since there is a lot of values that are computed in the algorithm.
@@ -3273,6 +3235,7 @@ This led us to find that our implementation of the polynomial evaluation seemed 
 
 \section{Finishing the implementation}\label{sub:final}
 In this section we will discuss our process when finalizing the implementation. We had a few bugs that led us to setup our code to be comparable with the reference implementation. First we will discuss our implementations of the signing and verification algorithms, and how we used the reference implementation to iron out bugs from our own code. Lastly we will discuss how we went about testing our implementation.
+
 \subsection{Signing}\label{sub:signing}
 After implementing all the subroutines, we proceeded to develop the general signing algorithm described in \autoref{sec:sdith-signature}.
 
@@ -3291,8 +3254,46 @@ Next, we computed the second Fiat-Shamir hash:
 
 The second hash $h_2$ is used to generate the view-opening challenges, which define the witness shares and are utilized to compute the authentication path in the Merkle tree.
 
-After
-\paragraph{Verification}\label{sub:verification}
+\subsubsection{Expansion of view-opening Challenge}
+To complete the Fiat-Shamir transform into a Signature scheme we need to pick the opened views described in \autoref{def:mpcinth_basic} based on the second hash computed on the message, salt, the first Fiat-Shamir hash, and the broadcast values.
+We do this by first initializing the PRG with the $h_2$ hash, and then sampling field elements until we have $l$ unique indices for each of the $\tau$ sets. We then sort the values to ensure that the views are ordered correctly.
+\begin{minted}{rust}
+pub fn expand_view_challenge_hash(h2: Hash) -> [[u16; PARAM_L]; PARAM_TAU] {
+    // Initialize the XOF (extendable output function) context with the second Fiat-Shamir
+    // transform hash
+    // Define a mask for reducing the value range
+
+    // Loop through all sets (PARAM_TAU sets)
+    for i in 0..PARAM_TAU {
+        let mut unique_values = std::collections::HashSet::new(); // To ensure uniqueness within a set
+
+        // Generate unique values for the set (PARAM_L values per set)
+        for j in 0..PARAM_L {
+            loop {
+                // Sample bytes from entropy and convert to u16 (handling endianness)
+                prg.sample_field_fq_elements(&mut tmp);
+                value = (tmp[0] as u16) | ((tmp[1] as u16) << 8);
+                value &= mask; // Apply mask to limit value range
+
+                // Ensure the value is within valid range and is unique
+                if value < PARAM_N as u16 && unique_values.insert(value) {
+                    break;
+                }
+            }
+
+            // Store the unique value in the output array
+            opened_views[i][j] = value;
+        }
+        // Sort the values in the set
+        opened_views[i].sort();
+    }
+    // Return the resulting array of opened views
+    opened_views
+}
+\end{minted}
+As this relies on random values we test that the output of the function follows the specifications, such as uniqueness and length.
+
+\subsection{Verification}\label{sub:verification}
 As the last piece to the puzzle we implemented the verification algorithm. For this we followed the specification and used the KAT generated signatures to verify that we could parse and validate a signature. This would allow us to ensure that our parsing of the signature, inverse MPC computation and our merkle tree verification was correct. This was in the attempt not the case. Which led us to compare our implementation with the specification as described in \autoref{sub:comparison_with_spec_impl}.
 
 \section{Comparison with spec impl}\label{sub:comparison_with_spec_impl}
