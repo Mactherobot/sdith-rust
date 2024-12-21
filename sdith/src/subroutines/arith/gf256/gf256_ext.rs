@@ -2,7 +2,9 @@
 //!
 //! An element of the field is represented as a pair of bytes `(a,b)` corresponding to `a + bX`
 
-use crate::subroutines::{arith::{gf256::gf256_vector::gf256_mul_vector_by_scalar, FieldArith}, prg::PRG};
+use rayon::iter::{IndexedParallelIterator, ParallelIterator};
+
+use crate::{subroutines::{arith::{gf256::gf256_vector::gf256_mul_vector_by_scalar, FieldArith}, prg::PRG}, utils::iterator::{get_iterator, get_iterator_mut}};
 
 const _GF256_16_ONE: [u8; 2] = [1, 0];
 const GF256_32_ONE: [u8; 4] = [1, 0, 0, 0];
@@ -162,6 +164,7 @@ pub fn gf256_polynomial_evaluation_in_point_r(poly_d: &[u8], powers_of_r: &[FPoi
     assert!(powers_of_r.len() >= poly_d.len());
     let mut sum = FPoint::default();
     let degree = poly_d.len();
+    // TODO: can we parallelize this?
     for i in 0..degree {
         // sum += r_j^(i-1) * q_poly_d[i]
         let mut r_i = powers_of_r[i];

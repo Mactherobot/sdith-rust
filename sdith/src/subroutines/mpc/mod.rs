@@ -132,7 +132,7 @@ pub fn compute_input_shares(
     });
 
     for e in 0..PARAM_TAU {
-        get_iterator(&mut input_shares[e])
+        get_iterator_mut(&mut input_shares[e])
             .enumerate()
             .for_each(|(i, share)| {
                 *share = compute_share(input_plain, &input_coefs[e], i as u8, i == 0);

@@ -45,7 +45,7 @@ impl Signature {
         let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
         let mut commitments_prime = [[0u8; PARAM_DIGEST_SIZE]; PARAM_N];
         for e in 0..PARAM_TAU {
-            get_iterator(&mut commitments_prime)
+            get_iterator_mut(&mut commitments_prime)
                 .enumerate()
                 .for_each(|(i, commitment)| {
                     *commitment = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
