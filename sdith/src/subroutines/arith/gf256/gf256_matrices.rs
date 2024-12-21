@@ -12,6 +12,8 @@ use crate::{
     subroutines::prg::PRG,
 };
 
+use super::gf256_vector::{gf256_add_vector, gf256_mul_vector_by_scalar};
+
 /// H' matrix with dimensions `m-k * k`. The ceil value is only do accommodate the way the spec creates the matrix.
 pub type HPrimeMatrix = [u8; PARAM_M_SUB_K * PARAM_K];
 
@@ -39,10 +41,6 @@ pub fn field_mul_matrix_vector<const M: usize, const N: usize>(
     _n: usize,
     v: &[u8; N],
 ) {
-    use crate::subroutines::arith::gf256::gf256_vector::{
-        gf256_add_vector, gf256_mul_vector_by_scalar,
-    };
-
     let mut offset = 0;
     for vi in v.iter() {
         let mut h_col: [u8; M] = h[offset..offset + m].try_into().unwrap();

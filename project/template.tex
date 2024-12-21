@@ -325,16 +325,17 @@ A common choice for the irreducible polynomial is the Rijndael polynomial $p(x) 
 \subsubsection{Field extension}\label{sub:field_extension}
 
 An advantageous property of Galois fields is that they can easily be extended, like $\mathbb{F}_{2}$ to $\mathbb{F}_{2^8}$. To ensure security in the SD-in-the-Head protocol, the field $\mathbb{F}_{2^8}$, which we shall denote as $\mathbb{F}_q$ is extended to encompass the field of 32-bit unsigned integers. This can be done as a \textit{tower extension} by first building a degree-2 extension to $\mathbb{F}_{q^2}$ using the irreducible polynomial $F_{q^2} = F_q[X] / (X^2 + X + 32)$ and finally extending this field to $\mathbb{F}_{q^4}$ using the irreducible polynomial $F_{q^4} = F_q[Z] / (Z^2 + Z + 32(X))$. While you could create the final field independently, the tower extension allows us to reuse the construction of the intermediate field. Addition and multiplication in the extension fields are represented as the following
-
 \begin{align*}
-  a         & = a_0 + a_1x                                               &  & a \in \mathbb{F}_{q^\eta}, a_0, a_1 \in \mathbb{F}_q \\
-  b         & = b_0 + b_1x                                               &  & b \in \mathbb{F}_{q^\eta}, b_0, b_1 \in \mathbb{F}_q \\\\
-  a + b     & = (a_0 + a_1x) + (b_0 + b_1x) = (a_0 + b_0) + (a_1 + b_1)x                                                           \\
-  a \cdot b & = (a_0 + a_1x) \cdot (b_0 + b_1x)                                                                                    \\
-            & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1x^2                                                                            \\
-            & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1(x + 32)                                                                       \\
-            & = a_0b_0 + 32a_1b_1 + (a_0b_1 + a_1b_0 + a_1b_1)x
+  a & = a_0 + a_1x  \quad a \in \mathbb{F}_{q^\eta}, a_0, a_1 \in \mathbb{F}_q \\
+  b & = b_0 + b_1x  \quad b \in \mathbb{F}_{q^\eta}, b_0, b_1 \in \mathbb{F}_q
 \end{align*}
+\begin{align}
+  a + b     & = (a_0 + a_1x) + (b_0 + b_1x) = (a_0 + b_0) + (a_1 + b_1)x               \nonumber \\
+  a \cdot b & = (a_0 + a_1x) \cdot (b_0 + b_1x)                                        \nonumber \\
+            & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1x^2                                \nonumber \\
+            & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1(x + 32)                           \nonumber \\
+            & = a_0b_0 + 32a_1b_1 + (a_0b_1 + a_1b_0 + a_1b_1)x\label{eq:gf256_ext_mul}
+\end{align}
 
 \section{Cryptographic Primitives and protocols}
 We assume the reader has basic knowledge of cryptographic primitives but will provide brief introductions to the primitives used in the SD-in-the-Head protocol. If you know the basics feel free to skip this section.
@@ -2604,21 +2605,40 @@ where
 This test could then be reused for all \rust{FieldArith} implementations.
 
 \begin{minted}{rust}
-/// GF256 finite field 
-impl FieldArith for u8 {
-    fn field_add(&self, rhs: Self) -> Self {
-        *self ^ rhs
-    }
-}
-
 #[cfg(test)]
-mod tests {
+mod gf256_tests {
   #[test]
-  fn test_field_arith_u8_definitions() {
+  fn test_field_arith_rijndael_definitions() {
     crate::arith::gf256::test_field_definitions(PRG::init(seed));
   }
 }
 \end{minted}
+
+\subsection{Rijndael's field}\label{sub:rijndael_field}
+
+First, we implemented the Rijndael's field $\mathbb{F}_{q}$ for $q=2^8$ and for the irreducible polynomial $X^8 + X^4 + X^3 + X + 1$. Field values are represented as unsigned bytes \rust{u8} (\autoref{sec:gf256})
+\begin{minted}{rust}
+  /// Rijndael's finite field 
+  impl FieldArith for u8 {
+      fn field_add(&self, rhs: Self) -> Self {
+          *self ^ rhs
+      }
+  }
+\end{minted}
+
+We explored multiple approaches for implementing multiplication in the field and ultimately selected two viable solutions:
+
+\begin{enumerate}
+    \item \textit{Table Lookup Method}: Given a generator $g$ of the field, the product of two elements $a$ and $b$ can be expressed as:
+    \begin{align*}
+        ab = g^{\log_g(a) + \log_g(b)}.
+    \end{align*}
+    Since the field size is relatively small, we can precompute and store the powers of $g$ as well as $\log_g$ values for all field elements. This allows multiplication to be performed through three lookup operations and a single addition, leveraging these precomputed tables.
+
+    \item \textit{Shift-and-Add with Modular Reduction}: This technique -- the one chosen in the reference implementation~\cite{aguilarsyndrome11} -- is particularly provides robust performance in most applications. Importantly, it has no conditional branches making it constant-time.
+\end{enumerate}
+
+Benchmarking these methods revealed that while the shift-and-add approach was faster overall, the table lookup method yielded slightly better results in the specific context of signing operations. Detailed performance metrics, including constant-time benchmarks, are presented in \autoref{ch:bench}. In the final implementation we left lookup-based multiplication as the default method, but allow the user to switch to the shift-and-add method through the \texttt{mul\_shift\_and\_add} feature flag.
 
 \subsection{Field Extensions}\label{sub:field_extensions}
 The field extensions were built using a \textit{tower structure} as we first implemented the base field $\mathbb{F}_{q}$ for $q=2^8$ -- also called Rijndael's field. Then, we proceeded to implement a trait for the first extension from \rust{u8} to \rust{[u8; 2]} in $\mathbb{F}_{q^2}$ and next to $\mathbb{F}_{q^4}$.
@@ -2646,15 +2666,7 @@ fn gf256_ext16_add(a: [u8; 2], b: [u8; 2]) -> [u8; 2] {
 
 \subsubsection*{Multiplication in $\mathbb{F}_{q^2}$}
 
-Multiplication is more intricate. Given two elements $(a, b)$ and $(c, d)$, we compute their product as:
-\begin{align}
-  (a + bX) \cdot (c + dX) & = ac + (ad + bc)  X + bd  X^2                        \\
-                          & = ac + (ad + bc)  X + bd  (X + 32)                   \\
-                          & = (ac + bd \cdot 32) + (ad + bc + bd)X               \\
-                          & = (ac + bd \cdot 32) + ((a + b) \cdot (c + d) - ac)X
-\end{align}
-The Rust implementation of this operation is as follows:
-
+Multiplication is more intricate (see \autoref{eq:gf256_ext_mul}). The Rust implementation of this operation is as follows:
 \begin{minted}{rust}
 fn gf256_ext16_mul(_a: [u8; 2], _b: [u8; 2]) -> [u8; 2] {
     let [a, b] = _a;
@@ -2671,7 +2683,7 @@ fn gf256_ext16_mul(_a: [u8; 2], _b: [u8; 2]) -> [u8; 2] {
 \end{minted}
 with $bd \cdot 0x20$ accounting for the reduction modulo the irreducible polynomial and the linear terms being computed using the sum of $a+b$ and $c+d$, with adjustments to maintain consistency with field arithmetic.
 
-\subsubsection*{Optimal Building Block}
+\subsubsection*{Optimising Multiplication in $\mathbb{F}_{q^4}$}
 
 The field $\mathbb{F}_{q^2}$ serves as a building block for constructing the next extension $\mathbb{F}_{q^4}$, which is defined as:
 \begin{align}
@@ -2756,10 +2768,62 @@ Initially, we implemented polynomial evaluations using Horner's method. However,
   }
 \end{minted}
 
-\subsection{Field vector operations}\label{sub:field_vector_operations}
+\subsection{Field vector and matrix operations}\label{sub:field_vector_operations}
 
-After defining the field arithmetic, we implemented the necessary vector operations for the $\mathbb{F}_{q^4}$ field. These operations are essential for the polynomial interpolation and MPC computations in the protocol.
-We first implemented the simple version of the functions, where you just iterate through the vector and use the field arithmetic between each value. We also went on to implement SIMD versions of each function to improve performance.
+After defining the field arithmetic, we implemented the necessary vector operations for the $\mathbb{F}_{q^4}$ field. These operations enable matrix multiplication, secret sharing, and MPC computations within the protocol. They include operations
+
+\begin{itemize}
+  \item Adding two vectors: $v_a + v_b$ for $v_* \in \mathbb{F}_{q}^n$
+  \item Multiplying a vector by a scalar: $v \cdot s$ for $v \in \mathbb{F}_{q}^n$ and $s \in \mathbb{F}_{q}$
+  \item Matrix multiplication with a vector as the right-hand side for the SD instance $Hx$
+\end{itemize}
+
+Initially, we developed straightforward implementations of these functions, iterating through the vector and applying field arithmetic to each element. Subsequently, we optimized these operations by implementing SIMD versions of each function -- available through the \texttt{simd} feature flag -- significantly enhancing performance.
+
+\subsubsection{MPC Inputs and sharing}
+When implementing the signing algorithm, we needed to generate a set of input shares for the MPC simulation. Since this functionality is logically related to the MPC simulation, we decided to implement it within the MPC subroutine.
+
+The function takes as input a Pseudo-Random Generator (PRG) and the plain input value. It begins by sampling random coefficients, which are used to compute the input shares. Each share is computed as defined in \autoref{sec:sdith-signature}. Our implementation of this computation is as follows:
+
+\begin{minted}{rust}
+pub fn compute_share<const SIZE: usize>(
+    plain: &[u8; SIZE],
+    rnd_coefs: &[[u8; SIZE]],
+    fi: u8,
+    skip_loop: bool,
+) -> [u8; SIZE] {
+    // We need to compute the following:
+    // input_share[e][i] = input_plain + sum^l_(j=1) fi^j * input_coef[e][j]
+    let mut share = *rnd_coefs.last().unwrap();
+
+    // Compute the inner sum
+    // sum^l_(j=1) fi^j * coef[j]
+    // Horner method
+    if !skip_loop {
+        for j in (0..(rnd_coefs.len() - 1)).rev() {
+            gf256_mul_scalar_add_vector(&mut share, &rnd_coefs[j], fi);
+        }
+
+        // Add the plain to the share
+        gf256_mul_scalar_add_vector(&mut share, plain, fi);
+    }
+
+    share
+}
+\end{minted}
+In this implementation, we start by initializing the share to the last coefficient. Then, depending on whether we are computing the first share, we may skip adding the plain input and all subsequent terms in the sum.
+We can then create a loop that computes the input share from the generated coefficients. This can be done in parallel, which we will discuss in \autoref{sec:optimizations}.
+\begin{minted}{rust}
+for e in 0..PARAM_TAU {
+    get_iterator(&mut input_shares[e])
+        .enumerate()
+        .for_each(|(i, share)| {
+            *share = compute_share(input_plain, &input_coefs[e], i as u8, i == 0);
+        });
+}
+
+ComputeInputSharesResult(input_shares, input_coefs)
+\end{minted}
 
 \section{Keygen -- Sampling SD instance}\label{sub:witness_generation}
 
@@ -3000,51 +3064,6 @@ Additionally we tested the correctness of the polynomial relation generation pro
 Before implementing the rest of the protocol, signing and verification, it was necessary to first develop the underlying MPC simulation subroutine detailed in \autoref{sec:sdith-mpc} -- including the generation of inputs, Beaver triples, and the MPC challenge. Following this, we detail the party computation subroutine, as well as its inverse, which form the core components of the MPC simulation.
 
 We designed the MPC subroutine around a central \rust{MPC} struct, making it more comprehensible and modular. Lastly, we focused on testing and verifying the correctness of the computations to ensure the reliability of the implementation.
-
-\subsubsection{Input shares}
-When implementing the signing algorithm, we needed to generate a set of input shares for the MPC simulation. Since this functionality is logically related to the MPC simulation, we decided to implement it within the MPC subroutine.
-
-The function takes as input a Pseudo-Random Generator (PRG) and the plain input value. It begins by sampling random coefficients, which are used to compute the input shares. Each share is computed as defined in \autoref{sec:sdith-signature}. Our implementation of this computation is as follows:
-
-\begin{minted}{rust}
-pub fn compute_share<const SIZE: usize>(
-    plain: &[u8; SIZE],
-    rnd_coefs: &[[u8; SIZE]],
-    fi: u8,
-    skip_loop: bool,
-) -> [u8; SIZE] {
-    // We need to compute the following:
-    // input_share[e][i] = input_plain + sum^l_(j=1) fi^j * input_coef[e][j]
-    let mut share = *rnd_coefs.last().unwrap();
-
-    // Compute the inner sum
-    // sum^l_(j=1) fi^j * coef[j]
-    // Horner method
-    if !skip_loop {
-        for j in (0..(rnd_coefs.len() - 1)).rev() {
-            gf256_mul_scalar_add_vector(&mut share, &rnd_coefs[j], fi);
-        }
-
-        // Add the plain to the share
-        gf256_mul_scalar_add_vector(&mut share, plain, fi);
-    }
-
-    share
-}
-\end{minted}
-In this implementation, we start by initializing the share to the last coefficient. Then, depending on whether we are computing the first share, we may skip adding the plain input and all subsequent terms in the sum.
-We can then create a loop that computes the input share from the generated coefficients. This can be done in parallel, which we will discuss in \autoref{sec:optimizations}.
-\begin{minted}{rust}
-for e in 0..PARAM_TAU {
-    get_iterator(&mut input_shares[e])
-        .enumerate()
-        .for_each(|(i, share)| {
-            *share = compute_share(input_plain, &input_coefs[e], i as u8, i == 0);
-        });
-}
-
-ComputeInputSharesResult(input_shares, input_coefs)
-\end{minted}
 
 \subsubsection{Complete and Truncate $\mathcal{Q}$}
 We can omit sending the leading coefficient since it is always going to be 1. For this we have created a function that can add the leading coefficient, as we also need to be able to add 0 for the leading coefficient for all the shares that are not the leading. As they need to sum to 1. Our implementation is a simple loop that will add an element that is going to be the leading coefficient.
