@@ -185,7 +185,6 @@ The most widely used digital signature schemes rely on public-key cryptography. 
 \section{NIST call to action}
 
 In 1994, the discovery of Shor's algorithm~\cite{shor1997} introduced a polynomial-time method for solving these problems using quantum computing. At that time, quantum computers were theoretical constructs. However, in 2001, Chuang et al.~\cite{vandersypen2001experimental,buchmann2004post} successfully implemented Shor's algorithm on a 7-qubit quantum computer. Two decades later, significant advancements in quantum technology have brought us closer to the point where quantum computers could be a reality. The most recent advancements including the Willow chip from Google~\cite{blogMeetWillow}. Reducing the errors exponentially as they scale up using more qubits.
-\todo{Add some examples of the significant advancements in quantum technology. Willow chip from google}
 
 A necessary pre-requisite for a post-quantum secure signature scheme is the existence of a problem that is intractable for quantum computers. Several candidates from the family of NP-hard problems within complexity theory have been proposed. These are problems that can not be solved in polynomial-time by any classical or quantum computer.
 
@@ -353,8 +352,7 @@ We denote a hash function by a generator $\mathcal{H}$ which on input of a secur
 
 The consensus among researchers indicates that for collision and preimage resistance, quantum computing is expected to reduce the security level from $k$ to $k/2$ through approaches like Grover's algorithm~\cite{nielsen2010quantumgrover}. In contrast, no known methods have been proposed to reduce the security level for collision resistance. Consequently, protocols that depend on collision-resistant hash functions, such as Merkle Signature or SD-in-the-Head, remain a viable choice for post-quantum secure protocols.
 
-In proving the security of hash functions, researchers often resort to models like the Quantum Random Oracle Model (QROM), this approach however suffers form the fact that it abstracts the hash functions as ideal even when evaluated in a superposition. While there is significant work being done to further prove the future security of hash functions~\cite{dtuPostquantumSecurity}.
-\todo{Read through the article i sent to Diego}
+In proving the security of hash functions, researchers often resort to models like the Quantum Random Oracle Model (QROM) described in \autoref{sub:qrom}, this approach however suffers form the fact that it abstracts the hash functions as ideal even when evaluated in a superposition. While there is significant work being done to further prove the future security of hash functions~\cite{dtuPostquantumSecurity}.
 
 \subsubsection{Extendable-output (hash) functions (XOF)}\label{sec:xof}
 An \textit{extendable-output function} is a function that takes a bit string (also called a message) $\{0,1\}^*$ as input and can produce any desirable length output. Meaning that it can be used to generate an arbitrary amount of pseudorandom data. This is useful in cryptographic protocols where a seeded randomness is needed.
@@ -388,7 +386,7 @@ We will formally define the \textit{classical} ROM as follows:
 \end{definition}
 This would later be replaced by the concrete hash function, enabling a quantum attacker to query $h$ based on quantum states.
 
-\subsubsection{Quantum-accessible Random Oracle Model (QROM)}
+\subsubsection{Quantum-accessible Random Oracle Model (QROM)}\label{sub:qrom}
 Since we are implementing post-quantum secure protocols, it is relevant to consider the \textit{Quantum Random Oracle Model} (QROM). The extension of the ROM model, defined in~\cite{boneh2011random}, is that we allow the quantum adversary to evaluate the random oracle in superpositions, meaning that the adversary can query with quantum states $|x \rangle = \sum \alpha_x |x \rangle$ and receive back the evaluated state $\sum\alpha_x |O(x)\rangle$. This is called the \textit{quantum(-accessible) random oracle model} (QROM).
 
 We define the QROM as follows:
@@ -3342,7 +3340,6 @@ Blake3, Haraka v2, KangarooTwelve, Xoodyak
 \section{Kat for NIST}\label{sub:kat_for_nist} % (fold)
 
 \chapter{Benchmarking}\label{ch:bench}
-
 
 We utilized the Criterion.rs~\cite{criterion} package benchmarking. Criterion.rs is a statistics-driven benchmarking library for Rust, offering robust tools to measure and analyze performance reliably.
 
