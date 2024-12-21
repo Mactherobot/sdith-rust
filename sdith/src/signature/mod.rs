@@ -2,8 +2,6 @@
 //!
 //! This module contains the implementation of the signature struct and its methods.
 
-pub mod input;
-#[doc()]
 mod sign;
 mod verify;
 
@@ -11,14 +9,15 @@ use crate::{
     constants::{
         params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_M_SUB_K, PARAM_SALT_SIZE, PARAM_TAU},
         types::{Hash, Salt, Seed},
-    }, subroutines::{
+    },
+    subroutines::{
+        challenge::expand_view_challenge_hash,
         merkle_tree::{MerkleTree, MerkleTreeTrait},
-        mpc::{
-            broadcast::{BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
-            expand_view_challenge_hash,
-        },
+        mpc::broadcast::{BROADCAST_PLAIN_SIZE, BROADCAST_SHARE_PLAIN_SIZE},
         prg::hashing::{hash_1, hash_2},
-    }, utils::marshalling::Marshalling, witness::SOLUTION_PLAIN_SIZE
+    },
+    utils::marshalling::Marshalling,
+    witness::SOLUTION_PLAIN_SIZE,
 };
 
 #[derive(Debug, PartialEq, Eq)]

@@ -3,10 +3,17 @@
 //! Input shares are used in the MPC protocol to share the solution.
 //! And are used in the inverse party computation.
 
+#[cfg(feature = "parallel")]
+use rayon::iter::{IndexedParallelIterator as _, ParallelIterator as _};
+
 use crate::{
-    constants::params::{PARAM_N, PARAM_TAU},
-    subroutines::mpc::beaver::{BeaverTriples, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE},
-    utils::marshalling::Marshalling,
+    constants::params::{PARAM_L, PARAM_N, PARAM_TAU},
+    subroutines::{
+        arith::gf256::gf256_vector::gf256_mul_scalar_add_vector,
+        mpc::beaver::{BeaverTriples, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE},
+        prg::PRG,
+    },
+    utils::{iterator::get_iterator_mut, marshalling::Marshalling},
     witness::{Solution, SOLUTION_PLAIN_SIZE},
 };
 
@@ -61,6 +68,72 @@ impl Input {
         input[SOLUTION_PLAIN_SIZE..].copy_from_slice(&beaver_triples.serialise());
         input
     }
+}
+
+/// Compute `share = plain + sum^ℓ_(j=1) fi^j · rnd_coefs[j]`
+/// Returns the computed share
+/// # Arguments
+/// * `plain` - The plain value to be shared
+/// * `rnd_coefs` - The random coefficients
+/// * `fi` - The challenge value
+/// * `skip_loop` - If true, will return rnd_coefs.last().clone()
+pub fn compute_share<const SIZE: usize>(
+    plain: &[u8; SIZE],
+    rnd_coefs: &[[u8; SIZE]],
+    fi: u8,
+    skip_loop: bool,
+) -> [u8; SIZE] {
+    // We need to compute the following:
+    // input_share[e][i] = input_plain + sum^ℓ_(j=1) fi^j · input_coef[e][j]
+    let mut share = *rnd_coefs.last().unwrap();
+
+    // Compute the inner sum
+    // sum^ℓ_(j=1) fi · coef[j]
+    // Horner method
+    if !skip_loop {
+        for j in (0..(rnd_coefs.len() - 1)).rev() {
+            gf256_mul_scalar_add_vector(&mut share, &rnd_coefs[j], fi);
+        }
+
+        // Add the plain to the share
+        gf256_mul_scalar_add_vector(&mut share, plain, fi);
+    }
+
+    share
+}
+
+/// A struct that holds the result of the [`compute_input_shares`] function.
+pub struct ComputeInputSharesResult(
+    pub Box<[[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU]>,
+    pub [[[u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU],
+);
+
+#[inline(always)]
+/// Compute shamir secret sharing of the [`Input`]'s.
+/// Returns (shares, coefficients).
+pub fn compute_input_shares(
+    input_plain: &[u8; INPUT_SIZE],
+    prg: &mut PRG,
+) -> ComputeInputSharesResult {
+    let mut input_shares = Box::new([[[0u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU]);
+
+    // Generate coefficients
+    let mut input_coefs = [[[0u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU];
+    input_coefs.iter_mut().for_each(|input_coefs_e| {
+        input_coefs_e
+            .iter_mut()
+            .for_each(|input_coefs_ei| prg.sample_field_fq_elements(input_coefs_ei))
+    });
+
+    for e in 0..PARAM_TAU {
+        get_iterator_mut(&mut input_shares[e])
+            .enumerate()
+            .for_each(|(i, share)| {
+                *share = compute_share(input_plain, &input_coefs[e], i as u8, i == 0);
+            });
+    }
+
+    ComputeInputSharesResult(input_shares, input_coefs)
 }
 
 #[cfg(test)]

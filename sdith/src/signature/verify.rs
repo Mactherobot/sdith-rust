@@ -15,22 +15,23 @@ use crate::{
     keygen::PublicKey,
     subroutines::{
         arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix},
-        commitments::commit_share,
-        merkle_tree::{MerkleTree, MerkleTreeTrait},
+        challenge::MPCChallenge,
+        commitments::{self},
+        merkle_tree::{MerkleTree, MerkleTreeTrait as _},
         mpc::{
+            self,
             beaver::BeaverTriples,
             broadcast::{
                 Broadcast, BroadcastShare, BROADCAST_SHARE_PLAIN_SIZE,
                 BROADCAST_SHARE_PLAIN_SIZE_AB,
             },
-            challenge::Challenge,
-            compute_share, inverse_party_computation,
+            input::{self, Input},
         },
     },
     utils::marshalling::Marshalling,
 };
 
-use super::{input::Input, Signature};
+use super::Signature;
 
 impl Signature {
     /// Verify a plain signature given a [`PublicKey`]
@@ -51,7 +52,7 @@ impl Signature {
         );
 
         // First challenge (MPC challenge) Only generate one in the case of threshold variant
-        let chal = Challenge::new(h1);
+        let chal = MPCChallenge::new(h1);
 
         let broadcast = Broadcast::parse(&broad_plain)?;
         let mut sh_broadcast = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
@@ -69,11 +70,12 @@ impl Signature {
                 // sh_broadcast[e][i] = (broad_plain, 0) + sum^ℓ_(j=1) fi^j · broad_share[e][j]
                 let f_i = i.to_le_bytes()[0];
 
-                sh_broadcast[e][li] = compute_share(&plain, &broadcast_shares[e], f_i, *i == 0u16);
+                sh_broadcast[e][li] =
+                    input::compute_share(&plain, &broadcast_shares[e], f_i, *i == 0u16);
 
                 // Verify the Merkle path
                 let broadcast_share = BroadcastShare::parse(&sh_broadcast[e][li])?;
-                let beaver_triples = inverse_party_computation(
+                let beaver_triples = mpc::inverse_party_computation(
                     wit_share[e][li],
                     &broadcast_share,
                     &chal,
@@ -89,7 +91,8 @@ impl Signature {
                 );
 
                 // Commit to the shares
-                commitments_prime[li] = commit_share(&salt, e as u16, *i, &input_share);
+                commitments_prime[li] =
+                    commitments::commit_share(&salt, e as u16, *i, &input_share);
             }
 
             let Ok(root) = MerkleTree::get_root_from_auth_path(

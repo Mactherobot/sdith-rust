@@ -10,55 +10,32 @@
 //! 5. Based on the view opening challenges, compute merkle trees from the commitments
 //! 5. Build the signature, with the message, salt, h1 and the broadcast plain, broadcast shares, solution shares and auth paths
 
-use beaver::BeaverTriples;
-use broadcast::BROADCAST_SHARE_PLAIN_SIZE;
-use challenge::Challenge;
-
 use crate::{
     constants::{
-        params::{PARAM_DIGEST_SIZE, PARAM_L, PARAM_N, PARAM_TAU},
+        params::{PARAM_L, PARAM_TAU},
         types::{Hash, Salt, Seed},
     },
     keygen::SecretKey,
     subroutines::{
         arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix},
-        commitments::commit_share,
-        merkle_tree::{MerkleTree, MerkleTreeTrait},
-        mpc::*,
+        challenge::{self, MPCChallenge},
+        commitments::{self},
+        merkle_tree::MerkleTreeTrait,
+        mpc::{
+            self,
+            beaver::BeaverTriples,
+            broadcast::BROADCAST_SHARE_PLAIN_SIZE,
+            input::{self, ComputeInputSharesResult, Input},
+        },
         prg::PRG,
     },
-    utils::{iterator::*, marshalling::Marshalling},
+    utils::marshalling::Marshalling,
     witness::SOLUTION_PLAIN_SIZE,
 };
 
-use super::input::INPUT_SIZE;
-use super::{input::Input, Signature};
+use super::Signature;
 
 impl Signature {
-    #[inline(always)]
-    /// Commit shares to the MPC protocol
-    pub fn commit_shares(
-        input_shares: &[[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU],
-        salt: Salt,
-    ) -> ([[u8; PARAM_DIGEST_SIZE]; PARAM_TAU], Vec<MerkleTree>) {
-        let mut commitments: [Hash; PARAM_TAU] = [[0u8; PARAM_DIGEST_SIZE]; PARAM_TAU];
-        let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
-        let mut commitments_prime = [[0u8; PARAM_DIGEST_SIZE]; PARAM_N];
-        for e in 0..PARAM_TAU {
-            get_iterator_mut(&mut commitments_prime)
-                .enumerate()
-                .for_each(|(i, commitment)| {
-                    *commitment = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
-                });
-
-            let merkle_tree = MerkleTree::new(commitments_prime, Some(salt));
-            commitments[e] = merkle_tree.root();
-            merkle_trees.push(merkle_tree);
-        }
-
-        (commitments, merkle_trees)
-    }
-
     /// Sign a `message` using the `secret_key` and the `entropy`
     pub fn sign_message(
         entropy: (Seed, Salt),
@@ -81,19 +58,19 @@ impl Signature {
 
         // Compute input shares for the MPC
         let input_plain = input.serialise();
-        let ComputeInputSharesResult(input_shares, input_coefs): ComputeInputSharesResult =
-            compute_input_shares(&input_plain, &mut prg);
+        let ComputeInputSharesResult(input_shares, input_coefs) =
+            input::compute_input_shares(&input_plain, &mut prg);
 
         // Commit shares
-        let (commitments, merkle_trees) = Signature::commit_shares(&input_shares, salt);
+        let (commitments, merkle_trees) = commitments::commit_shares(&input_shares, salt);
 
         // Create MPC challenge
         // h1 = Hash1 (seedH, y, salt, com[1], . . . , com[τ ])
         let h1 = Signature::gen_h1(&secret_key.seed_h, &secret_key.y, salt, commitments);
-        let chal = Challenge::new(h1);
+        let chal = MPCChallenge::new(h1);
 
         // MPC Simulation
-        let broadcast_result = compute_broadcast(input, &chal, h_prime, secret_key.y);
+        let broadcast_result = mpc::compute_broadcast(input, &chal, h_prime, secret_key.y);
         if broadcast_result.is_err() {
             return Err("MPC Simulation failed".to_string());
         }
@@ -104,7 +81,7 @@ impl Signature {
         let mut broadcast_shares = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
         for e in 0..PARAM_TAU {
             for j in 0..PARAM_L {
-                let broadcast_share = party_computation(
+                let broadcast_share = mpc::party_computation(
                     input_coefs[e][j],
                     &chal,
                     h_prime,
@@ -121,7 +98,7 @@ impl Signature {
         let h2 = Signature::gen_h2(message, &salt, &h1, &broadcast_plain, &broadcast_shares);
 
         // Create the set of view-opening challenges
-        let view_opening_challenges = expand_view_challenge_hash(h2);
+        let view_opening_challenges = challenge::expand_view_challenge_hash(h2);
 
         // Signature building
         let mut solution_share = [[[0u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];

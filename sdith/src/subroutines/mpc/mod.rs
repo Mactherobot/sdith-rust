@@ -4,143 +4,27 @@
 
 pub mod beaver;
 pub mod broadcast;
-pub mod challenge;
+pub mod input;
 
 use crate::{
-    constants::{
-        params::{
-            PARAM_L, PARAM_LOG_N, PARAM_M_SUB_K, PARAM_N, PARAM_SPLITTING_FACTOR, PARAM_T,
-            PARAM_TAU,
+    constants::params::{PARAM_M_SUB_K, PARAM_SPLITTING_FACTOR, PARAM_T},
+    subroutines::arith::{
+        gf256::{
+            gf256_ext::{gf256_polynomial_evaluation_in_point_r, FPoint},
+            gf256_matrices::HPrimeMatrix,
         },
-        types::Hash,
+        FieldArith as _,
     },
-    signature::input::{Input, InputSharePlain, INPUT_SIZE},
-    subroutines::{
-        arith::{
-            gf256::{
-                gf256_ext::{gf256_polynomial_evaluation_in_point_r, FPoint},
-                gf256_matrices::HPrimeMatrix,
-                gf256_vector::gf256_mul_scalar_add_vector,
-            },
-            FieldArith as _,
-        },
-        prg::PRG,
-    },
-    utils::{iterator::*, marshalling::Marshalling},
+    utils::marshalling::Marshalling,
     witness::{complete_q, compute_s, compute_s_poly, Solution, SOLUTION_PLAIN_SIZE},
 };
 
 use beaver::{BeaverA, BeaverB, BeaverC};
 use broadcast::{Broadcast, BroadcastShare};
-use challenge::Challenge;
 use clap::error::Result;
+use input::{Input, InputSharePlain};
 
-/// Expands the view opening challenges based on the h1 hash
-pub fn expand_view_challenge_hash(h2: Hash) -> [[u16; PARAM_L]; PARAM_TAU] {
-    // Initialize the XOF (extendable output function) context with the second Fiat-Shamir
-    // transform hash
-    let mut prg = PRG::init_base(&h2);
-
-    // Define a mask for reducing the value range
-    let mask: u16 = (1 << PARAM_LOG_N) - 1;
-    let mut opened_views = [[0u16; PARAM_L]; PARAM_TAU]; // Array for storing the opened views
-
-    let mut tmp = [0u8; 2]; // Temporary buffer for sampled bytes
-    let mut value: u16; // The sampled value
-
-    // Loop through all sets (PARAM_TAU sets)
-    for i in 0..PARAM_TAU {
-        let mut unique_values = std::collections::HashSet::new(); // To ensure uniqueness within a set
-
-        // Generate unique values for the set (PARAM_L values per set)
-        for j in 0..PARAM_L {
-            loop {
-                // Sample bytes from entropy and convert to u16 (handling endianness)
-                prg.sample_field_fq_elements(&mut tmp);
-                value = (tmp[0] as u16) | ((tmp[1] as u16) << 8);
-                value &= mask; // Apply mask to limit value range
-
-                // Ensure the value is within valid range and is unique
-                if value < PARAM_N as u16 && unique_values.insert(value) {
-                    break;
-                }
-            }
-
-            // Store the unique value in the output array
-            opened_views[i][j] = value;
-        }
-        // Sort the values in the set
-        opened_views[i].sort();
-    }
-    // Return the resulting array of opened views
-    opened_views
-}
-
-/// Compute `share = plain + sum^ℓ_(j=1) fi^j · rnd_coefs[j]`
-/// Returns the computed share
-/// # Arguments
-/// * `plain` - The plain value to be shared
-/// * `rnd_coefs` - The random coefficients
-/// * `fi` - The challenge value
-/// * `skip_loop` - If true, will return rnd_coefs.last().clone()
-pub fn compute_share<const SIZE: usize>(
-    plain: &[u8; SIZE],
-    rnd_coefs: &[[u8; SIZE]],
-    fi: u8,
-    skip_loop: bool,
-) -> [u8; SIZE] {
-    // We need to compute the following:
-    // input_share[e][i] = input_plain + sum^ℓ_(j=1) fi^j · input_coef[e][j]
-    let mut share = *rnd_coefs.last().unwrap();
-
-    // Compute the inner sum
-    // sum^ℓ_(j=1) fi · coef[j]
-    // Horner method
-    if !skip_loop {
-        for j in (0..(rnd_coefs.len() - 1)).rev() {
-            gf256_mul_scalar_add_vector(&mut share, &rnd_coefs[j], fi);
-        }
-
-        // Add the plain to the share
-        gf256_mul_scalar_add_vector(&mut share, plain, fi);
-    }
-
-    share
-}
-
-/// A struct that holds the result of the [`compute_input_shares`] function.
-pub struct ComputeInputSharesResult(
-    pub Box<[[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU]>,
-    pub [[[u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU],
-);
-
-#[inline(always)]
-/// Compute shamir secret sharing of the [`Input`]'s.
-/// Returns (shares, coefficients).
-pub fn compute_input_shares(
-    input_plain: &[u8; INPUT_SIZE],
-    prg: &mut PRG,
-) -> ComputeInputSharesResult {
-    let mut input_shares = Box::new([[[0u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU]);
-
-    // Generate coefficients
-    let mut input_coefs = [[[0u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU];
-    input_coefs.iter_mut().for_each(|input_coefs_e| {
-        input_coefs_e
-            .iter_mut()
-            .for_each(|input_coefs_ei| prg.sample_field_fq_elements(input_coefs_ei))
-    });
-
-    for e in 0..PARAM_TAU {
-        get_iterator_mut(&mut input_shares[e])
-            .enumerate()
-            .for_each(|(i, share)| {
-                *share = compute_share(input_plain, &input_coefs[e], i as u8, i == 0);
-            });
-    }
-
-    ComputeInputSharesResult(input_shares, input_coefs)
-}
+use super::challenge::MPCChallenge;
 
 /// Computes the publicly recomputed values of the MPC protocol (i.e. the plain
 /// values corresponding to the broadcasted shares).
@@ -153,7 +37,7 @@ pub fn compute_input_shares(
 /// Input: (wit plain, beav ab plain, beav c plain), chal, (H', y)
 pub fn compute_broadcast(
     input: Input,
-    chal: &Challenge,
+    chal: &MPCChallenge,
     h_prime: HPrimeMatrix,
     y: [u8; PARAM_M_SUB_K],
 ) -> Result<Broadcast, String> {
@@ -185,7 +69,7 @@ pub fn compute_broadcast(
 /// `(α, β, v)_i` of the party.
 pub fn party_computation(
     input_share_plain: InputSharePlain,
-    chal: &Challenge,
+    chal: &MPCChallenge,
     h_prime: HPrimeMatrix,
     y: [u8; PARAM_M_SUB_K],
     broadcast: &Broadcast,
@@ -204,7 +88,7 @@ pub fn party_computation(
 
 fn _party_computation(
     input_share_plain: InputSharePlain,
-    chal: &Challenge,
+    chal: &MPCChallenge,
     h_prime: HPrimeMatrix,
     y: [u8; PARAM_M_SUB_K],
     broadcast: &Broadcast,
@@ -291,7 +175,7 @@ fn _party_computation(
 pub fn inverse_party_computation(
     solution_plain: [u8; SOLUTION_PLAIN_SIZE],
     broadcast_share: &BroadcastShare,
-    chal: &Challenge,
+    chal: &MPCChallenge,
     h_prime: HPrimeMatrix,
     y: [u8; PARAM_M_SUB_K],
     broadcast: &Broadcast,
@@ -374,15 +258,15 @@ mod mpc_tests {
     use crate::{
         constants::{
             params::{
-                PARAM_DIGEST_SIZE, PARAM_M, PARAM_N, PARAM_SALT_SIZE, PARAM_SEED_SIZE,
-                PRECOMPUTED_F_POLY,
+                PARAM_DIGEST_SIZE, PARAM_M, PARAM_SALT_SIZE, PARAM_SEED_SIZE, PRECOMPUTED_F_POLY,
             },
             types::{hash_default, Seed},
         },
-        signature::input::INPUT_SIZE,
         subroutines::{
             arith::gf256::gf256_vector::{gf256_add_vector, gf256_add_vector_with_padding},
-            mpc::{broadcast::BroadcastShare, challenge::get_powers},
+            challenge::get_powers,
+            mpc::broadcast::BroadcastShare,
+            prg::PRG,
         },
         witness::{generate_witness, sample_polynomial_relation},
     };
@@ -392,7 +276,7 @@ mod mpc_tests {
     fn prepare() -> (
         Input,
         Broadcast,
-        Challenge,
+        MPCChallenge,
         HPrimeMatrix,
         [u8; PARAM_M_SUB_K],
     ) {
@@ -404,7 +288,7 @@ mod mpc_tests {
         let witness = generate_witness(hseed, (q, s, p));
 
         let beaver = BeaverTriples::generate(&mut prg);
-        let chal = Challenge::new(hash_default());
+        let chal = MPCChallenge::new(hash_default());
 
         let solution = Solution {
             s_a: witness.s_a,
@@ -423,44 +307,6 @@ mod mpc_tests {
         }
     }
 
-    #[test]
-    fn test_expand_view_challenge_hash() {
-        let mut prg = PRG::init_base(&[0]);
-        let mut h2 = [0u8; PARAM_DIGEST_SIZE];
-        for _ in 0..1000 {
-            prg.sample_field_fq_elements(&mut h2);
-            let view_challenges = expand_view_challenge_hash(h2);
-            assert_eq!(view_challenges.len(), PARAM_TAU);
-            for view_challenge in view_challenges {
-                assert_eq!(view_challenge.len(), PARAM_L);
-                for &x in view_challenge.iter() {
-                    assert!(
-                        x as usize <= PARAM_N,
-                        "View challenge should be less than N: {} <= {}",
-                        x,
-                        PARAM_N as u8
-                    );
-                }
-            }
-        }
-    }
-
-    #[test]
-    fn test_polynomial_evaluation() {
-        let r = [40, 106, 142, 69];
-
-        let mut powers_of_r = [FPoint::default(); PARAM_M + 1];
-        get_powers(r, &mut powers_of_r);
-
-        let q_poly = [vec![1, 2, 3]];
-
-        let q_eval = gf256_polynomial_evaluation_in_point_r(&q_poly[0], &powers_of_r); // r_0 =
-                                                                                       // [1,0,0,0] * 1 + [40, 106, 142, 69] * 2 + [123, 29, 100, 186] * 3 = [220, 243, 171, 95]
-
-        let expected = FPoint::from([220, 243, 171, 95]); // q(r) = 1 + 2r + 3r^2
-        assert_eq!(q_eval, expected);
-    }
-
     /// Test that we compute the correct sized broadcast values
     #[test]
     fn test_compute_broadcast() {
@@ -473,7 +319,7 @@ mod mpc_tests {
         let beaver = BeaverTriples::generate(&mut prg);
 
         let hash1 = [0u8; PARAM_DIGEST_SIZE];
-        let chal = Challenge::new(hash1);
+        let chal = MPCChallenge::new(hash1);
 
         let broadcast = compute_broadcast(
             Input {
@@ -529,7 +375,7 @@ mod mpc_tests {
     #[test]
     fn mpc_test_toy_example() {
         let (input, broadcast, chal, h_prime, y) = prepare();
-        let random_input_plain: InputSharePlain = [1; INPUT_SIZE];
+        let random_input_plain: InputSharePlain = [1; input::INPUT_SIZE];
 
         // Here N = 1, l = 1 so the shamir secret sharing
 

@@ -14,3 +14,4 @@ pub mod commitments;
 pub mod merkle_tree;
 pub mod mpc;
 pub mod prg;
+pub mod challenge;

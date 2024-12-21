@@ -2,9 +2,10 @@
 //!
 //! An element of the field is represented as a pair of bytes `(a,b)` corresponding to `a + bX`
 
-use rayon::iter::{IndexedParallelIterator, ParallelIterator};
-
-use crate::{subroutines::{arith::{gf256::gf256_vector::gf256_mul_vector_by_scalar, FieldArith}, prg::PRG}, utils::iterator::{get_iterator, get_iterator_mut}};
+use crate::subroutines::{
+    arith::{gf256::gf256_vector::gf256_mul_vector_by_scalar, FieldArith},
+    prg::PRG,
+};
 
 const _GF256_16_ONE: [u8; 2] = [1, 0];
 const GF256_32_ONE: [u8; 4] = [1, 0, 0, 0];
@@ -152,8 +153,6 @@ impl FieldArith for FPoint {
     }
 }
 
-
-
 /// Evaluate the polynomial at a given point in FPoint. See p. 20 of the specification.
 /// Q(r) = Σ_{i=1}^{|Q|} q_i · r^i
 ///
@@ -204,8 +203,7 @@ mod ext32_tests {
     use super::*;
 
     use crate::{
-        constants::params::PARAM_SEED_SIZE, subroutines::arith::test_field_definitions,
-        subroutines::prg::PRG,
+        constants::params::{PARAM_M, PARAM_SEED_SIZE}, subroutines::{arith::test_field_definitions, challenge::get_powers, prg::PRG},
     };
 
     #[test]
@@ -238,5 +236,21 @@ mod ext32_tests {
         let expected = a.field_pow(3).field_add(a.field_mul(a)).field_add(a);
 
         assert_eq!(eval, expected);
+    }
+
+    #[test]
+    fn test_polynomial_evaluation() {
+        let r = [40, 106, 142, 69];
+
+        let mut powers_of_r = [FPoint::default(); PARAM_M + 1];
+        get_powers(r, &mut powers_of_r);
+
+        let q_poly = [vec![1, 2, 3]];
+
+        let q_eval = gf256_polynomial_evaluation_in_point_r(&q_poly[0], &powers_of_r); // r_0 =
+                                                                                       // [1,0,0,0] * 1 + [40, 106, 142, 69] * 2 + [123, 29, 100, 186] * 3 = [220, 243, 171, 95]
+
+        let expected = FPoint::from([220, 243, 171, 95]); // q(r) = 1 + 2r + 3r^2
+        assert_eq!(q_eval, expected);
     }
 }

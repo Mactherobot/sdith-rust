@@ -3,8 +3,21 @@
 //! Commitment primitive for shares in the MPCitH protocol.
 //! Allows for verifying the MPC protocol _in the head_ execution.
 
-use super::prg::hashing::{SDitHHash, SDitHHashTrait as _};
-use crate::constants::types::{Hash, Salt};
+#[cfg(feature = "parallel")]
+use rayon::iter::{IndexedParallelIterator as _, ParallelIterator as _};
+
+use super::{
+    merkle_tree::{MerkleTree, MerkleTreeTrait as _},
+    mpc::input::INPUT_SIZE,
+    prg::hashing::{SDitHHash, SDitHHashTrait as _},
+};
+use crate::{
+    constants::{
+        params::{PARAM_DIGEST_SIZE, PARAM_N, PARAM_TAU},
+        types::{Hash, Salt},
+    },
+    utils::iterator::get_iterator_mut,
+};
 
 /// The prefix for the commitment hash function.
 const COMMITMENT_HASH_PREFIX: [u8; 1] = [0];
@@ -33,6 +46,30 @@ pub fn commit_share(salt: &Salt, e: u16, i: u16, share: &[u8]) -> Hash {
     hasher.update(share);
 
     SDitHHash::finalize(hasher)
+}
+
+#[inline(always)]
+/// Commit shares to the MPC protocol
+pub fn commit_shares(
+    input_shares: &[[[u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU],
+    salt: Salt,
+) -> ([[u8; PARAM_DIGEST_SIZE]; PARAM_TAU], Vec<MerkleTree>) {
+    let mut commitments: [Hash; PARAM_TAU] = [[0u8; PARAM_DIGEST_SIZE]; PARAM_TAU];
+    let mut merkle_trees: Vec<MerkleTree> = Vec::with_capacity(PARAM_TAU);
+    let mut commitments_prime = [[0u8; PARAM_DIGEST_SIZE]; PARAM_N];
+    for e in 0..PARAM_TAU {
+        get_iterator_mut(&mut commitments_prime)
+            .enumerate()
+            .for_each(|(i, commitment)| {
+                *commitment = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
+            });
+
+        let merkle_tree = MerkleTree::new(commitments_prime, Some(salt));
+        commitments[e] = merkle_tree.root();
+        merkle_trees.push(merkle_tree);
+    }
+
+    (commitments, merkle_trees)
 }
 
 #[cfg(test)]

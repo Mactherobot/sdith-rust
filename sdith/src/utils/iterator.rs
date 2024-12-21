@@ -1,7 +1,10 @@
+#![allow(unused)]
 //! Iterator utilities for parallel and sequential iterators according to the feature flag `parallel`
 
 #[cfg(feature = "parallel")]
-pub use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, IntoParallelIterator, ParallelIterator};
+pub use rayon::iter::{
+    IndexedParallelIterator, IntoParallelIterator, IntoParallelRefMutIterator, ParallelIterator,
+};
 
 #[cfg(not(feature = "parallel"))]
 /// Get an iterator for the array
