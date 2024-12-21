@@ -1,9 +1,9 @@
 //! # Challenge
-//!
-//! Contains the struct Challenge pair `(r, e) ∈ F_point^t, (F_point^t)^d` along with some
-//! precomputed values,
-//! Furthermore, it contains the functions for generating the challenges and the powers of r
-//! These are generated based on the Fiat-Shamir Transform
+//! 
+//! MPCitH challenge generation and precomputed values
+//! 
+//! - MPCChallenge: pair (r, e) ∈ F_point^t, (F_point^t)^d
+//! - View opening challenge: I ∈ [N] for |I| = l
 
 use core::fmt;
 use std::fmt::Formatter;
@@ -97,7 +97,9 @@ pub fn get_powers(point: FPoint, out: &mut [FPoint]) {
     }
 }
 
-/// Expands the view opening challenges based on the h1 hash
+/// Expands h2 hash into the view opening challenge
+/// 
+/// `I ∈ [N]` for `|I| = l`
 pub fn expand_view_challenge_hash(h2: Hash) -> [[u16; PARAM_L]; PARAM_TAU] {
     // Initialize the XOF (extendable output function) context with the second Fiat-Shamir
     // transform hash
