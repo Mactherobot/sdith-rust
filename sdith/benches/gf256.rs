@@ -17,10 +17,10 @@ pub(crate) fn mul_benchmark<M: Measurement>(c: &mut Criterion<M>) {
         )
     });
 
-    group.bench_function("mul_spec", |b| {
+    group.bench_function("mul_shift_and_add", |b| {
         b.iter_batched(
             || (rng.gen::<u8>(), rng.gen::<u8>()),
-            |(a, b)| gf256::gf256_arith::_mul_spec(a, b),
+            |(a, b)| gf256::gf256_arith::_mul_shift_and_add(a, b),
             criterion::BatchSize::SmallInput,
         )
     });

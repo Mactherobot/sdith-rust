@@ -132,12 +132,14 @@ fn gf256_add(a: u8, b: u8) -> u8 {
 
 /// Function for GF(256) multiplication between two u8
 #[inline(always)]
+#[cfg(not(feature = "mul_shift_and_add"))]
 fn gf256_mul(a: u8, b: u8) -> u8 {
-    if cfg!(feature = "mul_spec") {
-        _mul_spec(a, b)
-    } else {
-        _mul_lookup(a, b)
-    }
+    _mul_lookup(a, b)
+}
+
+#[cfg(feature = "mul_shift_and_add")]
+fn gf256_mul(a: u8, b: u8) -> u8 {
+    _mul_shift_and_add(a, b)
 }
 
 /// Multiplication using log table lookup a * b = g^(log_g(a) + log_g(b))
@@ -155,9 +157,12 @@ pub fn _mul_lookup(a: u8, b: u8) -> u8 {
 }
 
 /// Multiplication from the spec implementation
+///
+/// Shift-and-Add multiplication with modular reduction based on the most significant bit of `r`
+///
 /// time:   [399.59 ps 400.26 ps 400.96 ps]
 #[inline(always)]
-pub fn _mul_spec(a: u8, b: u8) -> u8 {
+pub fn _mul_shift_and_add(a: u8, b: u8) -> u8 {
     let a = Wrapping(a);
     let b = Wrapping(b);
     let one = Wrapping(1_u8);
@@ -171,32 +176,6 @@ pub fn _mul_spec(a: u8, b: u8) -> u8 {
     r = (-(b >> 1 & one) & a) ^ (-(r >> 7) & modulus) ^ (r + r);
     r = (-(b & one) & a) ^ (-(r >> 7) & modulus) ^ (r + r);
     return r.0;
-}
-
-/// Multiplication using wiki implementation
-#[inline(always)]
-pub fn _mul_wiki(a: u8, b: u8) -> u8 {
-    // TODO: Lookup carryless multiplication in Rust clmul
-    let mut r: u8 = 0;
-    let mut a = a.clone();
-    let mut b = b.clone();
-    while a != 0 && b != 0 {
-        if (b & 1) != 0 {
-            // f the polynomial for b has a constant term, add the corresponding a to p
-            r ^= a // addition in GF(2^m) is an XOR of the polynomial coefficients
-        }
-
-        if (a & 0x80) != 0 {
-            // If the polynomial for a has a highest term, reduce it modulo the irreducible polynomial
-            a = (a << 1) ^ MODULUS; // subtract (XOR) the primitive polynomial –
-                                    // you can change it but it must be irreducible and %2 == 1
-        } else {
-            a <<= 1
-        }
-        b >>= 1
-    }
-
-    r
 }
 
 /// using lookup table for power: a^b = g^(log_g(a^b)) = g^(b * log_g(a)) = g^(b * log_g(a) mod |g|)

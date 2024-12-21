@@ -25,7 +25,7 @@ Optimizations
 
 Features
 
-- `mul_spec`: Use the multiplication in the spec implementation instead of the lookup implementation seeing a small performance decrease but probably constant time
+- `mul_shift_and_add`: Use shift-and-add multiplication instead of the lookup implementation seeing a small performance decrease but probably constant time
 - `xof_blake3`: Use the Blake3 XOF implementation
 - `hash_blake3`: Use the Blake3 hash implementation
 

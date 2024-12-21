@@ -88,7 +88,7 @@ pub fn gf256_mul_vector_by_scalar(vz: &mut [u8], scalar: u8) {
         {
             let vz: &mut u8x32 = &mut vz_chunk_simd;
 
-            // Perform the multiplication
+            // Perform the shift-and-add multiplication
             let mut r = (scalar_chunk >> 7).wrapping_neg() & *vz;
             r = ((scalar_chunk >> 6 & one).wrapping_neg() & *vz)
                 ^ ((r >> 7).wrapping_neg() & modulus)
