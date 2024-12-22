@@ -1,0 +1,1 @@
+{"cargo bench --no-default-features --features default,mul_shift_and_add,category_one --profile=release api": {"runUiid": 4359, "features": ["mul_shift_and_add"], "category": "one", "profile": "release", "results": {"api/keygen": "500.97 \u00b5s", "api/signing": "2.1068 ms", "api/verification": "534.92 \u00b5s"}}}

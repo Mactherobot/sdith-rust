@@ -52,6 +52,11 @@ fn main() {
     if cfg!(feature = "merkle_batching") {
         println!("cargo:warning=Merkle tree batching enabled");
     }
+    if cfg!(feature = "mul_shift_and_add") {
+        println!("cargo:warning=Mul shift and add enabled");
+    } else {
+        println!("cargo:warning=Mul lookup enabled");
+    }
 }
 
 /// Based on https://stackoverflow.com/a/70914430

@@ -13,11 +13,11 @@ pub(super) const PARAM_W: usize = 87;
 pub(super) const PARAM_SPLITTING_FACTOR: usize = 1;
 
 // MPCitH Parameters
-pub(super) const PARAM_T: usize = 7;
-pub(super) const PARAM_ETA: usize = 4;
 pub(super) const PARAM_N: usize = 256;
-pub(super) const PARAM_TAU: usize = 6;
 pub(super) const PARAM_L: usize = 3;
+pub(super) const PARAM_TAU: usize = 6;
+pub(super) const PARAM_ETA: usize = 4;
+pub(super) const PARAM_T: usize = 7;
 
 // Signature Parameters
 pub(super) const PARAM_SEED_SIZE: usize = 128;

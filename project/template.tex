@@ -32,6 +32,7 @@
 \usepackage{mdframed}
 \usepackage{listings}
 \usepackage{titlesec}
+\usepackage{multirow}
 \lstdefinestyle{tree}{
   literate=
   {├}{{\smash{\raisebox{-1ex}{\rule{1pt}{\baselineskip}}}\raisebox{0.5ex}{\rule{1ex}{1pt}}}}1 
@@ -1487,7 +1488,7 @@ As our implementation is a reference implementation for the SD-in-the-Head proto
 \subsection{Optimizations in Rust}\label{sub:rust_optimizations}
 Blazingly fast code does not come without a cost. However, Rust and its community offers several ways to optimize performance. In this section we describe the methods used to measure performance in our implementation. Next, we will explore techniques for Rust that allow us to enhance performance.
 
-\subsection*{Measuring performance}\label{sec:rust_benchmarking}
+\subsubsection*{Measuring performance}\label{sec:rust_benchmarking}
 There are two techniques that we used in order to investigate the performance of our implementation and  to guide the optimizations that were needed. These are \textit{benchmarking} and \textit{profiling}.
 
 \subsubsection{Benchmarking}
@@ -1508,7 +1509,6 @@ In order to profile our implementation, we used the \textit{Samply Commandline P
   \caption{Samply Profiler HTML Output}
   \label{fig:samply}
 \end{figure}
-
 
 \subsection{Build Configuration}
 
@@ -2109,7 +2109,7 @@ Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$
 
 We set out to implement the SD-in-the-Head Protocol using a modern, well-maintained language that provides the necessary performance and security for a post-quantum secure signature scheme. To achieve this, we selected Rust~\cite{rustlangRustProgramming,nistsaferlanguages,lurklurkEffectiveRust,rustlangPerformanceBook} as the programming language. As a principle and to give ourselves the ability to manage the protocol effectively, we aimed to develop as much of the project's code as possible independently, minimizing reliance on pre-existing packages. This approach included implementing subroutines for the Galois Finite Field and Merkle Tree Commitment Scheme. However, for cryptographic primitives such as hash functions~\cite{blakethree,tinykeccak}, we utilized external libraries. This reliance is common, as developing such primitives securely often requires an entire dedicated effort and a whole project in itself.
 
-Initially, we aimed to base our implementation solely on the specification. However, this approach proved challenging due to ambiguities in some of the definitions, making it unclear how certain elements should be implemented and making testing the outcomes hard. To address this, we instead aligned our implementation with the reference implementation. This provided a valuable tool for debugging and figuring out these ambiguities.
+Initially, we aimed to base our implementation solely on the specification. However, this approach proved challenging due to ambiguities in some of the definitions, making it unclear how certain elements should be implemented and making testing the outcomes hard. To address this, we instead aligned our implementation in terms of outputs with the reference implementation. This provided a valuable tool for debugging and figuring out these ambiguities.
 
 This section provides a detailed overview of our implementation. We present a brief walkthrough of the structure and each module in our implementation, detailing how the code aligns with the SD-in-the-Head specification. Additionally, we describe the steps taken to test and optimize these modules and discuss the challenges encountered during their development.
 
@@ -2417,9 +2417,9 @@ To validate the correctness of the Merkle tree implementation, we perform the fo
   \item Confirm that the computed root matches the expected value, ensuring the integrity of the tree structure.
 \end{enumerate}
 
-Our initial design adheres to Algorithm~5 described in~\cite[p31]{aguilarsyndrome11}. However, through optimization efforts, it became apparent that the Merkle tree construction presented a significant performance bottleneck during the signing process. Profiling results revealed that this stage consumed approximately $52\%$ of the execution time on the main thread, highlighting the need for further optimization.
+Our initial design adheres to Algorithm~5 described in~\cite[p31]{aguilarsyndrome11}. However, through optimization efforts, it became apparent that the Merkle tree construction presented a significant performance bottleneck during the signing process. Profiling results revealed that this stage consumed approximately $52-54\%$ of the execution time on the main thread, highlighting the need for further optimization.
 
-First, we introduced batching in the tree construction, inspired by the C++ reference implementation. In this approach, four parent hashes are computed simultaneously, improving efficiency during tree-building.
+We introduced batching in the tree construction, inspired by the C++ reference implementation. In this approach, four parent hashes are computed simultaneously, improving efficiency during tree-building.
 
 \begin{minted}{rust}
 fn merkle_hash_x4(parent_indexes, left_child_hashes, right_child_hashes, salt);
@@ -2429,7 +2429,24 @@ As has become standard in our approach, we implemented this functionality as a f
 
 We further investigated the possibility of parallelizing the construction of parent hashes, enabled through the feature flag \texttt{merkle\_parallel}. Theoretically, this would allow independent computation of each parent hash, potentially improving efficiency. However, this approach significantly increased implementation complexity and introduced substantial thread allocation overhead, ultimately resulting in a performance regression. Consequently, we decided to retain the sequential approach for its simplicity and better overall performance.
 
+\subsubsection*{Blake3}\label{sub:blake3}
+
 In addition, we explored the use of alternative hash functions. The \texttt{SHA3} implementation required by NIST~\cite{nistcall}, while highly secure, is not optimal in terms of performance due to the numerous rounds required to ensure its robustness. To address this, we introduced a feature flag, \texttt{blake3}, enabling the use of the more efficient \texttt{Blake3} hash function. This change resulted in dramatic performance improvements. However, the SD-in-the-Head protocol, being heavily reliant on the security of its commitment scheme due to its MPCitH nature, depends critically on the strength of the underlying hash function. Therefore, the \texttt{blake3} feature is restricted to Category I security levels and intended strictly for exploratory purposes.
+
+As anticipated, the performance gains resulting from substituting the hash function were significant. As demonstrated in \autoref{tab:blake3}. By profiling, we saw that the computational overhead for Merkle tree construction decreased to approximately $38\%$ of the total execution time. This reduction aligns closely with the time complexity observed for the MPC computations.
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{lllll}
+    \hline
+    Category/Profile & Features & api/keygen & api/signing & api/verification \\
+    \hline
+    one/release      & base     & 293.99 µs  & 1.8742 ms   & 380.85 µs        \\
+    one/release      & blake3   & 282.54 µs  & 1.1936 ms   & 338.39 µs        \\
+    \hline
+  \end{tabular}
+  \caption{Performance comparison of the \texttt{one} profile, with and without the \texttt{blake3} feature flag. Run with full optimizations and turbo boost enabled.}\label{tab:blake3}
+\end{table}
 
 \subsubsection{Computing the authentication paths}\label{sub:auth_path}
 The initial implementation traversed the array in reverse order, identifying missing nodes by verifying parent-child relationships. This approach followed the structure outlined in Algorithm~6 of~\cite[p30]{aguilarsyndrome11}. Ultimately, however, we transitioned to a \textit{queue}-based method implemented in \rust{get_revealed_nodes}:
@@ -2627,13 +2644,13 @@ First, we implemented the Rijndael's field $\mathbb{F}_{q}$ for $q=2^8$ and for 
 We explored multiple approaches for implementing multiplication in the field and ultimately selected two viable solutions:
 
 \begin{enumerate}
-    \item \textit{Table Lookup Method}: Given a generator $g$ of the field, the product of two elements $a$ and $b$ can be expressed as:
-    \begin{align*}
-        ab = g^{\log_g(a) + \log_g(b)}.
-    \end{align*}
-    Since the field size is relatively small, we can precompute and store the powers of $g$ as well as $\log_g$ values for all field elements. This allows multiplication to be performed through three lookup operations and a single addition, leveraging these precomputed tables.
+  \item \textit{Table Lookup Method}: Given a generator $g$ of the field, the product of two elements $a$ and $b$ can be expressed as:
+        \begin{align*}
+          ab = g^{\log_g(a) + \log_g(b)}.
+        \end{align*}
+        Since the field size is relatively small, we can precompute and store the powers of $g$ as well as $\log_g$ values for all field elements. This allows multiplication to be performed through three lookup operations and a single addition, leveraging these precomputed tables.
 
-    \item \textit{Shift-and-Add with Modular Reduction}: This technique -- the one chosen in the reference implementation~\cite{aguilarsyndrome11} -- is particularly provides robust performance in most applications. Importantly, it has no conditional branches making it constant-time.
+  \item \textit{Shift-and-Add with Modular Reduction}: This technique -- the one chosen in the reference implementation~\cite{aguilarsyndrome11} -- is particularly provides robust performance in most applications. Importantly, it has no conditional branches making it constant-time.
 \end{enumerate}
 
 Benchmarking these methods revealed that while the shift-and-add approach was faster overall, the table lookup method yielded slightly better results in the specific context of signing operations. Detailed performance metrics, including constant-time benchmarks, are presented in \autoref{ch:bench}. In the final implementation we left lookup-based multiplication as the default method, but allow the user to switch to the shift-and-add method through the \texttt{mul\_shift\_and\_add} feature flag.
@@ -2728,21 +2745,17 @@ Finally, we extended the field $\mathbb{F}_{q^2}$ to $\mathbb{F}_{q^4}$. The imp
 Given the reliance on bitwise operations for addition, we achieved small performance gains by implementing the addition operation using the \texttt{std::simd} module. While there would be a little overhead in the conversions
 
 \begin{minted}{rust}
-#[inline(always)]
 #[cfg(feature = "simd")]
 fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
     use std::simd::u8x4;
-
     let simd_a = u8x4::from(a);
     let simd_b = u8x4::from(b);
-
     let res = simd_a ^ simd_b;
-
     res.into()
 }
 \end{minted}
 
-\subsection{Field polynomials}\label{sub:field_polynomials}
+\subsubsection{Field polynomials}\label{sub:field_polynomials}
 To represent and compute polynomials in the field, we aligned our implementation with the representation used in the reference implementation. Specifically, a polynomial is represented as:
 \begin{align*}
   f(x) = [a_0, a_1, \dots, a_n] = \sum_{i=0}^{n} a_i x^i,
@@ -2766,7 +2779,7 @@ Initially, we implemented polynomial evaluations using Horner's method. However,
   }
 \end{minted}
 
-\subsection{Field vector and matrix operations}\label{sub:field_vector_operations}
+\subsubsection{Field vector and matrix operations}\label{sub:field_vector_operations}
 
 After defining the field arithmetic, we implemented the necessary vector operations for the $\mathbb{F}_{q^4}$ field. These operations enable matrix multiplication, secret sharing, and MPC computations within the protocol. They include operations
 
@@ -2778,7 +2791,7 @@ After defining the field arithmetic, we implemented the necessary vector operati
 
 Initially, we developed straightforward implementations of these functions, iterating through the vector and applying field arithmetic to each element. Subsequently, we optimized these operations by implementing SIMD versions of each function -- available through the \texttt{simd} feature flag -- significantly enhancing performance.
 
-\subsubsection{MPC Inputs and sharing}
+\subsection{MPC Inputs and sharing}
 When implementing the signing algorithm, we needed to generate a set of input shares for the MPC simulation. Since this functionality is logically related to the MPC simulation, we decided to implement it within the MPC subroutine.
 
 The function takes as input a Pseudo-Random Generator (PRG) and the plain input value. It begins by sampling random coefficients, which are used to compute the input shares. Each share is computed as defined in \autoref{sec:sdith-signature}. Our implementation of this computation is as follows:
@@ -2790,13 +2803,9 @@ pub fn compute_share<const SIZE: usize>(
     fi: u8,
     skip_loop: bool,
 ) -> [u8; SIZE] {
-    // We need to compute the following:
-    // input_share[e][i] = input_plain + sum^l_(j=1) fi^j * input_coef[e][j]
     let mut share = *rnd_coefs.last().unwrap();
 
-    // Compute the inner sum
-    // sum^l_(j=1) fi^j * coef[j]
-    // Horner method
+    // Compute the inner sum Horner method
     if !skip_loop {
         for j in (0..(rnd_coefs.len() - 1)).rev() {
             gf256_mul_scalar_add_vector(&mut share, &rnd_coefs[j], fi);
@@ -2809,8 +2818,10 @@ pub fn compute_share<const SIZE: usize>(
     share
 }
 \end{minted}
+
 In this implementation, we start by initializing the share to the last coefficient. Then, depending on whether we are computing the first share, we may skip adding the plain input and all subsequent terms in the sum.
 We can then create a loop that computes the input share from the generated coefficients. This can be done in parallel, which we will discuss in \autoref{sec:optimizations}.
+
 \begin{minted}{rust}
 for e in 0..PARAM_TAU {
     get_iterator(&mut input_shares[e])
@@ -3249,11 +3260,7 @@ This led us to find that our implementation of the polynomial evaluation seemed 
     }
 \end{minted}
 
-
-\section{Finishing the implementation}\label{sub:final}
-In this section we will discuss our process when finalizing the implementation. We had a few bugs that led us to setup our code to be comparable with the reference implementation. First we will discuss our implementations of the signing and verification algorithms, and how we used the reference implementation to iron out bugs from our own code. Lastly we will discuss how we went about testing our implementation.
-
-\subsection{Signing}\label{sub:signing}
+\section{Signing}\label{sub:signing}
 After implementing all the subroutines, we proceeded to develop the general signing algorithm described in \autoref{sec:sdith-signature}.
 
 We began by implementing all the necessary sampling procedures. This included generating the $H'$ matrix, creating the Beaver triples, and computing the inputs required for the MPC simulation. After committing to the input shares, we constructed the MPC challenge using the first Fiat-Shamir hash:
@@ -3310,231 +3317,281 @@ pub fn expand_view_challenge_hash(h2: Hash) -> [[u16; PARAM_L]; PARAM_TAU] {
 \end{minted}
 As this relies on random values we test that the output of the function follows the specifications, such as uniqueness and length.
 
-\subsection{Verification}\label{sub:verification}
+\section{Verification}\label{sub:verification}
 As the last piece to the puzzle we implemented the verification algorithm. For this we followed the specification and used the KAT generated signatures to verify that we could parse and validate a signature. This would allow us to ensure that our parsing of the signature, inverse MPC computation and our merkle tree verification was correct. This was in the attempt not the case. Which led us to compare our implementation with the specification as described in \autoref{sub:comparison_with_spec_impl}.
 
-\section{Comparison with spec impl}\label{sub:comparison_with_spec_impl}
+
+\section{Final Implementation}\label{sub:final}
+In this section we will discuss our process when finalizing the implementation. We had a few bugs that led us to setup our code to be comparable with the reference implementation. First we will discuss our implementations of the signing and verification algorithms, and how we used the reference implementation to iron out bugs from our own code. Lastly we will discuss how we went about testing our implementation.
+
+README?
+
+\subsection{Alignment with the Reference Implementation}\label{sub:comparison_with_spec_impl}
 To verify and debug our code, we configured our implementation to align with the reference implementation provided in C. This setup required us to execute the reference code to obtain intermediate data, which we then used to compare internal states between the two implementations. In order to get this to work we ran into the following problems. First we had to setup the same random byte generator to allow our randomness to be the same. Furthermore, during this process, we identified a bug in the calculation of the view-opening challenges. Specifically, the reference implementation neglected to finalize the SHAKE function before squeezing, which posed an issue because the Tiny Keccak Rust library automatically performs this finalization when initializing a hash or XOF.
 Additionally, we discovered that, to produce identical outputs from the XOF, we needed to first rotate the permutation once by supplying an empty vector before invoking the function.
 
+\subsection{Compilation profiles}
+
+Describe the release profile.
+
+\subsection{Feature flags}\label{sub:feature_flags}
+\todo{rewrite this section to explain all feature flags we created and why}
+
+To maintain a baseline implementation while enabling flexibility to switch between different NIST categories, we utilized Rust's feature flags. These flags support conditional compilation, allowing multiple implementations of the same function to coexist in the codebase. Only the specific implementation required is compiled, based on the flag provided to the compiler. This approach made it possible to test individual optimizations in isolation, rather than applying all optimizations simultaneously.
+
+\subsection{Rust crate \texttt{rsdith}}
+
+Write about the lib
+
+\subsection{\texttt{rsdith} CLI}
+
+the CLI binary.
 
 \subsection{Testing our implementation}\label{sub:testing_our_implementation}
 
-reused tests in marshalling and for field arithmetic
+TLDR; our testing strategy (could talk about marshalling utility and its test function)
 
 \section{Optimizations}
 
-Re-iterate on optimisations
-
-\subsection{Parallelisation}\label{sub:rayon} % (fold)
-
-% subsection Rayon (end)
-
-\subsection{SIMD}\label{sub:simd} % (fold)
-
-% subsection SIMD (end)
-
-\subsection{Hash functions}
-Blake3, Haraka v2, KangarooTwelve, Xoodyak
-
-\section{Kat for NIST}\label{sub:kat_for_nist} % (fold)
+Re-iterate on optimisations anything we havent mentioned yet
 
 \chapter{Benchmarking}\label{ch:bench}
 
-tests:
+This chapter presents the benchmarking results of our implementation. As detailed in \autoref{sec:rust_benchmarking}, the evaluation leveraged a combination of \texttt{criterion} for precise benchmarking and \texttt{samply} for comprehensive profiling to assess the performance.
 
-\begin{itemize}
-  \item spec implementation results
-  \item no features, simd, parallel, parallel and simd - TB off for all
-  \item run theirs and ours full optimisation with TB
-  \item nightly vs stable
-  \item multiplication algorithms: Individually and in whole protocol
-  \item dudect bench (bunch of times to get a good average)
-  \item blake3 vs keccak
-  \item signature size
+We conducted a series of tests to evaluate both the overall performance as well as individual subroutines and optimisation steps
+
+\begin{itemize}[parsep=0pt, itemsep=3pt]
+  \item \textit{Combined benchmarks for the Rust implementation} -- Full benchmarks for our implementation and each optimisation flag.
+
+        We ran benchmarks for our implementation on both setups 1 and 2 \autoref{fig:benchmarking_setups}. We ran all combinations of feature flags for parallelisation, SIMD on the \textit{release} profile. Furthermore, we ran with and without Turbo Boost enabled for setup 1.
+  \item \textit{Optimized reference implementation benchmarks} -- For comparison, we benchmarked the reference implementation on setup 1 \autoref{fig:benchmarking_setups}. We used \texttt{clang@15} for compilation, which is the same used by~\cite{aguilarsyndrome11}. We ran both with and without Turbo Boost enabled.
+  \item \textit{Rust Nightly vs Stable} -- We ran a comparison between the compiling in the \textit{nightly} and \textit{stable} channels for rust.
+  \item \textit{Multiplication algorithms} -- We benchmarked multiplication algorithms for \textit{Lookup} and \textit{Shift-and-Add} unit and integration tests.
+  \item \textit{Constant time for multiplication} -- We ran \texttt{dudect} benchmarks for multiplication algorithms.
+  \item \textit{Blake3} -- We benchmarked an optimised implementation with \texttt{blake3} for hashing.
+  \item \textit{Signature size} -- We benchmarked the size of the signature produced by the \texttt{sign} function.
+  \item \textit{Final profiling} -- We ran a final profiling of the fully optimized implementation to prompt discussions of future optimisations.
 \end{itemize}
-
-
-We utilized the Criterion.rs~\cite{criterion} package benchmarking. Criterion.rs is a statistics-driven benchmarking library for Rust, offering robust tools to measure and analyze performance reliably.
-
-\subsection{Benchmark setup}
-Benchmarking functions are organized in a separate folder named bench. Within this folder, we create files dedicated to specific benchmarking tasks. To enable benchmarking, the target functions must be declared as pub (public) and exported through a lib.rs file. This structure creates a package that can be accessed and invoked by the benchmarking files.
-
-\subsection{Feature flags}\label{sub:feature_flags} % (fold)
-To maintain a baseline implementation while enabling flexibility to switch between different NIST categories, we utilized Rust's feature flags. These flags support conditional compilation, allowing multiple implementations of the same function to coexist in the codebase. Only the specific implementation required is compiled, based on the flag provided to the compiler. This approach made it possible to test individual optimizations in isolation, rather than applying all optimizations simultaneously.
-
-The way we implemented this was by using the \rust{cfg} attribute. This attribute allows us to specify a feature flag, which can be used to conditionally compile code. For example, we can use the following code to conditionally compile a function:
-\begin{minted}{rust}
-#[cfg(not(feature = "simd"))]
-pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
-... add vector the naive way ...
-}
-
-#[cfg(feature = "simd")]
-pub fn gf256_add_vector(vz: &mut [u8], vx: &[u8]) {
-... add vector the simd way ...
-}
-\end{minted}
-This ensures that when the feature flag for $simd$ is set the compiled code will have the simd function only.
 
 \section{Testing setup}\label{sub:testing_setup}
 
-\subsection{Test Environment}\label{sub:test_env}
-Benchmarks were conducted on two machines: a Dell XPS 15 9510 and a MacBook Pro with an M2 Pro chip. These machines represent different architectures, allowing us to observe subtle variations in runtime performance based on hardware differences. The specifications of the machines are as follows:
+Benchmarks were conducted on two machines: a Dell XPS 15 9510 and a MacBook Pro with an M2 Pro chip. These machines represent different architectures, allowing us to observe subtle variations in runtime performance based on hardware differences. Each machine is described in \autoref{fig:benchmarking_setups} as \textit{Setup 1} and \textit{Setup 2} respectively.
 
-\begin{itemize}
-  \item \textbf{Setup 1: Dell XPS 15 9510}:
-        \begin{itemize}
-          \item \textbf{CPU}: 11th Gen Intel Core i7-11800H @ 2.30GHz x 16
-          \item \textbf{GPU}: GeForce RTX 3050 Ti Mobile
-          \item \textbf{RAM}: 32GB DDR4 3200MHz
-          \item \textbf{OS}: Ubuntu 22.04.5 LTS, 64-bit
-        \end{itemize}
-  \item \textbf{Setup 2: MacBook Pro (M2 Pro)}:
-        \begin{itemize}
-          \item \textbf{CPU}: Apple M2 Pro (10-core CPU: 6 performance cores, 4 efficiency cores)
-          \item \textbf{RAM}: 32GB LPDDR5
-          \item \textbf{OS}: macOS Sequoia 15.1.1 (24B91)
-        \end{itemize}
-\end{itemize}
-This setup provided a diverse testing environment, ensuring our benchmarks accounted for both x86\_64 and ARM architectures. We ran all tests without turbo boost to ensure a fair comparison between tests.
-
-\subsection{Build Configurations}\label{sub:build_config}
-
-
-\subsubsection{Benchmarking test areas}\label{sub:bench_test_areas}
-
-We ran benchmarking tests for different areas of the codebase -- based on the api when they were specifically relevant to optimizations from \autoref{sub:rust_optimizations}. Furthermore, we ran benchmarks for different configurations, run through feature flags. We ran all benchmarks for both the baseline and release profiles and ran them on both Setup 1 and Setup 2 \autoref{sub:testing_setup}.
-
-\begin{figure}
-  \begin{itemize}
-    \item API
-          \begin{itemize}
-            \item Key generation
-            \item Signing a message \rust{vec![1,2,3,4]}
-            \item Verifying a signature
-          \end{itemize}
-    \item SIMD
-          \begin{itemize}
-            \item Matrix multiplication
-            \item Vector addition
-            \item Vector addition times a scalar
-          \end{itemize}
-    \item Parallelisation
-          \begin{itemize}
-            \item Computing input share commitments.
-            \item Committing to shares
-          \end{itemize}
-    \item Merkle tree creation \todo{Might not be relevant}
-  \end{itemize}
-  \caption{Benchmark test functions -- Grouped by optimization interest}\label{fig:bench_test_functions}
+\begin{figure}[ht]
+  \centering
+  \fbox{
+    \begin{minipage}[t][6cm][t]{.45\textwidth} % Set a fixed height for the boxes
+      \textbf{Setup 1}: Dell XPS 15 9510
+      \begin{itemize}[label={}, leftmargin=0pt, itemsep=2.5pt, parsep=0pt]
+        \item \textbf{CPU}: 11th Gen Intel Core i7-11800H @ 2.30GHz x 16
+        \item \textbf{GPU}: GeForce RTX 3050 Ti Mobile
+        \item \textbf{RAM}: 32GB DDR4 3200MHz
+        \item \textbf{OS}: Ubuntu 22.04.5 LTS, 64-bit
+        \item \textbf{Compilers}: clang@15, rustc 1.85.0-nightly (426d17342 2024-12-21), rustc 1.83.0 (90b35a623 2024-11-26)
+        \item \textbf{Target}: stable-x86\_64-unknown-linux-gnu
+      \end{itemize}
+      \vspace*{\fill} % Ensures vertical alignment
+    \end{minipage}
+  }
+  \hfill
+  \fbox{
+    \begin{minipage}[t][6cm][t]{.45\textwidth} % Set the same height
+      \textbf{Setup 2}: MacBook Pro (M2 Pro)
+      \begin{itemize}[label={}, leftmargin=0pt, itemsep=2.5pt, parsep=0pt]
+        \item \textbf{CPU}: Apple M2 Pro (10-core CPU: 6 performance cores, 4 efficiency cores)
+        \item \textbf{RAM}: 32GB LPDDR5
+        \item \textbf{OS}: macOS Sequoia 15.1.1 (24B91)
+        \item \textbf{Compilers}: Apple clang version 16.0.0 (clang-1600.0.26.4), rustc 1.83.0-nightly (6c6d21008 2024-09-22)
+        \item \textbf{Target}: arm64-apple-darwin24.1.0
+      \end{itemize}
+      \vspace*{\fill} % Ensures vertical alignment
+    \end{minipage}
+  }
+  \caption{Hardware configurations used for benchmarking and profiling.}
+  \label{fig:benchmarking_setups}
 \end{figure}
 
-\begin{figure}
-  \begin{itemize}
-    \item Categories -- Only run with and without all optimizations
-          \begin{itemize}
-            \item Category one (143 bits)
-            \item Category three (207 bits)
-            \item Category five (272 bits)
-          \end{itemize}
-    \item Configurations -- Only run with and without all optimizations
-          \begin{itemize}
-            \item Baseline
-            \item Release
-          \end{itemize}
-    \item Optimizations
-          \begin{itemize}
-            \item Parallelisation
-            \item SIMD
-            \item Allocators: \texttt{jemalloc} and \texttt{mimalloc}
-            \item Al optimizations: Parallelisation, SIMD \todo{allocation}
-          \end{itemize}
-  \end{itemize}
-  \caption{Benchmark test variants -- Categories, Configurations, Optimizations}
-\end{figure}
-
-\subsection{Benchmark measurements}\label{sub:bench_measurements}
-We measured performance in both cycles per byte and time. Furthermore we measured the binary size for each benchmark using \texttt{cargo size}. We compared our implementation to the optimised NIST submissions.
-
-\subsection{Benchmark of specification}
-To compare our implementation to the one from the NIST submission, we ran the same benchmarks for both implementations. This had to be done for both the Dell and Macbook. On the Macbook we ran into problems with running the optimised version of the specification implementation, so we had to run against the reference implementation instead. It was built with the following cc:
-\begin{itemize}
-  \item Apple clang version 16.0.0 (clang-1600.0.26.4)
-  \item Target: arm64-apple-darwin24.1.0
-\end{itemize}
+\subsubsection{Benchmark measurements}\label{sub:bench_measurements}
+We measured performance in both cycles per byte and time. Furthermore, we measured the signature size in bytes. \todo{Do we want cycles? Could we just add it to appendix?}
 
 \section{Results}\label{sub:results}
 
-\begin{figure}
+\begin{table}[H]
   \centering
   \begin{tabular}{l|l|lll}
     \hline
-    Category              & Optimisation  & Keygen          & Sign        & Verify          \\
+    Category                       & Optimisation  & Keygen          & Sign        & Verify          \\
     \hline
     \hline
-    One (Specification)   & reference     & $1020.0$ $\mu$s & $12.30$ ms  & $1670.0$ $\mu$s \\
-    One (Specification)   & optimized     & $1020.0$ $\mu$s & $9.47$ ms   & $570.00$ $\mu$s \\
+    One \cite{aguilar2023return}   & reference     & $1.07$ ms       & $2.63$ ms   & $0.38$ ms       \\
     \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
-    One                   & base          & $301.37$ $\mu$s & $4.2804$ ms & $469.05$ $\mu$s \\
-    One                   & parallel      & $363.07$ $\mu$s & $2.0137$ ms & $467.62$ $\mu$s \\
-    One                   & simd          & $313.97$ $\mu$s & $3.5553$ ms & $398.15$ $\mu$s \\
-    One                   & simd,parallel & $305.76$ $\mu$s & $1.8201$ ms & $392.03$ $\mu$s \\
+    One                            & base          & $482.15$ $\mu$s & $3.3524$ ms & $402.96$ $\mu$s \\
+    One                            & parallel      & $356.68$ $\mu$s & $2.1407$ ms & $406.12$ $\mu$s \\
+    One                            & simd          & $433.14$ $\mu$s & $2.4967$ ms & $285.54$ $\mu$s \\
+    One                            & simd,parallel & $427.11$ $\mu$s & $1.8995$ ms & $288.84$ $\mu$s \\
     \hline
-    Three (Specification) & reference     & $1230.0$ $\mu$s & $31.84$ ms  & $5.02$ ms       \\
-    Three (Specification) & optimized     & $1240.0$ $\mu$s & $24.12$ ms  & $1.52$ ms       \\
+    Three \cite{aguilar2023return} & reference     & $1.27$ ms       & $6.31$ ms   & $1.15$ ms       \\
     \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
-    Three                 & base          & $476.24$ $\mu$s & $10.594$ ms & $1.3668$ ms     \\
-    Three                 & parallel      & $482.23$ $\mu$s & $4.3479$ ms & $1.4328$ ms     \\
-    Three                 & simd          & $410.27$ $\mu$s & $8.3600$ ms & $1.1454$ ms     \\
-    Three                 & simd,parallel & $409.49$ $\mu$s & $3.8273$ ms & $1.1558$ ms     \\
+    Three                          & base          & $449.60$ $\mu$s & $8.9537$ ms & $1.2467$ ms     \\
+    Three                          & parallel      & $447.91$ $\mu$s & $4.7179$ ms & $1.2217$ ms     \\
+    Three                          & simd          & $382.59$ $\mu$s & $6.3998$ ms & $873.75$ $\mu$s \\
+    Three                          & simd,parallel & $383.29$ $\mu$s & $4.0825$ ms & $874.87$ $\mu$s \\
     \hline
-    Five (Specification)  & reference     & $2150.0$ $\mu$s & $61.93$ ms  & $11.14$ ms      \\
-    Five (Specification)  & optimized     & $2220.0$ $\mu$s & $45.06$ ms  & $3.00$ ms       \\
+    Five \cite{aguilar2023return}  & reference     & $2.20$ ms       & $13.51$ ms  & $2.05$ ms       \\
     \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
-    Five                  & base          & $835.07$ $\mu$s & $24.017$ ms & $3.0376$ ms     \\
-    Five                  & parallel      & $832.74$ $\mu$s & $9.1615$ ms & $3.1524$ ms     \\
-    Five                  & simd          & $710.26$ $\mu$s & $18.796$ ms & $2.4786$ ms     \\
-    Five                  & simd,parallel & $710.66$ $\mu$s & $7.9276$ ms & $2.5273$ ms     \\
+    Five                           & base          & $803.73$ $\mu$s & $19.040$ ms & $2.7238$ ms     \\
+    Five                           & parallel      & $805.42$ $\mu$s & $8.8069$ ms & $2.8439$ ms     \\
+    Five                           & simd          & $676.53$ $\mu$s & $14.255$ ms & $1.8393$ ms     \\
+    Five                           & simd,parallel & $673.10$ $\mu$s & $7.4172$ ms & $1.8426$ ms     \\
     \hline
   \end{tabular}
-  \caption{API benchmarks over each category and optimisation feature flag for setup 1. The table includes benchmarks for the specification implementations run on the same setup}\label{fig:api_benchmarks_dell}
-\end{figure}
-
-
-\begin{figure}
+  \caption{API benchmarks over each category and optimisation feature flag for \textit{Setup 2}. We ran reference implementation benchmarks as the optimised solution was not compatible with \textit{Setup 2}.}
+  \label{tab:api_mac_results}
+\end{table}
+\begin{table}[H]
   \centering
   \begin{tabular}{l|l|lll}
     \hline
-    Category              & Optimisation  & Keygen          & Sign        & Verify          \\
+    Category                       & Optimisation       & Keygen          & Sign        & Verify          \\
     \hline
     \hline
-    One (Specification)   & reference     & $1090$ $\mu$s   & $2.65$ ms   & $380$ $\mu$s    \\
+    One \cite{aguilar2023return}   & optimized          & $1.89$ ms       & $2.82$ ms   & $0.96$ ms       \\
+    One \cite{aguilar2023return}   & optimized (TB)     & $0.97$ ms       & $1.46$ ms   & $0.49$ ms       \\
     \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
-    One                   & base          & $308.03$ $\mu$s & $3.4506$ ms & $425.86$ $\mu$s \\
-    One                   & parallel      & $345.09$ $\mu$s & $2.1825$ ms & $434.58$ $\mu$s \\
-    One                   & simd          & $305.96$ $\mu$s & $2.5643$ ms & $307.97$ $\mu$s \\
-    One                   & simd,parallel & $304.03$ $\mu$s & $1.9369$ ms & $308.99$ $\mu$s \\
+    One                            & base               & $708.95$ $\mu$s & $7.8733$ ms & $907.32$ $\mu$s \\
+    One                            & parallel           & $709.99$ $\mu$s & $3.5922$ ms & $923.61$ $\mu$s \\
+    One                            & simd               & $584.30$ $\mu$s & $6.4045$ ms & $726.70$ $\mu$s \\
+    One                            & simd,parallel      & $587.76$ $\mu$s & $3.1986$ ms & $719.26$ $\mu$s \\
+    One                            & simd,parallel (TB) & $294.23$ $\mu$s & $1.8595$ ms & $380.30$ $\mu$s \\
     \hline
-    Three (Specification) & reference     & $1280$ ms       & $6.37$ ms   & $1.16$ ms       \\
+    Three \cite{aguilar2023return} & optimized          & $2.26$ ms       & $7.10$ ms   & $2.50$ ms       \\
+    Three \cite{aguilar2023return} & optimized (TB)     & $1.14$ ms       & $3.57$ ms   & $1.26$ ms       \\
     \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
-    Three                 & base          & $430.52$ $\mu$s & $8.6839$ ms & $1.2836$ ms     \\
-    Three                 & parallel      & $441.66$ $\mu$s & $4.1697$ ms & $1.2896$ ms     \\
-    Three                 & simd          & $384.20$ $\mu$s & $5.9972$ ms & $894.70$ $\mu$s \\
-    Three                 & simd,parallel & $378.16$ $\mu$s & $3.4572$ ms & $895.01$ $\mu$s \\
+    Three                          & base               & $929.21$ $\mu$s & $20.921$ ms & $2.8104$ ms     \\
+    Three                          & parallel           & $929.56$ $\mu$s & $9.3856$ ms & $2.8974$ ms     \\
+    Three                          & simd               & $790.15$ $\mu$s & $16.898$ ms & $2.2100$ ms     \\
+    Three                          & simd,parallel      & $790.48$ $\mu$s & $8.3999$ ms & $2.2225$ ms     \\
+    Three                          & simd,parallel (TB) & $396.58$ $\mu$s & $4.5913$ ms & $1.1621$ ms     \\
     \hline
-    Five (Specification)  & reference     & $2230$ $\mu$s   & $13.71$ ms  & $2.08$ ms       \\
+    Five \cite{aguilar2023return}  & optimized          & $3.93$ ms       & $14.30$ ms  & $4.98$ ms       \\
+    Five \cite{aguilar2023return}  & optimized (TB)     & $1.99$ ms       & $7.20$ ms   & $2.51$ ms       \\
     \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
-    Five                  & base          & $778.58$ $\mu$s & $18.850$ ms & $2.9469$ ms     \\
-    Five                  & parallel      & $760.17$ $\mu$s & $8.4553$ ms & $2.9637$ ms     \\
-    Five                  & simd          & $668.17$ $\mu$s & $13.694$ ms & $1.9529$ ms     \\
-    Five                  & simd,parallel & $677.93$ $\mu$s & $7.0687$ ms & $1.8977$ ms     \\
+    Five                           & base               & $1.6175$ ms     & $45.707$ ms & $6.0828$ ms     \\
+    Five                           & parallel           & $1.6190$ ms     & $18.705$ ms & $6.0955$ ms     \\
+    Five                           & simd               & $1.3550$ ms     & $37.560$ ms & $4.5229$ ms     \\
+    Five                           & simd,parallel      & $1.3543$ ms     & $16.364$ ms & $4.5010$ ms     \\
+    Five                           & simd,parallel (TB) & $677.55$ $\mu$s & $9.2047$ ms & $2.3676$ ms     \\
     \hline
   \end{tabular}
-  \caption{API benchmarks over each category and optimisation feature flag for setup 2. The table includes benchmarks for the specification reference implementation (could not run optimised version on Mac) }\label{fig:api_benchmarks_mac}
-\end{figure}
-diaries of benchmarks.
-discussion of results
+  \caption{API benchmarks over each category and optimisation feature flag for \textit{Setup 1}. We ran the optimised reference implementation \cite{aguilar2023return} with and without Turbo Boost enabled.}
+  \label{tab:api_dell_results}
+\end{table}
+
+\subsubsection{Comparison of Categories}\label{sub:comparison_categories}
+
+We ran benchmarks for our implementation on both setups \textit{1} and \textit{2} (\autoref{fig:benchmarking_setups}) using the \textit{release} profile. All combinations of feature flags for parallelisation and SIMD were tested. In order to have a baseline comparison to the reference implementation, we also ran benchmarks for the reference implementation~\cite{aguilar2023return} on both setups. The reference implementation was executed using tag version \href{https://github.com/sdith/sdith/releases/tag/v1.1.0}{\texttt{v1.1.0}}.
+
+For \textit{Setup 1}, we performed benchmarks with and without Turbo Boost (TB) enabled. In contrast, for \textit{Setup 2}, we could only evaluate the ``reference'' implementation due to architectural incompatibilities that prevented running the optimised implementation with SIMD AVX2 optimisations.
+
+The results for \textit{Setup 1} and \textit{Setup 2} are seen in \autoref{tab:api_dell_results} and \autoref{tab:api_mac_results}, respectively.
+
+We begin by comparing the performance across the different categories. As expected, there is a decrease in performance between categories one, three, and five as the parameters increase (\autoref{tab:secparam}). Overall, the increases in running time between the categories are comparable to the reference implementation (\autoref{tab:api_percentage_increase}), indicating that our implementation does not suffer from any disadvantages in terms of scaling with parameter increases.
+
+Curiously, we observe a larger increase in verification time for our implementation between categories one and three. We hypothesize that this difference may be due to variations in compiler optimisations. Future work could include profiling our implementation against the reference implementation to better understand the reason behind of this discrepancy.
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{l|l|rrr}
+    \hline
+    Implementation                              & Operation & One to Three (\%) & Three to Five (\%) \\
+    \hline
+    S1: optimised (TB)~\cite{aguilarsyndrome11} & Keygen    & 17.53             & 74.56              \\
+    S1: optimised (TB)~\cite{aguilarsyndrome11} & Sign      & 144.52            & 101.68             \\
+    S1: optimised (TB)~\cite{aguilarsyndrome11} & Verify    & 157.14            & 99.21              \\
+    \hline
+    S1: simd,parallel (TB)                      & Keygen    & 34.79             & 70.85              \\
+    S1: simd,parallel (TB)                      & Sign      & 146.91            & 100.48             \\
+    S1: simd,parallel (TB)                      & Verify    & 205.57            & 103.73             \\
+    \hline
+    S2: simd,parallel (TB)                      & Keygen    & -10.26            & 75.61              \\
+    S2: simd,parallel (TB)                      & Sign      & 114.92            & 81.68              \\
+    S2: simd,parallel (TB)                      & Verify    & 202.89            & 110.61             \\
+    \hline
+  \end{tabular}
+  \caption{Running time percentage increases for \textit{Setup 1} (S1) and \textit{Setup 2} (S1). Key Generation, Signing, and Verification between categories One to Three and Three to Five for rows for the optimised reference implementation \cite{aguilarsyndrome11} and our optimised implementation. Results are negligible between other implementations in \autoref{tab:api_dell_results}}
+  \label{tab:api_percentage_increase}
+\end{table}
+
+\subsubsection{Comparison of optimisations}\label{sub:comparison_optimisations}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{l|l|rr|rr}
+    \hline
+    \multirow{2}{*}{Category} & \multirow{2}{*}{Operation} & \multicolumn{2}{c|}{Parallel (\%)} & \multicolumn{2}{c}{SIMD (\%)}                                                   \\
+                              &                            & \multicolumn{1}{c}{S1}             & \multicolumn{1}{c}{S2}        & \multicolumn{1}{c}{S1} & \multicolumn{1}{c}{S2} \\
+    \hline
+    \multirow{3}{*}{One}
+                              & Keygen                     & $+0.15$                            & $-26.02$                      & $-17.58$               & $-10.16$               \\
+                              & Sign                       & $-54.37$                           & $-36.14$                      & $-18.66$               & $-25.52$               \\
+                              & Verify                     & $+1.80$                            & $+0.78$                       & $-19.91$               & $-29.14$               \\
+    \hline
+    \multirow{3}{*}{Three}
+                              & Keygen                     & $+0.04$                            & $-0.38$                       & $-14.97$               & $-14.90$               \\
+                              & Sign                       & $-55.14$                           & $-47.31$                      & $-19.23$               & $-28.52$               \\
+                              & Verify                     & $+3.10$                            & $-2.01$                       & $-21.36$               & $-29.83$               \\
+    \hline
+    \multirow{3}{*}{Five}
+                              & Keygen                     & $+0.09$                            & $+0.21$                       & $-16.23$               & $-15.83$               \\
+                              & Sign                       & $-59.08$                           & $-53.75$                      & $-17.82$               & $-25.13$               \\
+                              & Verify                     & $+0.21$                            & $+4.41$                       & $-25.64$               & $-32.47$               \\
+    \hline
+  \end{tabular}
+  \caption{Percentage differences between the "base" and each of the "parallel" and "SIMD" optimisations for key generation, signing, and verification across categories for \textit{Setup 1} (S1) and \textit{Setup 2} (S2).}
+  \label{tab:base_vs_parallel_simd_s1_s2}
+\end{table}
+
+Next, we compare the different optimisations (\autoref{tab:base_vs_parallel_simd_s1_s2}). For parallelisation, we observe significant improvements in signing ($\approx 50\%$), with negligible improvements in key generation ($\approx 0\%$) and verification ($\approx 2\%$). This is expected, as the most substantial parallelisation gains are derived from the initiation and commitment of the $N$ party inputs for MPC.
+
+For SIMD, we observe a general improvement across all operations of approximately $16$-$20\%$. This aligns with the fact that all operations involve field vector computations -- matrix multiplication and MPC computations -- which are optimised for SIMD.
+
+We were very surprised to observe that including parallelisation for \textit{Setup 2} resulted in a significantly lower key generation time of $-26\%$. This was entirely unexpected, as no parallelisation is utilised in the key generation operation. However, we were able to consistently reproduce this result. This phenomenon highlights the ``magic'' behind compiler optimisation. Some hypotheses could be that the inclusion of the \texttt{rayon} package causes differences memory alignment or how the Rust compiler structures the code, but somehow only on the M2 Darwin architecture. While it has no significant impact on the practicality of our implementation, it is an intriguing result worth noting and for future investigation.
+
+\subsubsection{Comparison of implementations}\label{sub:comparison_implementations}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{l|lll}
+    \hline
+    Category & Keygen (\%) & Sign (\%) & Verify (\%) \\
+    \hline
+    One      & $-69.66$    & $+27.36$  & $-22.39$    \\
+    Three    & $-65.21$    & $+28.61$  & $-7.77$     \\
+    Five     & $-65.95$    & $+27.84$  & $-5.67$     \\
+    \hline
+  \end{tabular}
+  \caption{Percentage differences between Optimised reference implementation with TB and our fully optimised implementation with TB for key generation, signing, and verification across categories one, three, and five.}
+  \label{tab:optimized_vs_simd_parallel_tb_new}
+\end{table}
+
+Next, we compare the performance of our implementation against the reference implementation from~\cite{aguilarsyndrome11}. For both benchmarks, we consider fully optimised versions with Turbo Boost enabled. Generally, it is challenging to hypothesise the reasons behind the observed differences, as we lack access to profiling data from the reference implementation. Nevertheless, we will attempt to tentatively guess towards potential reasons.
+
+For key generation, we observe that our implementation is significantly faster than the reference implementation ($\approx -65\%$). Initially, we hypothesised that this might be due to differences in benchmarking methodologies, as our benchmarking did not sample the master seed inside the key generation function. However, after adjusting our benchmarking to include this step, we still observed a significant difference between the two implementations. 
+
+Practically, key generation is rarely the benchmark used to categorise the performance of a signature scheme, as it is typically expected to be performed in advance. Therefore, we currently did not explore this difference further.
+
+For signing, we observe that the reference implementation outperforms our implementation by approximately $27\%$. From our understanding, it is generally expected that Rust applications can be optimised to the same degree as C applications. Our implementation incorporates parallelisation for the signing operation, which is absent in the reference implementation. However, both the SIMD and parallelisation implementations in our code rely on external crates (\texttt{std::simd} and \texttt{rayon}), meaning we are not directly implementing these operations. This reliance may introduce additional bloat in the binary and less specialized code. While we believe that our implementations significantly improve code readability, they also highlight areas where we have room for more specialized optimisations. 
+
+The most time-consuming operation in the signing process is the hashing step. We observed a dramatic improvement in signing performance when using the \texttt{Blake3} hashing algorithm ($1.19$ ms, \autoref{tab:blake3}). This suggests that further optimisation of the hashing process could yield even greater performance benefits.
+
+For verification, our implementation is slightly faster, particularly for Category One. Once again, it is difficult to hypothesise the reasons behind this improvement, and this question will be left for future work.
+
+\subsubsection{Rust Nightly vs Stable}
+
+Mention that rust has these to versions and its important to know that nightly is generally not suggested for production. However, our simd optimisation cannot be used in stable rust.
+
+\subsubsection{Multiplication algorithms}
 
 \todo{old benchmarks \url{https://asecuritysite.com/openssl/openssl3_b2}}
 
@@ -3557,17 +3614,23 @@ lookup slower alone, but faster in full protocol.
 
 conclude on the problem statement from the introduction
 
+- readability
+- performance
+- review of the specification
+- what we learned
+
 Talk about the advantages and limitations of the SD-in-the-Head protocol and threshold variant.
 
 Talk about the advantageous and limitations of rust implementation.
 
-conclude on the benchmarks.
+
 
 point to round 2 NIST
 
 future work:
 
 - Collaborate with the authors (talk about issues we found in the spec and in implementing the spec)
+- Investigate differences in performance between ours and reference implementation (profiling their code and comparing to ours)
 - We could add subroutines as parameters to the API. Then the developer could just add their own subroutines defined by our traits.
 - dynamic parameters created by users of the crate ("parameter sets tailored to different use cases") we could use build script with feature flag to exchange cat import in param.rs for custom file. Maybe write section on exploratory work
 - Verkle trees Optimisation
@@ -3577,6 +3640,7 @@ future work:
 - Analyse the code binary for compiler optimisations Check for constant time
 - hypercube implementation and generalisation to accommodate it
 - gf251 implementation
+- Profiling shows conversion to and from SIMD has some overhead. make type FPoint into simd
 - \cite[p26]{feneuil2023threshold} Batching Proofs with Shamir's Secret Sharing for communication saving
 - Full constant time analysis
 - use https://github.com/AdamNiederer/faster for simd. Use work by smarter people than us.
