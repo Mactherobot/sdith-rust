@@ -24,13 +24,5 @@ pub(crate) fn mul_benchmark<M: Measurement>(c: &mut Criterion<M>) {
             criterion::BatchSize::SmallInput,
         )
     });
-
-    group.bench_function("mul_wiki", |b| {
-        b.iter_batched(
-            || (rng.gen::<u8>(), rng.gen::<u8>()),
-            |(a, b)| gf256::gf256_arith::_mul_wiki(a, b),
-            criterion::BatchSize::SmallInput,
-        )
-    });
     group.finish();
 }

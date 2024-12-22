@@ -14,6 +14,7 @@ parser = ap.ArgumentParser(
     description="Benchmark sdith-rust. Run a combination of combination of feature flags",
 )
 parser.add_argument("--features", type=str, default="")
+parser.add_argument("--stick-features", type=str, default="merkle_batching")
 parser.add_argument("--categories", type=str, default="one,three,five")
 parser.add_argument("--profiles", type=str, default="release")
 parser.add_argument("--test", type=str, default="api")
@@ -121,6 +122,7 @@ if args.print_result:
 # Benching
 
 features = args.features.split(",")
+stick_features = args.stick_features.split(",")
 
 
 def print_run(features, category, profile, test):
@@ -174,13 +176,13 @@ def save_results(runUiid, cmd, results, features, category, profile):
         json.dump(data, f)
 
 
-def get_command(features, category, profile, test):
-    return f"cargo bench --no-default-features --features {','.join(features)},category_{category}{',cycles_per_byte' if args.cycles else ''} --profile={profile} {test}"
+def get_command(features, stick_features, category, profile, test):
+    return f"cargo bench --no-default-features --features {','.join(stick_features)},{','.join(features)},category_{category}{',cycles_per_byte' if args.cycles else ''} --profile={profile} {test}"
 
 
-def run_benchmark(features, category, profile, test):
+def run_benchmark(features, stick_features, category, profile, test):
     features = [f if f != "none" else "" for f in features]
-    command = get_command(features, category, profile, test)
+    command = get_command(features, stick_features, category, profile, test)
     process = subprocess.Popen(
         command.split(" "),
         stdout=subprocess.PIPE,  # Capture standard output
@@ -234,15 +236,15 @@ runUiid = random.randint(0, 10000)
 for i, (profile, category) in enumerate(all_outer_combinations):
     for j, features in enumerate(all_feature_combinations):
         cprint(
-            f"Running combination [{profile}, {category}] ({i+1}/{len(all_outer_combinations)}) with features {features} ({j+1}/{len(all_feature_combinations)})",
+            f"Running combination [{profile}, {category}] ({i+1}/{len(all_outer_combinations)}) with features {stick_features} {features} ({j+1}/{len(all_feature_combinations)})",
             "blue",
             attrs=["bold"],
         )
         cprint(
-            f"CMD: {get_command(features, category, profile, args.test)}",
+            f"CMD: {get_command(features, stick_features,category, profile, args.test)}",
             "blue",
             attrs=["bold"],
         )
-        cmd, res = run_benchmark(features, category, profile, args.test)
+        cmd, res = run_benchmark(features, stick_features, category, profile, args.test)
         cprint(f"OUT: {res}", "green", attrs=["bold"])
         save_results(runUiid, cmd, res, features, category, profile)
