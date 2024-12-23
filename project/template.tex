@@ -842,10 +842,8 @@ On the other hand, the TCitH model described by~\cite{feneuil2023threshold} resu
 
 To facilitate this, a Merkle Tree Commitment Scheme (\autoref{sub:merkle_tree_prelim}) is employed. This scheme enables the prover to efficiently prove the consistency of a subset of committed inputs by providing additionally the authentication path along with the tree root -- introducing the slight increase in communicational complexity.
 
-\todo{Add protocol here}
-
 \begin{lemma}[Soundness of TCitH based ZK]
-  Given a threshold MPC protocol $ f_{thr} $ with threshold $ \ell $ and $ N $ parties, we see a soundness error
+  Given a threshold MPC protocol $ f_{thr} $ with threshold $ \ell $ and $ N $ parties, we have a soundness error of:
   \begin{align*}
     \frac{1}{\binom{N}{\ell}} + p_{f_{thr}} \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1}
   \end{align*}
@@ -874,8 +872,27 @@ Finally, the malicious prover could provide an invalid sharing of the input witn
   \frac{1}{\binom{N}{\ell}} + p_{f_{thr}} \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1} \geq \frac{1}{\binom{N}{\ell}} + \left(1 - \frac{1}{\binom{N}{\ell}}\right) \cdot p_{f_{thr}}. \qed
 \end{align*}
 
-This final step is formally proven in~\cite[p20]{feneuil2023threshold}.
-\todo{Should we go over the proof?}
+This final step is formally proven in~\cite[p20]{feneuil2023threshold} but we will go over the main ideas of the proof.
+
+The first thing to realise is the fact that the verifier only ever sees at most $\ell$ shares of the secret sharing $\sh{w}$, this allows the malicious prover to pick different sharings for a set of subsets of $N$.
+We can denote such a subset:
+\begin{align}
+  \mathcal{J} = \{J \subset [N] \mid |J| = \ell + 1\}
+\end{align}
+The malicious prover can then pick different witness values $w_J$ for each $J \in \mathcal{J}$ corresponding to the shares $\sh{w}_J$.
+This fact allows the maliciour prover to pick:
+
+\begin{align}
+  w_{J_1} \neq w_{J_2} \text{ for } J_1, J_2 \in \mathcal{J}
+\end{align}
+
+The authors then describes a \textit{Soundness attack} where the malicious prover samples different witness values for each $J \in \mathcal{J}$. When the verifier sends the challenge value $\epsilon$ the malicious prover does the following:
+\begin{itemize}
+  \item If $\epsilon = w_{J_0}$ for some $J_0 \in \mathcal{J}$, the malicious prover defines the broadcast values and shares upon this set of shares $J_0$. This ensures that if $I \subset J_0$ then the malicious prover can convince the verifier that the shares are consistent.
+  \item Otherwise, if no such $w_{J_0}$ exists the malicious prover has to guess the which set $I$ the verifier will pick.
+\end{itemize}
+
+The authors then proove that using the above strategy is in fact optimal for the malicious prover, and that the propability that the malicious prover convinces the verifier is the same as mentioned before. This is done by showing that if we have an efficient prover $\mathcal{P}$, we can use this to find commitment collisions using an average number of calls to $\mathcal{P}$. Which in turn would break the underlying commitment protocol.
 
 \section{Fiat-Shamir Heuristic}\label{sec:fiatshamir}
 To transform any zero-knowledge protocol into a signature scheme, one can use the approach described in~\cite{fiat1986prove}. Here, we outline the general concept.
@@ -3588,7 +3605,6 @@ The most time-consuming operation in the signing process is the hashing step. We
 For verification, our implementation is slightly faster, particularly for Category One. Once again, it is difficult to hypothesise the reasons behind this improvement, and this question will be left for future work.
 
 \subsubsection{Rust Nightly vs Stable}
-
 
 \begin{table}[H]
   \centering
