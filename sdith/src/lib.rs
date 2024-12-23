@@ -18,7 +18,6 @@ static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 #[cfg(feature = "mimalloc")]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-pub mod api;
 pub mod constants;
 #[cfg(feature = "kat")]
 mod kat;

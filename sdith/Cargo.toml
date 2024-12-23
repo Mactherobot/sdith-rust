@@ -4,7 +4,7 @@ description = "SDitH Signature Scheme Protocol from NIST Post-Quantum Cryptograp
 version = "0.0.0"
 edition = "2021"
 resolver = "2"
-default-run = "cli" # Default run the cli
+default-run = "cli"                                                                                                                       # Default run the cli
 
 # We manually specify targets below
 autobenches = false
@@ -46,20 +46,20 @@ rustc_version = "0.4.1"
 [lib]
 name = "rsdith"
 path = "src/lib.rs"
-bench = false # Prevents benchmarks from running src/lib.rs tests
-doctest = false # Prevents doctests from src/lib.rs
+bench = false       # Prevents benchmarks from running src/lib.rs tests
+doctest = false     # Prevents doctests from src/lib.rs
 
 [[bin]]
 name = "cli"
 path = "src/bin/cli/mod.rs"
-test = false # Prevents tests from cli
-bench = false # Prevents benchmarks from cli
+test = false                # Prevents tests from cli
+bench = false               # Prevents benchmarks from cli
 
 [[bin]]
 name = "profiling_sign"
 path = "src/bin/profiling/sign.rs"
-test = false # Prevents tests from profiling
-bench = false # Prevents benchmarks from profiling
+test = false                       # Prevents tests from profiling
+bench = false                      # Prevents benchmarks from profiling
 
 [[bench]]
 name = "benchmark"
@@ -99,15 +99,15 @@ inherits = "release"
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(CHANNEL_NIGHTLY)'] }
 
 ## Features
-
 [features]
 default = ["optimized"]
 
 # Categories
-category_one = []   # This is the default category.
+category_one = [] # This is the default category.
 category_three = []
 category_five = []
-category_custom = [] # Use in conjunction with `SDITH_CUSTOM_PARAMS_PATH` environment variable
+category_custom = [
+] # Use in conjunction with `SDITH_CUSTOM_PARAMS_PATH` environment variable
 
 # Optimization features
 optimized = ["simd", "parallel", "merkle_batching"]
@@ -117,7 +117,6 @@ jemalloc = ["dep:tikv-jemallocator"]
 mimalloc = ["dep:mimalloc"]
 merkle_base = []
 merkle_batching = []
-merkle_parallel = ["dep:rayon"]
 
 # Testing and Benchmarking features
 cycles_per_byte = ["dep:criterion-cycles-per-byte"] # Benchmarking feature
