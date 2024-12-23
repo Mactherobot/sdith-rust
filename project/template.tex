@@ -3589,7 +3589,24 @@ For verification, our implementation is slightly faster, particularly for Catego
 
 \subsubsection{Rust Nightly vs Stable}
 
-Mention that rust has these to versions and its important to know that nightly is generally not suggested for production. However, our simd optimisation cannot be used in stable rust.
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{l|lll}
+    \hline
+    Rust-version & Keygen & Sign & Verify \\
+    \hline
+    Stable      & $354.55$ $\mu$s   & $2.1500$ $ms$  & $409.92$ $\mu$s    \\
+    Nightly    & $361.83$ $\mu$s    & $2.1434$ $ms$  & $409.90$ $\mu$s     \\
+    \hline
+  \end{tabular}
+  \caption{Benchmarks for the \textit{nightly} and \textit{stable} channels for Rust on \textit{Setup 2}.}
+  \label{tab:rust_nightly_vs_stable}
+\end{table}
+
+To show that our implementation is compatible with stable rust, we ran our benchmarks for the \textit{nightly} and \textit{stable} channels. The reason behind this is to argue that our library is production ready, as the nightly is generally not recommended for production environments. Furthermore, we were interested in if there were any optimizations being done in either that could be useful. However, we had to remove our optimization with SIMD as it is not yet a stable Rust feature. We ran our benchmarks with our parallel optimization, as this is done using an external stable crate. The results are shown in \autoref{tab:rust_nightly_vs_stable}. 
+
+We see a minor increase ($2\%$) in our keygen when running with stable rust. This is likely due to some overhead introduced by the nightly compiler. However, the difference is negligible. The signing and verification times are identical between the two channels. This suggests that our implementation is compatible with the rust stable channel, and could be used in production environments. This serves just as a proof of concept and further investigation into constant time runtime and security is needed but this shows that we are not using any specifically insecure features. 
 
 \subsubsection{Multiplication algorithms}
 
