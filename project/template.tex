@@ -1554,9 +1554,9 @@ The release profile was configured to maximize optimization during the compilati
   \item \mintinline{toml}{panic = "abort"}: This setting ensures that the program aborts immediately on a panic, without performing unwinding. If unwinding (e.g., via the \rust{catch_unwind} macro) is not required, setting \texttt{panic} to \texttt{"abort"} reduces binary size and often provides a slight performance boost.
 \end{itemize}
 
-\subsubsection{Inlining}
-A subtle but effective way to improve performance is to inline functions that are called many times, this removes the overhead of the function call. The Rust compiler will automatically inline functions if they are small enough. But there are some cases where this is not enough and the compiler does not inline. In this case we can use the \texttt{inline} attribute to force the compiler to inline a function. Cachegrind is a good profiling tool to check if a function is inlined by the compiler.
-\todo{Maybe revise this}
+% \subsubsection{Inlining}
+% A subtle but effective way to improve performance is to inline functions that are called many times, this removes the overhead of the function call. The Rust compiler will automatically inline functions if they are small enough. But there are some cases where this is not enough and the compiler does not inline. In this case we can use the \texttt{inline} attribute to force the compiler to inline a function. Cachegrind is a good profiling tool to check if a function is inlined by the compiler.
+% \todo{Maybe revise this}
 
 \subsubsection{Parallelisation}
 A common optimization technique in modern programming is to leverage the multi-core architecture of modern CPUs by employing \textit{parallelization} or \textit{multi-threading}. This approach allows programs to execute multiple tasks concurrently, significantly improving performance for computationally intensive operations.
@@ -2186,7 +2186,6 @@ This modular design ensures that each aspect of the protocol is encapsulated wit
     .3 cli/\color{orange}cli.rs.
     .3 profiling/sign.rs.
     .2 \color{orange}lib.rs.
-    .2 \color{teal}api.rs.
     .2 \color{teal}keygen.rs.
     .2 \color{teal}witness.rs.
     .2 constants/.
@@ -3378,54 +3377,20 @@ We created the following set of feature flags:
 To allow for our implementation to be used in other projects, we have created it as a create. This is done by defining creating a \rust{lib.rs} file within the root folder of the project.
 We did this with the following modules:
 \begin{itemize}
-  \item \textbf{API}: The API module contains the public functions that can be used to interact with the implementation.
+  \item \texttt{constants}: Contains all the constants used in the implementation.
+  \item \texttt{keygen}: Contains the key generation algorithm.
+  \item \texttt{signature}: Contains the signing and verification algorithms.
+  \item \texttt{subroutines}: Contains the MPC simulation and other subroutines.
+  \item \texttt{utils}: Contains utility functions.
+  \item \texttt{witness}: Contains the witness generation algorithm.
 \end{itemize}
 
-\begin{minted}{rust}
-#![cfg_attr(feature = "simd", feature(portable_simd))]
-#![warn(missing_docs)]
-#![cfg_attr(all(doc, CHANNEL_NIGHTLY), feature(doc_auto_cfg))]
+Some of them are not needed but are included due to benchmarking. 
 
-//! # Syndrome-Decoding in the Head (SDitH) Signature scheme
-//!
-//! The SD-in-the-Head signature scheme relies on an MPC protocol which efficiently checks whether
-//! a given shared input corresponds to the solution of a syndrome decoding instance
-//! By applying the MPC-in-the-Head paradigm, this protocol is turned into a zero-knowledge proof
-//! of knowledge for the syndrome decoding problem that is then transformed into a signature scheme using the Fiat-Shamir heuristic.
-
-// Allocator features
-#[cfg_attr(feature = "jemalloc", global_allocator)]
-#[cfg(feature = "jemalloc")]
-static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
-
-#[cfg_attr(feature = "mimalloc", global_allocator)]
-#[cfg(feature = "mimalloc")]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
-
-pub mod api;
-pub mod constants;
-#[cfg(feature = "kat")]
-mod kat;
-pub mod keygen;
-pub mod signature;
-pub mod subroutines;
-pub mod utils;
-pub mod witness;
-
-#[cfg(test)]
-mod tests {
-    use crate::constants::params::COMPILED_CATEGORY;
-
-    #[test]
-    fn print_category() {
-        println!("Running tests for the category: {:?}", COMPILED_CATEGORY);
-    }
-}
-  
-\end{minted}
 Write about the lib
 
 \subsection{\texttt{rsdith} CLI}
+As a small addition to the crate we created a simple command-line interface in order to use our signing from the terminal. This was just to easily test and demonstrate that generation of keys and using it to sign messages could be done like other similar tools like those of \textit{OpenSSL}.
 
 the CLI binary.
 
@@ -3852,13 +3817,11 @@ Our primary objective was to mitigate the strict dependency of the communication
   \end{align*}
 \end{lemma}
 
-\todo{\dots}
 
 \section{Merkle Tree Commitment Revealed Nodes}\label{sub:merkle_tree_revealed_nodes}
 
 We chose to follow the definitions for the merkle tree provided in \cite{aguilarsyndrome11}. However, we added a separate method that calculates bottom up the revealed nodes based on the view opening challenges. This is used to know the length of the authentication path that is added to the signature and is needed when parsing the signature for verification. The algorithm uses the queue structure which is also mentioned in the spec, where the tree structure is a 1D array with the last elements being the leaf. First it checks for empty input. Then we initiate an empty list to hold the revealed nodes. Now in order to traverse the tree we will get the $heightIndex$ and $lastIndex$, which are the current layer of the tree, and the index of the 1D array of where the current layer stops. Lastly we need a queue to hold the indexes. Now in order to find the revealed nodes it starts by adding the indexes of the selected leaves to the queue. Then we go through the queue until the next index is $1$ which indicates that we are at the root. In the while loop we first get the current index, and then check if we have gone up a layer in the tree, and if the current node is a left child. If the current node is a left child and it is the last index in the layer, then we can just skip to the next node because we know it has no sibling. If it is not the last node we get the next node as a candidate, if the queue is not empty. If the current node is still the left child, and the next node in the queue is the other child of the same parent we do not need to add this as a revealed node as it is part of the known values. But if the next node is not the right child of the current node we add it as a revealed node. If the current node is not the left child we add the left child to the revealed nodes. And then we add the parent index to the queue. When we exit the while loop we have traversed the tree bottom up adding for each layer the neighbours of the selected leaves. The algorithm is described in pseudocode in \autoref{alg:get-revealed-nodes}.
 
-\todo{change last sentence}
 
 \begin{breakablealgorithm}
   \caption{Get Revealed Nodes for Selected Leaves in Merkle Tree}\label{alg:get-revealed-nodes}
