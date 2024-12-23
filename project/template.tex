@@ -3352,9 +3352,27 @@ Additionally, we discovered that, to produce identical outputs from the XOF, we 
 Describe the release profile.
 
 \subsection{Feature flags}\label{sub:feature_flags}
-\todo{rewrite this section to explain all feature flags we created and why}
-
-To maintain a baseline implementation while enabling flexibility to switch between different NIST categories, we utilized Rust's feature flags. These flags support conditional compilation, allowing multiple implementations of the same function to coexist in the codebase. Only the specific implementation required is compiled, based on the flag provided to the compiler. This approach made it possible to test individual optimizations in isolation, rather than applying all optimizations simultaneously.
+To maintain a baseline implementation while enabling flexibility to switch between different NIST categories, we utilized Rust's feature flags. These flags support conditional compilation, allowing multiple implementations of the same function to coexist in the codebase. This approach made it possible to test individual optimizations in isolation, rather than applying all optimizations simultaneously.
+We created the following set of feature flags:
+\begin{itemize}[parsep=0pt, itemsep=3pt]
+  \item \textbf{Default}: The default feature flag includes all optimizations and is used for the final implementation.
+  \item \textbf{Category flags}: We created flags for each NIST category, enabling the selection of a specific category to compile.
+  \item \textbf{Optimization flags}: We created flags for each optimization, allowing the selection of individual optimizations.
+    \begin{itemize}
+      \item \textbf{Parallel}: Enables parallelization of the computation.
+      \item \textbf{SIMD}: Enables SIMD instructions for faster computation.
+    \end{itemize}
+  \item \textbf{Testing and benchmarking flags}: We created flags for testing and benchmarking features.
+    \begin{itemize}
+      \item \textbf{Cycles per byte}: Enables the benchmarking feature for cycles per byte.
+      \item \textbf{Known Answer Tests (KAT)}: Includes known answer tests.
+    \end{itemize}
+  \item \textbf{Experimental flags}: We created flags for experimental features.
+    \begin{itemize}
+      \item \textbf{Blake3}: Enables the use of the \texttt{blake3} hashing algorithm.
+      \item \textbf{MulShiftAndAdd}: Enables the use of the multiplication algorithm \textit{Shift-and-Add} instead of \textit{Lookup}.
+    \end{itemize}
+\end{itemize}
 
 \subsection{Rust crate \texttt{rsdith}}
 
