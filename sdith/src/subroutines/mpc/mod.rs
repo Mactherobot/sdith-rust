@@ -201,6 +201,7 @@ pub fn inverse_party_computation(
     // Complete Q
     let q_poly_complete = complete_q(q_poly, if with_offset { 1u8 } else { 0u8 });
 
+    // Outputs
     let mut a = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
     let mut b = [[FPoint::default(); PARAM_T]; PARAM_SPLITTING_FACTOR];
     let mut c = [FPoint::default(); PARAM_T];
