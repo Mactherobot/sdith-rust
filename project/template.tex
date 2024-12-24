@@ -3088,9 +3088,9 @@ Additionally we tested the correctness of the polynomial relation generation pro
 \section{MPC computation}\label{sub:mpc_algo}
 Before implementing the rest of the protocol, signing and verification, it was necessary to first develop the underlying MPC simulation subroutine detailed in \autoref{sec:sdith-mpc} -- including the generation of inputs, Beaver triples, and the MPC challenge. Following this, we detail the party computation subroutine, as well as its inverse, which form the core components of the MPC simulation.
 
-\subsubsection{Complete and Truncate $\mathcal{Q}$}
-We can omit sending the leading coefficient since it is always going to be 1. For this we have created a function that can add the leading coefficient, as we also need to be able to add 0 for the leading coefficient for all the shares that are not the leading. As they need to sum to 1. Our implementation is a simple loop that will add an element that is going to be the leading coefficient.
-\todo{Should we remove this section? Seems }
+% \subsubsection{Complete and Truncate $\mathcal{Q}$}
+% We can omit sending the leading coefficient since it is always going to be 1. For this we have created a function that can add the leading coefficient, as we also need to be able to add 0 for the leading coefficient for all the shares that are not the leading. As they need to sum to 1. Our implementation is a simple loop that will add an element that is going to be the leading coefficient.
+% \todo{Should we remove this section? Seems }
 
 \subsubsection{Beaver Triples}
 The generation of $t \cdot d$ Beaver triples for performing the operation verification MPC protocol \autoref{def:sacrifice} begins by sampling $d$ field elements $a$ and $b$, followed by computing the corresponding correlated elements $c = a \cdot b$. When the splitting factor is $d=1$, the inner product reduces to simple multiplications. However, for a higher splitting factor such as $d=2$, the values $c_j$ (where $j \in [1:\tau]$) are computed as:
