@@ -21,9 +21,9 @@ use gf256::mul_benchmark;
 fn get_config() -> Criterion {
     Criterion::default()
         .significance_level(0.1)
-        .sample_size(1000)
+        .sample_size(250)
         .without_plots()
-        .measurement_time(Duration::from_secs(80))
+        .measurement_time(Duration::from_secs(20))
 }
 
 #[cfg(all(target_os = "linux", feature = "cycles_per_byte"))]

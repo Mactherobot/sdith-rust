@@ -8,6 +8,7 @@ import itertools
 from termcolor import cprint
 from tabulate import tabulate
 import collections
+import numpy as np
 
 
 parser = ap.ArgumentParser(
@@ -24,6 +25,8 @@ parser.add_argument("--cycles", action="store_true")
 parser.add_argument("--print-result", nargs="*")
 parser.add_argument("--print-latex", action="store_true")
 parser.add_argument("--filter", nargs="*")
+
+parser.add_argument("--dudect", type=int, default=0)
 
 args = parser.parse_args()
 
@@ -118,6 +121,59 @@ if args.print_result:
     )
     exit(0)
 
+# Dudect
+
+if args.dudect:
+    data = dict()
+
+    for i in range(1, args.dudect + 1):
+        print(f"\rRunning dudect {i}/{args.dudect}", end="")
+
+        # Run cargo run --example dudect and get the results
+        dudect_results = subprocess.run(
+            ["cargo", "run", "--example", "dudect"],
+            stdout=subprocess.PIPE,  # Capture standard output
+            stderr=subprocess.PIPE,  # Capture standard error
+            text=True,  # Decode output as text
+            bufsize=1,  # Line buffering for real-time output
+        )
+
+        # Get results: They are of the form
+        # "bench gf256_mul_lookup             seeded with 0x24af349fb0532db6
+        # bench gf256_mul_lookup             ... : n == +0.001M, max t = -1.63677, max tau = -0.06075, (5/tau)^2 = 6774"
+        # ...
+        # get name,t and max t.
+
+        # Split into groups of two lines
+        dudect_results = list(
+            filter(lambda x: "bench " in x, dudect_results.stdout.split("\n"))
+        )
+        for i in range(0, len(dudect_results), 2):
+            # Get name
+            name = r"bench (?P<name>\S+)"
+            name = re.search(name, dudect_results[i]).group("name")
+
+            # Get t
+            t = r"t = (?P<t>\S+),"
+            t = re.search(t, dudect_results[i + 1]).group("t")
+
+            if name not in data:
+                data[name] = []
+            data[name].append(float(t))
+
+    print("\rDone running dudect              ")
+
+    results = dict()
+
+    for name, values in data.items():
+        results[name] = dict()
+        results[name]["mean"] = np.mean(values)
+        results[name]["std_dev"] = np.std(values)
+        results[name]["max"] = max(values)
+
+    json.dump(results, open("dudect.json", "w"))
+
+    exit(0)
 
 # Benching
 

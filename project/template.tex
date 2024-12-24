@@ -3357,20 +3357,20 @@ We created the following set of feature flags:
   \item \textbf{Default}: The default feature flag includes all optimizations and is used for the final implementation.
   \item \textbf{Category flags}: We created flags for each NIST category, enabling the selection of a specific category to compile.
   \item \textbf{Optimization flags}: We created flags for each optimization, allowing the selection of individual optimizations.
-    \begin{itemize}
-      \item \textbf{Parallel}: Enables parallelization of the computation.
-      \item \textbf{SIMD}: Enables SIMD instructions for faster computation.
-    \end{itemize}
+        \begin{itemize}
+          \item \textbf{Parallel}: Enables parallelization of the computation.
+          \item \textbf{SIMD}: Enables SIMD instructions for faster computation.
+        \end{itemize}
   \item \textbf{Testing and benchmarking flags}: We created flags for testing and benchmarking features.
-    \begin{itemize}
-      \item \textbf{Cycles per byte}: Enables the benchmarking feature for cycles per byte.
-      \item \textbf{Known Answer Tests (KAT)}: Includes known answer tests.
-    \end{itemize}
+        \begin{itemize}
+          \item \textbf{Cycles per byte}: Enables the benchmarking feature for cycles per byte.
+          \item \textbf{Known Answer Tests (KAT)}: Includes known answer tests.
+        \end{itemize}
   \item \textbf{Experimental flags}: We created flags for experimental features.
-    \begin{itemize}
-      \item \textbf{Blake3}: Enables the use of the \texttt{blake3} hashing algorithm.
-      \item \textbf{MulShiftAndAdd}: Enables the use of the multiplication algorithm \textit{Shift-and-Add} instead of \textit{Lookup}.
-    \end{itemize}
+        \begin{itemize}
+          \item \textbf{Blake3}: Enables the use of the \texttt{blake3} hashing algorithm.
+          \item \textbf{MulShiftAndAdd}: Enables the use of the multiplication algorithm \textit{Shift-and-Add} instead of \textit{Lookup}.
+        \end{itemize}
 \end{itemize}
 
 \subsection{Rust crate \texttt{rsdith}}
@@ -3385,7 +3385,7 @@ We did this with the following modules:
   \item \texttt{witness}: Contains the witness generation algorithm.
 \end{itemize}
 
-Some of them are not needed but are included due to benchmarking. 
+Some of them are not needed but are included due to benchmarking.
 
 Write about the lib
 
@@ -3624,11 +3624,11 @@ We were very surprised to observe that including parallelisation for \textit{Set
 
 Next, we compare the performance of our implementation against the reference implementation from~\cite{aguilarsyndrome11}. For both benchmarks, we consider fully optimised versions with Turbo Boost enabled. Generally, it is challenging to hypothesise the reasons behind the observed differences, as we lack access to profiling data from the reference implementation. Nevertheless, we will attempt to tentatively guess towards potential reasons.
 
-For key generation, we observe that our implementation is significantly faster than the reference implementation ($\approx -65\%$). Initially, we hypothesised that this might be due to differences in benchmarking methodologies, as our benchmarking did not sample the master seed inside the key generation function. However, after adjusting our benchmarking to include this step, we still observed a significant difference between the two implementations. 
+For key generation, we observe that our implementation is significantly faster than the reference implementation ($\approx -65\%$). Initially, we hypothesised that this might be due to differences in benchmarking methodologies, as our benchmarking did not sample the master seed inside the key generation function. However, after adjusting our benchmarking to include this step, we still observed a significant difference between the two implementations.
 
 Practically, key generation is rarely the benchmark used to categorise the performance of a signature scheme, as it is typically expected to be performed in advance. Therefore, we currently did not explore this difference further.
 
-For signing, we observe that the reference implementation outperforms our implementation by approximately $27\%$. From our understanding, it is generally expected that Rust applications can be optimised to the same degree as C applications. Our implementation incorporates parallelisation for the signing operation, which is absent in the reference implementation. However, both the SIMD and parallelisation implementations in our code rely on external crates (\texttt{std::simd} and \texttt{rayon}), meaning we are not directly implementing these operations. This reliance may introduce additional bloat in the binary and less specialized code. While we believe that our implementations significantly improve code readability, they also highlight areas where we have room for more specialized optimisations. 
+For signing, we observe that the reference implementation outperforms our implementation by approximately $27\%$. From our understanding, it is generally expected that Rust applications can be optimised to the same degree as C applications. Our implementation incorporates parallelisation for the signing operation, which is absent in the reference implementation. However, both the SIMD and parallelisation implementations in our code rely on external crates (\texttt{std::simd} and \texttt{rayon}), meaning we are not directly implementing these operations. This reliance may introduce additional bloat in the binary and less specialized code. While we believe that our implementations significantly improve code readability, they also highlight areas where we have room for more specialized optimisations.
 
 The most time-consuming operation in the signing process is the hashing step. We observed a dramatic improvement in signing performance when using the \texttt{Blake3} hashing algorithm ($1.19$ ms, \autoref{tab:blake3}). This suggests that further optimisation of the hashing process could yield even greater performance benefits.
 
@@ -3640,36 +3640,93 @@ For verification, our implementation is slightly faster, particularly for Catego
   \centering
   \begin{tabular}{l|lll}
     \hline
-    Rust-version & Keygen & Sign & Verify \\
+    Rust-version & Keygen          & Sign          & Verify          \\
     \hline
-    Stable      & $354.55$ $\mu$s   & $2.1500$ $ms$  & $409.92$ $\mu$s    \\
-    Nightly    & $361.83$ $\mu$s    & $2.1434$ $ms$  & $409.90$ $\mu$s     \\
+    Stable       & $354.55$ $\mu$s & $2.1500$ $ms$ & $409.92$ $\mu$s \\
+    Nightly      & $361.83$ $\mu$s & $2.1434$ $ms$ & $409.90$ $\mu$s \\
     \hline
   \end{tabular}
   \caption{Benchmarks for the \textit{nightly} and \textit{stable} channels for Rust on \textit{Setup 2}.}
   \label{tab:rust_nightly_vs_stable}
 \end{table}
 
-To show that our implementation is compatible with stable rust, we ran our benchmarks for the \textit{nightly} and \textit{stable} channels. The reason behind this is to argue that our library is production ready, as the nightly is generally not recommended for production environments. Furthermore, we were interested in if there were any optimizations being done in either that could be useful. However, we had to remove our optimization with SIMD as it is not yet a stable Rust feature. We ran our benchmarks with our parallel optimization, as this is done using an external stable crate. The results are shown in \autoref{tab:rust_nightly_vs_stable}. 
+To show that our implementation is compatible with stable rust, we ran our benchmarks for the \textit{nightly} and \textit{stable} channels. The reason behind this is to argue that our library is production ready, as the nightly is generally not recommended for production environments. Furthermore, we were interested in if there were any optimizations being done in either that could be useful. However, we had to remove our optimization with SIMD as it is not yet a stable Rust feature. We ran our benchmarks with our parallel optimization, as this is done using an external stable crate. The results are shown in \autoref{tab:rust_nightly_vs_stable}.
 
-We see a minor increase ($2\%$) in our keygen when running with stable rust. This is likely due to some overhead introduced by the nightly compiler. However, the difference is negligible. The signing and verification times are identical between the two channels. This suggests that our implementation is compatible with the rust stable channel, and could be used in production environments. This serves just as a proof of concept and further investigation into constant time runtime and security is needed but this shows that we are not using any specifically insecure features. 
+We see a minor increase ($2\%$) in our keygen when running with stable rust. This is likely due to some overhead introduced by the nightly compiler. However, the difference is negligible. The signing and verification times are identical between the two channels. This suggests that our implementation is compatible with the rust stable channel, and could be used in production environments. This serves just as a proof of concept and further investigation into constant time runtime and security is needed but this shows that we are not using any specifically insecure features.
 
-\subsubsection{Multiplication algorithms}
+\subsubsection{Constant time analysis and Multiplications}
 
-\todo{old benchmarks \url{https://asecuritysite.com/openssl/openssl3_b2}}
+Constant-time analysis is an important part of cryptographic design. It helps make algorithms secure against timing attacks -- a side-channel attack where an attacker tries to infer secret information by measuring the execution time of a protocol. Since there are no general tools for this, the analysis must be specific to the protocol. A good starting point is to ask what needs to be protected. For a signature scheme, the main concern is not the message but the secret part of the algorithm, such as the $x$ vector from the syndrome decoding problem, which is the secret key.
 
-Test on both mac and linux.
-nightly vs stable rust
-different hashes
-benching at different tags
-parallelisation, test for amount of cores, 2, 4, 8, 16
-no turbo boost (max 2.6 GHz)
-cycles per bytes
-compare ours to the optimised reference
+Timing attacks often happen because of conditional branches in the code. These branches might not even be written by the developer but could come from compiler optimizations. In the SD-in-the-Head protocol, there are no clear branches, and most operations during signing and verification use randomized inputs. This reduces the chance of timing attacks in these areas. However, the $x$ vector is used directly during key generation, when creating the polynomials $(S, P, Q)$. Note the lines 11 and 15 below.
 
-dudect: Found little in lookup for zero. Hard to find $x$ with known weight, but can learn positions of $x$ however, x is only used in keygen (not considered too much).
+\begin{minted}[linenos]{rust}
+  // witness.rs 
 
-lookup slower alone, but faster in full protocol.
+  fn sample_polynomial_relation(prg: PRG) -> ((QPoly,SPoly,PPoly)) {
+      ...
+      for n_poly in 0..PARAM_SPLITTING_FACTOR {
+          // Sample x vector
+          let (x_vector, positions) = sample_x_chunk(prg);
+          x_vectors[n_poly] = x_vector;
+
+          // Compute Q
+          q_poly[n_poly] = compute_q_prime_chunk(&positions);
+
+          // Compute S and P
+          for i in 0..PARAM_CHUNK_M {
+              let scalar = x_vector[i].field_mul(PRECOMPUTED_LAGRANGE_INTERPOLATION_WEIGHTS[i]);
+              ...
+      }
+    }
+  }
+\end{minted}
+
+In this example, multiplication is performed in the finite field $\mathbb{F}_{256}$. While key generation is often disregarded in terms of side-channel vulnerability -- since it is typically done in advance -- multiplications also occur throughout the protocol. It is therefore prudent to ensure that the multiplication function operates in constant time.
+
+To test this, we used the tool \textit{dudect}~\cite{reparaz2017dude}. It is a tool that samples the execution time of a function and produces a \textit{t-test} to determine whether to categories of inputs cause significantly different execution times. We ran the following tests for our two multiplication implementations, \texttt{Lookup} and \texttt{Shift-and-Add}.
+
+\begin{enumerate}
+  \item For the inputs to the multiplication $\texttt{mul}(a,b)$, $a$ operand is kept constant for two different values. The constants were chosen arbitrarily as $10$ and $250$ to ensure a large difference between them.\label{dudect_test_1}
+  \item Repeat of 1 but for $b$ operand kept constant. Checking for the other operand.\label{dudect_test_2}
+  \item Repeat of 1 but for $0$ instead of $10$. $0$ is often an easy target for optimisation. E.g. if you XOR's with $0$ the compiler can remove these operations as they have no effect.\label{dudect_test_3}
+\end{enumerate}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{|l|c|r|r|}
+    \hline
+    \textbf{Function}      & \textbf{Test}       & \textbf{$t$ Mean (std)} & \textbf{Max} \\ \hline
+    \texttt{Lookup}        & \ref{dudect_test_1} & -0.4813 (28.5514)       & 249.6994     \\
+    \texttt{Lookup}        & \ref{dudect_test_2} & -0.3793 (29.2336)       & 269.1453     \\
+    \texttt{Lookup}        & \ref{dudect_test_3} & -0.4467 (29.4799)       & 249.9463     \\
+    \texttt{Shift-and-Add} & \ref{dudect_test_1} & -0.0258 (1.5587)        & 3.8619       \\
+    \texttt{Shift-and-Add} & \ref{dudect_test_2} & -0.3793 (29.2336)       & 269.1453     \\
+    \texttt{Shift-and-Add} & \ref{dudect_test_3} & -0.4467 (29.4799)       & 249.9463     \\\hline
+  \end{tabular}
+  \caption{Running the \texttt{dudect} tool 1000 times and collected averages and standard deviations for the three tests and the two implementations of multiplication. A $t < 5$ indicates that there is no significant difference between the two hypotheses. A $t > 5$ indicates that the difference is significant.}
+  \label{tab:mul_dudect}
+\end{table}
+
+\autoref{tab:mul_dudect} presents the results of running the \texttt{dudect} tests. Both implementations exhibit a $t$-statistic below the threshold of 5, suggesting no significant timing leakage. However, the \texttt{Lookup} implementation displays a large standard deviation, indicating uncertainty in the results. This behavior might be attributed to potential timing variance in the table lookup operation, which could depend on the supplied index. Despite these observations, the results remain inconclusive. All tests were conducted with \textit{black box} obfuscation to prevent compiler optimizations based on input. Running the tests without obfuscation yielded consistent results.
+
+Curiously, we observed confounding results when benchmarking the performance of the \texttt{Lookup} and \texttt{Shift-and-Add} implementations -- \autoref{tab:mul_comparison}. While the \texttt{Shift-and-Add} implementation consistently runs significantly faster than the \texttt{Lookup} implementation, the signing operation is notably faster when using \texttt{Lookup}. Initially, we hypothesized that differences in compiler optimizations might account for this performance discrepancy. However, testing with the lowest level of optimization produced consistent results ($\approx 70$ ms for \texttt{Shift-and-Add} versus $97$ ms for \texttt{Lookup}). These results suggest complexities that require further investigation, which is beyond the scope of this report.
+
+Given these findings, we have set the \texttt{Lookup} implementation as the default and provided \texttt{Shift-and-Add} as an alternative via the feature flag \texttt{mul\_shift\_and\_add}. This decision is based on the significant performance differences and our belief that the key generation algorithm is the most likely target, with minimal impact from potential non-constant time behavior.
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|l|l|r|}
+    \hline
+    \textbf{Test}        & \textbf{Multiplication} & \textbf{Time} \\ \hline
+    Multiplication alone & \texttt{Lookup}         & $1030.61$ ps  \\
+    Multiplication alone & \texttt{Shift-and-Add}  & $385.35$ ps   \\
+    Signing              & \texttt{Lookup}         & $1.9404$ ms   \\
+    Signing              & \texttt{Shift-and-Add}  & $2.1169$ ms   \\
+    \hline
+  \end{tabular}
+  \caption{Multiplication performance comparison between \texttt{Lookup} and \texttt{Shift-and-Add} implementations. Running tests for multiplication alone and the signing operation}\label{tab:mul_comparison}
+\end{table}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -3699,6 +3756,12 @@ future work:
 - Verkle trees Optimisation
 - custom parallelisation outside of Rayon? data structures that allow for independent parallelisation in the MPC computation?
 - Explore optimisations that go away from the spec. Both code wise and parameter wise (we follow theirs a lot. Can we do better?)
+- rayon bottleneck \url{https://gendignoux.com/blog/2024/11/18/rust-rayon-optimized.html#bonus-does-rayons-with_max_len-help} We tried for MPC and Merkle but had decreased performance
+
+\begin{quote}
+  But while it's easy to outperform a Swiss Army knife with a custom tool, the hard part is to generalize to other scenarios. This is where Rayon really shines: its generic approach applies to a very wide range of use cases, and the API is very simple (“just put a par\_iter() on it”). I'm still exploring turning my custom parallelism into a library, to see what are the design trade-offs and hopefully make it useful for similar workloads.
+\end{quote}
+
 - e.g. Blake3
 - Analyse the code binary for compiler optimisations Check for constant time
 - hypercube implementation and generalisation to accommodate it
