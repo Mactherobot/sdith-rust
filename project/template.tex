@@ -3236,9 +3236,13 @@ We created the following set of feature flags:
         \end{itemize}
 \end{itemize}
 
+\section{How to use our implementation}
+After finalizing our implementation, we created a Rust crate, \texttt{rsdith}, to allow for easy integration into other projects. This is useful for other developers to test out the impact of using the SD-in-the-Head as a signature scheme for their application. Just like we used Blake3 to test different hashes. 
+Furthermore, in order to interact and use our implementation we create a simple command-line interface (CLI) to allow for easy signing and verification of messages. Such a solution could be useful for a sever setup where the binary could be allocated on the server and used to sign messages, like the use of \textit{OpenSSL}. A CLI also allows for easy demonstration and testing of the implementation.
+
 \subsection{Rust crate \texttt{rsdith}}
-To allow for our implementation to be used in other projects, we have created it as a create. This is done by defining creating a \rust{lib.rs} file within the root folder of the project.
-We did this with the following modules:
+To allow for our implementation to be used in other projects, we have created it as a create. This is done creating a \rust{lib.rs} file within the root folder of the project.
+We then exported the following modules:
 \begin{itemize}
   \item \texttt{constants}: Contains all the constants used in the implementation.
   \item \texttt{keygen}: Contains the key generation algorithm.
@@ -3253,9 +3257,14 @@ Some of them are not needed but are included due to benchmarking.
 Write about the lib
 
 \subsection{\texttt{rsdith} CLI}
-As a small addition to the crate we created a simple command-line interface in order to use our signing from the terminal. This was just to easily test and demonstrate that generation of keys and using it to sign messages could be done like other similar tools like those of \textit{OpenSSL}.
+As a small addition to the crate we created a simple CLI using the crate \textit{clap}. We created the following commands:
+\begin{itemize}
+  \item \textbf{Keygen}: Used to generate a key pair $(pk,sk)$ either as a file or raw output.
+  \item \textbf{Sign}: Takes a message file or raw input, a secret key file and optionally a seed and salt. Outputs the signature to a file or raw output. 
+  \item \textbf{Verify}: Takes a message file or raw input, a public key file and a signature file or raw input. Outputs whether the signature is valid or not.
+  \item \textbf{Parameters}: Outputs the parameters used in the implementation.
+\end{itemize}
 
-the CLI binary.
 
 \subsection{Testing our implementation}\label{sub:testing_our_implementation}
 
