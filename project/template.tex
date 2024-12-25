@@ -566,6 +566,7 @@ Furthermore, the $(\ell + 1, N)$ the scheme is $(+, +)$-homomorphic. This follow
   \Rightarrow\  & (h_a + h_b)(0) = h_a(0) + h_b(0) = a + b.
 \end{align*}
 
+\todo{The picture is a bit confusing to me. The secret should correct to the y-intercept given by f(0). I see alternative curves with one share but no curves with two shares.}
 \begin{figure}
   \centering
   \includegraphics[width=0.8\textwidth]{images/shamir.png}
@@ -1515,7 +1516,7 @@ Benchmarking provides several benefits. It allows us to compare our implementati
 
 In native Rust, benchmarking is still in its early stages. However, the \textit{criterion} package~\cite{criterion} offers a statistically driven benchmarking framework that is user-friendly and integrates seamlessly with Rust.
 
-\subsubsection{Profiling}
+\subsubsection{Profiling}\label{ch:prelim:sec:rust:sub:profiling}
 As opposed to benchmarking, profiling is a process of collecting a detailed \textit{history} of one run of a program. It draws a picture of how much time is spent and how many resources are used during the execution of the program. This information can be used to identify bottlenecks or inefficiencies in the program.
 
 In order to profile our implementation, we used the \textit{Samply Commandline Profiler}~\cite{samply}. Running a \textit{debug} version of our program, we were able to collect a detailed profile of the execution. This allowed us to identify the most time-consuming parts of our code and to pinpoint areas that could be optimized \autoref{fig:samply}.
@@ -3203,15 +3204,19 @@ As the last piece to the puzzle we implemented the verification algorithm. For t
 \section{Final Implementation}\label{sub:final}
 In this section we will discuss our process when finalizing the implementation. We had a few bugs that led us to setup our code to be comparable with the reference implementation. First we will discuss our implementations of the signing and verification algorithms, and how we used the reference implementation to iron out bugs from our own code. Lastly we will discuss how we went about testing our implementation.
 
-README?
 
 \subsection{Alignment with the Reference Implementation}\label{sub:comparison_with_spec_impl}
 To verify and debug our code, we configured our implementation to align with the reference implementation provided in C. This setup required us to execute the reference code to obtain intermediate data, which we then used to compare internal states between the two implementations. In order to get this to work we ran into the following problems. First we had to setup the same random byte generator to allow our randomness to be the same. Furthermore, during this process, we identified a bug in the calculation of the view-opening challenges. Specifically, the reference implementation neglected to finalize the SHAKE function before squeezing, which posed an issue because the Tiny Keccak Rust library automatically performs this finalization when initializing a hash or XOF.
 Additionally, we discovered that, to produce identical outputs from the XOF, we needed to first rotate the permutation once by supplying an empty vector before invoking the function.
 
-\subsection{Compilation profiles}
+\subsection{Testing our implementation}\label{sub:testing_our_implementation}
 
-Describe the release profile.
+TLDR; our testing strategy (could talk about marshalling utility and its test function)
+
+\todo{Remove this if we decide not to talk about it}
+% \subsection{Compilation profiles}
+%
+% Describe the release profile.
 
 \subsection{Feature flags}\label{sub:feature_flags}
 To maintain a baseline implementation while enabling flexibility to switch between different NIST categories, we utilized Rust's feature flags. These flags support conditional compilation, allowing multiple implementations of the same function to coexist in the codebase. This approach made it possible to test individual optimizations in isolation, rather than applying all optimizations simultaneously.
@@ -3240,8 +3245,10 @@ We created the following set of feature flags:
 After finalizing our implementation, we created a Rust crate, \texttt{rsdith}, to allow for easy integration into other projects. This is useful for other developers to test out the impact of using the SD-in-the-Head as a signature scheme for their application. Just like we used Blake3 to test different hashes. 
 Furthermore, in order to interact and use our implementation we create a simple command-line interface (CLI) to allow for easy signing and verification of messages. Such a solution could be useful for a sever setup where the binary could be allocated on the server and used to sign messages, like the use of \textit{OpenSSL}. A CLI also allows for easy demonstration and testing of the implementation.
 
+We created a README file to explain how to use, test, benchmark and build our implementation. We did this to help other developers understand and run the code for themselves in order to reproduce our benchmarks and test results. 
+
 \subsection{Rust crate \texttt{rsdith}}
-To allow for our implementation to be used in other projects, we have created it as a create. This is done creating a \rust{lib.rs} file within the root folder of the project.
+To allow for our implementation to be used in other projects, we have created it as a create. This is done creating a \rust{lib.rs} file within the root folder of the project. We tried to adhere to the best practices when creating a crate. For the interested reader, look in the \rust{cargo.toml} file to see how we have setup the crate. 
 We then exported the following modules:
 \begin{itemize}
   \item \texttt{constants}: Contains all the constants used in the implementation.
@@ -3254,8 +3261,6 @@ We then exported the following modules:
 
 Some of them are not needed but are included due to benchmarking.
 
-Write about the lib
-
 \subsection{\texttt{rsdith} CLI}
 As a small addition to the crate we created a simple CLI using the crate \textit{clap}. We created the following commands:
 \begin{itemize}
@@ -3265,14 +3270,16 @@ As a small addition to the crate we created a simple CLI using the crate \textit
   \item \textbf{Parameters}: Outputs the parameters used in the implementation.
 \end{itemize}
 
-
-\subsection{Testing our implementation}\label{sub:testing_our_implementation}
-
-TLDR; our testing strategy (could talk about marshalling utility and its test function)
-
 \section{Optimizations}
+Before presenting the results, we summarize the optimizations applied to our implementation. We begin with the smaller adjustments and progress to the more intricate enhancements.
 
-Re-iterate on optimisations anything we havent mentioned yet
+To guide our optimization efforts, we utilized the profiler as described in \autoref{ch:prelim:sec:rust:sub:profiling}. This process initially highlighted the computation of shares, a primary component of the signing algorithm. Observing that the computation of each share is independent of the others, we parallelized this task to improve performance.
+
+Next, we turned our attention to the MPC computations. Here, we noted that many operations involved vectors. To optimize these, we chunked the data into SIMD (Single Instruction, Multiple Data) vectors, accelerating the vector operations. Despite this, we retained our \rust{FPoint} representation to preserve code readability and maintain extensibility for further optimizations. Given more time, we would have considered adopting SIMD vector types directly to represent points for additional performance gains.
+
+Finally, we examined the creation of the Merkle tree, another significant computational bottleneck due to its reliance on hashing functions. Initially, we attempted to parallelize the Merkle tree construction, but this approach proved slower than the batched solution utilized by the original implementation. The most notable improvement in this area came from switching to a faster hashing algorithm, \texttt{blake3}.
+
+In the conclusion, we will outline additional optimizations that could further enhance the efficiency of the signing and verification algorithms.
 
 \chapter{Benchmarking}\label{ch:bench}
 
@@ -3527,7 +3534,7 @@ To show that our implementation is compatible with stable rust, we ran our bench
 We see a minor increase ($2\%$) in our keygen when running with stable rust. This is likely due to some overhead introduced by the nightly compiler. However, the difference is negligible. The signing and verification times are identical between the two channels. This suggests that our implementation is compatible with the rust stable channel, and could be used in production environments. This serves just as a proof of concept and further investigation into constant time runtime and security is needed but this shows that we are not using any specifically insecure features.
 
 \subsubsection{Constant time analysis and Multiplications}
-
+\todo{Remove the sections defining constant time analysis}
 Constant-time analysis is an important part of cryptographic design. It helps make algorithms secure against timing attacks -- a side-channel attack where an attacker tries to infer secret information by measuring the execution time of a protocol. Since there are no general tools for this, the analysis must be specific to the protocol. A good starting point is to ask what needs to be protected. For a signature scheme, the main concern is not the message but the secret part of the algorithm, such as the $x$ vector from the syndrome decoding problem, which is the secret key.
 
 Timing attacks often happen because of conditional branches in the code. These branches might not even be written by the developer but could come from compiler optimizations. In the SD-in-the-Head protocol, there are no clear branches, and most operations during signing and verification use randomized inputs. This reduces the chance of timing attacks in these areas. However, the $x$ vector is used directly during key generation, when creating the polynomials $(S, P, Q)$. Specifically we run multiplications on the individual elements of the vector (see file \texttt{src/subroutines/witness.rs}).
