@@ -151,8 +151,17 @@
 \pagestyle{plain}
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
+As part of the ongoing efforts to identify robust post-quantum cryptographic solutions under the NIST call for standardization, the Syndrome Decoding in the Head (SDitH) protocol has emerged as a promising candidate. Combining the modularity and efficiency of the MPC-in-the-Head paradigm with threshold-based MPC techniques, this protocol delivers a code-based, quantum-resilient digital signature.
 
-\todo{in English\dots}
+In this work, we present an implementation of the SDitH protocol in Rust, a modern, memory-safe programming language. Our implementation prioritizes modularity and readability to serve as a comprehensive reference for future developers and the protocol's authors. Additionally, we leveraged modern Rust language features and developed a robust test suite to ensure the implementation's reliability and maintainability.
+
+This report also provides an in-depth review of the theoretical foundations underpinning the protocol, offering readers a thorough understanding of its principles and design.
+
+Benchmarking against the optimized reference implementation demonstrated comparable performance in key generation and verification, with a minor performance gap observed in the signing operation. Our analysis points to a need for more specialized optimisations.
+
+Our implementation demonstrates the protocol's flexibility, enabling the exploration of alternative hash functions and customizable parameters. We also propose future optimizations, such as replacing the Merkle Commitment Scheme with Verkle Trees, to address current performance bottlenecks in hashing operations.
+
+In conclusion, we believe that our Rust implementation provides a valuable resource for future research and development, supporting the ongoing refinement and practical deployment of post-quantum cryptographic protocols.
 
 \chapter*{Resum\'e}
 \addcontentsline{toc}{chapter}{Resum\'e}
@@ -2081,7 +2090,7 @@ Similarly, the Beaver triples $a$ and $b$ are adjusted for the $d$-split as foll
 
 While the $d$-split variant introduces a slight reduction in security compared to the standard SD problem, this is mitigated by a small increase in the security parameters $m$, and $w$. The primary advantage of this variant lies in its flexibility, enabling improved performance trade-offs~\cite{aguilarsyndrome11}. The increase in parameters are given by
 \begin{align}
-  \varepsilon_1 \geq \frac{\binom{m/d}{w/d}}{\binom{m}{w}} \cdot \epsilon_d\label{eq:d_split_epsilon}
+  \epsilon_1 \geq \frac{\binom{m/d}{w/d}}{\binom{m}{w}} \cdot \epsilon_d\label{eq:d_split_epsilon}
 \end{align}
 a proof of this can be found in~\cite[p27]{feneuil2022syndrome}
 
@@ -3601,11 +3610,11 @@ The most significant performance bottlenecks in our implementation are the Merkl
 
 The most apparent direction for future work involves implementing aspects of the SD-in-the-Head protocol that we have not yet covered, such as the hypercube variant and the $\mathbb{F}_{251}$ field variant. However, as demonstrated in our implementation, the use of feature flags, traits, and conditional compilation provides significant flexibility to incorporate these variants in the future. This modular and extensible approach ensures that the protocol can be efficiently expanded to support additional features and configurations.
 
-Additionally, we aim to explore more specialized and efficient parallelization strategies, as well as SIMD optimizations, to further enhance performance. 
+Additionally, we aim to explore more specialized and efficient parallelization strategies, as well as SIMD optimizations, to further enhance performance.
 
 One of the key strengths of the SD-in-the-Head protocol is its inherent modularity. This characteristic is evident in the authors' work, where they initially developed the base protocol and subsequently introduced the hypercube and threshold variants~\cite{feneuil2023threshold,aguilar2023return}. Building on this principle, we introduced a feature in our implementation that allows for swapping the \texttt{SHA3} and \texttt{SHAKE} hash functions with the \texttt{Blake3} implementation. This substitution yielded significant performance improvements, further demonstrating the protocol's flexibility and its potential for enabling alternative optimizations.
 
-Furthermore, our implementation allows users to manually specify custom parameters. This feature empowers future users of the protocol to experiment with various configurations and tailor performance to their specific use cases. 
+Furthermore, our implementation allows users to manually specify custom parameters. This feature empowers future users of the protocol to experiment with various configurations and tailor performance to their specific use cases.
 
 Currently, the greatest parallelization gains in our implementation occur during the commitment of input shares. This opens up opportunities for further optimizations, such as playing with the number of parties, adjusting the threshold or the SD instance. We believe that exploring and benchmarking these configurations could provide substantial improvements and represent a promising avenue for future work.
 
