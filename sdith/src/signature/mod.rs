@@ -192,6 +192,11 @@ impl Marshalling<Vec<u8>> for Signature {
             auth_lengths[e] = MerkleTree::get_auth_size(&view_opening_challenges[e]);
         }
 
+        // Check if length is correct
+        if signature_plain.len() != offset + auth_lengths.iter().sum::<usize>() {
+            return Err("Signature length does not match calculated auth path lengths".to_string());
+        }
+
         let mut auth: [Vec<Hash>; PARAM_TAU] = Default::default();
         for (e, auth_len) in auth_lengths.iter().enumerate() {
             auth[e] = signature_plain[offset..offset + *auth_len]
@@ -234,12 +239,12 @@ mod signature_tests {
         let signature1 = Signature::sign_message(entropy, &sk1, &message).unwrap();
         let signature2 = Signature::sign_message(entropy, &sk2, &message).unwrap();
 
-        crate::utils::marshalling::_test_marhalling(signature1, signature2);
+        crate::utils::marshalling::test_marhalling(signature1, signature2);
     }
 
     use crate::{
         constants::{
-            params::{PARAM_K, PARAM_M_SUB_K, PARAM_SALT_SIZE},
+            params::{PARAM_K, PARAM_SALT_SIZE},
             types::Seed,
         },
         utils::marshalling::Marshalling,
@@ -263,30 +268,46 @@ mod signature_tests {
 
     #[test]
     fn test_sign_failure() {
-        let spec_master_seed: Seed = [0u8; PARAM_SEED_SIZE];
-        let (_, mut sk) = keygen(spec_master_seed);
-        let message = b"Hello, World!".to_vec();
-        let entropy = (spec_master_seed, [0u8; PARAM_SALT_SIZE]);
+        let (_, mut sk1) = keygen([0u8; PARAM_SEED_SIZE]);
 
-        let var_name = [0u8; PARAM_K];
-        sk.solution.s_a = var_name;
-        let signature = Signature::sign_message(entropy, &sk, &message);
+        let message = b"Hello, World!".to_vec();
+        let entropy = ([0u8; PARAM_SEED_SIZE], [0u8; PARAM_SALT_SIZE]);
+
+        sk1.solution.s_a = [0u8; PARAM_K]; // Invalid s_a
+        let signature = Signature::sign_message(entropy, &sk1, &message);
         assert!(signature.is_err());
     }
 
     #[test]
     fn test_verify_failure() {
-        let spec_master_seed: Seed = [0u8; PARAM_SEED_SIZE];
-        let (mut pk, sk) = keygen(spec_master_seed);
+        let entropy1 = ([1u8; PARAM_SEED_SIZE], [1u8; PARAM_SALT_SIZE]);
+        let (pk1, mut sk1) = keygen([1u8; PARAM_SEED_SIZE]);
+        let (pk2, sk2) = keygen([2u8; PARAM_SEED_SIZE]);
         let message = b"Hello, World!".to_vec();
-        let entropy = (spec_master_seed, [0u8; PARAM_SALT_SIZE]);
 
-        let signature = Signature::sign_message(entropy, &sk, &message)
+        let signature = Signature::sign_message(entropy1, &sk1, &message)
             .unwrap()
             .serialise();
 
-        pk.y = [0u8; PARAM_M_SUB_K];
-        let valid = Signature::verify_signature(&pk, &signature);
-        assert!(valid.is_err());
+        assert!(Signature::verify_signature(&pk1, &signature).is_ok());
+        assert!(
+            Signature::verify_signature(&pk2, &signature).is_err(),
+            "Should not verify with different key"
+        );
+
+        let mut signature_bit_flip = signature.clone();
+        signature_bit_flip[0] = signature_bit_flip[0] ^ 1u8;
+
+        assert!(
+            Signature::verify_signature(&pk1, &signature_bit_flip).is_err(),
+            "Should not verify if signature is damaged"
+        );
+
+        sk1.y = sk2.y;
+        let signature = Signature::sign_message(entropy1, &sk1, &message).unwrap();
+        assert!(
+            Signature::verify_signature(&pk1, &signature.serialise()).is_err(),
+            "Should not verify if invalid key, i.e. y \neq Hx"
+        );
     }
 }

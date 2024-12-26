@@ -12,6 +12,8 @@
 pub mod hashing;
 pub mod xof;
 
+use std::collections::HashSet;
+
 use xof::{SDitHXOF, SDitHXOFTrait as _};
 
 use crate::{
@@ -64,21 +66,24 @@ impl PRG {
         }
     }
 
-    /// Sample non-zero **distinct** random values in the field [F_q](crate::arith::gf256::FieldArith)
+    /// Sample **distinct** random values in the field [F_q](crate::arith::gf256::FieldArith)
     ///
     /// The output length must be less than 256
-    pub fn sample_field_fq_non_zero_set(&mut self, output: &mut [u8]) -> Result<(), String> {
+    pub fn sample_field_fq_distinct(&mut self, output: &mut [u8]) -> Result<(), String> {
         if output.len() >= 256 {
             return Err("Output length must be less than 256".to_string());
         };
 
         let mut i = 0;
+        let mut unique = HashSet::<u8>::new();
         while i < output.len() {
-            self.sample_field_fq_non_zero(&mut output[i..i + 1]);
-            let is_redundant = (0..i).any(|j| output[j] == output[i]);
-            if is_redundant {
-                continue;
+            loop {
+                self.sample_field_fq_elements(&mut output[i..i + 1]);
+                if unique.insert(output[i]) {
+                    break;
+                }
             }
+
             i += 1;
         }
 
@@ -163,19 +168,22 @@ mod tests {
     }
 
     #[test]
-    fn test_prg_sample_non_zero_set() {
+    fn test_prg_sample_distinct() {
         let seed = &[0u8; PARAM_SEED_SIZE];
         let mut prg = PRG::init(seed, None);
-
         let mut f = [0u8; 100];
-        let _ = prg.sample_field_fq_non_zero_set(&mut f);
-        for (i, fi) in f.iter().enumerate() {
-            assert_ne!(*fi, 0);
-            let is_redundant = (0..i).any(|j| f[j] == *fi);
-            assert!(!is_redundant);
+
+        // Test a few times
+        for _ in 0..1000 {
+            let _ = prg.sample_field_fq_distinct(&mut f);
+            for (i, fi) in f.iter().enumerate() {
+                let is_redundant = f.iter().enumerate().any(|(j, fj)| i != j && *fj == *fi);
+                assert!(!is_redundant, "Found redundant value {fi}: {:?}", f);
+            }
         }
 
+        // Cannot sample more than 256 distinct values
         let mut f = [0u8; 256];
-        assert!(prg.sample_field_fq_non_zero_set(&mut f).is_err());
+        assert!(prg.sample_field_fq_distinct(&mut f).is_err());
     }
 }

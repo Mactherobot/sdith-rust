@@ -69,13 +69,10 @@ fn get_value_from_line(line: &str) -> &str {
 
 fn get_response_file() -> &'static str {
     if cfg!(feature = "category_three") {
-        println!("category_three");
         include_str!("./vectors/cat3_gf256/PQCsignKAT.rsp")
     } else if cfg!(feature = "category_five") {
-        println!("category_five");
         include_str!("./vectors/cat5_gf256/PQCsignKAT.rsp")
     } else {
-        println!("category_one");
         include_str!("./vectors/cat1_gf256/PQCsignKAT.rsp")
     }
 }
@@ -127,7 +124,32 @@ fn read_response_test_vectors(n: usize) -> Vec<TestVectorResponse> {
 mod kat_tests {
     use super::*;
 
-    use crate::{keygen::keygen, signature::Signature, subroutines::marshalling::Marshalling};
+    use crate::{keygen::keygen, signature::Signature, utils::marshalling::Marshalling as _};
+
+    fn signature_eq(a: &Signature, b: &Signature) -> bool {
+        assert_eq!(
+            a.broadcast_plain, b.broadcast_plain,
+            "Broadcast plain mismatch"
+        );
+        assert_eq!(
+            a.broadcast_shares, b.broadcast_shares,
+            "Broadcast shares mismatch"
+        );
+        assert_eq!(a.message, b.message, "Message mismatch");
+        assert_eq!(a.salt, b.salt, "Salt mismatch");
+        assert_eq!(a.h1, b.h1, "Hash 1 mismatch");
+        assert_eq!(
+            a.solution_share, b.solution_share,
+            "Solution shares mismatch"
+        );
+        assert_eq!(a.auth, b.auth, "Auth paths mismatch");
+        assert_eq!(
+            a.view_opening_challenges, b.view_opening_challenges,
+            "View opening challenges mismatch"
+        );
+
+        return true;
+    }
 
     #[test]
     fn test_read_test_vectors() {
@@ -144,7 +166,7 @@ mod kat_tests {
     }
 
     #[test]
-    fn test_signing_and_verifying() {
+    fn test_signing_and_verifying_with_kat_entropy() {
         let v = read_response_test_vectors(100);
         for tv in v {
             let (pk, sk) = keygen(tv.nist_entropy.keygen_seed);
@@ -160,6 +182,32 @@ mod kat_tests {
             assert!(verification.is_ok());
         }
     }
-    
-    // TODO Test signature same as spec
+
+    #[test]
+    fn test_signature_align() {
+        let v = read_response_test_vectors(100);
+        for tv in v {
+            let sk = tv.sk;
+            let kat_signature = Signature::parse(&tv.sm).unwrap();
+
+            let signature = Signature::sign_message(
+                (tv.nist_entropy.sign_seed, tv.nist_entropy.sign_salt),
+                &sk,
+                &tv.msg,
+            );
+
+            assert!(signature.is_ok());
+            let signature = signature.unwrap();
+
+            assert!(signature_eq(&signature, &kat_signature));
+        }
+    }
+
+    #[test]
+    fn test_verify_align() {
+        let v = read_response_test_vectors(100);
+        for tv in v {
+            assert!(Signature::verify_signature(&tv.pk, &tv.sm).is_ok());
+        }
+    }
 }

@@ -4,7 +4,7 @@ use crate::{
         types::Seed,
     },
     keygen::{PublicKey, SecretKey},
-    subroutines::marshalling::Marshalling as _,
+    utils::marshalling::Marshalling as _,
     witness::{Solution, SOLUTION_PLAIN_SIZE},
 };
 

@@ -1,7 +1,5 @@
 //! Marshalling module for serialising and deserialising types
 
-use std::fmt::Debug;
-
 /// Trait for serialising and deserialising types
 pub trait Marshalling<S>
 where
@@ -14,11 +12,13 @@ where
 }
 
 /// Test the marshalling of a type
-pub(crate) fn _test_marhalling<T, S>(value: T, changed_value: T)
+#[cfg(test)]
+pub(crate) fn test_marhalling<T, S>(value: T, changed_value: T)
 where
-    T: Marshalling<S> + Debug + Eq,
-    S: std::cmp::PartialEq + Debug,
+    T: Marshalling<S> + std::fmt::Debug + Eq,
+    S: std::cmp::PartialEq + std::fmt::Debug,
 {
+    // Positive test: Check that d = parse(serialise(d))
     // Serialise the value
     let serialised_value = value.serialise();
     // Parse the serialised value
@@ -26,7 +26,7 @@ where
     // Check if the parsed value is equal to the original value
     assert_eq!(value, parsed);
 
-    // Negative test: Check if the parsed value is not equal to the original value
+    // Negative test: Ensure that d != parse(serialise(d')) if d' != d
     assert_ne!(changed_value, value);
 
     let serialised_changed_value = changed_value.serialise();

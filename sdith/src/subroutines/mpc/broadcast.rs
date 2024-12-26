@@ -244,7 +244,7 @@ mod broadcast_tests {
         let bs1 = gen_random_broadcast_share(&mut PRG::init_base(&[1]));
         let bs2 = gen_random_broadcast_share(&mut PRG::init_base(&[2]));
 
-        crate::utils::marshalling::_test_marhalling(bs1, bs2);
+        crate::utils::marshalling::test_marhalling(bs1, bs2);
     }
 
     fn gen_random_broadcast(prg: &mut PRG) -> Broadcast {
@@ -263,6 +263,6 @@ mod broadcast_tests {
         let bc1 = gen_random_broadcast(&mut PRG::init_base(&[1]));
         let bc2 = gen_random_broadcast(&mut PRG::init_base(&[2]));
 
-        crate::utils::marshalling::_test_marhalling(bc1, bc2);
+        crate::utils::marshalling::test_marhalling(bc1, bc2);
     }
 }

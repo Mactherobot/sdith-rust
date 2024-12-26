@@ -1,7 +1,7 @@
 //! # Challenge
-//! 
+//!
 //! MPCitH challenge generation and precomputed values
-//! 
+//!
 //! - MPCChallenge: pair (r, e) ∈ F_point^t, (F_point^t)^d
 //! - View opening challenge: I ∈ [N] for |I| = l
 
@@ -10,7 +10,10 @@ use std::fmt::Formatter;
 
 use crate::{
     constants::{
-        params::{PARAM_CHUNK_M, PARAM_L, PARAM_LOG_N, PARAM_N, PARAM_SPLITTING_FACTOR, PARAM_T, PARAM_TAU, PRECOMPUTED_F_POLY},
+        params::{
+            PARAM_CHUNK_M, PARAM_L, PARAM_LOG_N, PARAM_SPLITTING_FACTOR, PARAM_T, PARAM_TAU,
+            PRECOMPUTED_F_POLY,
+        },
         types::{hash_default, Hash},
     },
     subroutines::{
@@ -58,7 +61,8 @@ impl MPCChallenge {
         for t in 0..PARAM_T {
             powers_of_r[t][1] = r[t];
             get_powers(r[t], &mut powers_of_r[t]);
-            f_poly_eval[t] = gf256_polynomial_evaluation_in_point_r(&PRECOMPUTED_F_POLY, &powers_of_r[t])
+            f_poly_eval[t] =
+                gf256_polynomial_evaluation_in_point_r(&PRECOMPUTED_F_POLY, &powers_of_r[t])
         }
 
         Self {
@@ -98,51 +102,51 @@ pub fn get_powers(point: FPoint, out: &mut [FPoint]) {
 }
 
 /// Expands h2 hash into the view opening challenge
-/// 
+///
+/// While the categories are all within u8 size, we
+/// use u16 to allow for higher number of parties
+///
 /// `I ∈ [N]` for `|I| = l`
 pub fn expand_view_challenge_hash(h2: Hash) -> [[u16; PARAM_L]; PARAM_TAU] {
-    // Initialize the XOF (extendable output function) context with the second Fiat-Shamir
-    // transform hash
+    // Initialize the XOF (extendable output function) context with the
+    // second Fiat-Shamir transform hash
     let mut prg = PRG::init_base(&h2);
 
-    // Define a mask for reducing the value range
-    let mask: u16 = (1 << PARAM_LOG_N) - 1;
-    let mut opened_views = [[0u16; PARAM_L]; PARAM_TAU]; // Array for storing the opened views
+    // Define a mask for reducing the value range. We use a mask to limit the value
+    // range to [0, N-1] to ensure that we can index into the opened_views array.
+    let modulo: u16 = (1 << PARAM_LOG_N) - 1;
+    let mut opened_views = [[0u16; PARAM_L]; PARAM_TAU];
 
     let mut tmp = [0u8; 2]; // Temporary buffer for sampled bytes
     let mut value: u16; // The sampled value
 
-    // Loop through all sets (PARAM_TAU sets)
     for i in 0..PARAM_TAU {
         let mut unique_values = std::collections::HashSet::new(); // To ensure uniqueness within a set
 
-        // Generate unique values for the set (PARAM_L values per set)
         for j in 0..PARAM_L {
             loop {
                 // Sample bytes from entropy and convert to u16 (handling endianness)
                 prg.sample_field_fq_elements(&mut tmp);
                 value = (tmp[0] as u16) | ((tmp[1] as u16) << 8);
-                value &= mask; // Apply mask to limit value range
+                value &= modulo; // Apply modulo to limit value range
 
-                // Ensure the value is within valid range and is unique
-                if value < PARAM_N as u16 && unique_values.insert(value) {
+                // Ensure the value is unique
+                if unique_values.insert(value) {
                     break;
                 }
             }
 
-            // Store the unique value in the output array
             opened_views[i][j] = value;
         }
-        // Sort the values in the set
+        // Sort the values in the set. This is required for the Merkle Tree calculations.
         opened_views[i].sort();
     }
-    // Return the resulting array of opened views
     opened_views
 }
 
 #[cfg(test)]
 mod challenge_tests {
-    use crate::constants::params::{PARAM_DIGEST_SIZE, PARAM_ETA};
+    use crate::constants::params::{PARAM_DIGEST_SIZE, PARAM_ETA, PARAM_N};
 
     use super::*;
 
@@ -192,11 +196,16 @@ mod challenge_tests {
                 assert_eq!(view_challenge.len(), PARAM_L);
                 for &x in view_challenge.iter() {
                     assert!(
-                        x as usize <= PARAM_N,
-                        "View challenge should be less than N: {} <= {}",
-                        x,
-                        PARAM_N as u8
+                        (x as usize) < PARAM_N,
+                        "View challenge should be less than N: {x} < {PARAM_N}",
                     );
+                }
+            }
+
+            // Assert that the view opening challenges are sorted
+            for views in view_challenges.iter() {
+                for i in 1..views.len() {
+                    assert!(views[i - 1] <= views[i], "View opening challenges should be sorted in ascending order for Merkle Tree implementation");
                 }
             }
         }

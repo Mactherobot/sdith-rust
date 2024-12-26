@@ -125,9 +125,9 @@ mod keygen_tests {
         let keys2 = super::keygen(seed2);
 
         // Test marshalling for PublicKey
-        crate::utils::marshalling::_test_marhalling(*keys1.0, *keys2.0);
+        crate::utils::marshalling::test_marhalling(*keys1.0, *keys2.0);
 
         // Test marshalling for SecretKey
-        crate::utils::marshalling::_test_marhalling(*keys1.1, *keys2.1);
+        crate::utils::marshalling::test_marhalling(*keys1.1, *keys2.1);
     }
 }

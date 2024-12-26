@@ -64,7 +64,13 @@ pub fn commit_shares(
                 *commitment = commit_share(&salt, e as u16, i as u16, &input_shares[e][i]);
             });
 
-        let merkle_tree = MerkleTree::new(commitments_prime, Some(salt));
+        let merkle_tree = MerkleTree::new(
+            commitments_prime,
+            #[cfg(feature = "kat")]
+            None,
+            #[cfg(not(feature = "kat"))]
+            Some(salt),
+        );
         commitments[e] = merkle_tree.root();
         merkle_trees.push(merkle_tree);
     }

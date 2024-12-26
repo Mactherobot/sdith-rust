@@ -511,7 +511,7 @@ mod test_helpers {
             },
             prg::PRG,
         },
-        utils::marshalling::_test_marhalling,
+        utils::marshalling::test_marhalling,
     };
 
     use super::*;
@@ -625,6 +625,6 @@ mod test_helpers {
         let solution1 = get_solution(seed1);
         let solution2 = get_solution(seed2);
 
-        _test_marhalling(solution1, solution2);
+        test_marhalling(solution1, solution2);
     }
 }

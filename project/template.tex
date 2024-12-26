@@ -1942,7 +1942,7 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
           \begin{align*}
             h_2 = \texttt{Hash}_2(m, \texttt{salt}, h_1, \texttt{broad\_plain}, \{\texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell\}_{e=1}^\tau)
           \end{align*}
-    \item Compute the second challenge $I \subset [N] \leftarrow \texttt{PRG}(h_2)$ for $|I| = \ell$
+    \item Compute the second challenge set $I \subset [1:N] \leftarrow \texttt{PRG}(h_2)$ for $|I| = \ell$
   \end{enumerate}
 
   \paragraph{Phase 5} Building of the signature output the signature $\sigma$ for $e \in [\tau]$ and $i \in I$
@@ -1967,6 +1967,8 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
   \end{enumerate}
 \end{protocol}
 
+\newpage
+
 \begin{protocol}[SD-in-the-Head Verification Protocol]\label{def:sdith-verify}
   \setlength{\parindent}{0pt}
   \setlength{\parskip}{5pt}
@@ -1983,7 +1985,7 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
 
   \paragraph{Assumptions}
   \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
-    \item $(\ell + 1, N)$-threshold MPC protocol with inverse computation $\phi^1, \phi^2$ (\autoref{def:sdith-mpc}, \autoref{thm:mpc_inverse}, \autoref{sec:mpc}), \autoref{equation:input_sharing_inverse}
+    \item $(\ell + 1, N)$-threshold MPC protocol with inverse computation $\phi^1, \phi^2$ (\autoref{def:sdith-mpc}, \autoref{thm:mpc_inverse}, \autoref{sec:mpc}), \autoref{equation:input_sharing_reverse}
     \item Merkle Tree Commitment Scheme: \texttt{MerkleRootFromAuthPath} (\autoref{sub:merkle_tree_prelim})
     \item Collision resistant  hash functions $\texttt{Hash}_n$ (\autoref{eq:fiatshamirhash})
     \item Random oracle $\texttt{PRG}$ (\autoref{sec:prelim_hash})
@@ -2003,7 +2005,7 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
           \end{align*}
     \item Recompute Beaver triples
           \begin{align*}
-            \sh{a}_i, \sh{b}_i, \sh{c}_i \stackrel{\phi^1_{i > 1}, \phi^2_{i > 1}}{\longrightarrow} (pk, \texttt{broad\_plain}, \sh{\texttt{wit}}_i^e, \mathcal{B'}_i, r, \varepsilon)
+            \sh{a}_i, \sh{b}_i, \sh{c}_i \stackrel{\phi^1_{i > 1}, \phi^2_{i > 1}}{\longleftarrow} pk, \texttt{broad\_plain}, \sh{\texttt{wit}}_i^e, \mathcal{B'}_i, r, \varepsilon
           \end{align*}
           Set $\texttt{input}^e_i = (\texttt{wit}_i^e, \mathcal{B'}_i)$
     \item Recompute commitments
@@ -3141,64 +3143,70 @@ With the implementation of the usual MPC protocol, we could easily inverse the c
 \end{align*}
 
 \section{Signing}\label{sub:signing}
-After implementing all the subroutines, we proceeded to develop the general signing algorithm described in \autoref{sec:sdith-signature}.
+After the implementation of all subroutines, we proceeded to develop the signing algorithm as described in \autoref{def:sdith-sign}. The method was designed to align with and clearly follow the prescribed algorithm in order to facilitate understanding.
 
-We began by implementing all the necessary sampling procedures. This included generating the $H'$ matrix, creating the Beaver triples, and computing the inputs required for the MPC simulation. After committing to the input shares, we constructed the MPC challenge using the first Fiat-Shamir hash:
-
-\[
-  h_1 = H'(seed_h, y, \text{salt}, \text{commitments}).
-\]
-This hash is subsequently used to derive the challenges $(r, \epsilon)^t$. With these challenges in place, we executed the MPC simulation to compute the broadcast values $\alpha$, $\beta$, and $v$. These values were then used to generate their corresponding shares by invoking the MPC function \rust{party_computation}.
-
-Next, we computed the second Fiat-Shamir hash:
-
-\[
-  h_2 = H'(message, \text{salt}, h_1, \text{broadcast}, \text{broadcast\_shares}).
-\]
-
-The second hash $h_2$ is used to generate the view-opening challenges, which define the witness shares and are utilized to compute the authentication path in the Merkle tree.
-
-\subsubsection{Expansion of view-opening Challenge}
-To complete the Fiat-Shamir transform into a Signature scheme we need to pick the opened views described in \autoref{def:mpcinth_basic} based on the second hash computed on the message, salt, the first Fiat-Shamir hash, and the broadcast values.
-We do this by first initializing the PRG with the $h_2$ hash, and then sampling field elements until we have $l$ unique indices for each of the $\tau$ sets. We then sort the values to ensure that the views are ordered correctly.
 \begin{minted}{rust}
-pub fn expand_view_challenge_hash(h2: Hash) -> [[u16; PARAM_L]; PARAM_TAU] {
-    // Initialize the XOF (extendable output function) context with the second Fiat-Shamir
-    // transform hash
-    // Define a mask for reducing the value range
+  pub fn sign_message(
+        entropy: (Seed, Salt),
+        secret_key: &SecretKey,
+        message: &Vec<u8>,
+    ) -> Result<Self, String> {
+        // # Setup: Initialise entropy
+        let (mseed, salt) = entropy;
+        let mut prg = PRG::init(&mseed, Some(&salt));
 
-    // Loop through all sets (PARAM_TAU sets)
-    for i in 0..PARAM_TAU {
-        let mut unique_values = std::collections::HashSet::new(); // To ensure uniqueness within a set
-
-        // Generate unique values for the set (PARAM_L values per set)
-        for j in 0..PARAM_L {
-            loop {
-                // Sample bytes from entropy and convert to u16 (handling endianness)
-                prg.sample_field_fq_elements(&mut tmp);
-                value = (tmp[0] as u16) | ((tmp[1] as u16) << 8);
-                value &= mask; // Apply mask to limit value range
-
-                // Ensure the value is within valid range and is unique
-                if value < PARAM_N as u16 && unique_values.insert(value) {
-                    break;
-                }
-            }
-
-            // Store the unique value in the output array
-            opened_views[i][j] = value;
-        }
-        // Sort the values in the set
-        opened_views[i].sort();
+        // # Phase 1: Prepare the MPCitH inputs
+        ...
     }
-    // Return the resulting array of opened views
-    opened_views
-}
 \end{minted}
-As this relies on random values we test that the output of the function follows the specifications, such as uniqueness and length.
+
+The setup phase, involving the sampling of the root seed and salt, was left as parameters to the method. In the CLI implementation described later, users can optionally provide their own seed or salt; otherwise, these values are randomly sampled as described in the algorithm.
+
+We then proceed to follow the algorithm described in \autoref{def:sdith-sign} step-by-step.
+
+
+% \subsubsection{Expansion of view-opening Challenge}
+% To complete the Fiat-Shamir transform into a Signature scheme we need to pick the opened views described in \autoref{def:mpcinth_basic} based on the second hash computed on the message, salt, the first Fiat-Shamir hash, and the broadcast values.
+% We do this by first initializing the PRG with the $h_2$ hash, and then sampling field elements until we have $l$ unique indices for each of the $\tau$ sets. We then sort the values to ensure that the views are ordered correctly.
+% \begin{minted}{rust}
+% pub fn expand_view_challenge_hash(h2: Hash) -> [[u16; PARAM_L]; PARAM_TAU] {
+%     // Initialize the XOF (extendable output function) context with the second Fiat-Shamir
+%     // transform hash
+%     // Define a mask for reducing the value range
+
+%     // Loop through all sets (PARAM_TAU sets)
+%     for i in 0..PARAM_TAU {
+%         let mut unique_values = std::collections::HashSet::new(); // To ensure uniqueness within a set
+
+%         // Generate unique values for the set (PARAM_L values per set)
+%         for j in 0..PARAM_L {
+%             loop {
+%                 // Sample bytes from entropy and convert to u16 (handling endianness)
+%                 prg.sample_field_fq_elements(&mut tmp);
+%                 value = (tmp[0] as u16) | ((tmp[1] as u16) << 8);
+%                 value &= mask; // Apply mask to limit value range
+
+%                 // Ensure the value is within valid range and is unique
+%                 if value < PARAM_N as u16 && unique_values.insert(value) {
+%                     break;
+%                 }
+%             }
+
+%             // Store the unique value in the output array
+%             opened_views[i][j] = value;
+%         }
+%         // Sort the values in the set
+%         opened_views[i].sort();
+%     }
+%     // Return the resulting array of opened views
+%     opened_views
+% }
+% \end{minted}
+% As this relies on random values we test that the output of the function follows the specifications, such as uniqueness and length.
 
 \section{Verification}\label{sub:verification}
-As the last piece to the puzzle we implemented the verification algorithm. For this we followed the specification and used the KAT generated signatures to verify that we could parse and validate a signature. This would allow us to ensure that our parsing of the signature, inverse MPC computation and our merkle tree verification was correct. This was in the attempt not the case. Which led us to compare our implementation with the specification as described in \autoref{sub:comparison_with_spec_impl}.
+The final piece of the puzzle was implementing the verification algorithm. Following the specification, we utilized the KAT-generated signatures to validate that we could correctly parse and verify a signature. This process was designed to ensure the accuracy of our signature parsing, inverse MPC computation, and Merkle tree verification. However, the initial attempt did not succeed, prompting us to compare our implementation with the specification as detailed in \autoref{sub:comparison_with_spec_impl}.
+
 
 
 \section{Final Implementation}\label{sub:final}
@@ -3209,14 +3217,46 @@ In this section we will discuss our process when finalizing the implementation. 
 To verify and debug our code, we configured our implementation to align with the reference implementation provided in C. This setup required us to execute the reference code to obtain intermediate data, which we then used to compare internal states between the two implementations. In order to get this to work we ran into the following problems. First we had to setup the same random byte generator to allow our randomness to be the same. Furthermore, during this process, we identified a bug in the calculation of the view-opening challenges. Specifically, the reference implementation neglected to finalize the SHAKE function before squeezing, which posed an issue because the Tiny Keccak Rust library automatically performs this finalization when initializing a hash or XOF.
 Additionally, we discovered that, to produce identical outputs from the XOF, we needed to first rotate the permutation once by supplying an empty vector before invoking the function.
 
-\subsection{Testing our implementation}\label{sub:testing_our_implementation}
+\subsection{Marshalling and reusable testing}\label{sub:testing_our_implementation}
 
-TLDR; our testing strategy (could talk about marshalling utility and its test function)
+Many structs in our implementation need to be serialized into byte arrays and subsequently parsed back into their respective structs. For instance, the MPC \rust{Input} type needed to be serialized to facilitate the Shamir's Secret Sharing. To address this, we defined a general trait \rust{Marshalling}:
 
-\todo{Remove this if we decide not to talk about it}
-% \subsection{Compilation profiles}
-%
-% Describe the release profile.
+\begin{minted}{rust}
+pub trait Marshalling<S>
+where
+    Self: Sized,
+{
+    /// Serialize the type into an array of bytes
+    fn serialise(&self) -> S;
+    /// Parse the type from an array of bytes
+    fn parse(serialised: &S) -> Result<Self, String>;
+}
+\end{minted}
+
+Additionally, we implemented a reusable test case that can be applied to all structs implementing this trait, ensuring consistent and reliable functionality across the implementation.
+
+\begin{minted}{rust}
+#[cfg(test)]
+pub(crate) fn test_marhalling<T, S>(value: T, changed_value: T)
+where
+    T: Marshalling<S> + std::fmt::Debug + Eq,
+    S: std::cmp::PartialEq + std::fmt::Debug,
+{
+    // Positive test: Check that d = parse(serialise(d))
+    // Negative test: Ensure that d != parse(serialise(d')) if d' != d
+}
+\end{minted}
+
+\section{Optimizations}
+Before presenting the results, we summarize the optimizations applied to our implementation. We begin with the smaller adjustments and progress to the more intricate enhancements.
+
+To guide our optimization efforts, we utilized the profiler as described in \autoref{ch:prelim:sec:rust:sub:profiling}. This process initially highlighted the computation of shares, a primary component of the signing algorithm. Observing that the computation of each share is independent of the others, we parallelized this task to improve performance.
+
+Next, we turned our attention to the MPC computations. Here, we noted that many operations involved vectors. To optimize these, we chunked the data into SIMD (Single Instruction, Multiple Data) vectors, accelerating the vector operations. Despite this, we retained our \rust{FPoint} representation to preserve code readability and maintain extensibility for further optimizations. Given more time, we would have considered adopting SIMD vector types directly to represent points for additional performance gains.
+
+Finally, we examined the creation of the Merkle tree, another significant computational bottleneck due to its reliance on hashing functions. Initially, we attempted to parallelize the Merkle tree construction, but this approach proved slower than the batched solution utilized by the original implementation. The most notable improvement in this area came from switching to a faster hashing algorithm, \texttt{blake3}.
+
+In the conclusion, we will outline additional optimizations that could further enhance the efficiency of the signing and verification algorithms.
 
 \subsection{Feature flags}\label{sub:feature_flags}
 To maintain a baseline implementation while enabling flexibility to switch between different NIST categories, we utilized Rust's feature flags. These flags support conditional compilation, allowing multiple implementations of the same function to coexist in the codebase. This approach made it possible to test individual optimizations in isolation, rather than applying all optimizations simultaneously.
@@ -3241,14 +3281,15 @@ We created the following set of feature flags:
         \end{itemize}
 \end{itemize}
 
-\section{How to use our implementation}
-After finalizing our implementation, we created a Rust crate, \texttt{rsdith}, to allow for easy integration into other projects. This is useful for other developers to test out the impact of using the SD-in-the-Head as a signature scheme for their application. Just like we used Blake3 to test different hashes. 
+\section{Exposing our implementation}
+After finalizing our implementation, we created a Rust crate, \texttt{rsdith}, to allow for easy integration into other projects. This is useful for other developers to test out the impact of using the SD-in-the-Head as a signature scheme for their application. Just like we used Blake3 to test different hashes.
+
 Furthermore, in order to interact and use our implementation we create a simple command-line interface (CLI) to allow for easy signing and verification of messages. Such a solution could be useful for a sever setup where the binary could be allocated on the server and used to sign messages, like the use of \textit{OpenSSL}. A CLI also allows for easy demonstration and testing of the implementation.
 
-We created a README file to explain how to use, test, benchmark and build our implementation. We did this to help other developers understand and run the code for themselves in order to reproduce our benchmarks and test results. 
+We created a README file to explain how to use, test, benchmark and build our implementation. We did this to help other developers understand and run the code for themselves in order to reproduce our benchmarks and test results.
 
 \subsection{Rust crate \texttt{rsdith}}
-To allow for our implementation to be used in other projects, we have created it as a create. This is done creating a \rust{lib.rs} file within the root folder of the project. We tried to adhere to the best practices when creating a crate. For the interested reader, look in the \rust{cargo.toml} file to see how we have setup the crate. 
+To allow for our implementation to be used in other projects, we have created it as a create. This is done creating a \rust{lib.rs} file within the root folder of the project. We tried to adhere to the best practices when creating a crate. For the interested reader, look in the \rust{cargo.toml} file to see how we have setup the crate.
 We then exported the following modules:
 \begin{itemize}
   \item \texttt{constants}: Contains all the constants used in the implementation.
@@ -3265,21 +3306,10 @@ Some of them are not needed but are included due to benchmarking.
 As a small addition to the crate we created a simple CLI using the crate \textit{clap}. We created the following commands:
 \begin{itemize}
   \item \textbf{Keygen}: Used to generate a key pair $(pk,sk)$ either as a file or raw output.
-  \item \textbf{Sign}: Takes a message file or raw input, a secret key file and optionally a seed and salt. Outputs the signature to a file or raw output. 
+  \item \textbf{Sign}: Takes a message file or raw input, a secret key file and optionally a seed and salt. Outputs the signature to a file or raw output.
   \item \textbf{Verify}: Takes a message file or raw input, a public key file and a signature file or raw input. Outputs whether the signature is valid or not.
   \item \textbf{Parameters}: Outputs the parameters used in the implementation.
 \end{itemize}
-
-\section{Optimizations}
-Before presenting the results, we summarize the optimizations applied to our implementation. We begin with the smaller adjustments and progress to the more intricate enhancements.
-
-To guide our optimization efforts, we utilized the profiler as described in \autoref{ch:prelim:sec:rust:sub:profiling}. This process initially highlighted the computation of shares, a primary component of the signing algorithm. Observing that the computation of each share is independent of the others, we parallelized this task to improve performance.
-
-Next, we turned our attention to the MPC computations. Here, we noted that many operations involved vectors. To optimize these, we chunked the data into SIMD (Single Instruction, Multiple Data) vectors, accelerating the vector operations. Despite this, we retained our \rust{FPoint} representation to preserve code readability and maintain extensibility for further optimizations. Given more time, we would have considered adopting SIMD vector types directly to represent points for additional performance gains.
-
-Finally, we examined the creation of the Merkle tree, another significant computational bottleneck due to its reliance on hashing functions. Initially, we attempted to parallelize the Merkle tree construction, but this approach proved slower than the batched solution utilized by the original implementation. The most notable improvement in this area came from switching to a faster hashing algorithm, \texttt{blake3}.
-
-In the conclusion, we will outline additional optimizations that could further enhance the efficiency of the signing and verification algorithms.
 
 \chapter{Benchmarking}\label{ch:bench}
 

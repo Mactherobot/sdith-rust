@@ -36,7 +36,7 @@ use super::Signature;
 impl Signature {
     /// Verify a plain signature given a [`PublicKey`]
     pub fn verify_signature(public_key: &PublicKey, signature: &Vec<u8>) -> Result<bool, String> {
-        // Expansion of parity-check matrix
+        // Expansion of the parity matrix H'
         let h_prime: HPrimeMatrix = gen_hmatrix(public_key.seed_h);
 
         // Signature parsing
@@ -51,14 +51,14 @@ impl Signature {
             signature.view_opening_challenges,
         );
 
-        // First challenge (MPC challenge) Only generate one in the case of threshold variant
+        // Recompute First challenge (MPC challenge)
         let chal = MPCChallenge::new(h1);
 
         let broadcast = Broadcast::parse(&broad_plain)?;
         let mut sh_broadcast = [[[0u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU];
         let mut commitments: [Hash; PARAM_TAU] = [[0u8; PARAM_DIGEST_SIZE]; PARAM_TAU];
 
-        // Party computation and regeneration of Merkle commitments
+        // Inverse MPC computation and regeneration of Merkle commitments
         let mut plain = [0u8; BROADCAST_SHARE_PLAIN_SIZE];
         plain[..BROADCAST_SHARE_PLAIN_SIZE_AB].copy_from_slice(&broad_plain);
         for e in 0..PARAM_TAU {
@@ -73,7 +73,7 @@ impl Signature {
                 sh_broadcast[e][li] =
                     input::compute_share(&plain, &broadcast_shares[e], f_i, *i == 0u16);
 
-                // Verify the Merkle path
+                // Recompute beaver triples
                 let broadcast_share = BroadcastShare::parse(&sh_broadcast[e][li])?;
                 let beaver_triples = mpc::inverse_party_computation(
                     wit_share[e][li],
@@ -90,7 +90,7 @@ impl Signature {
                     BeaverTriples::new(beaver_triples.0, beaver_triples.1, beaver_triples.2),
                 );
 
-                // Commit to the shares
+                // Recompute commitment
                 commitments_prime[li] =
                     commitments::commit_share(&salt, e as u16, *i, &input_share);
             }
@@ -99,6 +99,9 @@ impl Signature {
                 &mut auth[e],
                 &commitments_prime,
                 &view_opening_challenges[e],
+                #[cfg(feature = "kat")]
+                None,
+                #[cfg(not(feature = "kat"))]
                 Some(salt),
             ) else {
                 return Err("Merkle root verification failed".to_string());
@@ -106,7 +109,7 @@ impl Signature {
             commitments[e] = root;
         }
 
-        // Compute h1' and compare with h1
+        // Recompute h1' and compare with h1
         if h1 == Signature::gen_h1(&public_key.seed_h, &public_key.y, salt, commitments) {
             Ok(true)
         } else {
