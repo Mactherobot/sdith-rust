@@ -130,16 +130,19 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \pagestyle{empty}
-\pagenumbering{roman}
-\vspace*{\fill}\noindent{\rule{\linewidth}{1mm}\\[4ex]
-{\Huge\sf SDitH rust implementation and optimization}\\[2ex]
+
+\vspace*{\fill}\noindent{
+{\Huge\sf The SDitH Strikes Back in Rust}\\[2ex]
 {\huge\sf Hugh Benjamin Zachariae, 201508592 \\ Magnus Jensen,
 201708626}\\[2ex]
-\noindent\rule{\linewidth}{1mm}\\[4ex]
+\noindent\rule{\linewidth}{.5mm}\\[4ex]
 \noindent{\Large\sf Master's Thesis, Computer Science\\[1ex]
   \today \\[1ex] Advisor: Diego F. Aranha\\[15ex]}\\[\fill]}
 \epsfig{file=images/logo.eps}\clearpage
-\includegraphics[width=\textwidth]{images/titleimage.png}
+
+\hspace*{-1.3in}
+\includegraphics[width=\paperwidth]{images/titleimage.png}
+\clearpage
 
 
 % macros
@@ -147,7 +150,7 @@
 \newcommand{\rust}[1]{{\mintinline{rust}{#1}}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+\pagenumbering{roman}
 \pagestyle{plain}
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}

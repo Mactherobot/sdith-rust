@@ -48,7 +48,6 @@ def generate_polynomials(point1, point2, secrets):
     plt.axvline(0, color="black", linewidth=0.8)
     plt.xticks([])  # Remove x-axis tick labels
     plt.yticks([])  # Remove y-axis tick labels
-    plt.
     plt.grid(alpha=0.4)
     plt.show()
 
