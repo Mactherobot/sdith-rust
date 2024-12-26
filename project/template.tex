@@ -3142,8 +3142,8 @@ With the implementation of the usual MPC protocol, we could easily inverse the c
   d = \texttt{inverse\_mpc}(\texttt{mpc}(d))
 \end{align*}
 
-\section{Signing}\label{sub:signing}
-After the implementation of all subroutines, we proceeded to develop the signing algorithm as described in \autoref{def:sdith-sign}. The method was designed to align with and clearly follow the prescribed algorithm in order to facilitate understanding.
+\section{Signing and Verification}\label{sub:signing_verification}
+As all the subroutines were implemented, the process of signing and verification was a straightforward exercise of combining these components. We proceeded to develop the signing and verification algorithms as described in \autoref{def:sdith-sign} and \autoref{def:sdith-verify}. The methods were designed to align with and clearly follow the prescribed algorithms in order to facilitate understanding for the reader and any future implementers.
 
 \begin{minted}{rust}
   pub fn sign_message(
@@ -3163,51 +3163,6 @@ After the implementation of all subroutines, we proceeded to develop the signing
 The setup phase, involving the sampling of the root seed and salt, was left as parameters to the method. In the CLI implementation described later, users can optionally provide their own seed or salt; otherwise, these values are randomly sampled as described in the algorithm.
 
 We then proceed to follow the algorithm described in \autoref{def:sdith-sign} step-by-step.
-
-
-% \subsubsection{Expansion of view-opening Challenge}
-% To complete the Fiat-Shamir transform into a Signature scheme we need to pick the opened views described in \autoref{def:mpcinth_basic} based on the second hash computed on the message, salt, the first Fiat-Shamir hash, and the broadcast values.
-% We do this by first initializing the PRG with the $h_2$ hash, and then sampling field elements until we have $l$ unique indices for each of the $\tau$ sets. We then sort the values to ensure that the views are ordered correctly.
-% \begin{minted}{rust}
-% pub fn expand_view_challenge_hash(h2: Hash) -> [[u16; PARAM_L]; PARAM_TAU] {
-%     // Initialize the XOF (extendable output function) context with the second Fiat-Shamir
-%     // transform hash
-%     // Define a mask for reducing the value range
-
-%     // Loop through all sets (PARAM_TAU sets)
-%     for i in 0..PARAM_TAU {
-%         let mut unique_values = std::collections::HashSet::new(); // To ensure uniqueness within a set
-
-%         // Generate unique values for the set (PARAM_L values per set)
-%         for j in 0..PARAM_L {
-%             loop {
-%                 // Sample bytes from entropy and convert to u16 (handling endianness)
-%                 prg.sample_field_fq_elements(&mut tmp);
-%                 value = (tmp[0] as u16) | ((tmp[1] as u16) << 8);
-%                 value &= mask; // Apply mask to limit value range
-
-%                 // Ensure the value is within valid range and is unique
-%                 if value < PARAM_N as u16 && unique_values.insert(value) {
-%                     break;
-%                 }
-%             }
-
-%             // Store the unique value in the output array
-%             opened_views[i][j] = value;
-%         }
-%         // Sort the values in the set
-%         opened_views[i].sort();
-%     }
-%     // Return the resulting array of opened views
-%     opened_views
-% }
-% \end{minted}
-% As this relies on random values we test that the output of the function follows the specifications, such as uniqueness and length.
-
-\section{Verification}\label{sub:verification}
-The final piece of the puzzle was implementing the verification algorithm. Following the specification, we utilized the KAT-generated signatures to validate that we could correctly parse and verify a signature. This process was designed to ensure the accuracy of our signature parsing, inverse MPC computation, and Merkle tree verification. However, the initial attempt did not succeed, prompting us to compare our implementation with the specification as detailed in \autoref{sub:comparison_with_spec_impl}.
-
-
 
 \section{Final Implementation}\label{sub:final}
 In this section we will discuss our process when finalizing the implementation. We had a few bugs that led us to setup our code to be comparable with the reference implementation. First we will discuss our implementations of the signing and verification algorithms, and how we used the reference implementation to iron out bugs from our own code. Lastly we will discuss how we went about testing our implementation.
