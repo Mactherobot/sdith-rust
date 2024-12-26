@@ -3573,50 +3573,52 @@ Given these findings, we have set the \texttt{Lookup} implementation as the defa
 
 \chapter{Conclusion}\label{ch:conclusion}
 
-conclude on the problem statement from the introduction
+In this project, we set out to implement the threshold variant of the SD-in-the-Head Protocol~\cite{aguilarsyndrome11} in Rust. Our aim was to create an implementation that is both easy to understand and serves as a foundation for future work. In this pursuit, we would like to highlight the following aspects of our implementation that we believe stand out as a contribution to the development of the protocol.
 
-- readability
-- performance
-- review of the specification
-- what we learned
+\subsubsection{Rust}
 
-Talk about the advantages and limitations of the SD-in-the-Head protocol and threshold variant.
+First, our implementation is written in Rust. Compared to the reference implementation in C++, Rust is a modern, memory-safe language with a growing developer community. We believe that this choice makes our implementation more future-proof and accessible to future developers. Rust provides a rich set of modern features that enhance both the readability and maintainability of the code, which we have leveraged throughout this project.
 
-Talk about how it was to work with the spec
+\begin{itemize}
+  \item \textit{Conditional compilation} -- Unlike the reference implementation, which is divided into multiple codebases for different categories, our implementation employs Rust's conditional compilation features. This approach consolidates all categories into a single, cohesive codebase, greatly simplifying the overall structure and reducing complexity.
+  \item \textit{Test coverage} -- We extensively utilized Rust's built-in testing framework throughout the development process. This framework not only facilitated debugging but also ensured the correctness of our implementation by providing a robust and reliable means of verification.
+  \item \textit{Debuggable type system} -- Rust's strong and expressive type system enhances both debuggability and code readability, allowing developers to identify and resolve issues more efficiently.
+\end{itemize}
 
--  We had trouble aligning with the reference input and output due to specific implementation details (PRG setup)
-- The order of the PRG calls are important when comparing the resulting outputs
-- Missing a deeper clarification on the reasoning behind the offset parameter in the MPC protocol.
+\subsubsection{Documentation and code alignment}
 
-Talk about the advantageous and limitations of rust implementation.
+One of the key reasons for selecting the SD-in-the-Head protocol was its modular design. While the authors provided a well-written specification and a functional reference implementation, we encountered challenges in interpreting and aligning the finer details of the protocol.
 
+A significant challenge arose from the specification's inclusion of two variants, which share considerable overlap. This overlap complicated efforts to clearly distinguish and implement the specifics of the threshold variant. Additionally, we observed discrepancies between the specification and the reference implementation, particularly in naming conventions and minor implementation details. Reconciling these differences required substantial effort and to address these challenges, we prioritized the development of clear and well-documented code. Our report includes a detailed overview of the underlying theories and protocols, along with formal definitions provided in \autoref{def:sdith-sign} and \autoref{def:sdith-verify}. We ensured that our implementation adhered to consistent terminology and closely followed the protocol descriptions, promoting both accuracy and clarity throughout the project.
 
+\subsubsection{Performance}
 
-point to round 2 NIST
+Our goal was to match the performance of the optimized reference implementation. Overall, we achieved comparable results, with performance gains in key generation and verification (see \autoref{tab:api_percentage_increase}). However, a small performance gap remains in the signing operation. It is worth mentioning that achieving the final incremental performance improvements often involves highly specific and sometimes less readable implementation techniques.
 
-future work:
+The most significant performance bottlenecks in our implementation are the Merkle Commitment Scheme, the underlying hashing operations, and the MPC protocol. Targeted parallelization optimizations in these areas could potentially result in substantial performance improvements. While we explored various parallelization strategies, these efforts did not yield significant performance gains. For parallelization, we primarily relied on the \texttt{rayon} library~\cite{rayon}, which provides a simple and intuitive interface for parallel computation. Although \texttt{rayon} is effective in certain cases, we believe future work could benefit from exploring custom parallelization strategies tailored specifically to the unique demands of this implementation.
 
-- Collaborate with the authors (talk about issues we found in the spec and in implementing the spec)
-- Investigate differences in performance between ours and reference implementation (profiling their code and comparing to ours)
-- We could add subroutines as parameters to the API. Then the developer could just add their own subroutines defined by our traits.
-- dynamic parameters created by users of the crate ("parameter sets tailored to different use cases") we could use build script with feature flag to exchange cat import in param.rs for custom file. Maybe write section on exploratory work
-- Verkle trees Optimisation
-- custom parallelisation outside of Rayon? data structures that allow for independent parallelisation in the MPC computation?
-- Explore optimisations that go away from the spec. Both code wise and parameter wise (we follow theirs a lot. Can we do better?)
-- rayon bottleneck \url{https://gendignoux.com/blog/2024/11/18/rust-rayon-optimized.html#bonus-does-rayons-with_max_len-help} We tried for MPC and Merkle but had decreased performance
+\subsubsection{Future work}
 
-\begin{quote}
-  But while it's easy to outperform a Swiss Army knife with a custom tool, the hard part is to generalize to other scenarios. This is where Rayon really shines: its generic approach applies to a very wide range of use cases, and the API is very simple (“just put a par\_iter() on it”). I'm still exploring turning my custom parallelism into a library, to see what are the design trade-offs and hopefully make it useful for similar workloads.
-\end{quote}
+The most apparent direction for future work involves implementing aspects of the SD-in-the-Head protocol that we have not yet covered, such as the hypercube variant and the $\mathbb{F}_{251}$ field variant. However, as demonstrated in our implementation, the use of feature flags, traits, and conditional compilation provides significant flexibility to incorporate these variants in the future. This modular and extensible approach ensures that the protocol can be efficiently expanded to support additional features and configurations.
 
-- e.g. Blake3
-- Analyse the code binary for compiler optimisations Check for constant time
-- hypercube implementation and generalisation to accommodate it
-- gf251 implementation
-- Profiling shows conversion to and from SIMD has some overhead. make type FPoint into simd
-- \cite[p26]{feneuil2023threshold} Batching Proofs with Shamir's Secret Sharing for communication saving
-- Full constant time analysis
-- use https://github.com/AdamNiederer/faster for simd. Use work by smarter people than us.
+Additionally, we aim to explore more specialized and efficient parallelization strategies, as well as SIMD optimizations, to further enhance performance. 
+
+One of the key strengths of the SD-in-the-Head protocol is its inherent modularity. This characteristic is evident in the authors' work, where they initially developed the base protocol and subsequently introduced the hypercube and threshold variants~\cite{feneuil2023threshold,aguilar2023return}. Building on this principle, we introduced a feature in our implementation that allows for swapping the \texttt{SHA3} and \texttt{SHAKE} hash functions with the \texttt{Blake3} implementation. This substitution yielded significant performance improvements, further demonstrating the protocol's flexibility and its potential for enabling alternative optimizations.
+
+Furthermore, our implementation allows users to manually specify custom parameters. This feature empowers future users of the protocol to experiment with various configurations and tailor performance to their specific use cases. 
+
+Currently, the greatest parallelization gains in our implementation occur during the commitment of input shares. This opens up opportunities for further optimizations, such as playing with the number of parties, adjusting the threshold or the SD instance. We believe that exploring and benchmarking these configurations could provide substantial improvements and represent a promising avenue for future work.
+
+\todo{Create sage script for calculating security}
+
+Another potential enhancement involves optimizing the Merkle Commitment Scheme by replacing it with Verkle Trees~\cite{kuszmaul2019verkle, iavich2023verkle}. Although Verkle Trees are theoretically more complex, they avoid reliance on hash functions, which are the most significant performance bottleneck in the current implementation. Additionally, Verkle Trees could improve both signature size and verification time, making them a compelling direction for future exploration.
+
+\subsubsection{Learning and Collaboration}
+Overall, this project has been an invaluable learning experience, enabling us to explore a diverse range of topics. These included gaining a deeper understanding of the foundational protocols that underpin the SD-in-the-Head protocol and refining our skills in developing and optimizing a Rust codebase.
+
+We hope that the experiences and insights gained during this implementation process will provide valuable feedback to the authors of the protocol, offering constructive suggestions to streamline and improve future implementation efforts.
+
+Moreover, we believe that our implementation makes a meaningful contribution to the documentation and understanding of the SD-in-the-Head protocol. We hope it will serve as a valuable resource for future researchers and developers, supporting further exploration and innovation in this exciting potentially post-quantum world.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
