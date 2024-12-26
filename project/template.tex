@@ -132,7 +132,7 @@
 \pagestyle{empty}
 \pagenumbering{roman}
 \vspace*{\fill}\noindent{\rule{\linewidth}{1mm}\\[4ex]
-{\Huge\sf SD-in-the-Head rust implementation and optimization}\\[2ex]
+{\Huge\sf SDitH rust implementation and optimization}\\[2ex]
 {\huge\sf Hugh Benjamin Zachariae, 201508592 \\ Magnus Jensen,
 201708626}\\[2ex]
 \noindent\rule{\linewidth}{1mm}\\[4ex]
@@ -151,7 +151,7 @@
 \pagestyle{plain}
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
-As part of the ongoing efforts to identify robust post-quantum cryptographic solutions under the NIST call for standardization, the Syndrome Decoding in the Head (SDitH) protocol has emerged as a promising candidate. Combining the modularity and efficiency of the MPC-in-the-Head paradigm with threshold-based MPC techniques, this protocol delivers a code-based, quantum-resilient digital signature.
+As part of the ongoing efforts to develop post-quantum cryptographic solutions under the NIST call for standardization, the \textit{Syndrome Decoding in the Head} (SDitH) protocol has emerged as a promising candidate. Combining the modularity and efficiency of the MPC-in-the-Head paradigm with threshold-based MPC techniques, this protocol delivers a code-based, quantum-resilient digital signature.
 
 In this work, we present an implementation of the SDitH protocol in Rust, a modern, memory-safe programming language. Our implementation prioritizes modularity and readability to serve as a comprehensive reference for future developers and the protocol's authors. Additionally, we leveraged modern Rust language features and developed a robust test suite to ensure the implementation's reliability and maintainability.
 
@@ -209,11 +209,11 @@ To mitigate the risks of relying heavily on lattice-based schemes, NIST issued a
 
 With the introduction of public-key cryptosystems by Diffie and Hellman in 1976, we saw the introduction to schemes like RSA, that is based on factoring of large integers and ElGamal which is based on the discrete logarithm problem. While less known, there exists schemes based on coding theory -- its own discipline within information theory which predates the introduction of public-key cryptography. In 1978, McEliece introduced a PK scheme based on coding theory~\cite{mceliece1978public} -- only two years later -- based on the hardness of decoding random linear codes~\cite{berlekamp1978inherent}.
 
-While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based crypto-schemes has seen a resurgence as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent developments in code-based cryptosystems have shown that the performance needed for code based cryptographic schemes practically is within reach, one such scheme is BIKE~\cite{BIKE_Spec_2024} from the first NIST PQC call. Introductions of linear based codes on finite fields and MPCitH (Multi-Party Computation in the Head) threshold schemes~\cite{baum2020concretely} show promising results. With the SD-in-the-Head scheme~\cite{aguilarsyndrome11,feneuil2023threshold} presented in this report, such techniques are combined to define an efficient post-quantum secure signature scheme.
+While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based crypto-schemes has seen a resurgence as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent developments in code-based cryptosystems have shown that the performance needed for code based cryptographic schemes practically is within reach, one such scheme is BIKE~\cite{BIKE_Spec_2024} from the first NIST PQC call. Introductions of linear based codes on finite fields and MPCitH (Multi-Party Computation in the Head) threshold schemes~\cite{baum2020concretely} show promising results. With the SDitH scheme~\cite{aguilarsyndrome11,feneuil2023threshold} presented in this report, such techniques are combined to define an efficient post-quantum secure signature scheme.
 
 \section{Our contributions}
 
-In this report, we present an implementation of the SD-in-the-Head protocol in the Rust programming language. While the NIST standardization has an overarching goal of \textit{selecting a number of acceptable candidate cryptosystems for standardization}~\cite{nistcall}, they also state that the goal of the submitted reference implementation is to promote understanding of the submitted algorithm.
+In this report, we present an implementation of the SDitH protocol in the Rust programming language. While the NIST standardization has an overarching goal of \textit{selecting a number of acceptable candidate cryptosystems for standardization}~\cite{nistcall}, they also state that the goal of the submitted reference implementation is to promote understanding of the submitted algorithm.
 
 One challenge of supporting both the \textit{hypercube} and \textit{threshold} variants of the protocol is the added complexity in implementation. Managing distinct definitions for the original protocol~\cite{feneuil2022syndrome} alongside these variants complicates the development process -- we experienced this ourselves in the development process. To address this, we opted to concentrate exclusively on the threshold variant, allowing us to present a more detailed and comprehensive specification of this version of the protocol.
 
@@ -227,18 +227,18 @@ Therefore, our objectives include delivering an implementation that provides
 
 We aim to identify and address potential pitfalls and challenges encountered during the implementation process in order to provide feedback to the authors so that they might clarify their specification.
 
-We believe that a reference implementation in a modern programming language, such as Rust, will provide future developers with deeper insights into the algorithm's structure and mappings. To support this effort, we aim to condense the literature on the \emph{SD-in-the-Head} protocol and deliver a comprehensive report focused on the threshold variant, along with its necessary prerequisites.
+We believe that a reference implementation in a modern programming language, such as Rust, will provide future developers with deeper insights into the algorithm's structure and mappings. To support this effort, we aim to condense the literature on the \emph{SDitH} protocol and deliver a comprehensive report focused on the threshold variant, along with its necessary prerequisites.
 
-Finally, this project serves as an opportunity learn about post-quantum signature schemes and to test our skill by implementing a cutting-edge cryptographic protocol in a modern, memory-safe language like Rust. As the final product, we will deliver this report alongside a Rust library and a \textit{Command-Line} application for the SD-in-the-Head protocol threshold variant.
+Finally, this project serves as an opportunity learn about post-quantum signature schemes and to test our skill by implementing a cutting-edge cryptographic protocol in a modern, memory-safe language like Rust. As the final product, we will deliver this report alongside a Rust library and a \textit{Command-Line} application for the SDitH protocol threshold variant.
 
-\subsection{Choosing the SD-in-the-Head protocol}
-The SD-in-the-Head protocol offers a highly modular design, enabling extensive configurability and support for various subroutines. This flexibility is particularly evident in the two variants included in the specification~\cite{aguilarsyndrome11}: the \textit{hypercube} and \textit{threshold} variants, both of which demonstrate significant performance improvements over the original protocol~\cite{feneuil2022syndrome,aguilar2023return,feneuil2023threshold}.
+\subsection{Choosing the SDitH protocol}
+The SDitH protocol offers a highly modular design, enabling extensive configurability and support for various subroutines. This flexibility is particularly evident in the two variants included in the specification~\cite{aguilarsyndrome11}: the \textit{hypercube} and \textit{threshold} variants, both of which demonstrate significant performance improvements over the original protocol~\cite{feneuil2022syndrome,aguilar2023return,feneuil2023threshold}.
 
 The threshold variant, in particular, provides an opportunity to explore and implement several cryptographic primitives, including Merkle Trees~\cite{becker2008merkle}, Linear Secret Sharing (Shamir) -- requiring an implementation of Galois Fields~\cite{brownadvanced} -- and Multi-Party Computation in the Head (MPCitH)~\cite{baum2020concretely}.
 
 Additionally, the authors supply a detailed and well-crafted specification, along with a reference implementation in C++, which serves as a robust starting point for our work.
 
-Of course, selfishly, a key consideration in our work was the belief that the protocol could be a strong contender for selection as the final ``winner'' in the NIST additional round~\cite{nistcall}. This belief was introduced by our supervisor, a trust that appears to have been well-placed. As we were developing our implementation, the NIST process advanced to the second round, with the \emph{SD-in-the-Head} protocol successfully moving forward. The NIST internal report highlights certain features which are valued by the NIST committee of the protocol, such as its flexibility  -- a promising indication for the future of the protocol.
+Of course, selfishly, a key consideration in our work was the belief that the protocol could be a strong contender for selection as the final ``winner'' in the NIST additional round~\cite{nistcall}. This belief was introduced by our supervisor, a trust that appears to have been well-placed. As we were developing our implementation, the NIST process advanced to the second round, with the \emph{SDitH} protocol successfully moving forward. The NIST internal report highlights certain features which are valued by the NIST committee of the protocol, such as its flexibility  -- a promising indication for the future of the protocol.
 
 \begin{quote}
   \textit{NIST prefers candidate algorithms with greater flexibility (e.g., those capable of running efficiently on a wide variety of platforms and those that used parallelism or instruction set extensions to achieve higher performance) and simple and elegant designs that reflect the submission team's understanding and confidence.}
@@ -251,7 +251,7 @@ Of course, selfishly, a key consideration in our work was the belief that the pr
 From the NIST second round internal report~\cite{alagic2024status}.
 
 \subsection{Choosing Rust}
-We chose to implement the SD-in-the-Head protocol in Rust for several compelling reasons. Rust, as a modern systems programming language, offers inherent memory and thread safety without compromising performance. Its strong safety guarantees\cite{jung2017rustbelt} are a key reason why Rust is included in the NIST list of safer programming languages~\cite{nistsaferlanguages}. These properties are particularly critical when implementing cryptographic primitives, where memory safety and robustness against concurrency issues are foundational to secure software development. Additionally, Rust provides fine-grained control over hardware resources, enabling the optimization of performance -- an essential consideration in cryptographic implementations
+We chose to implement the SDitH protocol in Rust for several compelling reasons. Rust, as a modern systems programming language, offers inherent memory and thread safety without compromising performance. Its strong safety guarantees\cite{jung2017rustbelt} are a key reason why Rust is included in the NIST list of safer programming languages~\cite{nistsaferlanguages}. These properties are particularly critical when implementing cryptographic primitives, where memory safety and robustness against concurrency issues are foundational to secure software development. Additionally, Rust provides fine-grained control over hardware resources, enabling the optimization of performance -- an essential consideration in cryptographic implementations
 
 Furthermore, our choice of Rust was driven by a desire to investigate its strengths and limitations in the context of implementing and optimizing cryptographic protocols. To this end, our report will include an overview of the features that Rust provides (\autoref{sec:rust}).
 
@@ -259,12 +259,12 @@ We prioritized code readability and maintainability in which Rust offers a stron
 
 For readability, we emphasized clear, well-documented, and logically structured code supported by Rust's documentation and modular structure.
 
-Given the inherent flexibility and variants of the SD-in-the-Head protocol, our implementation leverages Rust's feature flags and build time scripts to enhance modularity and interchangeability. This approach not only supports a high degree of configurability but also ensures that the implementation remains adaptable to future changes and extensions.
+Given the inherent flexibility and variants of the SDitH protocol, our implementation leverages Rust's feature flags and build time scripts to enhance modularity and interchangeability. This approach not only supports a high degree of configurability but also ensures that the implementation remains adaptable to future changes and extensions.
 
 \section{Structure of the report}
-\autoref{ch:prelim} provides a condensed background on the cryptographic primitives and sub-protocols employed in the SD-in-the-Head protocol. Additionally, it includes an overview of the Rust programming language and its features, offering readers insight into the programmatic design choices made in our implementation.
+\autoref{ch:prelim} provides a condensed background on the cryptographic primitives and sub-protocols employed in the SDitH protocol. Additionally, it includes an overview of the Rust programming language and its features, offering readers insight into the programmatic design choices made in our implementation.
 
-\autoref{ch:spec} outlines the specification of the SD-in-the-Head protocol for the threshold variant. \autoref{ch:impl} delves into our implementation of the protocol in Rust, detailing the individual subroutines and highlighting the most impactful design decisions and optimizations.
+\autoref{ch:spec} outlines the specification of the SDitH protocol for the threshold variant. \autoref{ch:impl} delves into our implementation of the protocol in Rust, detailing the individual subroutines and highlighting the most impactful design decisions and optimizations.
 
 In \autoref{ch:bench}, we evaluate the performance of our implementation, comparing our results to the reference implementation and analyzing the effects of specific optimization features. Finally, \autoref{ch:conclusion} summarizes our contributions and discusses potential directions for future work.
 
@@ -272,15 +272,15 @@ In \autoref{ch:bench}, we evaluate the performance of our implementation, compar
 
 \chapter{Preliminaries}\label{ch:prelim}
 
-In this section, we outline the mathematical and cryptographic foundations necessary to understand the SD-in-the-Head scheme and its components, providing a step-by-step progression from the basics to the construction of the protocol.
+In this section, we outline the mathematical and cryptographic foundations necessary to understand the SDitH scheme and its components, providing a step-by-step progression from the basics to the construction of the protocol.
 
-We begin by introducing the essential subroutines that underpin the SD-in-the-Head protocol. This includes \textbf{Galois Finite Fields}~\cite{martinez2023syndromes, reed1960polynomial, brownadvanced} along with cryptographic primitives; \textbf{collision-resistant hash functions} and \textbf{Merkle tree commitment scheme}~\cite{becker2008merkle}. In addition, we provide short introductions to the foundational protocols of \textbf{Secure Multi-Party Computation} (MPC) and \textbf{Zero-Knowledge} (ZK) proofs, which serve as the underlying cryptographic protocols.
+We begin by introducing the essential subroutines that underpin the SDitH protocol. This includes \textbf{Galois Finite Fields}~\cite{martinez2023syndromes, reed1960polynomial, brownadvanced} along with cryptographic primitives; \textbf{collision-resistant hash functions} and \textbf{Merkle tree commitment scheme}~\cite{becker2008merkle}. In addition, we provide short introductions to the foundational protocols of \textbf{Secure Multi-Party Computation} (MPC) and \textbf{Zero-Knowledge} (ZK) proofs, which serve as the underlying cryptographic protocols.
 
-Next, we explain the Syndrome Decoding (SD) problem, which forms the backbone of the SD-in-the-Head protocol. This includes an overview of the problem definition~\cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}, and its polynomial representation. This will support an understanding of how the protocol operates on hard instances of the SD problem.
+Next, we explain the Syndrome Decoding (SD) problem, which forms the backbone of the SDitH protocol. This includes an overview of the problem definition~\cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}, and its polynomial representation. This will support an understanding of how the protocol operates on hard instances of the SD problem.
 
-Building upon these foundations, we lay the groundwork for the construction of the SD-in-the-Head protocol. First, we discuss the \textbf{Multi-Party-Computation-in-the-Head} (MPCitH) paradigm, explaining how it is leveraged to construct efficient ZK proofs~\cite{ishai2007zero}. Additionally we detail the role of the MPC preprocessing~\cite{baum2020concretely} and linear secret-sharing scheme~\cite{feneuil2023threshold}, which dramatically improve the efficiency of the MPCitH construction, and verification. Next, we introduce the \textbf{Fiat-Shamir heuristic}, a powerful tool that transforms an interactive ZK protocol into a non-interactive signature scheme~\cite{fiat1986prove}.
+Building upon these foundations, we lay the groundwork for the construction of the SDitH protocol. First, we discuss the \textbf{Multi-Party-Computation-in-the-Head} (MPCitH) paradigm, explaining how it is leveraged to construct efficient ZK proofs~\cite{ishai2007zero}. Additionally we detail the role of the MPC preprocessing~\cite{baum2020concretely} and linear secret-sharing scheme~\cite{feneuil2023threshold}, which dramatically improve the efficiency of the MPCitH construction, and verification. Next, we introduce the \textbf{Fiat-Shamir heuristic}, a powerful tool that transforms an interactive ZK protocol into a non-interactive signature scheme~\cite{fiat1986prove}.
 
-Finally, we outline the reasons and benefits of using the Rust programming language as the foundation for implementing the SD-in-the-Head protocol.
+Finally, we outline the reasons and benefits of using the Rust programming language as the foundation for implementing the SDitH protocol.
 
 
 \section{Galois Finite Field}\label{sec:gf256}
@@ -311,7 +311,7 @@ Finite fields lay the basis for many cryptographic protocols and primitives. In 
 \end{definition}
 
 \noindent
-The most commonly known finite fields are the prime fields $\mathbb{F}_p$, widely used in discrete logarithm cryptosystems, such as ECDSA and ElGamal. These fields can be extended into $\mathbb{F}_{p^n}$, containing $p^n$ elements which we will describe in \autoref{sub:field_extension}. However, prime fields are not efficient for large numbers, due to the modular reduction overhead, a common requirement in protocols such as SD-in-the-Head. For better efficiency, we require a field that can be represented using low amounts of bits or bytes. One method to achieve this is by constructing fields commonly known as Galois fields. Consider the simplest prime field, also called binary field, $\mathbb{F}_2 = ({0,1}, \texttt{XOR}, \texttt{AND}, 0, 1)$. It is straightforward to verify that this field satisfies the properties outlined in \autoref{def:field}.
+The most commonly known finite fields are the prime fields $\mathbb{F}_p$, widely used in discrete logarithm cryptosystems, such as ECDSA and ElGamal. These fields can be extended into $\mathbb{F}_{p^n}$, containing $p^n$ elements which we will describe in \autoref{sub:field_extension}. However, prime fields are not efficient for large numbers, due to the modular reduction overhead, a common requirement in protocols such as SDitH. For better efficiency, we require a field that can be represented using low amounts of bits or bytes. One method to achieve this is by constructing fields commonly known as Galois fields. Consider the simplest prime field, also called binary field, $\mathbb{F}_2 = ({0,1}, \texttt{XOR}, \texttt{AND}, 0, 1)$. It is straightforward to verify that this field satisfies the properties outlined in \autoref{def:field}.
 
 The Galois field $\mathbb{F}_{2^n}$ is an extension field of $\mathbb{F}_2$, defined as $\mathbb{F}_{2^n}$. This field is constructed by selecting an irreducible polynomial $f(x)$ of degree $n$ with coefficients in $\mathbb{F}_2$. The elements of $\mathbb{F}_{2^n}$ are represented as polynomials of degree at most $n-1$ with coefficients in $\mathbb{F}_2$. Consequently, $\mathbb{F}_{2^n}$ contains exactly $2^n$ elements. The polynomial $f(x)$ ensures that $\mathbb{F}_{2^n}$ forms a valid field as it defines the modular reduction in multiplication.
 
@@ -333,7 +333,7 @@ A common choice for the irreducible polynomial is the Rijndael polynomial $p(x) 
 
 \subsubsection{Field extension}\label{sub:field_extension}
 
-An advantageous property of Galois fields is that they can easily be extended, like $\mathbb{F}_{2}$ to $\mathbb{F}_{2^8}$. To ensure security in the SD-in-the-Head protocol, the field $\mathbb{F}_{2^8}$, which we shall denote as $\mathbb{F}_q$ is extended to encompass the field of 32-bit unsigned integers. This can be done as a \textit{tower extension} by first building a degree-2 extension to $\mathbb{F}_{q^2}$ using the irreducible polynomial $F_{q^2} = F_q[X] / (X^2 + X + 32)$ and finally extending this field to $\mathbb{F}_{q^4}$ using the irreducible polynomial $F_{q^4} = F_q[Z] / (Z^2 + Z + 32(X))$. While you could create the final field independently, the tower extension allows us to reuse the construction of the intermediate field. Addition and multiplication in the extension fields are represented as the following
+An advantageous property of Galois fields is that they can easily be extended, like $\mathbb{F}_{2}$ to $\mathbb{F}_{2^8}$. To ensure security in the SDitH protocol, the field $\mathbb{F}_{2^8}$, which we shall denote as $\mathbb{F}_q$ is extended to encompass the field of 32-bit unsigned integers. This can be done as a \textit{tower extension} by first building a degree-2 extension to $\mathbb{F}_{q^2}$ using the irreducible polynomial $F_{q^2} = F_q[X] / (X^2 + X + 32)$ and finally extending this field to $\mathbb{F}_{q^4}$ using the irreducible polynomial $F_{q^4} = F_q[Z] / (Z^2 + Z + 32(X))$. While you could create the final field independently, the tower extension allows us to reuse the construction of the intermediate field. Addition and multiplication in the extension fields are represented as the following
 \begin{align*}
   a & = a_0 + a_1x  \quad a \in \mathbb{F}_{q^\eta}, a_0, a_1 \in \mathbb{F}_q \\
   b & = b_0 + b_1x  \quad b \in \mathbb{F}_{q^\eta}, b_0, b_1 \in \mathbb{F}_q
@@ -347,7 +347,7 @@ An advantageous property of Galois fields is that they can easily be extended, l
 \end{align}
 
 \section{Cryptographic Primitives and protocols}
-We assume the reader has basic knowledge of cryptographic primitives but will provide brief introductions to the primitives used in the SD-in-the-Head protocol. If you know the basics feel free to skip this section.
+We assume the reader has basic knowledge of cryptographic primitives but will provide brief introductions to the primitives used in the SDitH protocol. If you know the basics feel free to skip this section.
 
 \subsection{Collision Resistant Hash Functions}\label{sec:prelim_hash}
 We denote a hash function by a generator $\mathcal{H}$ which on input of a security parameter $k$ outputs a function $h : \{0,1{\}}^* \rightarrow \{0,1{\}}^{2k}$. We denote a hash function $h$ to be cryptographically secure if it satisfies the following properties
@@ -360,7 +360,7 @@ We denote a hash function by a generator $\mathcal{H}$ which on input of a secur
   Given a hash function $h$, there exist no PPT algorithm that can find two distinct messages $m, m'$ such that $h(m) = h(m')$ with non-negligible probability.
 \end{lemma}
 
-The consensus among researchers indicates that for collision and preimage resistance, quantum computing is expected to reduce the security level from $k$ to $k/2$ through approaches like Grover's algorithm~\cite{nielsen2010quantumgrover}. In contrast, no known methods have been proposed to reduce the security level for collision resistance. Consequently, protocols that depend on collision-resistant hash functions, such as Merkle Signature or SD-in-the-Head, remain a viable choice for post-quantum secure protocols.
+The consensus among researchers indicates that for collision and preimage resistance, quantum computing is expected to reduce the security level from $k$ to $k/2$ through approaches like Grover's algorithm~\cite{nielsen2010quantumgrover}. In contrast, no known methods have been proposed to reduce the security level for collision resistance. Consequently, protocols that depend on collision-resistant hash functions, such as Merkle Signature or SDitH, remain a viable choice for post-quantum secure protocols.
 
 In proving the security of hash functions, researchers often resort to models like the Quantum Random Oracle Model (QROM) described in \autoref{sub:qrom}, this approach however suffers form the fact that it abstracts the hash functions as ideal even when evaluated in a superposition. While there is significant work being done to further prove the future security of hash functions~\cite{dtuPostquantumSecurity}.
 
@@ -486,7 +486,7 @@ Conversely, the binding property \autoref{lem:binding} is upheld by the fact tha
 
 A notable property of the Merkle tree is its ability to open a partial subset of the committed values by providing only the necessary authentication paths for the values in the subset. The verifier can still validate these values using a single global root value.
 
-This property is particularly advantageous in protocols like the SD-in-the-Head threshold protocol, where only a subset of the committed values needs to be opened while keeping the rest concealed. By leveraging this feature, the prover can efficiently prove the validity of the subset without revealing the entire set of commitments.
+This property is particularly advantageous in protocols like the SDitH threshold protocol, where only a subset of the committed values needs to be opened while keeping the rest concealed. By leveraging this feature, the prover can efficiently prove the validity of the subset without revealing the entire set of commitments.
 
 \subsection{Secret Sharing Schemes (SSS)}
 
@@ -538,7 +538,7 @@ In this case, the SSS described above would not suffice as losing even one share
 
 \subsubsection{Shamir's Secret Sharing}\label{sub:shamir}
 
-One particular example, and the one utilized by the SD-in-the-Head protocol, is Shamir's Secret Sharing scheme~\cite{shamir1979share,cramer2015secure}. This $(\ell + 1, N)$-threshold SSS is based on polynomials over a finite field $\mathbb{F}$. A secret $s$ is shared by choosing a random polynomial $P_s$ of degree at most $\ell \geq 2$ with $s = P_s(0)$. For each participant $i \in [n]$, $P_i$, a share $s_i$ is generated by evaluating $P(i)$. The secret can then be reconstructed by interpolating the polynomial from a $\ell + 1$ shares and with $\ell$ or less shares we gain no information about the secret -- i.e. we have $\ell$-privacy. We can prove reconstruction, correctness and privacy using \textit{Lagrange interpolation}.
+One particular example, and the one utilized by the SDitH protocol, is Shamir's Secret Sharing scheme~\cite{shamir1979share,cramer2015secure}. This $(\ell + 1, N)$-threshold SSS is based on polynomials over a finite field $\mathbb{F}$. A secret $s$ is shared by choosing a random polynomial $P_s$ of degree at most $\ell \geq 2$ with $s = P_s(0)$. For each participant $i \in [n]$, $P_i$, a share $s_i$ is generated by evaluating $P(i)$. The secret can then be reconstructed by interpolating the polynomial from a $\ell + 1$ shares and with $\ell$ or less shares we gain no information about the secret -- i.e. we have $\ell$-privacy. We can prove reconstruction, correctness and privacy using \textit{Lagrange interpolation}.
 
 \begin{definition}[Lagrange interpolation]\label{def:lagrange}
   If $h(X)$ is a polynomial over $\mathbb{F}$ of degree at most $\ell$ and if $C$ is a subset of $\mathbb{F}$ with $|C| = \ell + 1$, then
@@ -579,7 +579,7 @@ Furthermore, the $(\ell + 1, N)$ the scheme is $(+, +)$-homomorphic. This follow
 \begin{figure}
   \centering
   \includegraphics[width=0.8\textwidth]{images/shamir.png}
-  \caption{Visualization of the Shamir's polynomial based secret sharing scheme. The dark line shows the specific sharing instance for a secret $s$ and a threshold $\ell=2$. With three shares, the secret can be reconstructed by interpolating the polynomial from the shares. However, with one or two shares, the reconstructed polynomial is not unique as we can see from the dotted lines.}\label{fig:shamir}
+  \caption{Visualization of the Shamir's polynomial based secret sharing scheme. Each line shows a specific sharing instance for a secret $s$ and a threshold $\ell=2$. The sharing is kept secret for the threshold as two points can interpolate into several different secrets as shown by the dashed lines}\label{fig:shamir}
 \end{figure}
 
 \subsection{Secure Multi-Party Computation}\label{sec:mpc}
@@ -598,7 +598,7 @@ Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling
   The MPC protocol has privacy up to $\ell$ malicious parties.\footnote{Most often achieved by using an $(\ell + 1, N)$-threshold secret sharing scheme \autoref{def:mpc-ss-threshold}}
 \end{definition}
 
-In terms of security needed for the SD-in-the-Head protocol, we define the following security requirements for the MPC protocol $f$
+In terms of security needed for the SDitH protocol, we define the following security requirements for the MPC protocol $f$
 
 \begin{itemize}
   \item \textbf{Semi-honest security}: The protocol is secure against semi-honest adversaries, where parties follow the protocol but may attempt to learn information from the messages they receive.
@@ -636,18 +636,18 @@ We denote a ZK $\Pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$. Let
 
 \section{Syndrome Decoding Problem}\label{sec:syndrome}
 
-The SD-in-the-Head protocol is built on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field (see \autoref{sec:gf256}). This protocol uses a variant of the SD problem, referred to as the \textit{coset weights} problem, first introduced by Berlekamp and McEliece in 1978~\cite{berlekamp1978inherent}. The problem is defined as follows:
+The SDitH protocol is built on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field (see \autoref{sec:gf256}). This protocol uses a variant of the SD problem, referred to as the \textit{coset weights} problem, first introduced by Berlekamp and McEliece in 1978~\cite{berlekamp1978inherent}. The problem is defined as follows:
 \begin{definition}\label{def:syndrome}
   Given $H \in \mathbb{F}^{(m-k)\times m}_q$ and $y \in \mathbb{F}^{m-k}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t.\ wt$(x) \leq w$ and $Hx = y$.
 \end{definition}
-Generating such an instance is straightforward: one can construct a uniformly random parity-check matrix $H$ and a codeword $x$ (with $wt(x) \leq w$), and then compute the syndrome $y = Hx$. In the SD-in-the-Head protocol, the values of the matrix $H$ and the syndrome $y$ are elements of the finite field $\mathbb{F}_q$ explained previously in \autoref{sec:gf256}. The SD problem is well-known to be NP-complete for random instances~\cite{berlekamp1978inherent} also referred to as the general decoding problem.To illustrate the computational difficulty, solving the problem using brute force would require $O(\binom{m}{w} q^w)$ operations, which is computationally infeasible for large $m$ and $k$.
+Generating such an instance is straightforward: one can construct a uniformly random parity-check matrix $H$ and a codeword $x$ (with $wt(x) \leq w$), and then compute the syndrome $y = Hx$. In the SDitH protocol, the values of the matrix $H$ and the syndrome $y$ are elements of the finite field $\mathbb{F}_q$ explained previously in \autoref{sec:gf256}. The SD problem is well-known to be NP-complete for random instances~\cite{berlekamp1978inherent} also referred to as the general decoding problem.To illustrate the computational difficulty, solving the problem using brute force would require $O(\binom{m}{w} q^w)$ operations, which is computationally infeasible for large $m$ and $k$.
 
 \subsubsection{Standard form of the parity-check matrix}\label{sub:standard_form_of_the_parity_check_matrix}
 To improve the performance and reduce the key size of the protocol, its possible to utilize the fact that the matrix $H$ can be in standard form. $H = (H'|I_{m-k}) $ Where $H' \in \mathbb{F}^{(m-k)\times k}_q$, and $I_{m-k}$ is the identity matrix of size $m-k$. This allows for the following representation of the syndrome:
 \begin{equation}
   y = Hx = H'x_A + x_B\label{eq:standard_form_of_the_parity_check_matrix}
 \end{equation}
-with $x = (x_A | x_B)$. This improves the performance of the algorithms used in the SD-in-the-Head protocol in the following ways
+with $x = (x_A | x_B)$. This improves the performance of the algorithms used in the SDitH protocol in the following ways
 \begin{itemize}
   \item At the MPC layer, we only need to reveal one share $x_A$. Due to the fact that the other share $x_B$ can simply be recomputed by $x_B = y - H'x_A$.
   \item By linearity of the above relation one only needs to send $x_A$ in order to recover $Hx = H'x_A + x_B$, the Syndrome decoding instance. So from a sharing of $x_A$ one can check the correctness of the SD instance.
@@ -655,11 +655,11 @@ with $x = (x_A | x_B)$. This improves the performance of the algorithms used in 
 
 \subsubsection{Polynomial representation of SD}\label{sec:polynomial_representation}
 
-The SD-in-the-Head MPC protocol must prove that the SD problem $ y = Hx $ is satisfied. As outlined in \autoref{def:sdith-mpc}, the shared input $\sh{x_A}$ is provided to the MPC protocol. Consequently, the correctness of the initial statement $ y = Hx $ follows directly~\cite{feneuil2022syndrome}.
+The SDitH MPC protocol must prove that the SD problem $ y = Hx $ is satisfied. As outlined in \autoref{def:sdith-mpc}, the shared input $\sh{x_A}$ is provided to the MPC protocol. Consequently, the correctness of the initial statement $ y = Hx $ follows directly~\cite{feneuil2022syndrome}.
 
 In addition to this, we need to verify that the Hamming weight condition $ \text{wt}(x) \leq w $ holds. To achieve this, the prover constructs three polynomials $ S $, $ Q $, and $ P $, alongside one public polynomial $ F $. These polynomials play a critical role in ensuring the weight condition is satisfied while preserving the zero-knowledge property of the protocol. The polynomials are defined as follows:
 
-\begin{definition}[SD-in-the-Head polynomials representation]\label{def:sdith-polynomials}
+\begin{definition}[SDitH polynomials representation]\label{def:sdith-polynomials}
   Let $f_1,\dots, f_q$ denote all the elements of $\mathbb{F}_q$ and $x\in \mathbb{F}^m_q$ is a binary vector with Hamming weight $wt(x) \leq w$, then the polynomials are defined as:
   \begin{itemize}
     \item $S\in \mathbb{F}_q[X]$ is the Lagrange interpolation of the coordinates of $x$, such that it matches $S(f_i) = x_i$ for $i\in [1:m]$ and has degree $\text{deg}(S) \leq m-1$
@@ -716,7 +716,7 @@ With this modification, we can replace the sharing $\sh{x_A}$ by representing $s
 
 \section{MPC-in-the-Head}\label{sec:mpcinth}
 
-The SD-in-the-Head protocol construction is based on the \textit{Multi-Party Computation in the Head} (MPCitH) framework. In this section we will give an introduction to the framework and how it can be used to construct ZK proofs, which in turn can be combined with the Fiat-Shamir heuristic to create a signature scheme.
+The SDitH protocol construction is based on the \textit{Multi-Party Computation in the Head} (MPCitH) framework. In this section we will give an introduction to the framework and how it can be used to construct ZK proofs, which in turn can be combined with the Fiat-Shamir heuristic to create a signature scheme.
 
 The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as its security relies on assumptions that are still believed to be quantum secure. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold} which have no known quantum algorithms that break their security.
 
@@ -768,7 +768,7 @@ The basic MPC-in-the-Head protocol serves as a foundation for constructing zero-
 
 \section{MPC Product verification using sacrificing}\label{sec:mpc_sacrificing}
 
-To enhance the performance of MPCitH-based zero-knowledge protocols, Baum and Nof introduced a variant of the framework built around a specialized MPC protocol. This protocol efficiently verifies a product relation between three values, $  a \cdot b = c  $. Their contributions significantly improved the efficiency of MPCitH-based zero-knowledge protocols and laid the foundation for the SD-in-the-Head protocol, which is designed to prove the SD relation (\autoref{sec:syndrome}).
+To enhance the performance of MPCitH-based zero-knowledge protocols, Baum and Nof introduced a variant of the framework built around a specialized MPC protocol. This protocol efficiently verifies a product relation between three values, $  a \cdot b = c  $. Their contributions significantly improved the efficiency of MPCitH-based zero-knowledge protocols and laid the foundation for the SDitH protocol, which is designed to prove the SD relation (\autoref{sec:syndrome}).
 
 The underlying MPC protocol is based on arithmetic circuits, where addition operations are straightforward to perform using any $ + $-homomorphic secret sharing scheme. However, performing multiplication -- which is required for the product relation -- is significantly more challenging. In this section, we describe the techniques and mechanisms used to address this challenge. The simplest idea would be to verify the relation by simply computing the product. A common technique is to use Beaver triples.
 
@@ -829,7 +829,7 @@ Observe that if both triples are correct multiplication triples (i.e., $z = xy$ 
 
 Consider the cause where one of $\Delta_z$ or $\Delta_c$ is zero and the other is non-zero. In this case the verifier will not accept from~\ref{eq:sacrifice-proof}. Otherwise, we require that $\varepsilon = \Delta_c \cdot \Delta_z^{-1}$ which happens with probability $\frac{1}{|\mathbb{F}|}$. \qed
 
-\autoref{def:sacrifice} forms the foundational mechanism underpinning the SD-in-the-Head protocol. While this approach delivers significant improvements~\cite{baum2020concretely,feneuil2022syndrome} in efficiency and soundness for ZK protocols, further advancements can be achieved by revisiting the secret sharing schemes utilized within the MPCitH framework.
+\autoref{def:sacrifice} forms the foundational mechanism underpinning the SDitH protocol. While this approach delivers significant improvements~\cite{baum2020concretely,feneuil2022syndrome} in efficiency and soundness for ZK protocols, further advancements can be achieved by revisiting the secret sharing schemes utilized within the MPCitH framework.
 
 \section{Threshold Computation in the Head (TCitH)}\label{sec:threshold-mpc}
 
@@ -846,7 +846,7 @@ A majority of constructions within the MPCitH framework~\cite{baum2020concretely
   \caption{Performance for prover and verifier for TCitH compared to MPCitH. I.e. the number of party emulations to achieve a soundness error of $2-\lambda$ (assuming a negligible false positive rate for the underlying MPC protocol). This table is from \cite{feneuil2023threshold}.}\label{tbl:tcith-performance}
 \end{table}
 
-We define a threshold MPC protocol, $ f_{thr} $, based on a $ (\ell, N) $-private SSS. In the context of the SD-in-the-Head protocol, this can be instantiated with Shamir's Secret Sharing (\autoref{sub:shamir}).
+We define a threshold MPC protocol, $ f_{thr} $, based on a $ (\ell, N) $-private SSS. In the context of the SDitH protocol, this can be instantiated with Shamir's Secret Sharing (\autoref{sub:shamir}).
 
 On the other hand, the TCitH model described by~\cite{feneuil2023threshold} results in a slightly larger proof size due to the increased flexibility in the number of input shares the prover must open. While the prover still commits to all input sharings, only a subset of these needs to be opened during the protocol.
 
@@ -911,7 +911,7 @@ Zero-knowledge protocols, such as the MPCitH protocols discussed above, depend o
 
 To adapt a zero-knowledge protocol into a signature scheme, the prover must eliminate the verifier's role in providing the randomness. This is achieved by allowing the prover to independently generate the challenge using a pseudo-random function, such as a secure hash function. By modeling the hash function as a random oracle, its security guarantees ensure that the prover cannot manipulate the randomness of the verification challenge. This maintains the fundamental property of zero-knowledge interactive protocols while enabling the transformation into a non-interactive signature scheme.
 
-Within the context of the SD-in-the-Head protocol, the transformation from a ZK to a signature scheme is accomplished by substituting the verifier's challenge with the output of hash functions, where these hash functions take as input the prover's prior communications.
+Within the context of the SDitH protocol, the transformation from a ZK to a signature scheme is accomplished by substituting the verifier's challenge with the output of hash functions, where these hash functions take as input the prover's prior communications.
 
 \section{The Rust Programming language}\label{sec:rust}
 As a preliminary to our implementation, we need to answer the question: ``Why is Rust a good choice for PQC?''.
@@ -1335,7 +1335,7 @@ This system provides fine-grained control over the visibility of code, making th
 
 \subsubsection{Generics and Traits}
 
-When implementing a program, it is common to encounter functionality that you want to reuse. However, due to the type system or the program's structure, you may end up duplicating code. For example, the authors of the SD-in-the-Head protocol define their implementation with two field variants -- \rust{GF(256)} and \rust{GF(251)} -- as well as three NIST categories. In their NIST submission, they create separate codebases for each variant, resulting in multiple copies of the protocol. This duplication is compounded by an additional $2\times$ copies for the hypercube variant:
+When implementing a program, it is common to encounter functionality that you want to reuse. However, due to the type system or the program's structure, you may end up duplicating code. For example, the authors of the SDitH protocol define their implementation with two field variants -- \rust{GF(256)} and \rust{GF(251)} -- as well as three NIST categories. In their NIST submission, they create separate codebases for each variant, resulting in multiple copies of the protocol. This duplication is compounded by an additional $2\times$ copies for the hypercube variant:
 
 \begin{minted}{bash}
 $ cd ~/Repos/datalogi/sdith/Reference_Implementation/Threshold_Variant 
@@ -1446,7 +1446,7 @@ Note that with Traits we can define default implementations for functions. For e
 \subsubsection{Conclusions on Maintainability and Readability}
 Rust offers a range of features that make it easier to write maintainable and readable code. In-built linting and documentation facilitate the creation of well-documented code. The module system enables developers to organize code into logical units while controlling visibility between them. Generics and Traits are powerful tools for writing more agnostic and reusable code across different parts of a program.
 
-However, while these features support good coding practices, they can be further enhanced by leveraging Rust's dynamic compilation features. In the next section, we will explore how these features were utilized to develop a more dynamic and optimizable implementation of the SD-in-the-Head protocol.
+However, while these features support good coding practices, they can be further enhanced by leveraging Rust's dynamic compilation features. In the next section, we will explore how these features were utilized to develop a more dynamic and optimizable implementation of the SDitH protocol.
 
 \subsection{Dynamic compilation}
 In many applications, it is beneficial to have dynamic compilation of the code. This allows for code generation, linking and configuring the package before building the actual binary. As a good example, when creating a submission to NIST you need to have different security levels for each category. This poses a problem of having to change the code based on specific parameters. This is where Cargo build scripts and Rust's feature flags come in handy.
@@ -1510,7 +1510,7 @@ fn main() {
 }
 \end{minted}
 In the example above we use the feature flag to change which trait is implemented for the \rust{u8} type. This means that when we build the binary it only compiles the code that has been specified.
-As our implementation is a reference implementation for the SD-in-the-Head protocol, we have used feature flags to switch between different categories and optimizations. This allows us to easily test and compare different configurations without having to manually change the code or have duplicates.
+As our implementation is a reference implementation for the SDitH protocol, we have used feature flags to switch between different categories and optimizations. This allows us to easily test and compare different configurations without having to manually change the code or have duplicates.
 
 \subsection{Optimizations in Rust}\label{sub:rust_optimizations}
 Blazingly fast code does not come without a cost. However, Rust and its community offers several ways to optimize performance. In this section we describe the methods used to measure performance in our implementation. Next, we will explore techniques for Rust that allow us to enhance performance.
@@ -1615,7 +1615,7 @@ fn simple_simd_vector_addition() -> [f32; 4] {
 
 \chapter{Specification}\label{ch:spec}
 
-The SD-in-the-Head protocol is founded on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field, as described in \autoref{sec:syndrome}. To recall, the problem is formally stated:
+The SDitH protocol is founded on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field, as described in \autoref{sec:syndrome}. To recall, the problem is formally stated:
 \begin{quote}
   Given a parity-check matrix $H \in \mathbb{F}_q^{(m-k) \times m}$ in standard form and a syndrome $y \in \mathbb{F}_q^{m-k}$, the challenge is to find a vector $x \in \mathbb{F}_q^m$ such that $Hx = y$ and $wt(x) \leq w$, where $wt(x)$ denotes the Hamming weight of $x$. This can be expressed as:
   \begin{align*}
@@ -1624,7 +1624,7 @@ The SD-in-the-Head protocol is founded on the computational hardness of the Synd
   with $x = (x_a \mid x_b)$ denoting the concatenation of subvectors $x_a$ and $x_b$.
 \end{quote}
 
-The SD-in-the-Head protocol establishes a signature scheme by demonstrating the correctness of a public SD instance $(H, y)$ using a secret witness derived from $x$. Its construction unfolds in three main steps:
+The SDitH protocol establishes a signature scheme by demonstrating the correctness of a public SD instance $(H, y)$ using a secret witness derived from $x$. Its construction unfolds in three main steps:
 \begin{enumerate}
   \item \textbf{Defining an MPC protocol:} Define a multi-party computation (MPC) protocol that enables $N$ parties to collaboratively verify the correctness of the public SD instance $(H, y)$ using a private witness $x$.
   \item \textbf{Transforming into a ZK-POK:} Convert the MPC protocol into a zero-knowledge proof of knowledge (ZK-POK) through the MPC-in-the-Head (MPCitH) framework, detailed in \autoref{sec:mpcinth}.
@@ -1633,7 +1633,7 @@ The SD-in-the-Head protocol establishes a signature scheme by demonstrating the 
 
 The construction is highly modular, allowing flexibility and adaptability, as you can tweak the SD instance, the MPC protocol, the MPCitH and Fiat-Shamir transformations. The authors propose two distinct protocol variants: the \textit{hypercube} variant and the \textit{threshold} variant. For this work, we focus on the \textit{threshold} variant~\cite{aguilarsyndrome11,feneuil2023threshold,feneuil2023threshold2}, as it offers significant performance enhancements compared to both the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11,aguilar2023return,feneuil2023threshold2}, albeit at the cost of slightly larger signature sizes.
 
-This chapter presents a comprehensive specification of the SD-in-the-Head Signature Scheme in the Threshold variant. The construction is based on the SD-in-the-Head MPC protocol in \autoref{sec:sdith-mpc}, its transformation into ZK-POK using MPCitH (described in \autoref{sec:sdith-zkpok}) and finally transformation into a signature scheme in \autoref{sec:sdith-signature}. Additionally, we describe optimizations applied to the protocol, such as avoiding interpolation and utilizing the $d$-split variant of the SD instance. A detailed table summarizing the protocol parameters and security assumptions is provided in \autoref{tab:sdith-protocol-parameters}.
+This chapter presents a comprehensive specification of the SDitH Signature Scheme in the Threshold variant. The construction is based on the SDitH MPC protocol in \autoref{sec:sdith-mpc}, its transformation into ZK-POK using MPCitH (described in \autoref{sec:sdith-zkpok}) and finally transformation into a signature scheme in \autoref{sec:sdith-signature}. Additionally, we describe optimizations applied to the protocol, such as avoiding interpolation and utilizing the $d$-split variant of the SD instance. A detailed table summarizing the protocol parameters and security assumptions is provided in \autoref{tab:sdith-protocol-parameters}.
 
 \begin{table}[]
   \begin{tabular}{p{0.12\textwidth}p{0.78\textwidth}}
@@ -1680,16 +1680,16 @@ This chapter presents a comprehensive specification of the SD-in-the-Head Signat
 
 \section{The MPC Protocol}\label{sec:sdith-mpc}
 
-The SD-in-the-Head protocol builds upon the \textit{Multi-Party Computation in the Head} (MPCitH) framework. As a first step, we describe the underlying MPC protocol, which is used to verify the polynomial relation of the SD instance as detailed in \autoref{sec:polynomial_representation}:
+The SDitH protocol builds upon the \textit{Multi-Party Computation in the Head} (MPCitH) framework. As a first step, we describe the underlying MPC protocol, which is used to verify the polynomial relation of the SD instance as detailed in \autoref{sec:polynomial_representation}:
 \begin{align*}
   S \cdot Q = P \cdot F, \quad \text{where } S, Q, P, F \in \mathbb{F}_q[X].
 \end{align*}
 
-The foundations for secret sharing and multi-party computation (MPC) are presented in \autoref{sec:additive-sss} and \autoref{sec:mpc}, respectively. The SD-in-the-Head MPC protocol is constructed using the sacrificing protocol introduced by Baum and Nof~\cite{baum2020concretely}, as detailed in \autoref{sec:mpc_sacrificing}.
+The foundations for secret sharing and multi-party computation (MPC) are presented in \autoref{sec:additive-sss} and \autoref{sec:mpc}, respectively. The SDitH MPC protocol is constructed using the sacrificing protocol introduced by Baum and Nof~\cite{baum2020concretely}, as detailed in \autoref{sec:mpc_sacrificing}.
 
 Recall, that instead of sharing $x_A$, we tweak the SD instance to share $s_A$ instead allowing us to skip interpolation detailed in \autoref{sec:syndrome-avoid-interpolation}.
 
-\begin{protocol}[SD-in-the-Head MPC protocol]\label{def:sdith-mpc}
+\begin{protocol}[SDitH MPC protocol]\label{def:sdith-mpc}
   Assume the existence of a \textit{random oracle} $R$ and a $(N-2)$-\textit{private secret sharing scheme}. Given a public SD instance $(H, y)$, and the private sharings for each party $(\sh{s_A}, \sh{P}, \sh{Q}) \in F_q$, as well as $t$ sharings of random Beaver triples $\sh{a}, \sh{b}, \sh{c} \in F_{q^4}$, the protocol proceeds as follows:
   \begin{enumerate}
     \item Sample $r^j, \varepsilon^j \in_R \mathbb{F}_{q^4}^t$ uniformly at random.
@@ -1727,7 +1727,7 @@ To analyze the security of the protocol, we denote $p$ as the false positive pro
 
 \section{The Threshold Signature Protocol}\label{sec:sdith-signature}
 
-The initial protocol for the SD-in-the-Head signature scheme is seen in~\cite[Figure 1]{aguilarsyndrome11} and was first introduced in~\cite[Figure 1, p19]{feneuil2022syndrome}.
+The initial protocol for the SDitH signature scheme is seen in~\cite[Figure 1]{aguilarsyndrome11} and was first introduced in~\cite[Figure 1, p19]{feneuil2022syndrome}.
 
 \subsubsection{Threshold variant}\label{sub:sdith-threshold-sss}
 
@@ -1771,7 +1771,7 @@ The nature of an SD instance allows the protocol to seamlessly transform into a 
 \subsubsection{ZK-POK protocol}
 First, the MPC protocol (\autoref{def:sdith-mpc}) is transformed into a ZK-POK using the Threshold MPCitH protocols described by~\cite{feneuil2023threshold,feneuil2023threshold2}. This transformation in full lies outside the scope of this report and is deferred to the appendix in \autoref{sec:sdith-zkpok}. Here we leave a short overview of the transformation~\cite{aguilarsyndrome11}.
 
-\begin{protocol}[SD-in-the-Head ZK-POK protocol]
+\begin{protocol}[SDitH ZK-POK protocol]
   \label{pro:sdith-zkpok}
   For a $(\ell + 1, N)$-threshold MPC protocol
   \begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
@@ -1800,7 +1800,7 @@ By applying the threshold-based approach, the soundness error is modified and be
   where $p$ represents the false positive probability of the MPC protocol, $N$ is the total number of parties, and $\ell$ is the threshold parameter~\cite{feneuil2023threshold}.
 \end{lemma}
 We can see that the threshold-based approach introduces a slight degradation in the soundness of the protocol. This comes from the fact that we now require less views to be validated, which in turn increases the probability of a false positive.
-To mitigate this, \textit{parallel repetition} is employed to strengthen the soundness signature protocol. Specifically, the SD-in-the-Head protocol repeats the underlying ZK-POK protocol $\tau$ times, where:
+To mitigate this, \textit{parallel repetition} is employed to strengthen the soundness signature protocol. Specifically, the SDitH protocol repeats the underlying ZK-POK protocol $\tau$ times, where:
 \begin{align*}
   \tau = \left\lceil \log_2\left(\frac{1}{\epsilon}\right) \cdot \lambda \right\rceil,
 \end{align*}
@@ -1819,7 +1819,7 @@ Additionally, we incorporate the message into the second hash, enabling the pre-
 Finally, we introduce a $\texttt{salt} \in \{0,1\}^{2\lambda}$, which serves as pseudo-randomness for commitments and seed generation. The use of a $\texttt{salt}$ ensures that the protocol remains secure and avoids reliance on externally provided randomness.
 
 \subsubsection{Optimizing Signature Size and Verification}\label{sec:mpc_thresh_tweak}
-In the original SD-in-the-Head protocol~\cite[Figure 1]{aguilarsyndrome11} -- without threshold SSS -- the signature includes both hashes $h_1, h_2$ and all input shares in $I$, where $|I| = N - 1$.
+In the original SDitH protocol~\cite[Figure 1]{aguilarsyndrome11} -- without threshold SSS -- the signature includes both hashes $h_1, h_2$ and all input shares in $I$, where $|I| = N - 1$.
 To verify the signature, the verifier recomputes the commitments for each share in $I$, and along with the last missing commitment $\texttt{com}_i$ for $i \notin I$, reconstructs $h_1$. The verifier then executes the MPC protocol for the opened shares and recomputes $h_2$ from the resulting output shares.
 
 \begin{theorem}[Sharing Redundancy of Shamir's Secret Sharing Scheme]
@@ -1875,7 +1875,7 @@ The same applies to $\phi^1$ and $\phi^2$ for the inverse MPC computation. For f
 \subsubsection{The protocols}
 We introduce the signing and verification protocols in \autoref{def:sdith-sign} and \autoref{def:sdith-verify}, respectively.
 
-\begin{protocol}[SD-in-the-Head Signing Protocol]\label{def:sdith-sign}
+\begin{protocol}[SDitH Signing Protocol]\label{def:sdith-sign}
   \setlength{\parindent}{0pt}
   \setlength{\parskip}{5pt}
   \titlespacing*{\paragraph}{0pt}{1pt}{1em}
@@ -1978,7 +1978,7 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
 
 \newpage
 
-\begin{protocol}[SD-in-the-Head Verification Protocol]\label{def:sdith-verify}
+\begin{protocol}[SDitH Verification Protocol]\label{def:sdith-verify}
   \setlength{\parindent}{0pt}
   \setlength{\parskip}{5pt}
   \titlespacing*{\paragraph}{0pt}{1pt}{1em}
@@ -2034,7 +2034,7 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
 
 \section{Security}
 
-The security analysis of the SD-in-the-Head signature scheme is based on the proposed standardization requirements from the 2022 NIST call for proposals of non-lattice based signature schemes~\cite{nistcall}. Therefore, as a preliminary, we will describe the reasoning and requirements of the NIST standardization process.
+The security analysis of the SDitH signature scheme is based on the proposed standardization requirements from the 2022 NIST call for proposals of non-lattice based signature schemes~\cite{nistcall}. Therefore, as a preliminary, we will describe the reasoning and requirements of the NIST standardization process.
 
 With the development of new quantum algorithms and unknowns in the capacities of the future quantum computers, there remain large uncertainties in estimating the security of the algorithms. To combat these uncertainties, NIST proposed for the 2022 stadardization effort, to define the security of submissions in a range of five categories. Each, with an easy-to-analyze cryptographic primitive providing the lower bound for a variety of metrics deemed relevant to practical security.
 
@@ -2046,13 +2046,13 @@ In terms of quantum security, the complexity and capability of quantum algorithm
 
 \subsubsection{NIST Categories}
 
-The SD-in-the-Head specification provides security parameters adhering to categories one, three and five. Therefore, according to the proposal by NIST, the SD-in-the-Head specification provides security metrics in terms of quantum circuit depth to optimal key recovery for AES-128, AES-192 and AES-256 for categories \textbf{one}, \textbf{three} and \textbf{five} respectively. These are estimated to be $2^{143}$, $2^{207}$ and $2^{272}$ classical gates~\cite{nistcall}.
+The SDitH specification provides security parameters adhering to categories one, three and five. Therefore, according to the proposal by NIST, the SDitH specification provides security metrics in terms of quantum circuit depth to optimal key recovery for AES-128, AES-192 and AES-256 for categories \textbf{one}, \textbf{three} and \textbf{five} respectively. These are estimated to be $2^{143}$, $2^{207}$ and $2^{272}$ classical gates~\cite{nistcall}.
 
 \subsubsection{Signature Forgery Attack}
 
-The SD-in-the-Head signature scheme ensures \textbf{E}xistential \textbf{U}nforgeability under \textbf{C}hosen \textbf{M}essage \textbf{A}ttack (EUF-CMA), a key security property evaluated by NIST~\cite{nistcall,aguilarsyndrome11}. In the EUF-CMA game, a challenger generates a key pair $(pk, sk)$ and provides $pk$ to the adversary, who can query a signing oracle for up to $2^{64}$ chosen messages $(m_1, \dots, m_r)$, receiving corresponding valid signatures $(\sigma_1, \dots, \sigma_r)$. The adversary wins if it produces a valid signature $(m^*, \sigma^*)$ for a message $m^*$ not queried to the signing oracle.
+The SDitH signature scheme ensures \textbf{E}xistential \textbf{U}nforgeability under \textbf{C}hosen \textbf{M}essage \textbf{A}ttack (EUF-CMA), a key security property evaluated by NIST~\cite{nistcall,aguilarsyndrome11}. In the EUF-CMA game, a challenger generates a key pair $(pk, sk)$ and provides $pk$ to the adversary, who can query a signing oracle for up to $2^{64}$ chosen messages $(m_1, \dots, m_r)$, receiving corresponding valid signatures $(\sigma_1, \dots, \sigma_r)$. The adversary wins if it produces a valid signature $(m^*, \sigma^*)$ for a message $m^*$ not queried to the signing oracle.
 
-We analyze the generic forgery attack on Fiat-Shamir transformed signature protocols as described by~\cite{kales2020attack}. This attack seeks to minimize the effective cost of a forgery attempt. For the threshold-based SD-in-the-Head protocol, the adversary can choose between two strategies:
+We analyze the generic forgery attack on Fiat-Shamir transformed signature protocols as described by~\cite{kales2020attack}. This attack seeks to minimize the effective cost of a forgery attempt. For the threshold-based SDitH protocol, the adversary can choose between two strategies:
 \begin{enumerate}
   \item \label{item:guessing-mpc-challenge} Guessing the unique MPC challenge.
   \item \label{item:guessing-view-challenge} Guessing the view-opening challenges for each of the $\tau$ executions.
@@ -2094,9 +2094,9 @@ While the $d$-split variant introduces a slight reduction in security compared t
 \end{align}
 a proof of this can be found in~\cite[p27]{feneuil2022syndrome}
 
-\subsubsection{Parameters for the SD-in-the-Head protocol}
+\subsubsection{Parameters for the SDitH protocol}
 
-The parameters for the SD-in-the-Head protocol are given in \autoref{tab:secparam} and \autoref{tab:hashparam} are given by \autoref{eq:forgery_attack_cost} and \autoref{eq:d_split_epsilon}
+The parameters for the SDitH protocol are given in \autoref{tab:secparam} and \autoref{tab:hashparam} are given by \autoref{eq:forgery_attack_cost} and \autoref{eq:d_split_epsilon}
 
 \begin{table}[ht]\label{tab:secparam}
   \centering
@@ -2125,7 +2125,7 @@ The parameters for the SD-in-the-Head protocol are given in \autoref{tab:secpara
 \end{table}
 
 \subsubsection{Assumptions}\label{sec:assumptions}
-The SD-in-the-Head protocol is secure under the following assumptions:
+The SDitH protocol is secure under the following assumptions:
 
 Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search (see \autoref{def:nistsec}) in terms of quantum circuit size. For this, $\kappa$ is defined as $143$, $207$ and $272$ for the categories~\cite{nistcall}. Furthermore, the XOF primitive used is secure with 128-bit, 192-bit, 256-bit security levels for each of the categories respectively. Finally, the Hash function used \textit{behaves as a random oracle}. Specifically, security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM)~\cite{aguilarsyndrome11}.
 
@@ -2135,11 +2135,11 @@ Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$
 
 \chapter{Implementation}\label{ch:impl}
 
-We set out to implement the SD-in-the-Head Protocol using a modern, well-maintained language that provides the necessary performance and security for a post-quantum secure signature scheme. To achieve this, we selected Rust~\cite{rustlangRustProgramming,nistsaferlanguages,lurklurkEffectiveRust,rustlangPerformanceBook} as the programming language. As a principle and to give ourselves the ability to manage the protocol effectively, we aimed to develop as much of the project's code as possible independently, minimizing reliance on pre-existing packages. This approach included implementing subroutines for the Galois Finite Field and Merkle Tree Commitment Scheme. However, for cryptographic primitives such as hash functions~\cite{blakethree,tinykeccak}, we utilized external libraries. This reliance is common, as developing such primitives securely often requires an entire dedicated effort and a whole project in itself.
+We set out to implement the SDitH Protocol using a modern, well-maintained language that provides the necessary performance and security for a post-quantum secure signature scheme. To achieve this, we selected Rust~\cite{rustlangRustProgramming,nistsaferlanguages,lurklurkEffectiveRust,rustlangPerformanceBook} as the programming language. As a principle and to give ourselves the ability to manage the protocol effectively, we aimed to develop as much of the project's code as possible independently, minimizing reliance on pre-existing packages. This approach included implementing subroutines for the Galois Finite Field and Merkle Tree Commitment Scheme. However, for cryptographic primitives such as hash functions~\cite{blakethree,tinykeccak}, we utilized external libraries. This reliance is common, as developing such primitives securely often requires an entire dedicated effort and a whole project in itself.
 
 Initially, we aimed to base our implementation solely on the specification. However, this approach proved challenging due to ambiguities in some of the definitions, making it unclear how certain elements should be implemented and making testing the outcomes hard. To address this, we instead aligned our implementation in terms of outputs with the reference implementation. This provided a valuable tool for debugging and figuring out these ambiguities.
 
-This section provides a detailed overview of our implementation. We present a brief walkthrough of the structure and each module in our implementation, detailing how the code aligns with the SD-in-the-Head specification. Additionally, we describe the steps taken to test and optimize these modules and discuss the challenges encountered during their development.
+This section provides a detailed overview of our implementation. We present a brief walkthrough of the structure and each module in our implementation, detailing how the code aligns with the SDitH specification. Additionally, we describe the steps taken to test and optimize these modules and discuss the challenges encountered during their development.
 
 % Talk about this in benchmarking chapter
 % We can now use the before mentioned criterion package to benchmark the different implementations and see the performance difference:
@@ -2264,7 +2264,7 @@ mod cat {
 This implementation makes the adaptability and tunability of the protocol available, providing users with greater flexibility to tailor the parameters to their specific needs.
 
 \section{Subroutines}\label{sub:subroutines}
-The modularity of the SD-in-the-Head protocol allowed us to implement its initial components as a set of subroutines.
+The modularity of the SDitH protocol allowed us to implement its initial components as a set of subroutines.
 
 \subsection{PRG}\label{sub:prg}
 To begin our implementation, we started by developing a pseudo-random generator (PRG) using an extendable output function (XOF) as the underlying mechanism. Although building custom cryptographic components can be a complex effort in its own right -- and one that may limit certain manual optimizations -- we chose to rely on the \textit{tiny-keccak}~\cite{tinykeccak} crate for convenience and reliability. This library provides established implementations of Keccak-derived functions aligned with NIST FIPS 202, SP800-185, and KangarooTwelve standards, ensuring both proper compliance and a secure foundation for our PRG.
@@ -2459,7 +2459,7 @@ We further investigated the possibility of parallelizing the construction of par
 
 \subsubsection*{Blake3}\label{sub:blake3}
 
-In addition, we explored the use of alternative hash functions. The \texttt{SHA3} implementation required by NIST~\cite{nistcall}, while highly secure, is not optimal in terms of performance due to the numerous rounds required to ensure its robustness. To address this, we introduced a feature flag, \texttt{blake3}, enabling the use of the more efficient \texttt{Blake3} hash function. This change resulted in dramatic performance improvements. However, the SD-in-the-Head protocol, being heavily reliant on the security of its commitment scheme due to its MPCitH nature, depends critically on the strength of the underlying hash function. Therefore, the \texttt{blake3} feature is restricted to Category I security levels and intended strictly for exploratory purposes.
+In addition, we explored the use of alternative hash functions. The \texttt{SHA3} implementation required by NIST~\cite{nistcall}, while highly secure, is not optimal in terms of performance due to the numerous rounds required to ensure its robustness. To address this, we introduced a feature flag, \texttt{blake3}, enabling the use of the more efficient \texttt{Blake3} hash function. This change resulted in dramatic performance improvements. However, the SDitH protocol, being heavily reliant on the security of its commitment scheme due to its MPCitH nature, depends critically on the strength of the underlying hash function. Therefore, the \texttt{blake3} feature is restricted to Category I security levels and intended strictly for exploratory purposes.
 
 As anticipated, the performance gains resulting from substituting the hash function were significant. As demonstrated in \autoref{tab:blake3}. By profiling, we saw that the computational overhead for Merkle tree construction decreased to approximately $38\%$ of the total execution time. This reduction aligns closely with the time complexity observed for the MPC computations.
 
@@ -3246,7 +3246,7 @@ We created the following set of feature flags:
 \end{itemize}
 
 \section{Exposing our implementation}
-After finalizing our implementation, we created a Rust crate, \texttt{rsdith}, to allow for easy integration into other projects. This is useful for other developers to test out the impact of using the SD-in-the-Head as a signature scheme for their application. Just like we used Blake3 to test different hashes.
+After finalizing our implementation, we created a Rust crate, \texttt{rsdith}, to allow for easy integration into other projects. This is useful for other developers to test out the impact of using the SDitH as a signature scheme for their application. Just like we used Blake3 to test different hashes.
 
 Furthermore, in order to interact and use our implementation we create a simple command-line interface (CLI) to allow for easy signing and verification of messages. Such a solution could be useful for a sever setup where the binary could be allocated on the server and used to sign messages, like the use of \textit{OpenSSL}. A CLI also allows for easy demonstration and testing of the implementation.
 
@@ -3530,7 +3530,7 @@ We see a minor increase ($2\%$) in our keygen when running with stable rust. Thi
 \subsubsection{Constant time analysis and Multiplications}
 Since there are no general tools for doing constant time analysis, the analysis must be specific to the protocol. A good starting point is to ask what needs to be protected. For a signature scheme, the main concern is not the message but the secret part of the algorithm, such as the $x$ vector from the syndrome decoding problem, which is the secret key.
 
-Timing attacks often happen because of conditional branches in the code. These branches might not even be written by the developer but could come from compiler optimizations. In the SD-in-the-Head protocol, there are no clear branches, and most operations during signing and verification use randomized inputs. This reduces the chance of timing attacks in these areas. However, the $x$ vector is used directly during key generation, when creating the polynomials $(S, P, Q)$. Specifically we run multiplications on the individual elements of the vector (see file \texttt{src/subroutines/witness.rs}).
+Timing attacks often happen because of conditional branches in the code. These branches might not even be written by the developer but could come from compiler optimizations. In the SDitH protocol, there are no clear branches, and most operations during signing and verification use randomized inputs. This reduces the chance of timing attacks in these areas. However, the $x$ vector is used directly during key generation, when creating the polynomials $(S, P, Q)$. Specifically we run multiplications on the individual elements of the vector (see file \texttt{src/subroutines/witness.rs}).
 
 While key generation is often disregarded in terms of side-channel vulnerability -- since it is typically done in advance -- multiplications also occur throughout the protocol. It is therefore prudent to ensure that the multiplication function operates in constant time.
 
@@ -3582,7 +3582,7 @@ Given these findings, we have set the \texttt{Lookup} implementation as the defa
 
 \chapter{Conclusion}\label{ch:conclusion}
 
-In this project, we set out to implement the threshold variant of the SD-in-the-Head Protocol~\cite{aguilarsyndrome11} in Rust. Our aim was to create an implementation that is both easy to understand and serves as a foundation for future work. In this pursuit, we would like to highlight the following aspects of our implementation that we believe stand out as a contribution to the development of the protocol.
+In this project, we set out to implement the threshold variant of the SDitH Protocol~\cite{aguilarsyndrome11} in Rust. Our aim was to create an implementation that is both easy to understand and serves as a foundation for future work. In this pursuit, we would like to highlight the following aspects of our implementation that we believe stand out as a contribution to the development of the protocol.
 
 \subsubsection{Rust}
 
@@ -3596,7 +3596,7 @@ First, our implementation is written in Rust. Compared to the reference implemen
 
 \subsubsection{Documentation and code alignment}
 
-One of the key reasons for selecting the SD-in-the-Head protocol was its modular design. While the authors provided a well-written specification and a functional reference implementation, we encountered challenges in interpreting and aligning the finer details of the protocol.
+One of the key reasons for selecting the SDitH protocol was its modular design. While the authors provided a well-written specification and a functional reference implementation, we encountered challenges in interpreting and aligning the finer details of the protocol.
 
 A significant challenge arose from the specification's inclusion of two variants, which share considerable overlap. This overlap complicated efforts to clearly distinguish and implement the specifics of the threshold variant. Additionally, we observed discrepancies between the specification and the reference implementation, particularly in naming conventions and minor implementation details. Reconciling these differences required substantial effort and to address these challenges, we prioritized the development of clear and well-documented code. Our report includes a detailed overview of the underlying theories and protocols, along with formal definitions provided in \autoref{def:sdith-sign} and \autoref{def:sdith-verify}. We ensured that our implementation adhered to consistent terminology and closely followed the protocol descriptions, promoting both accuracy and clarity throughout the project.
 
@@ -3608,11 +3608,11 @@ The most significant performance bottlenecks in our implementation are the Merkl
 
 \subsubsection{Future work}
 
-The most apparent direction for future work involves implementing aspects of the SD-in-the-Head protocol that we have not yet covered, such as the hypercube variant and the $\mathbb{F}_{251}$ field variant. However, as demonstrated in our implementation, the use of feature flags, traits, and conditional compilation provides significant flexibility to incorporate these variants in the future. This modular and extensible approach ensures that the protocol can be efficiently expanded to support additional features and configurations.
+The most apparent direction for future work involves implementing aspects of the SDitH protocol that we have not yet covered, such as the hypercube variant and the $\mathbb{F}_{251}$ field variant. However, as demonstrated in our implementation, the use of feature flags, traits, and conditional compilation provides significant flexibility to incorporate these variants in the future. This modular and extensible approach ensures that the protocol can be efficiently expanded to support additional features and configurations.
 
 Additionally, we aim to explore more specialized and efficient parallelization strategies, as well as SIMD optimizations, to further enhance performance.
 
-One of the key strengths of the SD-in-the-Head protocol is its inherent modularity. This characteristic is evident in the authors' work, where they initially developed the base protocol and subsequently introduced the hypercube and threshold variants~\cite{feneuil2023threshold,aguilar2023return}. Building on this principle, we introduced a feature in our implementation that allows for swapping the \texttt{SHA3} and \texttt{SHAKE} hash functions with the \texttt{Blake3} implementation. This substitution yielded significant performance improvements, further demonstrating the protocol's flexibility and its potential for enabling alternative optimizations.
+One of the key strengths of the SDitH protocol is its inherent modularity. This characteristic is evident in the authors' work, where they initially developed the base protocol and subsequently introduced the hypercube and threshold variants~\cite{feneuil2023threshold,aguilar2023return}. Building on this principle, we introduced a feature in our implementation that allows for swapping the \texttt{SHA3} and \texttt{SHAKE} hash functions with the \texttt{Blake3} implementation. This substitution yielded significant performance improvements, further demonstrating the protocol's flexibility and its potential for enabling alternative optimizations.
 
 Furthermore, our implementation allows users to manually specify custom parameters. This feature empowers future users of the protocol to experiment with various configurations and tailor performance to their specific use cases.
 
@@ -3623,11 +3623,11 @@ Currently, the greatest parallelization gains in our implementation occur during
 Another potential enhancement involves optimizing the Merkle Commitment Scheme by replacing it with Verkle Trees~\cite{kuszmaul2019verkle, iavich2023verkle}. Although Verkle Trees are theoretically more complex, they avoid reliance on hash functions, which are the most significant performance bottleneck in the current implementation. Additionally, Verkle Trees could improve both signature size and verification time, making them a compelling direction for future exploration.
 
 \subsubsection{Learning and Collaboration}
-Overall, this project has been an invaluable learning experience, enabling us to explore a diverse range of topics. These included gaining a deeper understanding of the foundational protocols that underpin the SD-in-the-Head protocol and refining our skills in developing and optimizing a Rust codebase.
+Overall, this project has been an invaluable learning experience, enabling us to explore a diverse range of topics. These included gaining a deeper understanding of the foundational protocols that underpin the SDitH protocol and refining our skills in developing and optimizing a Rust codebase.
 
 We hope that the experiences and insights gained during this implementation process will provide valuable feedback to the authors of the protocol, offering constructive suggestions to streamline and improve future implementation efforts.
 
-Moreover, we believe that our implementation makes a meaningful contribution to the documentation and understanding of the SD-in-the-Head protocol. We hope it will serve as a valuable resource for future researchers and developers, supporting further exploration and innovation in this exciting potentially post-quantum world.
+Moreover, we believe that our implementation makes a meaningful contribution to the documentation and understanding of the SDitH protocol. We hope it will serve as a valuable resource for future researchers and developers, supporting further exploration and innovation in this exciting potentially post-quantum world.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
