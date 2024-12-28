@@ -130,11 +130,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \pagestyle{empty}
-
-\vspace*{\fill}\noindent{
+\vspace*{\fill}\noindent{\\[4ex]
 {\Huge\sf The SDitH Strikes Back in Rust}\\[2ex]
-{\huge\sf Hugh Benjamin Zachariae, 201508592 \\ Magnus Jensen,
-201708626}\\[2ex]
+{\Large\sf Hugh Benjamin Zachariae, 201508592 \\ Magnus Jensen,
+201708626}\\[1ex]
 \noindent\rule{\linewidth}{.5mm}\\[4ex]
 \noindent{\Large\sf Master's Thesis, Computer Science\\[1ex]
   \today \\[1ex] Advisor: Diego F. Aranha\\[15ex]}\\[\fill]}
@@ -208,7 +207,7 @@ To mitigate the risks of relying heavily on lattice-based schemes, NIST issued a
 
 \section{Code-based problems}
 
-A requirement for a post-quantum secure signature scheme is the existence of a computational problem that remains infeasible for quantum computers. Among the proposed candidates, several derive from the family of NP-hard problems in complexity theory. 
+A requirement for a post-quantum secure signature scheme is the existence of a computational problem that remains infeasible for quantum computers. Among the proposed candidates, several derive from the family of NP-hard problems in complexity theory.
 
 The advent of public-key cryptosystems by Diffie and Hellman in 1976 revolutionized cryptography, leading to widespread development in this field. While public-key systems primarily advanced through number theory, coding theory -- a distinct branch of information theory predating public-key cryptography -- offered alternative foundations. In 1978, McEliece introduced a code-based public-key scheme based~\cite{mceliece1978public} -- only two years after the foundational breakthroughs in public-key cryptography. This scheme relies on the hardness of decoding random linear codes, a problem rigorously analyzed in subsequent works~\cite{berlekamp1978inherent}.
 
@@ -240,11 +239,11 @@ Furthermore, our choice of Rust was driven by a desire to investigate the langua
 
 \section{Our contributions}
 
-In this report, we present an implementation of the NIST round to candidate, the SDitH protocol. We will be developing the protocol in the Rust programming language which presents a modern alternative C/C++. 
+In this report, we present an implementation of the NIST round to candidate, the SDitH protocol. We will be developing the protocol in the Rust programming language which presents a modern alternative C/C++.
 
 While the NIST standardization has an overarching goal of \textit{selecting a number of acceptable candidate cryptosystems for standardization}~\cite{nistcall}, they also state that the goal of the submitted reference implementation is to promote understanding of the submitted algorithm.
 
-The SDitH protocol is available in two variants~\cite{aguilarsyndrome11}: the \textit{hypercube} and \textit{threshold} variants. Including distinct definitions for the original protocol~\cite{feneuil2022syndrome} alongside these variants within a single specificationcan lead to confusion and complicates the implementation process. To mitigate this issue, we chose to focus exclusively on the threshold variant, striving to provide a more detailed and comprehensive specification for this version of the protocol. 
+The SDitH protocol is available in two variants~\cite{aguilarsyndrome11}: the \textit{hypercube} and \textit{threshold} variants. Including distinct definitions for the original protocol~\cite{feneuil2022syndrome} alongside these variants within a single specificationcan lead to confusion and complicates the implementation process. To mitigate this issue, we chose to focus exclusively on the threshold variant, striving to provide a more detailed and comprehensive specification for this version of the protocol.
 
 In order to achieve this, we aimed to achieve the following goals
 
@@ -260,7 +259,7 @@ Furthermore, we aim to identify and address potential pitfalls and challenges en
 Finally, this project serves as an opportunity for ourselves to learn about post-quantum signature schemes and to test our skill by implementing a cutting-edge cryptographic protocol in a modern, memory-safe language like Rust. As the final product, we will deliver this report alongside a Rust library and a \textit{Command-Line} application for the SDitH protocol threshold variant.
 
 \section{Structure of the report}
-\autoref{ch:prelim} provides a condensed background on the cryptographic primitives and sub-protocols employed in the SDitH protocol. Additionally, it includes an overview of the Rust programming language and its features, offering readers insight into the programmatic design choices made in our implementation. 
+\autoref{ch:prelim} provides a condensed background on the cryptographic primitives and sub-protocols employed in the SDitH protocol. Additionally, it includes an overview of the Rust programming language and its features, offering readers insight into the programmatic design choices made in our implementation.
 
 \autoref{ch:spec} outlines the specification of the SDitH protocol for the threshold variant. \autoref{ch:impl} delves into our implementation of the protocol in Rust, detailing the individual subroutines and highlighting the most impactful design decisions and optimizations.
 
@@ -270,19 +269,18 @@ In \autoref{ch:bench}, we evaluate the performance of our implementation, compar
 
 \chapter{Preliminaries}\label{ch:prelim}
 
-In this section, we outline the mathematical and cryptographic foundations necessary to understand the SDitH scheme and its components, providing a step-by-step progression from the basics to the construction of the protocol.
+In this section, we outline the foundations required to understand the SDitH signature scheme and its components.
 
-We begin by introducing the essential subroutines that underpin the SDitH protocol. This includes \textbf{Galois Finite Fields}~\cite{martinez2023syndromes, reed1960polynomial, brownadvanced} along with cryptographic primitives; \textbf{collision-resistant hash functions} and \textbf{Merkle tree commitment scheme}~\cite{becker2008merkle}. In addition, we provide short introductions to the foundational protocols of \textbf{Secure Multi-Party Computation} (MPC) and \textbf{Zero-Knowledge} (ZK) proofs, which serve as the underlying cryptographic protocols.
+We begin by introducing the essential subroutines that underpin the SDitH protocol. This includes \textit{Galois Finite Fields}~\cite{martinez2023syndromes, reed1960polynomial, brownadvanced} along with cryptographic primitives; \textit{collision-resistant hash functions} and \textit{Merkle tree commitment scheme}~\cite{becker2008merkle}. In addition, we provide short introductions to the underlying mechanisms of \textit{Secure Multi-Party Computation} (MPC) and \textit{Zero-Knowledge} (ZK) proofs, which serve as the underlying cryptographic protocols.
 
-Next, we explain the Syndrome Decoding (SD) problem, which forms the backbone of the SDitH protocol. This includes an overview of the problem definition~\cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}, and its polynomial representation. This will support an understanding of how the protocol operates on hard instances of the SD problem.
+Next, we explain the Syndrome Decoding (SD) problem, which forms the underlying computational problem of the SDitH protocol. We give an overview of the problem definition~\cite{aguilarsyndrome11, mceliece1978public, berlekamp1978inherent, baldi2013optimization}, and its polynomial representation.
 
-Building upon these foundations, we lay the groundwork for the construction of the SDitH protocol. First, we discuss the \textbf{Multi-Party-Computation-in-the-Head} (MPCitH) paradigm, explaining how it is leveraged to construct efficient ZK proofs~\cite{ishai2007zero}. Additionally we detail the role of the MPC preprocessing~\cite{baum2020concretely} and linear secret-sharing scheme~\cite{feneuil2023threshold}, which dramatically improve the efficiency of the MPCitH construction, and verification. Next, we introduce the \textbf{Fiat-Shamir heuristic}, a powerful tool that transforms an interactive ZK protocol into a non-interactive signature scheme~\cite{fiat1986prove}.
+Building upon these foundations, we lay the groundwork for the construction of the SDitH protocol. First, we discuss the \textit{Multi-Party-Computation-in-the-Head} (MPCitH) paradigm, explaining how it is leveraged to construct efficient ZK proofs~\cite{ishai2007zero}. Additionally we detail the role of the MPC preprocessing~\cite{baum2020concretely} and linear secret-sharing scheme~\cite{feneuil2023threshold}, which dramatically improve the efficiency of the MPCitH construction, and verification. Next, we introduce the \textit{Fiat-Shamir heuristic}, a powerful tool that transforms an interactive ZK protocol into a non-interactive signature scheme~\cite{fiat1986prove}.
 
-Finally, we outline the reasons and benefits of using the Rust programming language as the foundation for implementing the SDitH protocol.
-
+Finally, we provide an introduction to the Rust programming language. This section serves to introduce the Rust programming language, aiming to both pique readers' interest in its unique features and provide a rationale for its selection in our implementation.
 
 \section{Galois Finite Field}\label{sec:gf256}
-Finite fields lay the basis for many cryptographic protocols and primitives. In essence, finite field theory describes the relation and properties between numbers, while disregarding the numbers themselves. In order to define finite fields, we first need to define a \textit{group} (\autoref{def:group}).
+Finite fields form the foundation of numerous cryptographic protocols and primitives. Fundamentally, finite field theory examines the relationships and properties among elements, abstracting away the elements themselves. To formally define finite fields, we must first introduce the concept of a \textit{group} (\autoref{def:group}).
 
 \begin{definition}\label{def:group}
   A group $\mathbb{G}$ is a tuple $(\mathbb{G}, \times, 1)$ where $\mathbb{G}$ is the set of elements in the group, $\times$ is a binary operator, and $1$ is the multiplicative identity. The group $\mathbb{G}$ must satisfy the following properties:
@@ -309,39 +307,39 @@ Finite fields lay the basis for many cryptographic protocols and primitives. In 
 \end{definition}
 
 \noindent
-The most commonly known finite fields are the prime fields $\mathbb{F}_p$, widely used in discrete logarithm cryptosystems, such as ECDSA and ElGamal. These fields can be extended into $\mathbb{F}_{p^n}$, containing $p^n$ elements which we will describe in \autoref{sub:field_extension}. However, prime fields are not efficient for large numbers, due to the modular reduction overhead, a common requirement in protocols such as SDitH. For better efficiency, we require a field that can be represented using low amounts of bits or bytes. One method to achieve this is by constructing fields commonly known as Galois fields. Consider the simplest prime field, also called binary field, $\mathbb{F}_2 = ({0,1}, \texttt{XOR}, \texttt{AND}, 0, 1)$. It is straightforward to verify that this field satisfies the properties outlined in \autoref{def:field}.
+The most commonly known finite fields are the prime fields $\mathbb{F}_p$, widely used in discrete logarithm cryptosystems, such as ECDSA and El-Gamal. These fields can be extended into $\mathbb{F}_{p^n}$, containing $p^n$ elements which we will describe in \autoref{sub:field_extension}. However, prime fields are not efficient for large numbers, due to the modular reduction overhead, a common requirement in protocols such as SDitH. For better efficiency, we require a field that can be represented using low amounts of bits or bytes. One method to achieve this is by constructing fields commonly known as Galois fields. Consider the simplest prime field, also called binary field, $\mathbb{F}_2 = (\{0,1\}, \texttt{XOR}, \texttt{AND}, 0, 1)$. It is straightforward to verify that this field satisfies the properties outlined in \autoref{def:field}.
 
-The Galois field $\mathbb{F}_{2^n}$ is an extension field of $\mathbb{F}_2$, defined as $\mathbb{F}_{2^n}$. This field is constructed by selecting an irreducible polynomial $f(x)$ of degree $n$ with coefficients in $\mathbb{F}_2$. The elements of $\mathbb{F}_{2^n}$ are represented as polynomials of degree at most $n-1$ with coefficients in $\mathbb{F}_2$. Consequently, $\mathbb{F}_{2^n}$ contains exactly $2^n$ elements. The polynomial $f(x)$ ensures that $\mathbb{F}_{2^n}$ forms a valid field as it defines the modular reduction in multiplication.
+The Galois field $\mathbb{F}_{2^n}$ is an extension field of $\mathbb{F}_2$, defined as $\mathbb{F}_{2^n}$. We can construct this field by selecting an irreducible polynomial $p(x)$ of degree $n$ with coefficients in $\mathbb{F}_2$. Consequently, $\mathbb{F}_{2^n}$ contains exactly $2^n$ elements. The polynomial $p(x)$ ensures that $\mathbb{F}_{2^n}$ forms a valid field as it defines the modular reduction in multiplication.
 
-Each element in $\mathbb{F}_{2^n}$ is represented as a polynomial of degree at most $n-1$ with coefficients in $\mathbb{F}_2$.
-
+Consequently, each element in $\mathbb{F}_{2^n}$ can be represented as a polynomial of degree at most $n-1$ with coefficients in $\mathbb{F}_2$.
 \begin{align*}
   a(x) = a_{n-1}x^{n-1} + a_{n-2}x^{n-2} + \cdots + a_1x + a_0
 \end{align*}
-
 \noindent
-where $a_i \in \mathbb{F}_2$ This corresponds directly into the 8-bit binary representation $a_{n-1}a_{n-2}\dots a_1a_0$. The addition and multiplication operations within $\mathbb{F}_{2^n}$ are defined as follows:
+where $a_i \in \mathbb{F}_2$. This corresponds directly into the binary representation $a_{n-1}a_{n-2}\dots a_1a_0$. The addition and multiplication operations within $\mathbb{F}_{2^n}$ are defined as follows:
 
 \begin{itemize}
-  \item \textbf{Addition}: The addition of two elements $a,b \in \mathbb{F}_{2^n}$ is defined as the bitwise XOR of the two elements, due to the fact that it corresponds to addition modulo $2$.
+  \item \textbf{Addition}: The addition of two elements $a,b \in \mathbb{F}_{2^n}$ is defined as the bitwise XOR of the two elements.
   \item \textbf{Multiplication}: The multiplication of two elements $a,b \in \mathbb{F}_{2^n}$ is defined as the multiplication of the two polynomials modulo the irreducible polynomial $p(x)$.
 \end{itemize}
 
-A common choice for the irreducible polynomial is the Rijndael polynomial $p(x) = x^8 + x^4 + x^3 + x + 1$ used in the AES protocol~\cite{brownadvanced}. This field is commonly known as $\mathbb{F}_{2^8}$. The size of the field allows us to represent elements as bytes, which is efficient for large numbers and it contains all the elements of a byte.
+A common choice for the irreducible polynomial is $p(x) = x^8 + x^4 + x^3 + x + 1$. This resulting field is commonly known as Rijndael's Galois Field employed in the AES protocol~\cite{brownadvanced}. In the SDitH protocol we will denote the field as $\mathbb{F}_{q} = \mathbb{F}_2[x]/(x^8 + x^4 + x^3 + x + 1)$ for $q=2^8$. The size of the field allows us to represent elements as bytes, which is efficient for large numbers and it contains all the elements of a byte.
 
 \subsubsection{Field extension}\label{sub:field_extension}
 
-An advantageous property of Galois fields is that they can easily be extended, like $\mathbb{F}_{2}$ to $\mathbb{F}_{2^8}$. To ensure security in the SDitH protocol, the field $\mathbb{F}_{2^8}$, which we shall denote as $\mathbb{F}_q$ is extended to encompass the field of 32-bit unsigned integers. This can be done as a \textit{tower extension} by first building a degree-2 extension to $\mathbb{F}_{q^2}$ using the irreducible polynomial $F_{q^2} = F_q[X] / (X^2 + X + 32)$ and finally extending this field to $\mathbb{F}_{q^4}$ using the irreducible polynomial $F_{q^4} = F_q[Z] / (Z^2 + Z + 32(X))$. While you could create the final field independently, the tower extension allows us to reuse the construction of the intermediate field. Addition and multiplication in the extension fields are represented as the following
+An advantageous property of Galois fields is that they can easily be extended -- like $\mathbb{F}_{2}$ was extended to $\mathbb{F}_{2^8}$. To ensure security in the SDitH protocol, the field $\mathbb{F}_q$ is extended to encompass the field of 32-bit unsigned integers. This can be done via a \textit{tower extension} by first building a degree-2 extension $\mathbb{F}_{q^2} = \mathbb{F}_q[X] / (X^2 + X + 32)$ and finally extending to $\mathbb{F}_{q^4} = \mathbb{F}_q[Z] / (Z^2 + Z + 32(X))$. While you could create the final field independently, the tower extension allows us to reuse the construction of the intermediate field. Addition and multiplication in the extension fields are represented as the following
 \begin{align*}
   a & = a_0 + a_1x  \quad a \in \mathbb{F}_{q^\eta}, a_0, a_1 \in \mathbb{F}_q \\
   b & = b_0 + b_1x  \quad b \in \mathbb{F}_{q^\eta}, b_0, b_1 \in \mathbb{F}_q
 \end{align*}
 \begin{align}
-  a + b     & = (a_0 + a_1x) + (b_0 + b_1x) = (a_0 + b_0) + (a_1 + b_1)x               \nonumber \\
-  a \cdot b & = (a_0 + a_1x) \cdot (b_0 + b_1x)                                        \nonumber \\
-            & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1x^2                                \nonumber \\
-            & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1(x + 32)                           \nonumber \\
-            & = a_0b_0 + 32a_1b_1 + (a_0b_1 + a_1b_0 + a_1b_1)x\label{eq:gf256_ext_mul}
+  a + b & = (a_0 + a_1x) + (b_0 + b_1x) = (a_0 + b_0) + (a_1 + b_1)x \\
+  \begin{split}
+    a \cdot b & = (a_0 + a_1x) \cdot (b_0 + b_1x)                                         \\
+    & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1x^2                                 \\
+    & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1(x + 32)                            \\
+    & = a_0b_0 + 32a_1b_1 + (a_0b_1 + a_1b_0 + a_1b_1)x
+  \end{split}
 \end{align}
 
 \section{Cryptographic Primitives and protocols}
@@ -358,12 +356,16 @@ We denote a hash function by a generator $\mathcal{H}$ which on input of a secur
   Given a hash function $h$, there exist no PPT algorithm that can find two distinct messages $m, m'$ such that $h(m) = h(m')$ with non-negligible probability.
 \end{lemma}
 
-The consensus among researchers indicates that for collision and preimage resistance, quantum computing is expected to reduce the security level from $k$ to $k/2$ through approaches like Grover's algorithm~\cite{nielsen2010quantumgrover}. In contrast, no known methods have been proposed to reduce the security level for collision resistance. Consequently, protocols that depend on collision-resistant hash functions, such as Merkle Signature or SDitH, remain a viable choice for post-quantum secure protocols.
+The consensus among cryptographic researchers is that quantum computing is expected to reduce the security level for preimage resistance from $k$ to $k/2$ through approaches like Grover's algorithm~\cite{nielsen2010quantumgrover}.
 
-In proving the security of hash functions, researchers often resort to models like the Quantum Random Oracle Model (QROM) described in \autoref{sub:qrom}, this approach however suffers form the fact that it abstracts the hash functions as ideal even when evaluated in a superposition. While there is significant work being done to further prove the future security of hash functions~\cite{dtuPostquantumSecurity}.
+In contrast, no known methods have been proposed to reduce the security level for collision resistance. Consequently, protocols that depend on collision-resistant hash functions, such as Merkle Signature or SDitH, remain a viable choice for post-quantum secure protocols.
+
+To prove the security of hash functions, researchers often rely on models such as the Quantum Random Oracle Model (QROM), as described in \autoref{sub:qrom}. However, this approach has the limitation of abstracting hash functions as ideal, even when evaluated in superposition. Research efforts are focused on further establishing the security of hash functions in post-quantum contexts~\cite{dtuPostquantumSecurity}.
+
 
 \subsubsection{Extendable-output (hash) functions (XOF)}\label{sec:xof}
-An \textit{extendable-output function} is a function that takes a bit string (also called a message) $\{0,1\}^*$ as input and can produce any desirable length output. Meaning that it can be used to generate an arbitrary amount of pseudorandom data. This is useful in cryptographic protocols where a seeded randomness is needed.
+An \textit{Extendable-Output Function} (XOF) is a function that takes a bit string (also called a message) $\{0,1\}^*$ as input and can produce any desirable length output. Meaning that it can be used to generate an arbitrary amount of pseudorandom data. This is useful in cryptographic protocols where a seeded randomness is needed.
+
 It is formally defined in FIPS 204~\cite{FIPS204_2024}:
 \begin{definition}
   A function on bit strings in which the output can be extended to any desired length. The approved XOFs from FIPS 202~\cite{FIPS202_2015} are designed to satisfy the following properties:
@@ -375,12 +377,13 @@ It is formally defined in FIPS 204~\cite{FIPS204_2024}:
 
 \subsubsection{Random Oracle Model (ROM)}
 
-When arguing about the security of cryptographic protocols that makes use of hash functions it is extremely useful to relax the assumption of the chosen hash function.
-Such a relaxation paradigm was suggested by bellare~\cite{bellare1993random}, this is known as the \textit{Random Oracle Model} (ROM). In this model they assumes that the hash function $h$ is instead a random oracle $O$. This allows for a more intuitive and simpler security analysis of a protocol.
+When proving the security of cryptographic protocols that utilize hash functions, it is often beneficial to relax the assumptions about the chosen hash function.
+
+Such a relaxation paradigm was suggested by bellare~\cite{bellare1993random}, known as the \textit{Random Oracle Model} (ROM). This model assumes that the hash function $h$ is instead a random oracle $O$ allowing for a simpler security analysis of a protocol.
 
 They describe the paradigm by the following steps:
-\begin{definition}[Random oracle model paradigm]
-  Suppose one has a protocol problem $\Pi$ where the problem is independent from the choice of $h$. In order to devise a good protocol $P$ for $\Pi$:
+\begin{definition}[ROM Paradigm]
+  Assume one has a protocol problem $\Pi$ where the problem is independent from the choice of $h$. In order to devise a good protocol $P$ for $\Pi$:
   \begin{itemize}
     \item Find a formal definition for $\Pi$ in the model of computation in which all parties -- good and bad alike -- shares the random oracle $O$
     \item Design a protocol $P$ that is secure in the ROM
@@ -388,16 +391,18 @@ They describe the paradigm by the following steps:
     \item Replace the random oracle with a hash function $h$ and prove that the protocol is secure in the ROM
   \end{itemize}
 \end{definition}
-We will formally define the \textit{classical} ROM as follows:
+
+We formally define the \textit{classical} ROM as follows:
 \begin{definition}[Random Oracle Model (ROM)]
   The adversary is given access to a random hash function through an oracle $O: \{0,1\}^* \rightarrow \{0,1\}^*$. The adversary can query the oracle $O(x)$ and receive the output. The oracle is stateless and the same input will always yield the same output.
 \end{definition}
-This would later be replaced by the concrete hash function, enabling a quantum attacker to query $h$ based on quantum states.
+
+% This would later be replaced by the concrete hash function, enabling a quantum attacker to query $h$ based on quantum states.
+% Note: This sentence is not clear. Either remove or extend explanation.
 
 \subsubsection{Quantum-accessible Random Oracle Model (QROM)}\label{sub:qrom}
-Since we are implementing post-quantum secure protocols, it is relevant to consider the \textit{Quantum Random Oracle Model} (QROM). The extension of the ROM model, defined in~\cite{boneh2011random}, is that we allow the quantum adversary to evaluate the random oracle in superpositions, meaning that the adversary can query with quantum states $|x \rangle = \sum \alpha_x |x \rangle$ and receive back the evaluated state $\sum\alpha_x |O(x)\rangle$. This is called the \textit{quantum(-accessible) random oracle model} (QROM).
+When dealing with post-quantum secure protocols, it is relevant to consider the \textit{Quantum Random Oracle Model} (QROM). The extension of the ROM model, defined in~\cite{boneh2011random}, allows the quantum adversary to evaluate the random oracle in superpositions, meaning that the adversary can query with quantum states $|x \rangle = \sum \alpha_x |x \rangle$ and receive back the evaluated state $\sum\alpha_x |O(x)\rangle$. This is called the \textit{quantum(-accessible) random oracle model} (QROM).
 
-We define the QROM as follows:
 \begin{definition}[Quantum Oracle Model (QROM)]
   Given a random oracle $O$, the associated quantum random oracle $O_Q$ maps a superposition of bit-strings to the superposition of its values when evaluated with $O$.\\
   For every basis vector:
@@ -405,8 +410,10 @@ We define the QROM as follows:
     O_Q(\langle x,y \rangle) = \langle x,y \oplus O(x) \rangle
   \end{align}
 \end{definition}
+
 One problem with this approach is the fact that we assume that the hash function becomes a evaluation at a superposition. This can be shown that for certain schemes this will yield to insecure protocols under any choice of hash function.
-For the sake of this paper we will only be using the ROM and QROM and not describe the further security analysis.
+
+For this report we will only be using the ROM and QROM and not describe the further security analysis.
 
 \subsection{Commitment Schemes}
 A commitment scheme allows a \textit{prover} to \textit{commit} to a value and later \textit{open} or reveal the value to a \textit{verifier}. It satisfies the following two properties:
@@ -423,7 +430,7 @@ Consider a simple scenario. Alice and Bob are playing a game of \textit{heads or
   \item Bob does not trust Alice not to correct her guess after learning his result
   \item Alice does not trust Bob not to use the knowledge of her guess to cheat
 \end{enumerate}
-Therefore, consider the following protocol. Given a public secure hash function $h$ \autoref{sec:prelim_hash}:
+Therefore, consider the following protocol. Given a public secure hash function $h$:
 \begin{enumerate}[parsep=0pt, itemsep=0pt]
   \item Alice chooses a guess $g \in \{0,1\}$ for \textit{tails} and \textit{heads} respectively.
   \item Alice computes her commitment $c = h(g | w)$ for some random string $w$ and sends $c$ to Bob.
@@ -443,38 +450,25 @@ which she can only do with negligible probability per \autoref{lem:collision}, e
 
 \subsubsection{Merkle Tree Commitment Scheme}
 \label{sub:merkle_tree_prelim}
-A variant of such a scheme which allows for partial opening, meaning that the prover does not have to open the entire commitment, but can instead open a subset of the commitment, is the \textit{Merkle Tree Commitment scheme}~\cite{becker2008merkle}.
+The common commitment scheme described above requires the prover to reveal all values that contribute to the commitment hash, enabling the verifier to fully reconstruct the commitment. However, in the threshold variant of the SDitH protocol, we require the prover to prove the consistency of a subset of the committed values without revealing the entire commitment. This is referred to as \textit{partial opening}. A potential candidate that supports partial opening is the \textit{Merkle Tree Commitment Scheme}~\cite{becker2008merkle}.
 
-Let $v_1, \dots, v_n$ be the values to be committed, and let $h$ denote a cryptographically secure hash function. The leaves of the Merkle tree, $a_{0,1}, \dots, a_{0,n}$, are initialized as the hash values of the input values:
+\begin{definition}\label{def:merkle_tree}
+  Given a collision-resistant hash function \texttt{Hash} and $N$ input values $v_1, \dots, v_N$. We define the \texttt{MerkleTree}
+  {\small\begin{align*}
+      \texttt{MerkleTree}(v_1, \dots, v_N) = \begin{cases}
+                                               \texttt{Hash}(\texttt{MerkleTree}(v_1, \dots, v_{N/2})\ |\ \texttt{MerkleTree}(v_{N/2+1}, \dots, v_N)) & N > 1 \\
+                                               \texttt{Hash}(v_i, i)                                                                                  & N = 1 \\
+                                             \end{cases}
+    \end{align*}}%
+\end{definition}
+
+In order to reveal the consistency of a subset $E \subset [N]$, the prover reveals the sibling paths for the values $(v_i)_{i \in E}$. We denote the function \texttt{MerkleAuthPath}.
 \begin{align*}
-  a_{0,i} = h(v_i), \quad \text{for } i = 1, \dots, n.
+  \texttt{MerkleAuthPath}(\{v_i\}_{i \in E}) \rightarrow \texttt{auth}
 \end{align*}
+We have that $|\texttt{auth}| \leq |E| \cdot \log(N/|E|)$.
 
-Each parent node $a_{i,j}$, where $i$ represents the level of the tree and $j$ denotes the parent index at that level, is computed as the hash of its two child nodes:
-\begin{align*}
-  a_{i,j} = h(a_{i-1,2j} \, | \, a_{i-1,2j+1}),
-\end{align*}
-where $|$ indicates concatenation of the child nodes.
-
-The root node, $a_{h,0}$, where $h$ is the height of the tree, serves as the commitment value and is sent to the verifier.
-
-To reveal a committed value $v$, the prover computes the authentication path for the value's leaf node $a_{0,l}$, where $l$ is the index of the value. The authentication path $A$ consists of the sequence of sibling nodes required to reconstruct the root. The first element in the authentication path, $A_0$, is the sibling of the leaf node:
-\begin{align*}
-  A_0 =
-  \begin{cases}
-    a_{0,l-1}, & \text{if } l \text{ is odd,}  \\
-    a_{0,l+1}, & \text{if } l \text{ is even.}
-  \end{cases}
-\end{align*}
-This element is recorded as $auth_0$.
-
-For higher levels, each subsequent element in the path is determined as:
-\begin{align*}
-  A_i = h(A_{i-1} \, | \, auth_{i-1}),
-\end{align*}
-where $auth_i$ is the sibling node of $A_{i-1}$ at the same level.
-
-The prover transmits the authentication path $A$ and the index $p$ of the selected value to the verifier. The verifier checks the validity of the commitment by using the provided leaf value and authentication path to recompute the root of the Merkle tree.
+The prover transmits the authentication path $\texttt{auth}$ and the index $p$ of the selected value to the verifier. The verifier validates the commitment by using the provided leaf value and authentication path to recompute the root of the Merkle tree. This process is represented by the function $\texttt{MerkleRootFromAuthPath}(\texttt{auth}, \{v_i\}_{i \in E})$.
 
 \subsubsection{Security properties}
 
@@ -1710,16 +1704,25 @@ Recall, that instead of sharing $x_A$, we tweak the SD instance to share $s_A$ i
 \end{protocol}
 Note that the protocol requires the evaluation of a polynomial $P \in \mathbb{F}_q^{\deg(P)}$ at a point $r \in \mathbb{F}_q^\eta$, where the coefficients of $P$ lie in $\mathbb{F}_q$ and the evaluation point $r$ is in the field extension $\mathbb{F}q^\eta$. Formally, we define the polynomial evaluation as follows:
 \begin{align}
-  Q(r)  = \textstyle\sum{i=0}^{|Q|} Q_i \cdot r^{i-1}  \quad Q_i \in F_q, r \in F_q^\eta\label{eq:sdith_mpc_polynomial_eval}
+  Q(r)  = \textstyle\sum_{i=0}^{|Q|} Q_i \cdot r^{i-1}  \quad Q_i \in F_q, r \in F_q^\eta\label{eq:sdith_mpc_polynomial_eval}
 \end{align}
 To analyze the security of the protocol, we denote $p$ as the false positive probability which quantifies the likelihood that the MPC protocol incorrectly accepts an invalid instance~\cite{feneuil2022syndrome,aguilarsyndrome11}.
 
+Let us reason about the false positive probability of the MPC protocol. We shall denote $\Delta = |\mathbb{F}_{q^4}|$. Whenever the input is invalid, i.e. $\texttt{wt}(x) > w, P, Q$ are incorrectly built, we have that $Q \cdot S \neq P \cdot F$. The probability to have the equality for $i$ evaluations among the $t$ repetitions is
+\begin{align*}
+  \frac{\max_{\ell \leq m + w -1} \{ \binom{\ell}{i} \binom{\Delta - \ell}{t-i} \}}{\binom{\Delta}{t}}
+\end{align*}
+since $Q\cdot S - P \cdot F$ is a polynomial pf degree at most $m + w -1$. This is following \autoref{lem:schwartz}. Whenever this event occurs, the probability of a false positive is bounded by
+\begin{align*}
+  \left(\frac{1}{\Delta}\right)^{t-i}
+\end{align*}
+For the $d$-split variant, we have that each polynomial is split into chunks of degree $m/d$ and $w/d$. Therefore the probability of a false positive is bounded by \autoref{lem:sdith-mpc-soundness}.
+
 \begin{lemma}[False positive probability $p$ of \autoref{def:sdith-mpc}]\label{lem:sdith-mpc-soundness}
-  Let $x_A = \texttt{open}(\sh{x_A})$. If $x_A$ corresponds to a valid SD instance $(H', y)$ and if all sharings are correctly generated. Then \autoref{def:sdith-mpc} always outputs \texttt{Accept}.
-  Otherwise, the probability of a false positive is bounded by
+  Let $x_A = \texttt{open}(\sh{x_A})$. If $x_A$ corresponds to a valid SD instance $(H', y)$ and if all sharings are correctly generated. Then \autoref{def:sdith-mpc} always outputs \texttt{Accept}. Otherwise, the probability of a false positive is bounded by
   \begin{align*}
-    p = \sum_{i=0}^t \frac{\max_{j \leq m + w -1} \{ \binom{j}{i} \binom{\Delta - j}{t-i} \}}{\binom{\Delta}{t}} \cdot \left(\frac{1}{\Delta}\right)^{t-i}
-  \end{align*} over the randomness $r$ and $\varepsilon$ and $\Delta = |\mathbb{F}_{q^4}|$.
+    p = \sum_{i=0}^t \frac{\max_{\ell \leq (m + w)/d-1} \{ \binom{\ell}{i} \binom{\Delta - \ell}{t-i} \}}{\binom{\Delta}{t}} \cdot \left(\frac{1}{\Delta}\right)^{t-i}
+  \end{align*} over the randomness $r$ and $\varepsilon$
 \end{lemma}
 
 \section{The Threshold Signature Protocol}\label{sec:sdith-signature}
@@ -1973,8 +1976,6 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
   \end{enumerate}
 \end{protocol}
 
-\newpage
-
 \begin{protocol}[SDitH Verification Protocol]\label{def:sdith-verify}
   \setlength{\parindent}{0pt}
   \setlength{\parskip}{5pt}
@@ -2028,6 +2029,56 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
   Output \texttt{Accept} if and only if $h_1 \stackrel{?}{=} \tilde{h_1}$, and \texttt{Reject} otherwise.
 
 \end{protocol}
+
+\subsection{Key and Signature sizes}
+
+The SDitH signature scheme has the following memory performances
+
+\subsubsection{Public key}
+The public key $pk = (\texttt{seed\_H}, y)$ consists of the seed of length $\lambda$ to generate the matrix $H'$ and the public output of $y \in \mathbb{F}_q^{m-k}$.
+\begin{align*}
+  |pk| = \lambda / 8 + (n - k) \text{ bytes}
+\end{align*}
+
+\subsubsection{Secret key}
+The secret key $sk = (\texttt{seed\_H}, y, s_A, P, Q)$ consists of the public key and the solution to the syndrome decoding problem: $s_A$, and the polynomials $P$ and $Q$, all derivied from the solution $x$.
+\begin{align*}
+  |sk| = |pk| + k + 2w = \lambda/8 + n + 2w \text{ bytes}
+\end{align*}
+Note that you could set the secret key to be some $\texttt{seed}_{root}$ and then compute the SD instance and solution at signing time. However, this would add the key generation time to the signing time, but would allow for a secret key of size $\lambda/8$ bytes.
+\subsubsection{Signature}
+\begin{align*}
+  \text{Total Size} =
+   & \ 2\lambda \quad                                                                 &  & \rightarrow \text{size of the salt}                               \\
+   & + 2\lambda \quad                                                                 &  & \rightarrow \text{size of } h_1                                   \\
+   & + 2d \cdot t \cdot \log_2(|F_{\text{points}}|) \quad                             &  & \rightarrow \text{size of broad plain}                            \\
+   & + \tau \cdot \ell \cdot (k \cdot \log_2(|F_q|) + 2w \cdot \log_2(|F_q|)) \quad   &  & \rightarrow \text{size of } (\text{wit share}[e][i])_{i \in I[e]} \\
+   & + \tau \cdot \ell \cdot (2d + 1) \cdot t \cdot \log_2(|F_{\text{points}}|) \quad &  & \rightarrow \text{size of broad share}                            \\
+   & + \tau \cdot \ell \cdot 2\lambda \cdot \log_2(N / \ell) \quad                    &  & \rightarrow \text{size of } \text{auth}[e].
+\end{align*}
+
+Assuming that each field element in $F_q$ is represented by a byte, the signature size (in bytes) is given by:
+\begin{align*}
+  |\sigma| =
+  \lambda + 2d \cdot t \cdot \eta + \tau \cdot \ell \cdot k + 2w + (2d + 1) \cdot t \cdot \eta + \log_2(N / \ell).
+\end{align*}
+For the NIST categories presented in \autoref{tab:secparam} we get the following sizes:
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{|l|r|r|r|}
+    \hline
+    & \multicolumn{3}{c}{\textbf{Sizes (in bytes)}} \\
+    \textbf{Category} & Public key & Secret key & Signature (Max) \\
+    \hline
+    One               & $132$         & $432$         & $10684$           \\
+    Three             & $180$         & $628$         & $25964$           \\
+    Five              & $244$         & $838$         & $45676$           \\
+    \hline
+  \end{tabular}
+  \caption{Sizes (in bytes) for the categories in the SDitH protocol.}
+  \label{tab:sizes}
+\end{table}
 
 \section{Security}
 
@@ -2085,7 +2136,7 @@ Similarly, the Beaver triples $a$ and $b$ are adjusted for the $d$-split as foll
   c_j & = \sum_{i=1}^d a_{i,j} \cdot b_{i,j}, \quad j \in [\tau].
 \end{align*}
 
-While the $d$-split variant introduces a slight reduction in security compared to the standard SD problem, this is mitigated by a small increase in the security parameters $m$, and $w$. The primary advantage of this variant lies in its flexibility, enabling improved performance trade-offs~\cite{aguilarsyndrome11}. The increase in parameters are given by
+While the $d$-split variant introduces a slight reduction in security compared to the standard SD problem, this is mitigated by a small increase in the security parameters $m$, and $w$. The primary advantage of this variant lies in its flexibility. We have a bound on the size of the $|\mathbb{F}_q| \geq m/d$. Therefore, the main benefit to introduce the $d$-split version is let the protocol work on polynomials of smaller degree and/or on specific fields which provides better performance trade-offs~\cite{aguilarsyndrome11}. The increase in parameters are given by
 \begin{align}
   \epsilon_1 \geq \frac{\binom{m/d}{w/d}}{\binom{m}{w}} \cdot \epsilon_d\label{eq:d_split_epsilon}
 \end{align}
@@ -2095,7 +2146,7 @@ a proof of this can be found in~\cite[p27]{feneuil2022syndrome}
 
 The parameters for the SDitH protocol are given in \autoref{tab:secparam} and \autoref{tab:hashparam} are given by \autoref{eq:forgery_attack_cost} and \autoref{eq:d_split_epsilon}
 
-\begin{table}[ht]\label{tab:secparam}
+\begin{table}[ht]
   \centering
   \def\arraystretch{1.5}%  1 is the default, change whatever you need
   \begin{tabular}{cccccccccccccc}
@@ -2106,7 +2157,7 @@ The parameters for the SDitH protocol are given in \autoref{tab:secparam} and \a
     \textbf{III}                               & 207  &                                            & 256 & 376                                            & 220 & 114 & 2   &  & $q$ & 3      & 26     & 4      & 10  \\
     \textbf{V}                                 & 272  &                                            & 256 & 494                                            & 282 & 156 & 2   &  & $q$ & 3      & 34     & 4      & 13  \\ \specialrule{.1em}{.05em}{.05em}
   \end{tabular}
-  \caption{Security parameters for the SDitH protocol for categories one, three and five~\cite{aguilarsyndrome11}.}
+  \caption{Security parameters for the SDitH protocol for categories one, three and five~\cite{aguilarsyndrome11}.}\label{tab:secparam}
 \end{table}
 
 \begin{table}[ht]\label{tab:hashparam}
@@ -2459,19 +2510,6 @@ We further investigated the possibility of parallelizing the construction of par
 In addition, we explored the use of alternative hash functions. The \texttt{SHA3} implementation required by NIST~\cite{nistcall}, while highly secure, is not optimal in terms of performance due to the numerous rounds required to ensure its robustness. To address this, we introduced a feature flag, \texttt{blake3}, enabling the use of the more efficient \texttt{Blake3} hash function. This change resulted in dramatic performance improvements. However, the SDitH protocol, being heavily reliant on the security of its commitment scheme due to its MPCitH nature, depends critically on the strength of the underlying hash function. Therefore, the \texttt{blake3} feature is restricted to Category I security levels and intended strictly for exploratory purposes.
 
 As anticipated, the performance gains resulting from substituting the hash function were significant. As demonstrated in \autoref{tab:blake3}. By profiling, we saw that the computational overhead for Merkle tree construction decreased to approximately $38\%$ of the total execution time. This reduction aligns closely with the time complexity observed for the MPC computations.
-
-\begin{table}[!ht]
-  \centering
-  \begin{tabular}{lllll}
-    \hline
-    Category/Profile & Features & api/keygen & api/signing & api/verification \\
-    \hline
-    one/release      & base     & 293.99 µs  & 1.8742 ms   & 380.85 µs        \\
-    one/release      & blake3   & 282.54 µs  & 1.1936 ms   & 338.39 µs        \\
-    \hline
-  \end{tabular}
-  \caption{Performance comparison of the \texttt{one} profile, with and without the \texttt{blake3} feature flag. Run with full optimizations and turbo boost enabled.}\label{tab:blake3}
-\end{table}
 
 \subsubsection{Computing the authentication paths}\label{sub:auth_path}
 The initial implementation traversed the array in reverse order, identifying missing nodes by verifying parent-child relationships. This approach followed the structure outlined in Algorithm~6 of~\cite[p30]{aguilarsyndrome11}. Ultimately, however, we transitioned to a \textit{queue}-based method implemented in \rust{get_revealed_nodes}:
@@ -3286,9 +3324,8 @@ We conducted a series of tests to evaluate both the overall performance as well 
   \item \textit{Rust Nightly vs Stable} -- We ran a comparison between the compiling in the \textit{nightly} and \textit{stable} channels for rust.
   \item \textit{Multiplication algorithms} -- We benchmarked multiplication algorithms for \textit{Lookup} and \textit{Shift-and-Add} unit and integration tests.
   \item \textit{Constant time for multiplication} -- We ran \texttt{dudect} benchmarks for multiplication algorithms.
-  \item \textit{Blake3} -- We benchmarked an optimised implementation with \texttt{blake3} for hashing.
+  \item \textit{Blake3} -- We benchmarked an optimised implementation with \texttt{blake3} for hashing see \autoref{tab:blake3}.
   \item \textit{Signature size} -- We benchmarked the size of the signature produced by the \texttt{sign} function.
-  \item \textit{Final profiling} -- We ran a final profiling of the fully optimized implementation to prompt discussions of future optimisations.
 \end{itemize}
 
 \section{Testing setup}\label{sub:testing_setup}
@@ -3575,7 +3612,40 @@ Given these findings, we have set the \texttt{Lookup} implementation as the defa
   \caption{Multiplication performance comparison between \texttt{Lookup} and \texttt{Shift-and-Add} implementations. Running tests for multiplication alone and the signing operation}\label{tab:mul_comparison}
 \end{table}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Blake3}
+
+We performed a comparison between the defined \texttt{SHA3} and \texttt{SHAKE} hashing algorithms from \cite{aguilarsyndrome11} and the \texttt{Blake3} implementation. Benchmarks were executed with full optimizations and turbo boost enabled. The results, shown in \autoref{tab:blake3}, indicate that the \texttt{Blake3} implementation is significantly faster, highlighting the hash functionality as a bottleneck in the protocol implementation. For future practical implementations, it is evident that the development of efficient hashing mechanisms for the SDitH protocol should be prioritized.
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{lllll}
+    \hline
+    Category/Profile & Features & api/keygen & api/signing & api/verification \\
+    \hline
+    one/release      & base     & 293.99 µs  & 1.8742 ms   & 380.85 µs        \\
+    one/release      & blake3   & 282.54 µs  & 1.1936 ms   & 338.39 µs        \\
+    \hline
+  \end{tabular}
+  \caption{Performance comparison of the \texttt{one} profile, with and without the \texttt{blake3} feature flag. Run with full optimizations and turbo boost enabled.}\label{tab:blake3}
+\end{table}
+
+\subsection{Signature size}
+We ran a benchmark on the signature size to check if it aligned with the expected sizes. The results are shown in Table~\ref{tab:sig_size}. The results align with the expected averages reported by \cite{aguilarsyndrome11}.
+
+\begin{table}[ht!]
+  \centering
+  \begin{tabular}{lccc}
+    \hline
+    \textbf{Category} & \textbf{Low \textit{CI 95\%}} & \textbf{Mean} & \textbf{High \textit{CI 95\%}} \\
+    \hline
+    One               & $10473.216$ B                 & $10491.816$ B & $10510.416$ B                  \\
+    Three             & $25411.584$ B                 & $25439.168$ B & $25476.759$ B                  \\
+    Five              & $44520.611$ B                 & $44568.192$ B & $44615.773$ B                  \\
+    \hline
+  \end{tabular}
+  \caption{Signature size in bytes for the three categories of the SDitH protocol. The low and high bounds are the 95\% confidence intervals.}\label{tab:sig_size}
+\end{table}
+
 
 \chapter{Conclusion}\label{ch:conclusion}
 
