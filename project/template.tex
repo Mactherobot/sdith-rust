@@ -1477,23 +1477,6 @@ Next, we explore additional features employed to create a more dynamic and optim
 
 A good usecase could be facilitating the NIST security parameters. Note that we want the parameters to be constant at compile time, but we do not want to create several instances of functions that use each parameter for each category. Rust's feature flags come in handy.
 
-% We ended up not using this ->
-
-% \subsubsection{Build script}
-% Build scripts are Rust files executed before the package is compiled, offering significant flexibility in the build process. By putting a build.rs file in the root folder of the package cargo will automatically execute this file before building. Enabling you to generate code, link libraries, or configure the build based on environment variables.
-
-% A good example is building and linking C code into a rust package:
-% \begin{minted}{rust}
-%   fn main() {
-%     // Tell cargo to rerun the build script if the file changes
-%     println!("cargo:rerun-if-changed=src/foo.c");
-%     // `cc` is a create to build and link C code
-%     cc::Build::new()
-%       .file("src/foo.c")
-%       .compile("foo");
-%   }
-% \end{minted}
-% This approach can be particularly useful when incorporating parts of a reference implementation in C or C++. In our case, due to time constraints, we opted to consider using portions of the reference implementation. Additionally, another important use case for our build script is verifying that the selected features during package compilation are correct. This need arose while benchmarking against another hash function with a lower security level.
 
 \subsubsection{Feature flags}\label{prelim:feature_flags}
 Rust's feature flag system enables conditional compilation, offering flexibility to optimize or configure code for diverse use cases.
