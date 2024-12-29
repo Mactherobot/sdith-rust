@@ -3683,7 +3683,9 @@ In this project, we set out to implement the threshold variant of the SDitH Prot
 
 \subsubsection{Rust}
 
-First, our implementation is written in Rust. Compared to the reference implementation in C++, Rust is a modern, memory-safe language with a growing developer community. We believe that this choice makes our implementation more future-proof and accessible to future developers. Rust provides a rich set of modern features that enhance both the readability and maintainability of the code, which we have leveraged throughout this project.
+In comparison to the reference implementation in C++, the decision to adopt Rust as the programming language for this project brings significant advantages. Rust, a modern language designed with an emphasis on memory safety, has been gaining a robust and expanding developer community. By selecting Rust, our implementation is poised to be more future-proof and accessible to new developers.
+
+Rust's feature set contributes extensively to the project's code quality. Its guarantees for memory safety without a garbage collector ensure that potential issues like null pointer dereferencing and data races are mitigated at compile time. Furthermore, the language's expressive type system and ownership model enhance code readability and maintainability, aligning well with the objectives of this project. These attributes not only foster more reliable software but also streamline collaborative development efforts.
 
 \begin{itemize}
   \item \textit{Conditional compilation} -- Unlike the reference implementation, which is divided into multiple codebases for different categories, our implementation employs Rust's conditional compilation features. This approach consolidates all categories into a single, cohesive codebase, greatly simplifying the overall structure and reducing complexity.
