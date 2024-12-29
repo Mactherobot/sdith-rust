@@ -397,8 +397,7 @@ We formally define the \textit{classical} ROM as follows:
   The adversary is given access to a random hash function through an oracle $O: \{0,1\}^* \rightarrow \{0,1\}^*$. The adversary can query the oracle $O(x)$ and receive the output. The oracle is stateless and the same input will always yield the same output.
 \end{definition}
 
-% This would later be replaced by the concrete hash function, enabling a quantum attacker to query $h$ based on quantum states.
-% Note: This sentence is not clear. Either remove or extend explanation.
+This would later be replaced by the concrete hash function when doing a security analysis. As this report is discussing a post quantum setting this would then lead to enabling a quantum attacker to query $h$ based on quantum states instead. This will change the security analysis of the protocol and is discussed in \autoref{sub:qrom}.
 
 \subsubsection{Quantum-accessible Random Oracle Model (QROM)}\label{sub:qrom}
 When dealing with post-quantum secure protocols, it is relevant to consider the \textit{Quantum Random Oracle Model} (QROM). The extension of the ROM model, defined in~\cite{boneh2011random}, allows the quantum adversary to evaluate the random oracle in superpositions, meaning that the adversary can query with quantum states $|x \rangle = \sum \alpha_x |x \rangle$ and receive back the evaluated state $\sum\alpha_x |O(x)\rangle$. This is called the \textit{quantum(-accessible) random oracle model} (QROM).
