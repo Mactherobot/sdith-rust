@@ -1596,10 +1596,6 @@ The release profile was configured to maximize optimization during the compilati
   \item \mintinline{toml}{panic = "abort"}: This setting ensures that the program aborts immediately on a panic, without performing unwinding. If unwinding (e.g., via the \rust{catch_unwind} macro) is not required, setting \texttt{panic} to \texttt{"abort"} reduces binary size and often provides a slight performance boost.
 \end{itemize}
 
-% \subsubsection{Inlining}
-% A subtle but effective way to improve performance is to inline functions that are called many times, this removes the overhead of the function call. The Rust compiler will automatically inline functions if they are small enough. But there are some cases where this is not enough and the compiler does not inline. In this case we can use the \texttt{inline} attribute to force the compiler to inline a function. Cachegrind is a good profiling tool to check if a function is inlined by the compiler.
-% \todo{Maybe revise this}
-
 \subsubsection{Parallelisation}
 A common optimization technique in modern programming is to leverage the multi-core architecture of modern CPUs by employing \textit{parallelization} or \textit{multi-threading}. This approach allows programs to execute multiple tasks concurrently, significantly improving performance for computationally intensive operations.
 
@@ -2309,7 +2305,7 @@ Within the \texttt{src} directory, the code is further divided into submodules, 
   \item \texttt{utils}: Offers utility functions used across the codebase.
 \end{itemize}
 
-This modular design ensures that each aspect of the protocol is encapsulated within its respective submodule, making the codebase easier to understand, maintain, and extend. \todo{Update}
+This modular design ensures that each aspect of the protocol is encapsulated within its respective submodule, making the codebase easier to understand, maintain, and extend.
 \begin{figure}[H]
   \dirtree{%
     .1 \color{orange}Cargo.toml.
@@ -3066,7 +3062,6 @@ Similarly for $P$, we can leverage the same interpolation structure but instead,
 Therefore, to compute $S$ and $P$ we iterate over each interpolation point $\alpha_i$ and compute the scalar $x_i \cdot \frac{1}{\prod_{j\neq i}(\alpha_i - \alpha_j)}$ and the contributions of $F$ and $Q$ to the interpolation weights.
 
 We store the pre-computations in a temporary array \rust{tmp_poly} and then transfer the result to the polynomial \rust{s_poly} using \rust{gf256_add_vector}.
-\todo{Use the section on field polys to explain this better}
 \begin{minted}{rust}
   // Compute S and P
   for i in 0..PARAM_CHUNK_M {
@@ -3211,10 +3206,6 @@ Additionally we tested the correctness of the polynomial relation generation pro
 
 \section{MPC computation}\label{sub:mpc_algo}
 Before implementing the rest of the protocol, signing and verification, it was necessary to first develop the underlying MPC simulation subroutine detailed in \autoref{sec:sdith-mpc} -- including the generation of inputs, Beaver triples, and the MPC challenge. Following this, we detail the party computation subroutine, as well as its inverse, which form the core components of the MPC simulation.
-
-% \subsubsection{Complete and Truncate $\mathcal{Q}$}
-% We can omit sending the leading coefficient since it is always going to be 1. For this we have created a function that can add the leading coefficient, as we also need to be able to add 0 for the leading coefficient for all the shares that are not the leading. As they need to sum to 1. Our implementation is a simple loop that will add an element that is going to be the leading coefficient.
-% \todo{Should we remove this section? Seems }
 
 \subsubsection{Beaver Triples}
 The generation of $t \cdot d$ Beaver triples for performing the operation verification MPC protocol \autoref{def:sacrifice} begins by sampling $d$ field elements $a$ and $b$, followed by computing the corresponding correlated elements $c = a \cdot b$. When the splitting factor is $d=1$, the inner product reduces to simple multiplications. However, for a higher splitting factor such as $d=2$, the values $c_j$ (where $j \in [1:\tau]$) are computed as:
@@ -3444,7 +3435,7 @@ Benchmarks were conducted on two machines: a Dell XPS 15 9510 and a MacBook Pro 
 \end{figure}
 
 \subsubsection{Benchmark measurements}\label{sub:bench_measurements}
-We measured performance in both cycles per byte and time. Furthermore, we measured the signature size in bytes. \todo{Do we want cycles? Could we just add it to appendix?}
+We measured performance in both cycles per byte and time. Furthermore, we measured the signature size in bytes.
 
 \section{Results}\label{sub:results}
 
@@ -3792,7 +3783,6 @@ Moreover, we believe that our implementation makes a meaningful contribution to 
 \cleardoublepage
 \appendix
 \chapter{Appendix}
-\todo{Remember to refer to these sections correctly}
 
 \section{ZK from Cut-and-Choose}\label{sec:zk-cut-and-choose}
 
@@ -4063,7 +4053,6 @@ Next, the verifier computes the inverse of the broadcast share to recompute $(\s
                & = {S^*}_0(r) - S^*_0(r)  + \sh{b}                                                                     &  & \autoref{eq:mpcpoly} \\
                & = \sh{b}                                                                                              &  & \autoref{eq:mpcpoly} \\
 \end{align*}
-\todo{Want to explain the above in a more detailed manner? Specifically ${Q^*}_0(r) - {\sh{Q}}_1(r) = Q_1(r)$}
 
 \section{ZK-PoK Protocol}\label{sec:sdith-zkpok}
 
