@@ -1,7 +1,7 @@
 //! # Extendable output function (XOF).
 //!
 //! The pseudorandomness in SD-in-the-Head is generated through an extendable output hash function (XOF).
-//! For example, we can easily generate an array of random values in [F_q](crate::arith::gf256::FieldArith) by
+//! For example, we can easily generate an array of random values in [F_q](crate::subroutines::arith::FieldArith) by
 //! sampling a random hash `n` byte hash output and interpreting it as an array of field elements.
 
 #[cfg(not(feature = "xof_blake3"))]

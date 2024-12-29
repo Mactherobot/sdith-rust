@@ -1,8 +1,31 @@
+//! # SDitH Protocol Command Line Interface
+//! 
+//! Usage: sdith [COMMAND]
+//! 
+//! Commands:
+//!   keygen      SDitH signature protocol -- key generation
+//!   sign        SDitH signature protocol -- signing
+//!   verify      SDitH signature protocol -- verification
+//!   parameters  SDitH signature protocol -- print parameters
+//!   help        Print this message or the help of the given subcommand(s)
+//! 
+//! Options:
+//!   -h, --help     Print help
+//!   -V, --version  Print version
+//! 
+//! ## Build the CLI
+//! 
+//! The CLI can be built with the following command:
+//! 
+//! ```
+//! cargo build --release --bin sdith --features [category]
+//! ```
+
 use clap::{CommandFactory, Parser};
 use cli::Commands;
 use colored::Colorize as _;
 
-pub mod cli;
+mod cli;
 
 fn main() {
     let cli = cli::Cli::parse();

@@ -4,7 +4,7 @@
 //! This scheme is used by the signature scheme to commit to the shares of the parties.
 //!
 //! The tree is constructed from a list of commitments, where each leaf is a commitment.
-//! Parents are calculated by hashing the concatenation of the left and right children along with a [prefix](HASH_PREFIX_MERKLE_TREE).
+//! Parents are calculated by hashing the concatenation of the left and right children along with a prefix.
 //! The root of the tree is then sent as the final commitment.
 //!
 //! To open a commitment, the prover sends the commitment along with the hashed path from the leaf to the root.

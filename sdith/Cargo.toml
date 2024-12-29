@@ -4,7 +4,7 @@ description = "SDitH Signature Scheme Protocol from NIST Post-Quantum Cryptograp
 version = "0.0.0"
 edition = "2021"
 resolver = "2"
-default-run = "cli"                                                                                                                       # Default run the cli
+default-run = "sdith"                                                                                                                       # Default run the cli
 
 # We manually specify targets below
 autobenches = false
@@ -50,7 +50,7 @@ bench = false       # Prevents benchmarks from running src/lib.rs tests
 doctest = false     # Prevents doctests from src/lib.rs
 
 [[bin]]
-name = "cli"
+name = "sdith"
 path = "src/bin/cli/mod.rs"
 test = false                # Prevents tests from cli
 bench = false               # Prevents benchmarks from cli
@@ -60,6 +60,7 @@ name = "profiling_sign"
 path = "src/bin/profiling/sign.rs"
 test = false                       # Prevents tests from profiling
 bench = false                      # Prevents benchmarks from profiling
+doc = false
 
 [[bench]]
 name = "benchmark"
