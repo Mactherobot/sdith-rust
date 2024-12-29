@@ -456,7 +456,7 @@ The common commitment scheme described above requires the prover to reveal all v
   {\small\begin{align*}
       \texttt{MerkleTree}(v_1, \dots, v_N) = \begin{cases}
                                                \texttt{Hash}(\texttt{MerkleTree}(v_1, \dots, v_{N/2}) \mid \texttt{MerkleTree}(v_{N/2+1}, \dots, v_N)) & N > 1 \\
-                                               \texttt{Hash}(v_i, i)                                                                                  & N = 1 \\
+                                               \texttt{Hash}(v_i, i)                                                                                   & N = 1 \\
                                              \end{cases}
     \end{align*}}%
 \end{definition}
@@ -557,14 +557,14 @@ The secret can then be reconstructed by interpolating the polynomial from $\ell 
 
 From \autoref{def:lagrange} and \autoref{eq:lagrange1}, it follows that the secret can be uniquely \textit{reconstructed} using any $\ell + 1$ shares. If there were two distinct solution polynomials, say $h(x)$ and $h'(x)$, then their difference $h(x) - h'(x)$ would be a non-zero polynomial of degree at most $\ell$. However, this polynomial would also have at least $\ell + 1$ roots (corresponding to the points in $S$), which is impossible since a non-zero polynomial of degree $\ell$ cannot have more than $\ell$ roots. Thus, the polynomial $h(x)$ is unique.
 
-To establish $\ell$-privacy, consider any subset of indices $I$ such that $|I| \leq \ell$. For a given secret $s$ and its corresponding sharing polynomial $h(x)$, where $h(0) = s$, the shares are given by $\{h(i) \mid i \in I\}$. 
+To establish $\ell$-privacy, consider any subset of indices $I$ such that $|I| \leq \ell$. For a given secret $s$ and its corresponding sharing polynomial $h(x)$, where $h(0) = s$, the shares are given by $\{h(i) \mid i \in I\}$.
 
 Now, consider a random set of shares \( A = \{s_i \mid i \in I\} \). By \autoref{lem:lagrange}, there exists exactly one polynomial \( h_A(x) \) of degree at most $\ell$ that satisfies:
 \begin{align*}
-  h_A(0) &= s, \\
-  h_A(i) &= s_i \quad \text{for all } i \in I.
+  h_A(0) & = s,                                 \\
+  h_A(i) & = s_i \quad \text{for all } i \in I.
 \end{align*}
-Since there are no constraints on the coefficients of \( h_A(x) \) beyond the $\ell$ known shares and the secret at $h(0)$, the remaining coefficients of \( h_A(x) \) are free to take any values in $F$. This means that for every possible set of $\ell$ shares, there are $|F|^{\ell}$ distinct polynomials consistent with these shares, each corresponding to a different possible secret \( s \). 
+Since there are no constraints on the coefficients of \( h_A(x) \) beyond the $\ell$ known shares and the secret at $h(0)$, the remaining coefficients of \( h_A(x) \) are free to take any values in $F$. This means that for every possible set of $\ell$ shares, there are $|F|^{\ell}$ distinct polynomials consistent with these shares, each corresponding to a different possible secret \( s \).
 
 Thus, the secret \( s \) is uniformly distributed over \( F \) when conditioned on any subset of $\ell$ shares, ensuring \textit{$\ell$-privacy}. For a visual demonstration, refer to \autoref{fig:shamir}.
 
@@ -606,7 +606,7 @@ In terms of security needed for the SDitH protocol, we define the following secu
 In order to prove the validity of a MPC protocol that have been run in the head, we define the following notion of \textit{consistency}~\cite{ishai2007zero}.
 
 \begin{definition}[MPC view]\label{def:mpc-view}
-  We denote the view $V_i$ of a party $P_i$ in the protocol as $(i, x, r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share, and $(m_1, \dots, m_j)$ are the messages received by $P_i$ in the first $j$ rounds of the protocol. 
+  We denote the view $V_i$ of a party $P_i$ in the protocol as $(i, x, r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share, and $(m_1, \dots, m_j)$ are the messages received by $P_i$ in the first $j$ rounds of the protocol.
 \end{definition}
 
 \noindent Note that the messages sent by the parties can be inferred from the $V_i$ by invoking $\Pi$.
@@ -617,10 +617,10 @@ In order to prove the validity of a MPC protocol that have been run in the head,
 
 \begin{lemma}[Local and global consistency]\label{lem:consistency}
   Let $\Pi$ be an $N$-party protocol with a public input $x$. The following statements hold:
-\begin{enumerate}
+  \begin{enumerate}
     \item If all pairs of views $V_i$ and $V_j$ (for $i, j \in \{1, \dots, N\}$) are consistent with respect to $\Pi$, then there exists a full execution of $\Pi$ such that $V_i$ corresponds to the view of party $P_i$, for each $i$.
     \item Conversely, if such a full execution of $\Pi$ exists, then the pairwise consistency condition holds for all $V_i$ and $V_j$.
-\end{enumerate}
+  \end{enumerate}
 \end{lemma}
 
 \textbf{Proof of \autoref{lem:consistency}} The \textit{if} direction is trivial and follows from \autoref{def:mpc-view} and \autoref{def:mpc-consistent-view}.
@@ -630,23 +630,30 @@ The \textit{only if} direction is shown by the following. Consider $n$ pairwise 
 This property is crucial as it enables a verifier in the MPCitH framework to validate the protocol's correctness.
 
 \subsection{Zero-Knowledge Proofs}\label{sec:zk}
-The intuition behind a Zero-Knowledge proof of knowledge is that the prover can convince the verifier that they know a secret $w$, such that $x$ is true, without revealing the secret $w$ to the verifier. This could be someone wanting to prove that they are above the age of 18 without revealing their age.
+The intuition behind a Zero-Knowledge proof of knowledge is that the prover can convince the verifier that they know a secret $w$, such that $x$ is true, without revealing the secret $w$ to the verifier. For example, this could be someone wanting to prove that they are above the age of 18 without revealing their specific age.
 
-We denote a ZK $\Pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$. Let $x$ be a public statement in \textbf{NP} and $w$ be a witness such that $(x, w) \in \mathcal{R}$~\cite{feneuil2023threshold}.
 \begin{definition}
-  Let $x$ be a statement of language $L$ in \textbf{NP}, and $W(x)$ the set of witnesses for $x$ such that the following relation holds:
+  We denote a ZK $\Pi_{\mathcal{R}}$ for some \textbf{NP} relation $\mathcal{R}(x, w)$. Let $x$ be a statement of language $L$ in \textbf{NP}, and $W(x)$ the set of witnesses for $x$ such that the following relation holds~\cite{feneuil2023threshold}:
   \begin{align*}
     \mathcal{R} = \{(x, w)\; x \in L, w \in W(x)\}
   \end{align*}
+  We have the following properties:
+  \begin{itemize}
+    \item \textit{Completeness}: If $x$ is true, then $\mathcal{R}(x, w)$ holds for some $w$.
+    \item \textit{Soundness}: If $x$ is false, then the prover can convince the verifier that $\mathcal{R}(x, w)$ holds with negligible probability.
+    \item \textit{Zero-knowledge}: The verifier learns nothing about the statement $x$.
+  \end{itemize}
 \end{definition}
 
 \section{Syndrome Decoding Problem}\label{sec:syndrome}
 
-The SDitH protocol is built on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field (see \autoref{sec:gf256}). This protocol uses a variant of the SD problem, referred to as the \textit{coset weights} problem, first introduced by Berlekamp and McEliece in 1978~\cite{berlekamp1978inherent}. The problem is defined as follows:
+The SDitH protocol is built on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field (see \autoref{sec:gf256}). Specifically, SDitH utilises a variant of the SD problem, referred to as the \textit{coset weights} problem, first introduced by Berlekamp and McEliece in 1978~\cite{berlekamp1978inherent}. We state the problem as follows:
+
 \begin{definition}\label{def:syndrome}
-  Given $H \in \mathbb{F}^{(m-k)\times m}_q$ and $y \in \mathbb{F}^{m-k}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t.\ wt$(x) \leq w$ and $Hx = y$.
+  Given $H \in \mathbb{F}^{w\times m}_q$ and $y \in \mathbb{F}^{w}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t.\ wt$(x) \leq w$ and $Hx = y$.
 \end{definition}
-Generating such an instance is straightforward: one can construct a uniformly random parity-check matrix $H$ and a codeword $x$ (with $wt(x) \leq w$), and then compute the syndrome $y = Hx$. In the SDitH protocol, the values of the matrix $H$ and the syndrome $y$ are elements of the finite field $\mathbb{F}_q$ explained previously in \autoref{sec:gf256}. The SD problem is well-known to be NP-complete for random instances~\cite{berlekamp1978inherent} also referred to as the general decoding problem.To illustrate the computational difficulty, solving the problem using brute force would require $O(\binom{m}{w} q^w)$ operations, which is computationally infeasible for large $m$ and $k$.
+
+Generating such an instance is straightforward: one can construct a uniformly random parity-check matrix $H$ and a codeword $x$ (with $wt(x) \leq w$), and then compute the syndrome $y = Hx$. In the SDitH protocol, the values of the matrix $H$ and the syndrome $y$ are elements of the finite field $\mathbb{F}_q$ explained previously in \autoref{sec:gf256}. The SD problem is well-known to be NP-complete for random instances~\cite{berlekamp1978inherent} also referred to as the \textit{general decoding problem}. To illustrate the computational difficulty, solving the problem using brute force would require $O(\binom{m}{w} q^w)$ operations, which is computationally infeasible for large enough $m$ and $w$.
 
 \subsubsection{Standard form of the parity-check matrix}\label{sub:standard_form_of_the_parity_check_matrix}
 To improve the performance and reduce the key size of the protocol, its possible to utilize the fact that the matrix $H$ can be in standard form. $H = (H'|I_{m-k}) $ Where $H' \in \mathbb{F}^{(m-k)\times k}_q$, and $I_{m-k}$ is the identity matrix of size $m-k$. This allows for the following representation of the syndrome:
@@ -663,7 +670,7 @@ with $x = (x_A | x_B)$. This improves the performance of the algorithms used in 
 
 The SDitH MPC protocol must prove that the SD problem $ y = Hx $ is satisfied. As outlined in \autoref{def:sdith-mpc}, the shared input $\sh{x_A}$ is provided to the MPC protocol. Consequently, the correctness of the initial statement $ y = Hx $ follows directly~\cite{feneuil2022syndrome}.
 
-In addition to this, we need to verify that the Hamming weight condition $ \text{wt}(x) \leq w $ holds. To achieve this, the prover constructs three polynomials $ S $, $ Q $, and $ P $, alongside one public polynomial $ F $. These polynomials play a critical role in ensuring the weight condition is satisfied while preserving the zero-knowledge property of the protocol. The polynomials are defined as follows:
+In addition to this, we need to verify that the Hamming weight condition $ \text{wt}(x) \leq w $ holds. To achieve this, the prover constructs three polynomials $ S $, $ Q $, and $ P $, alongside one public polynomial $ F $. The polynomials are defined as follows:
 
 \begin{definition}[SDitH polynomials representation]\label{def:sdith-polynomials}
   Let $f_1,\dots, f_q$ denote all the elements of $\mathbb{F}_q$ and $x\in \mathbb{F}^m_q$ is a binary vector with Hamming weight $wt(x) \leq w$, then the polynomials are defined as:
@@ -675,7 +682,7 @@ In addition to this, we need to verify that the Hamming weight condition $ \text
   \end{itemize}
 \end{definition}
 
-We can now look at the relation
+\noindent We can now look at the relation
 \begin{equation}
   \centering
   S\cdot Q = P\cdot F\label{eq:polynomial_representation}
@@ -685,22 +692,24 @@ If we look at the left-hand side, which has the following property by design $S\
 
 For the right-hand side, the polynomial $F$ is the vanishing polynomial for the set ${f_1, \dots, f_m}$, so $F(f_i) = 0\ \forall\ f_i \in [1:m]$. The polynomial $P$ is needed to match the degree of $S \cdot Q$. As the degree of $F$ is $m \leq \text{deg}(S\cdot Q) \leq m + w - 1$.
 
-It is now apparent that if the prover can convince the verifier that they know of polynomials $P,Q$ such that $S\cdot Q = F \cdot P = 0$ at all points $f_i \in [1:m]$. The following must hold, either $S(f_i) = x_i = 0$ or $Q(f_i) = 0$. However, the polynomial $Q$ can be zero in at most $w$ points based on the degree, this means that $S$ is non-zero in at most $w$ points, based on the construction, which in turn implies that $wt(x) \leq w$.
+It is now evident that if the prover can convince the verifier of the existence of polynomials $P, Q$ such that the relation $S \cdot Q = F \cdot P = 0$ holds at all points $f_i \in [1 : m]$, the following must be true: either $S(f_i) = x_i = 0$ or $Q(f_i) = 0$ for each $f_i$.
 
-With this, we can define the soundness of the language for ZKP as follows:
+By the degree constraint of $Q$, the polynomial $Q$ can have at most $w$ roots (i.e., points $f_i$ where $Q(f_i) = 0$). Consequently, there are at most $w$ points where $S(f_i) \neq 0$, as $S(f_i)$ must be zero for all other $f_i$ to satisfy the given relation. This directly implies that $S$, and hence the vector $x$ it interpolates, has at most $w$ non-zero entries.
+
+Thus, the weight constraint $\text{wt}(x) \leq w$ is satisfied, completing the proof. With this, we can define the soundness of the language for ZKP as follows:
 \begin{equation}
   wt(x) \leq w \Leftrightarrow \exists P,Q \text{  with  }\text{deg}(P)\leq w-1\text{  and  }\text{deg}(Q) = w\text{ s.t. \autoref{eq:polynomial_representation} holds}\label{eq:soundness}
 \end{equation}
 
 \subsubsection{False positive probability}\label{sub:equality_test}
-The equality test from \autoref{eq:polynomial_representation} has a small probability of false positives, denoted $p$. To reduce this probability, the relation is evaluated at random points $\{r_k \in \mathbb{F}_q\}_{k\in[t]}$. By Schwartz-Zippel \autoref{lem:schwartz}, the probability of a false positive is bounded by $p \leq \frac{t}{q}$, where $q$ is the size of the finite field $\mathbb{F}_q$. In short, this makes it unlikely that the relation will hold for all points $r_k$ if the relation is not sound according to \autoref{eq:soundness}. Furthermore, we can tweak the parameters $t$ and $q$ to reduce $p$.
+The equality test from \autoref{eq:polynomial_representation} has a small probability of false positives, denoted $p$. To reduce this probability, we can evaluate the relation at random points $\{r_k \in \mathbb{F}_q\}_{k\in[t]}$. By the Schwartz-Zippel \autoref{lem:schwartz}, the probability of a false positive is bounded by $p \leq \frac{t}{q}$, where $q$ is the size of the finite field $\mathbb{F}_q$. In short, this makes it unlikely that the relation will hold for all points $r_k$ if the relation is not sound according to \autoref{eq:soundness}. Furthermore, we can tweak the parameters $t$ and $q$ to reduce $p$.
 
 \begin{lemma}[Schwartz-Zippel]\label{lem:schwartz}
   For a non-zero polynomial $P \in \mathbb{S}[X]$ of degree $d \geq 0$. Let $\mathbb{R}$ be a finite subset of $\mathbb{S}$ and set of random points $[r_1, \dots, r_n] \in \mathbb{R}$, the probability that $\Pr[P(r_1, \dots, r_n) = 0] \leq d/|\mathbb{R}|$.
 \end{lemma}
 
 \subsubsection{Avoiding interpolations for $S$}\label{sec:syndrome-avoid-interpolation}
-Recall the sharing of the witness $\sh{x_A}$ for $x = (x_A | x_B)$ detailed in \autoref{sec:syndrome}. We would have to use interpolation to compute $\sh{S}$ for each share $\sh{x_A}$. However, interpolation is of quadratic complexity and therefore not suitable for MPC. To mitigate this, we redefine the SD instance as follows:
+Recall the sharing of the witness $\sh{x_A}$ for $x = (x_A \mid x_B)$ as described in \autoref{sec:syndrome}. In the current setup, each party in the MPC protocol would need to perform interpolation to compute their share $\sh{S}$. However, interpolation incurs quadratic complexity, leading to significant computational overhead. To address this issue, we redefine the SD instance as follows:
 
 \begin{definition}[Redefined SD instance $y = Hx$]
   Let $s$ represent the coefficients of the polynomial $S$ in \autoref{eq:polynomial_representation}, and let $V$ be a matrix such that:
@@ -715,10 +724,11 @@ Recall the sharing of the witness $\sh{x_A}$ for $x = (x_A | x_B)$ detailed in \
 
 This redefinition preserves the security properties of the original SD problem, as the linear code $\mathcal{C}_{HV}$ remains uniformly random. This is due to the randomness of $\mathcal{C}_H$ and the invertibility of $V$.
 
-With this modification, we can replace the sharing $\sh{x_A}$ by representing $s = (s_A \mid s_B) = Vx$. The parties can then compute $\sh{s_B}$ and $\sh{s}$ from the sharing of $\sh{s_A}$ using:
+With this modification, we can replace the sharing $\sh{x_A}$ with $\sh{s_A}$ by representing $s = (s_A \mid s_B) = Vx$. The parties can then compute $\sh{s_B}$ and $\sh{s}$ from the sharing of $\sh{s_A}$ using:
 \begin{align*}
   \sh{s_B} = y - H'\sh{s_A}.
 \end{align*}
+This modification significantly improves the efficiency of the MPC protocol and the computational overhead of the SDitH protocol.
 
 \section{MPC-in-the-Head}\label{sec:mpcinth}
 
@@ -1981,12 +1991,12 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
           \end{align*}
     \item Build the signature
           \begin{align*}
-            \sigma = & \ (\ m \mid \texttt{salt} \mid h_1                                  \\
-                     &  \mid \texttt{broad\_plain}                                        \\
-                     &  \mid \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \\
-                     &  \mid \texttt{auth}^e                                              \\
-                     &  \mid \sh{\texttt{wit}}_i^e                                        \\
-                     &  \mid I\ )
+            \sigma = & \ (\ m \mid \texttt{salt} \mid h_1                                \\
+                     & \mid \texttt{broad\_plain}                                        \\
+                     & \mid \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \\
+                     & \mid \texttt{auth}^e                                              \\
+                     & \mid \sh{\texttt{wit}}_i^e                                        \\
+                     & \mid I\ )
           \end{align*}
   \end{enumerate}
 \end{protocol}
@@ -1997,12 +2007,12 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
   \titlespacing*{\paragraph}{0pt}{1pt}{1em}
   Given a public SD instance $pk = (H, y)$, security parameters $\lambda, \tau$, and a signature
   \begin{align*}
-    \sigma = & \ (\ m \mid \texttt{salt} \mid h_1                                  \\
-             &  \mid \texttt{broad\_plain}                                        \\
-             &  \mid \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \\
-             &  \mid \texttt{auth}^e                                              \\
-             &  \mid \sh{\texttt{wit}}_i^e                                        \\
-             &  \mid I\ )
+    \sigma = & \ (\ m \mid \texttt{salt} \mid h_1                                \\
+             & \mid \texttt{broad\_plain}                                        \\
+             & \mid \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \\
+             & \mid \texttt{auth}^e                                              \\
+             & \mid \sh{\texttt{wit}}_i^e                                        \\
+             & \mid I\ )
   \end{align*}
 
   \paragraph{Assumptions}
