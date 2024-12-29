@@ -32,6 +32,7 @@
 \usepackage{mdframed}
 \usepackage{listings}
 \usepackage{titlesec}
+\usepackage{tcolorbox}
 \usepackage{multirow}
 \lstdefinestyle{tree}{
   literate=
@@ -1293,7 +1294,7 @@ It can be hard to maintain both of these aspects separately. Rust enables the de
 
 Adding a triple slash \rust{///} above a function or struct generates documentation for it. Hovering over the function in most Rust-compatible editors, such as \href{https://code.visualstudio.com/docs/languages/rust}{Visual Studio Code}, displays the documentation. Similarly, using \rust{//!} creates top-level documentation for the module.
 
-While these comments enable developers to access documentation directly within the code, Rust also provides a powerful feature to automatically generate comprehensive documentation. By running \href{https://doc.rust-lang.org/cargo/commands/cargo-doc.html}{\texttt{cargo doc}}, you can create a webpage with detailed documentation for the project.
+While these comments enable developers to access documentation directly within the code, Rust also provides a powerful feature to automatically generate comprehensive documentation. By running \href{https://doc.rust-lang.org/cargo/commands/cargo-doc.html}{\texttt{cargo doc}}, you can create a webpage with detailed documentation for the project. Checkout out the documentation for our project \href{https://mactherobot.github.io/sdith-rust}{here}.
 
 \subsubsection{Codebase structure and Modules}\label{sub:rust_modules}
 Rust provides a module system that allow you to organize your code into logical units. Making it it easier to understand and maintain the codebase. A module is a collection of related items, such as functions, structs, and constants, that are grouped together.
@@ -1301,12 +1302,14 @@ Rust provides a module system that allow you to organize your code into logical 
 Modules can be nested, allowing for a hierarchical structure of code.
 If utilized correctly, this can help organize the logic of a program effectively for readability and reuse. For example, encapsulating field arithmetic within a module and separating components into subfolders and subroutines related to the main signature algorithm.
 
-Rust structures modules either directly in the code or through the file system. There are two files that provides the entry points to your code.
+Rust structures modules either directly in the code or through the file system. There are two files that provides the entry points to your program
 \begin{enumerate}
   \item \texttt{main.rs}: This is the main entry point of the program. It is the first file that is executed when the program is run. You can quickly run the program by running \texttt{cargo run}.
   \item \texttt{lib.rs}: In the case that you are building code that you want to provide for other developers to use in their own Rust code -- named a \textit{crate} -- this is the entry point for such a library.
 \end{enumerate}
-We do not utilize internal modules except for tests so we will only describe the file system module system. Consider a simple example structure below
+
+Consider a simple example structure below
+
 \begin{minted}{rust}
   // main.rs
   use crate::arith::gf256::add;
@@ -1317,7 +1320,7 @@ We do not utilize internal modules except for tests so we will only describe the
     println!("{}", add(3, 4));
   }
 
-  // arith/mod.rs
+  // arith.rs
   pub mod gf256;
 
   // arith/gf256.rs
@@ -1330,23 +1333,25 @@ We do not utilize internal modules except for tests so we will only describe the
     ...
   }
 \end{minted}
+
 The example shows a structure with the main entry file which first declares a module \rust{mod arith}. The compiler then looks for the code of the module in three places
 \begin{itemize}[parsep=0pt, itemsep=0pt]
   \item Inline with curly braces (e.g. like the \rust{mod tests {}})
   \item In the file \texttt{arith.rs}
   \item In the file \texttt{arith/mod.rs}
 \end{itemize}
-In this case, the module \rust{arith} is declared in the file \texttt{arith/mod.rs}. A nested submodule \rust{gf256} is then declared and found in the same recursive way. This structure allows for a clear \textit{separation of concerns} and makes it easier to understand the codebase and reuse code as modules.
+In this case, the module \rust{arith} is declared in the file \texttt{arith.rs}. A nested submodule \rust{gf256} is then declared and found in the same recursive way. This structure allows for a clear \textit{separation of concerns} and makes it easier to understand the codebase and reuse code as modules.
 
-\subsubsection{Visibility} %pub(crate)
-Code from modules can then be accessed using the path from the crate root using the \rust{use crate::arith::gf256::add} statement. However, Rust has a strict visibility system that restricts access to code based on the visibility of the item. By default, items are private to the module they are declared in. It is then possible to control the visibility of the code using the \textit{visibility modifier} \rust{pub}.
+\subsubsection{Visibility}
+Modules in Rust allow code to be accessed using paths, such as \rust{use crate::arith::gf256::add}. Rust enforces a strict visibility system to control access based on an item's visibility. By default, items are kept private to their module, but their visibility can be modified using the \rust{pub} keyword:
 \begin{itemize}[parsep=0pt, itemsep=0pt]
-  \item \rust{pub}: The item is fully accessible from outside the module.
-  \item \rust{pub(crate)}: The item is accessible only within the same crate.
-  \item \rust{pub(super)}: The item is accessible only within the parent module.
-  \item \rust{pub(in path)}: The item is accessible only within the specified path.
+  \item \rust{pub}: Fully accessible outside the module.
+  \item \rust{pub(crate)}: Accessible only within the same crate.
+  \item \rust{pub(super)}: Accessible only within the parent module.
+  \item \rust{pub(in path)}: Accessible only within the specified path.
 \end{itemize}
-This system provides fine-grained control over the visibility of code, making the codebase easier to understand and maintain. Furthermore, it simplifies the process of restricting unwanted access to internal functionality. For instance, consider a scenario where a function conditionally selects between two different implementations based on a program configuration. In such cases, you would want to restrict access to the individual implementation functions, exposing only the function responsible for making the choice. This ensures that the internal functions cannot be accessed accidentally, thereby reducing the likelihood of bugs.
+This system provides fine-grained control, improving code maintainability and preventing unintended access to internal functionality. For example, consider a function that selects between two implementations based on a configuration feature (explained in \autoref{prelim:feature_flags}), you can restrict access to the individual implementation functions and expose only the selector function, reducing the risk of bugs by unwanted access to the underlying private functionality.
+
 \begin{minted}{rust}
   pub fn functionality_handler() {
     if cfg!(feature = "functionality_one") {
@@ -1372,11 +1377,9 @@ sdith_threshold_cat1_p251/   sdith_threshold_cat5_gf256/
 sdith_threshold_cat3_gf256/  sdith_threshold_cat5_p251/
 \end{minted}
 
-Each codebase contains significant shared code. However, to switch between the variants and arithmetic fields, copies of the code with necessary modifications are maintained. While it is unclear whether the authors utilize an automated system to ensure consistency across these instances, such duplication is a common issue in programming and indicates that the codebase may not be as maintainable as it could be.
+Each codebase contains significant shared code, but switching between variants and arithmetic fields requires maintaining separate copies with necessary modifications. It is unclear whether an automated system is used to ensure consistency across these instances. However, such duplication suggests that the codebase may not be as maintainable as it could be.
 
-Rust addresses this problem with two powerful features: \textit{Generics} and \textit{Traits}.
-
-Consider the following example:
+Rust allows us to address this problem with two powerful features: \textit{Generics} and \textit{Traits}. Consider the following example:
 
 \begin{minted}{rust}
 fn add(a: u8, b: u8) -> u8 {
@@ -1394,9 +1397,9 @@ fn main() {
 }
 \end{minted}
 
-In this example, the type system prevents calling the same function with different types. To handle \rust{u16}, you would need to duplicate the function, creating \rust{add_u8} and \rust{add_u16}, leading to issues such as increased maintenance complexity. For instance, if one function is updated, all others must be updated manually.
+In this example, the type system prevents calling the same function with different types. Handling \rust{u16} would require duplicating the function, such as creating \rust{add_u8} and \rust{add_u16}, increasing maintenance complexity.
 
-Rust solves this problem with \textit{Generics}. Generics enable defining functionality that is agnostic to the input type while maintaining Rust's strong type safety. The function \rust{add} can be rewritten as:
+Rust addresses this issue with \textit{Generics}, allowing functionality to be defined independently of input types while preserving strong type safety. The function \rust{add} can be rewritten as:
 
 \begin{minted}{rust}
 fn add<T>(a: T, b: T) -> T {
@@ -1419,7 +1422,7 @@ fn add<T: Add<Output = T>>(a: T, b: T) -> T {
 
 This function can now be called with any type that implements the \rust{Add} trait. For instance, both \rust{u8} and \rust{u16} implement the \rust{Add} trait by default, enabling the creation of generic, reusable code.
 
-Traits also allow you to define custom reusable behavior. For example, consider defining arithmetic operations over finite fields $GF(256)$ and $GF(251)$. Suppose we want a function that calculates a polynomial over a field and works dynamically for both fields, as well as others in the future. We can achieve this by defining a trait to encapsulate the behavior of a field and then implementing the trait for each specific field. Here's an example:
+In our case, consider the example of defining arithmetic operations over finite fields $GF(256)$ and $GF(251)$. Suppose we want a function that calculates a polynomial over a field and works dynamically for both fields, as well as others in the future. We can achieve this by defining a trait to encapsulate the behavior of a field and then implementing the trait for each specific field. Here's an example:
 
 \begin{minted}{rust}
 // arith.rs
@@ -1437,18 +1440,13 @@ pub trait FieldArith {
 // arith/gf256.rs
 struct GF256(u8);
 impl FieldArith for GF256 {
-    fn add(a: Self, b: Self) -> Self {
-        GF256(a.0 ^ b.0)
-    }
-    fn mul(a: Self, b: Self) -> Self {
-        // implementation ...
-    }
+    // implementation for add and mul ...
 }
 
 // arith/gf251.rs
 struct GF251(u8);
 impl FieldArith for GF251 {
-    // implementation ...
+    // implementation for add and mul ...
 }
 
 // main.rs
@@ -1471,56 +1469,63 @@ fn main() {
 Note that with Traits we can define default implementations for functions. For example, the \rust{pow} function is defined in the trait directly. This makes it so that we only need to implement the function for the fields that have a different implementation. With the trait implemented, the \texttt{polynomial} function only has to be defined once and can be used for both fields. This approach promotes code reuse and simplifies future program expansions. To add support for a new field, you only need to implement the \rust{FieldArith} trait for that field, allowing the existing functions to handle it seamlessly.
 
 \subsubsection{Conclusions on Maintainability and Readability}
-Rust offers a range of features that make it easier to write maintainable and readable code. In-built linting and documentation facilitate the creation of well-documented code. The module system enables developers to organize code into logical units while controlling visibility between them. Generics and Traits are powerful tools for writing more agnostic and reusable code across different parts of a program.
-
-However, while these features support good coding practices, they can be further enhanced by leveraging Rust's dynamic compilation features. In the next section, we will explore how these features were utilized to develop a more dynamic and optimizable implementation of the SDitH protocol.
+Rust offers a range of features that make it easier to write maintainable and readable code. In-built linting and code docs facilitate the creation of well-documented code. The module system enables developers to organize code into logical units while controlling visibility between them. Generics and Traits are powerful tools for writing more agnostic and reusable code across different parts of a program.
 
 \subsection{Dynamic compilation}
-In many applications, it is beneficial to have dynamic compilation of the code. This allows for code generation, linking and configuring the package before building the actual binary. As a good example, when creating a submission to NIST you need to have different security levels for each category. This poses a problem of having to change the code based on specific parameters. This is where Cargo build scripts and Rust's feature flags come in handy.
 
-\subsubsection{Build script}
-Build scripts are Rust files executed before the package is compiled, offering significant flexibility in the build process. By putting a build.rs file in the root folder of the package cargo will automatically execute this file before building. Enabling you to generate code, link libraries, or configure the build based on environment variables.
+Next, we explore additional features employed to create a more dynamic and optimized implementation of the SDitH protocol. Dynamic compilation allows for code generation, linking and configuring the package before building the actual binary.
 
-A good example is building and linking C code into a rust package:
-\begin{minted}{rust}
-  fn main() {
-    // Tell cargo to rerun the build script if the file changes
-    println!("cargo:rerun-if-changed=src/foo.c");
-    // `cc` is a create to build and link C code
-    cc::Build::new()
-      .file("src/foo.c")
-      .compile("foo");
-  }
-\end{minted}
-This approach can be particularly useful when incorporating parts of a reference implementation in C or C++. In our case, due to time constraints, we opted to consider using portions of the reference implementation. Additionally, another important use case for our build script is verifying that the selected features during package compilation are correct. This need arose while benchmarking against another hash function with a lower security level.
+A good usecase could be facilitating the NIST security parameters. Note that we want the parameters to be constant at compile time, but we do not want to create several instances of functions that use each parameter for each category. Rust's feature flags come in handy.
 
-\subsubsection{Feature flags}
-Rust offers a robust feature flag system that enables conditional compilation, providing significant flexibility for writing code optimized or configured for various use cases.
-A practical example, as previously mentioned, involves handling different sets of arithmetic fields. To address the challenge of creating a struct to manage functionality for the same type across different fields, we can leverage feature flags. These allow us to conditionally compile code tailored to the specific field required. This is achieved by adding the following configuration to the Cargo.toml file:
+% We ended up not using this ->
+
+% \subsubsection{Build script}
+% Build scripts are Rust files executed before the package is compiled, offering significant flexibility in the build process. By putting a build.rs file in the root folder of the package cargo will automatically execute this file before building. Enabling you to generate code, link libraries, or configure the build based on environment variables.
+
+% A good example is building and linking C code into a rust package:
+% \begin{minted}{rust}
+%   fn main() {
+%     // Tell cargo to rerun the build script if the file changes
+%     println!("cargo:rerun-if-changed=src/foo.c");
+%     // `cc` is a create to build and link C code
+%     cc::Build::new()
+%       .file("src/foo.c")
+%       .compile("foo");
+%   }
+% \end{minted}
+% This approach can be particularly useful when incorporating parts of a reference implementation in C or C++. In our case, due to time constraints, we opted to consider using portions of the reference implementation. Additionally, another important use case for our build script is verifying that the selected features during package compilation are correct. This need arose while benchmarking against another hash function with a lower security level.
+
+\subsubsection{Feature flags}\label{prelim:feature_flags}
+Rust's feature flag system enables conditional compilation, offering flexibility to optimize or configure code for diverse use cases.
+
+A use case could again be handling different Galois fields. First, we define a feature flag in the Cargo.toml file:
+
 \begin{minted}{toml}
 [features]
   default = ["gf256"]
   gf256 = []
   gf251 = []
 \end{minted}
-Or by giving it when running cargo:
+
+In order to use the feature flag, we need to specify it in the \texttt{cargo} command:
+
 \begin{minted}{bash}
   $ cargo build --features "gf251"
 \end{minted}
-Now we can use the feature flags in the code:
+
+In our code we can then use the \rust{cfg} annotation to announce a required feature flag. This means that any code just below the annotation will only be compiled if the feature flag is enabled.
+
 \begin{minted}{rust}
 // arith.rs
 pub trait FieldArith {
     // Trait functions
 }
 
-// arith/gf256.rs
 #[cfg(feature = "gf256")]
 impl FieldArith for u8 {
     // implementation ...
 }
 
-// arith/gf251.rs
 #[cfg(feature = "gf251")]
 impl FieldArith for u8 {
     // implementation ...
@@ -1533,14 +1538,16 @@ fn polynomial<T: FieldArith + Default>(coeffs: &[T]) -> T {
 
 fn main() {
     let coeffs = vec![1u8, 2u8, 3u8];
-    println!("Field evaluation: {:?}", polynomial(&coeffs256));
+    println!("Field evaluation: {:?}", polynomial(&coeffs));
 }
 \end{minted}
-In the example above we use the feature flag to change which trait is implemented for the \rust{u8} type. This means that when we build the binary it only compiles the code that has been specified.
-As our implementation is a reference implementation for the SDitH protocol, we have used feature flags to switch between different categories and optimizations. This allows us to easily test and compare different configurations without having to manually change the code or have duplicates.
+
+In the example above we use the feature flag to change which trait is implemented for the \rust{u8} type. 
+
+In our implementation, we use feature flags to toggle between different categories and enable specific optimizations -- like parallelisation or SIMD. This approach allows dynamic testing and comparison of various configurations without the need for manual code changes or duplication.
 
 \subsection{Optimizations in Rust}\label{sub:rust_optimizations}
-Blazingly fast code does not come without a cost. However, Rust and its community offers several ways to optimize performance. In this section we describe the methods used to measure performance in our implementation. Next, we will explore techniques for Rust that allow us to enhance performance.
+Achieving \textit{blazingly fast} code requires careful optimization. Fortunately, Rust and its community provide numerous tools to improve performance. In this section, we describe the methods used to measure performance in our implementation and explore techniques in Rust that help enhance it further.
 
 \subsubsection*{Measuring performance}\label{sec:rust_benchmarking}
 There are two techniques that we used in order to investigate the performance of our implementation and  to guide the optimizations that were needed. These are \textit{benchmarking} and \textit{profiling}.
@@ -1553,7 +1560,7 @@ Benchmarking provides several benefits. It allows us to compare our implementati
 In native Rust, benchmarking is still in its early stages. However, the \textit{criterion} package~\cite{criterion} offers a statistically driven benchmarking framework that is user-friendly and integrates seamlessly with Rust.
 
 \subsubsection{Profiling}\label{ch:prelim:sec:rust:sub:profiling}
-As opposed to benchmarking, profiling is a process of collecting a detailed \textit{history} of one run of a program. It draws a picture of how much time is spent and how many resources are used during the execution of the program. This information can be used to identify bottlenecks or inefficiencies in the program.
+As opposed to benchmarking, profiling is a process of collecting a detailed \textit{history} of one execution of a program. It draws a picture of how much time is spent and how many resources are used by different parts of the program during its execution. This information can be used to identify bottlenecks or inefficiencies.
 
 In order to profile our implementation, we used the \textit{Samply Commandline Profiler}~\cite{samply}. Running a \textit{debug} version of our program, we were able to collect a detailed profile of the execution. This allowed us to identify the most time-consuming parts of our code and to pinpoint areas that could be optimized \autoref{fig:samply}.
 
@@ -1600,7 +1607,7 @@ A common optimization technique in modern programming is to leverage the multi-c
 
 In many programming languages, multi-threading support is either limited or not guaranteed, often requiring developers to rely on external libraries or frameworks. However, Rust provides robust and native support for \textit{thread-safe} parallelization. With Rust's ownership system and built-in concurrency primitives, developers can write highly performant parallel code while minimizing risks of common concurrency issues such as data races or deadlocks.
 
-The \textit{rayon}~\cite{rayon} package implements easy-to-use and lightweight data-parallelisation through their parallel iterators
+The \textit{rayon}~\cite{rayon} package implements easy-to-use data-parallelisation through their parallel iterators
 \begin{minted}{rust}
   use rayon::prelude::*;
   fn sum_of_squares(input: &[i32]) -> i32 {
@@ -1609,6 +1616,8 @@ The \textit{rayon}~\cite{rayon} package implements easy-to-use and lightweight d
           .sum()
   }
 \end{minted}
+
+Although custom parallelization can sometimes outperform \textit{rayon}, the library provides an intuitive interface that enables parallelization with minimal effort, often requiring just a single line of modification. In this project, we have opted to use \textit{rayon} and reserved custom parallelization for the future.
 
 \subsubsection{Single Instruction Multiple Data (SIMD)}
 Single Instruction Multiple Data or SIMD for short, is a way to better utilize a CPU when dealing with data in the form of Vectors. It is a way for the CPU to do a single instruction but on multiple data points at the same time by splitting the data into chunks that fit into a single register. This can greatly improve performance when dealing with large amounts of data. Rust has support for SIMD through the \texttt{std::simd} module. This module provides access to a portable abstraction for SIMD operations that is not bound to any particular hardware architecture.
@@ -1639,6 +1648,8 @@ fn simple_simd_vector_addition() -> [f32; 4] {
     z.to_array() 
 }
 \end{minted}
+
+In our implementation, we utilize \texttt{std::simd} from Rust's \textit{nightly} version. While it would be preferable to compile with the stable version, this implementation provides largely architecture-independent SIMD support. See \href{https://github.com/rust-lang/rust/issues/86656}{the issue} on the Rust repository for more on its development.
 
 \chapter{Specification}\label{ch:spec}
 
