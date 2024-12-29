@@ -73,7 +73,6 @@ pub const PARAM_M_SUB_K: usize = PARAM_M - PARAM_K;
 pub const PARAM_CHUNK_M: usize = PARAM_M / PARAM_SPLITTING_FACTOR;
 /// Chunk size for the splitting variant of the Syndrome Decoding Problem for Hamming weight w
 pub const PARAM_CHUNK_W: usize = PARAM_W / PARAM_SPLITTING_FACTOR;
-// Weird params from spec, TODO remove?
 /// m-k rounded up to 32 for performance
 pub const PARAM_M_SUB_K_CEIL32: usize = ((PARAM_M - PARAM_K + 31) >> 5) << 5;
 /// m rounded up to 32 for performance
@@ -88,3 +87,23 @@ pub const PRECOMPUTED_F_POLY: [u8; PARAM_CHUNK_M + 1] = cat::PRECOMPUTED_F_POLY;
 /// 1 / ∏_{j \neq i}(alpha_i - alpha_j)
 pub const PRECOMPUTED_LAGRANGE_INTERPOLATION_WEIGHTS: [u8; PARAM_CHUNK_M] =
     cat::PRECOMPUTED_LAGRANGE_INTERPOLATION_WEIGHTS;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn check_n_constraint() {
+        // For the threshold variant the number N of parties is limited by the size of the field F_q ,
+        // i.e. N <= q, which is due to the MDS conjecture
+        assert!(PARAM_N <= PARAM_Q, "N must be smaller than or equal to |F_q| due to the MDS conjecture");
+    }
+
+    #[test]
+    fn check_q_constraint() {
+        // The size of the field F_q is limited by the size of the biggest polynomial. 
+        // These are sized by the splitting factor.
+        assert!(PARAM_CHUNK_M <= PARAM_Q, "Chunk size must be smaller than or equal to |F_q|");
+        assert!(PARAM_CHUNK_W <= PARAM_Q, "Chunk size must be smaller than or equal to |F_q|");
+    }
+}
