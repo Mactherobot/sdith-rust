@@ -14,4 +14,4 @@ Authors:
 -  [Hugh Benjamin Zachariae](https://github.com/arcuo)
 -  [Magnus Jensen](https://github.com/Mactherobot)
 
-Checkout the package [README](sdith/README.md).
+Checkout the package [README](sdith/README.md) or the [documentation](https://mactherobot.github.io/sdith-rust) for more information.
