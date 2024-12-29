@@ -629,22 +629,6 @@ The \textit{only if} direction is shown by the following. Consider $n$ pairwise 
 
 This property is crucial as it enables a verifier in the MPCitH framework to validate the protocol's correctness.
 
-\subsection{Zero-Knowledge Proofs}\label{sec:zk}
-The intuition behind a Zero-Knowledge proof of knowledge is that the prover can convince the verifier that they know a secret $w$, such that $x$ is true, without revealing the secret $w$ to the verifier. For example, this could be someone wanting to prove that they are above the age of 18 without revealing their specific age.
-
-\begin{definition}
-  We denote a ZK $\Pi_{\mathcal{R}}$ for some \textbf{NP} relation $\mathcal{R}(x, w)$. Let $x$ be a statement of language $L$ in \textbf{NP}, and $W(x)$ the set of witnesses for $x$ such that the following relation holds~\cite{feneuil2023threshold}:
-  \begin{align*}
-    \mathcal{R} = \{(x, w)\; x \in L, w \in W(x)\}
-  \end{align*}
-  We have the following properties:
-  \begin{itemize}
-    \item \textit{Completeness}: If $x$ is true, then $\mathcal{R}(x, w)$ holds for some $w$.
-    \item \textit{Soundness}: If $x$ is false, then the prover can convince the verifier that $\mathcal{R}(x, w)$ holds with negligible probability.
-    \item \textit{Zero-knowledge}: The verifier learns nothing about the statement $x$.
-  \end{itemize}
-\end{definition}
-
 \section{Syndrome Decoding Problem}\label{sec:syndrome}
 
 The SDitH protocol is built on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field (see \autoref{sec:gf256}). Specifically, SDitH utilises a variant of the SD problem, referred to as the \textit{coset weights} problem, first introduced by Berlekamp and McEliece in 1978~\cite{berlekamp1978inherent}. We state the problem as follows:
@@ -712,81 +696,97 @@ The equality test from \autoref{eq:polynomial_representation} has a small probab
 Recall the sharing of the witness $\sh{x_A}$ for $x = (x_A \mid x_B)$ as described in \autoref{sec:syndrome}. In the current setup, each party in the MPC protocol would need to perform interpolation to compute their share $\sh{S}$. However, interpolation incurs quadratic complexity, leading to significant computational overhead. To address this issue, we redefine the SD instance as follows:
 
 \begin{definition}[Redefined SD instance $y = Hx$]
-  Let $s$ represent the coefficients of the polynomial $S$ in \autoref{eq:polynomial_representation}, and let $V$ be a matrix such that:
-  \begin{align*}
-    S = \text{Lagrange Interpolation}(x) \Leftrightarrow s = Vx.
-  \end{align*}
-  The SD instance is then redefined as:
-  \begin{align*}
-    y = HVx.
-  \end{align*}
+  Let $s$ represent the coefficients of the polynomial $S$ in \autoref{eq:polynomial_representation}, and let $V$ be a matrix such that \[ S = \text{Lagrange Interpolation}(x) \Leftrightarrow s = Vx. \]
+  The SD instance is then redefined as $y = HVx$.
 \end{definition}
 
 This redefinition preserves the security properties of the original SD problem, as the linear code $\mathcal{C}_{HV}$ remains uniformly random. This is due to the randomness of $\mathcal{C}_H$ and the invertibility of $V$.
 
 With this modification, we can replace the sharing $\sh{x_A}$ with $\sh{s_A}$ by representing $s = (s_A \mid s_B) = Vx$. The parties can then compute $\sh{s_B}$ and $\sh{s}$ from the sharing of $\sh{s_A}$ using:
-\begin{align*}
+\[
   \sh{s_B} = y - H'\sh{s_A}.
-\end{align*}
+\]
 This modification significantly improves the efficiency of the MPC protocol and the computational overhead of the SDitH protocol.
 
 \section{MPC-in-the-Head}\label{sec:mpcinth}
 
-The SDitH protocol construction is based on the \textit{Multi-Party Computation in the Head} (MPCitH) framework. In this section we will give an introduction to the framework and how it can be used to construct ZK proofs, which in turn can be combined with the Fiat-Shamir heuristic to create a signature scheme.
+The SDitH protocol construction is built upon the \textit{Multi-Party Computation in the Head} (MPCitH) framework introduced by~\cite{ishai2007zero}. In this section, we provide an introduction to the MPCitH framework and demonstrate how it can be used to construct Zero-Knowledge Proofs of Knowledge (ZK-PoK). These proofs can then be combined with the \hyperref[sec:fiatshamir]{Fiat-Shamir heuristic} to derive a signature scheme. To begin, we first describe the concept of a ZK-PoK.
 
-The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as its security relies on assumptions that are still believed to be quantum secure. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold} which have no known quantum algorithms that break their security.
+\subsubsection{Zero-Knowledge Proofs of Knowledge}\label{sec:zk}
+The intuition behind a ZK-PoK is that the prover can convince the verifier that they know a secret $w$, such that $x$ is true, without revealing the secret $w$ to the verifier. For example, this could be someone wanting to prove that they are above the age of 18 without revealing their specific age.
 
-We will describe the basic construction suggested by Ishai et al~\cite{ishai2007zero}. For now, we will only consider an underlying semi-honest MPC protocol $f_{add}$ for $N$ parties with $N-1$ secrecy based on \textit{additive} secret sharing \autoref{sec:additive-sss}.
+\begin{definition}
+  We denote a ZK-PoK $\Pi_{\mathcal{R}}$ for some \textbf{NP} relation $\mathcal{R} = \{(x, w)\; x \in L, w \in W(x)\}$.
+
+  Let $x$ be a statement of language $L$ in \textbf{NP}, and $W(x)$ the set of witnesses for $x$ such that the following relation holds~\cite{feneuil2023threshold}   \[
+    \mathcal{R}(x,w) = \begin{cases}
+                         1 & \text{if } x \in L \text{ and } w \in W(x) \\
+                         0 & \text{otherwise}
+                       \end{cases}
+  \]  We have the following properties:
+  \begin{itemize}
+    \item \textit{Completeness}: If $x$ is true, then $\mathcal{R}(x, w)$ holds for some $w$.
+    \item \textit{Soundness}: If $x$ is false, then the prover can convince the verifier that $\mathcal{R}(x, w)$ holds with negligible probability.
+    \item \textit{Zero-knowledge}: The verifier learns nothing about the statement $x$.
+  \end{itemize}
+\end{definition}
+
+\subsubsection{Generic ZK-PoK Construction}\label{sec:zk-generic}
+
+The framework provides a versatile method for constructing ZK-PoK protocols. These protocols are typically considered quantum-safe because they can be built exclusively on symmetric-key assumptions, such as the hardness of inverting a cryptographic hash function, rather than on number-theoretic assumptions, such as factoring or discrete logarithms.
+
+We will describe the basic construction suggested by Ishai et al~\cite{ishai2007zero}. For now, we will only consider an underlying semi-honest MPC protocol $\Pi_+$ for $N$ parties with $N-1$ secrecy based on \textit{additive} secret sharing -- see \autoref{sec:additive-sss}.
 
 \begin{protocol}\label{def:mpcinth_basic}
-  Given $f_{add}$ a ZK relation $\mathcal{R}$ for some public statement $x$, and a witness $w$ (\autoref{sec:zk}).
-  Let $w_i$ be an additive secret share of $\sh{w}$ for the party $P_i$. Let $f_{add}(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, i.e. $f_{add}(x,w)$ accepts if $(x,w) \in \mathcal{R}$.
+  Given $\Pi_+$ a ZK relation $\mathcal{R}$ for some public statement $x$, and a witness $w$. Let $w_i$ be an additive secret share of $\sh{w}$ for the party $P_i$. Let \[ \Pi_+(x, w_1, \dots, w_n) = \mathcal{R}(x, w), \] i.e. $\Pi_+(x,w)$ outputs \texttt{Accept} if $\mathcal{R}(x,w) = 1$. We assume an underlying commitment scheme \texttt{Commit}.
 
   \begin{enumerate}[parsep=2pt, itemsep=0pt]
     \item The prover builds a random sharing of $\sh{w} = w_1, \dots, w_n$. Then
           \begin{enumerate}[nolistsep]
-            \item Simulates the outputs of the MPC protocol $f$ on the inputs $(x, w_1, \dots, w_n)$ and the randomness $r_1, \dots, r_n$.
-            \item Prepares views $V_1, \dots, V_n$ of the parties in the protocol $f$.\footnote{Remember that the views include the inputs, randomness and messages received by the parties.}
-            \item Commits to each view $V_i$ using a secure commitment scheme, and sends ($\text{Commit}(V_1), \dots, \text{Commit}(V_n)$) to the verifier.
+            \item Simulates the outputs of the MPC protocol $\Pi_+$ on the inputs $(x, w_1, \dots, w_n)$ and the randomness $r_1, \dots, r_n$.
+            \item Prepares views $V_1, \dots, V_n$ of the parties in the protocol $f$.
+            \item Commits to each view $V_i$ and sends ($\texttt{Commit}(V_1), \dots, \texttt{Commit}(V_n)$) to the verifier.
           \end{enumerate}
     \item The verifier picks $\ell$ random distinct indices $i \in [n]$ and sends them to the prover.
     \item The prover opens the corresponding $\ell$ commitments into the views $V_i$ and sends the openings to the verifier.
     \item The verifier accepts if and only if:
           \begin{enumerate}[nolistsep]
-            \item\label{prop:mpcinth_commit} The views are valid according to the commitment scheme.
-            \item\label{prop:mpcinth_consistent} The views are consistent according to the public input $x$.
-            \item\label{prop:mpcinth_knowledge} The views output $1$ according to $\mathcal{R}$ meaning that $\mathcal{R}(x,w) = 1$.
+            \item\label{prop:mpcinth_commit} The views are consistent according to the commitment scheme.
+            \item\label{prop:mpcinth_consistent} The views are consistent according to the public input $x$ and the randomness $r_1, \dots, r_n$.
+            \item\label{prop:mpcinth_knowledge} The the output of $\Pi_+$ from the views output \texttt{Accept}.
           \end{enumerate}
   \end{enumerate}
 \end{protocol}
 
-We see the following properties of the protocol:
+\noindent We see the following properties of the protocol:
 
 \begin{lemma}[Completeness~\cite{ishai2007zero}]\label{def:mpcinth_completeness}
-  A boolean function is said to be complete if it depends on all inputs of the function. Given an honest prover, $\mathcal{R}(x,w) = 1$ and the correctness of the MPC protocol $f_{add}$, all outputs of $P_i$ are one and all views are consistent.
+  Given an honest prover, $\mathcal{R}(x,w) = 1$ and the correctness of the MPC protocol $\Pi_+$, all outputs of $P_i$ are one and all views are consistent.
 \end{lemma}
 
 \begin{lemma}[Zero-Knowledge~\cite{ishai2007zero}]
-  The verifier only sees $\ell$ views, and therefore from the definition of the MPC protocol $f_{add}$ learns nothing of the secret witness $w$.
+  The verifier only sees $\ell$ views, and therefore from the definition of the MPC protocol $\Pi_+$ learns nothing of the secret witness $w$.
 \end{lemma}
 
-We consider soundness of the MPCitH framework. We assume that the verifier accepts the relation $\mathcal{R}(x,w)$ for $x \notin L$ -- i.e. the verifier accepts the relation even though the prover has created a false statement. This means that the prover must have cheated on of two ways. First, the prover may have cheated in the underlying MPC protocol which is defined by the error probability $p_{f_{add}}$.
+We consider soundness of the MPCitH framework. We assume that the verifier accepts the relation $\mathcal{R}(x,w)$ for $x \notin L$ -- i.e. the verifier accepts the relation even though the prover has created a false statement. This means that the prover must have cheated on of two ways. First, the prover may have cheated in the underlying MPC protocol which is defined by the error probability $p$.
 
 Secondly, the prover could have tampered with the views. In this, the prover must have corrupted one party and creating a inconsistent view. The probability that the prover succeeds with this is at most $1 / N$. This gives us an overall soundness
 
-\begin{lemma}[Soundness of MPCitH for $f_{add}$~\cite{feneuil2022syndrome}]\label{lem:soundness_mpcinth}
-  \begin{align*}
-    1 - (1 - \frac{1}{N}) (1 - p_{f_{add}}) = \frac{1}{N} + p - \frac{1}{N} p_{f_{add}}
-  \end{align*}
+\begin{lemma}[Soundness of MPCitH for $\Pi_+$~\cite{feneuil2022syndrome}]\label{lem:soundness_mpcinth} Given a false positive probability $p$ for the underlying MPC protocol $\Pi_+$, the probability that the verifier outputs \texttt{Accept} for $\mathcal{R}(x,w) \neq 1$ is at most \[ \frac{1}{N} + p - \frac{1}{N} p \]
 \end{lemma}
 
-The basic MPC-in-the-Head protocol serves as a foundation for constructing zero-knowledge (ZK) proofs for any NP relation and has been demonstrated to yield relatively efficient ZK protocols~\cite{feneuil2022syndrome,baum2020concretely,katz2018improved}. Giacomelli et al. and Chase et al.~\cite{katz2018improved,giacomelli2016zkboo,chase2017post} provided concrete implementations of the \textit{MPC-in-the-Head} approach and observed that employing a 3-party protocol $\Pi$ achieved optimal performance within the space of protocols they analyzed. However, due to the small number of parties, the soundness of the resulting honest-verifier zero-knowledge (HVZK) proof is relatively weak. As a consequence, a large number of parallel repetitions is required to achieve negligible soundness error. This increases the size of the proofs and the communication overhead of the protocols. In this section we will describe a variant of the MPC-in-the-Head protocol which is sound for the addition relation.
 
-\section{MPC Product verification using sacrificing}\label{sec:mpc_sacrificing}
+\section{Efficient product verification}\label{sec:mpc_sacrificing}
 
-To enhance the performance of MPCitH-based zero-knowledge protocols, Baum and Nof introduced a variant of the framework built around a specialized MPC protocol. This protocol efficiently verifies a product relation between three values, $  a \cdot b = c  $. Their contributions significantly improved the efficiency of MPCitH-based zero-knowledge protocols and laid the foundation for the SDitH protocol, which is designed to prove the SD relation (\autoref{sec:syndrome}).
+The basic MPCitH protocol serves as a foundation for constructing ZK-PoK for any \textbf{NP} relation and it has been demonstrated to yield relatively efficient ZK protocols~\cite{feneuil2022syndrome,baum2020concretely,katz2018improved}. Giacomelli et al. and Chase et al.~\cite{katz2018improved,giacomelli2016zkboo,chase2017post} provided concrete implementations of the \textit{MPC-in-the-Head} approach and observed that employing a 3-party MPC protocol achieved optimal performance within the space of protocols they analyzed. 
 
-The underlying MPC protocol is based on arithmetic circuits, where addition operations are straightforward to perform using any $ + $-homomorphic secret sharing scheme. However, performing multiplication -- which is required for the product relation -- is significantly more challenging. In this section, we describe the techniques and mechanisms used to address this challenge. The simplest idea would be to verify the relation by simply computing the product. A common technique is to use Beaver triples.
+However, due to the small number of parties, the soundness of the resulting protocols is relatively weak. Consequently, a large number of parallel repetitions is required to achieve a negligible soundness error. This significantly increases both the size of the proofs and the communication overhead of the protocols. In this section, we describe a variant of the MPC-in-the-Head protocol that is specifically sound for the addition relation.
+
+In an effort to improve this, Baum and Nof introduced a variant of the framework based on a specialized MPC protocol. This protocol efficiently verifies a product relation $a \cdot b = c$. Their contributions significantly enhanced the efficiency of MPCitH-based ZK-PoK protocols and serve as the foundation for the underlying MPC protocol used in the SDitH protocol.
+
+The underlying MPC protocol is based on arithmetic circuits, where addition operations are straightforward to perform using any $(+,+)$-homomorphic secret sharing scheme. 
+
+However, performing multiplication -- which is required for the product relation -- is significantly more challenging. The simplest approach would be to verify the relation by directly computing the product. A common technique for handling multiplication in MPC protocols is the use of Beaver triples.
 
 \begin{definition}[Beaver triple~\cite{Beaver1992efficient}]\label{def:Beaver}
   A Beaver triple is a tuple $ (a, b, c) $ such that $ a \cdot b = c $, where $ a, b, c \in \mathbb{F}_q $.
@@ -794,7 +794,7 @@ The underlying MPC protocol is based on arithmetic circuits, where addition oper
 
 \begin{protocol}[MPC Multiplication using Beaver triples]\label{def:Beaver-multiplication}
   Given a $+$-homomorphic additive secret sharing scheme and a preprocessed random Beaver triple $\sh{a}, \sh{b}, \sh{c} $, the parties do the following:
-  \begin{enumerate}
+  \begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
     \item The parties compute $ \sh{\alpha} = \sh{x} - \sh{a} $ and $ \sh{\beta} = \sh{y} - \sh{b} $.
     \item The parties run $ \text{open}(\sh{\alpha}) $ and $ \text{open}(\sh{\beta}) $ to obtain $ \alpha $ and $ \beta $.
     \item Each party computes $ \sh{z} = \sh{c} - \alpha \cdot \sh{b} - \beta \cdot \sh{a} + \alpha \cdot \beta $.
@@ -809,11 +809,14 @@ The above is a well-known technique from~\cite{Beaver1992efficient} where the co
          & = \sh{xy}
 \end{align*}
 
-Proposals for zero-knowledge proofs -- such as the \textit{Cut-and-Choose} protocol~\cite{katz2018improved,baum2020concretely} -- utilize \autoref{def:Beaver-multiplication}, combined with preprocessing techniques, to achieve promising results\footnote{See \autoref{sec:zk-cut-and-choose}}. Building upon these protocols, Baum and Nof~\cite{baum2020concretely} propose a variant that shifts the focus from simulating the computation of a product to simulating the \textit{verification} of the triple relation instead. This verification is achieved by sacrificing another triple, ensuring correctness while improving performance. Consider the following protocol, which is based on the MPC protocol described in~\cite{damgaard2012multiparty}.
+Proposals for ZK-PoK proofs -- such as the \textit{Cut-and-Choose} protocol~\cite{katz2018improved,baum2020concretely} -- utilize \autoref{def:Beaver-multiplication}, combined with preprocessing techniques, to achieve promising results (see appendix \autoref{sec:zk-cut-and-choose}).
+
+Building upon these protocols, Baum and Nof~\cite{baum2020concretely} propose a variant that shifts the focus from computing the product to simulating the \textit{verification} of the triple relation instead. This verification is performed by sacrificing another triple. Consider the following protocol, which is based on the MPC protocol described in~\cite{damgaard2012multiparty}.
+
 
 \begin{protocol}[Verification of a multiplication triple by sacrificing another]\label{def:sacrifice}
   Given an input triple $(x,y,z) \in \mathbb{F}$ random shared triple $(\sh{a}, \sh{b}, \sh{c}) \in \mathbb{F}$, it is possible to verify the correctness of the statement $z = x \cdot y$ without revealing any information on either of the input. Define \texttt{open} according to \autoref{def:ss-share}.
-  \begin{enumerate}
+  \begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
     \item The parties generate a random $\varepsilon \in \mathbb{F}$.
     \item The parties locally set $\sh{\alpha} = \varepsilon\sh{x} + \sh{a}, \sh{\beta} = \sh{y} + \sh{b}$.
     \item The parties run \texttt{open}$(\sh{\alpha})$ and \texttt{open}$(\sh{\beta})$ to obtain $\alpha$ and $\beta$.
@@ -823,7 +826,6 @@ Proposals for zero-knowledge proofs -- such as the \textit{Cut-and-Choose} proto
 \end{protocol}
 
 Observe that if both triples are correct multiplication triples (i.e., $z = xy$ and $c = ab$) then the parties will always accept since
-
 \begin{align*}
   v & = \varepsilon \cdot z - c + \alpha \cdot b + \beta \cdot a - \alpha \cdot \beta                                                     \\
     & = \varepsilon \cdot xy - ab + (\varepsilon \cdot x + a)b + (y + b)a - (\varepsilon \cdot x + a)(y + b)                              \\
@@ -845,89 +847,97 @@ Observe that if both triples are correct multiplication triples (i.e., $z = xy$ 
 
 Consider the cause where one of $\Delta_z$ or $\Delta_c$ is zero and the other is non-zero. In this case the verifier will not accept from~\ref{eq:sacrifice-proof}. Otherwise, we require that $\varepsilon = \Delta_c \cdot \Delta_z^{-1}$ which happens with probability $\frac{1}{|\mathbb{F}|}$. \qed
 
-\autoref{def:sacrifice} forms the foundational mechanism underpinning the SDitH protocol. While this approach delivers significant improvements~\cite{baum2020concretely,feneuil2022syndrome} in efficiency and soundness for ZK protocols, further advancements can be achieved by revisiting the secret sharing schemes utilized within the MPCitH framework.
+Under the MPCitH paradigm, the verifier must issue two challenges. The first challenge is for the randomness used in the MPC protocol computation, denoted by $\varepsilon$, which we refer to as the \textit{MPC challenge}. This challenge ensures that the prover cannot cheat in the computation of the multiplication gates or manipulate the inputs. By doing so, the verifier does not have to recompute the MPC inputs to check the consistency of the committed inputs, thereby significantly reducing the computational overhead for the verifier.
+
+The second challenge is a \textit{view opening challenge} $I \subseteq [N]$, where $|I| = N-1$. This challenge is the same as the one used in the initial MPCitH protocol.
 
 \section{Threshold Computation in the Head (TCitH)}\label{sec:threshold-mpc}
 
-A majority of constructions within the MPCitH framework~\cite{baum2020concretely,feneuil2022syndrome,katz2018improved} rely on $ (N-1, N) $ additive secret sharing schemes (SSS). Feneuil and Rivain~\cite{feneuil2023threshold,feneuil2023threshold2} explore the application of threshold secret sharing schemes (\autoref{sub:threshold-sss}). In addition to improving the soundness of the resulting zero-knowledge protocol, their approach reduces the computational overhead: the prover needs to emulate only $ \ell + 1 $ parties, while the verifier needs to verify and emulate just $ \ell $ parties. This optimization delivers significantly improved performance, particularly for low-threshold schemes.
+\autoref{def:sacrifice} forms the foundational mechanism underpinning the SDitH protocol. While this approach delivers significant improvements~\cite{baum2020concretely,feneuil2022syndrome} in efficiency and soundness for ZK-PoK protocols, further advancements can be achieved by revisiting the secret sharing schemes utilized within the MPCitH framework. The majority of constructions within the MPCitH framework~\cite{baum2020concretely,feneuil2022syndrome,katz2018improved} rely on $(N-1, N)$ additive secret sharing schemes (SSS). 
+
+Recently, Feneuil and Rivain~\cite{feneuil2023threshold,feneuil2023threshold2} proposed the application of threshold secret sharing schemes -- see \autoref{sub:threshold-sss}. For low-threshold SSS, their approach dramatically reduces computational overhead, as the prover emulates only $\ell + 1$ parties, while the verifier needs to verify and emulate just $\ell$ parties.
 
 \begin{table}[]
   \centering
   \def\arraystretch{1.5}%  1 is the default, change whatever you need
-  \begin{tabular}{cc|c}
+  \begin{tabular}{ccc}
     \textbf{} & MPCitH                                  & TCitH                                                      \\ \arrayrulecolor{darkgray}\hline
-    Prover    & $ \approx \lambda \frac{N}{\log_2 N}$   & $ \approx \lambda \frac{\ell + 1}{\log_2 \binom{N}{\ell}}$ \\ \arrayrulecolor{lightgray}\hline
-    Verifier  & $ \approx \lambda \frac{N-1}{\log_2 N}$ & $ \approx \lambda \frac{\ell + 1}{\log_2 \binom{N}{\ell}}$ \\ \arrayrulecolor{darkgray}\hline
+    Prover    & $ \lambda \frac{N}{\log_2 N}$   & $ \lambda \frac{\ell + 1}{\log_2 \binom{N}{\ell}}$ \\ \arrayrulecolor{lightgray}\hline
+    Verifier  & $ \lambda \frac{N-1}{\log_2 N}$ & $ \lambda \frac{\ell + 1}{\log_2 \binom{N}{\ell}}$ \\ \arrayrulecolor{darkgray}\hline
   \end{tabular}
-  \caption{Performance for prover and verifier for TCitH compared to MPCitH. I.e. the number of party emulations to achieve a soundness error of $2-\lambda$ (assuming a negligible false positive rate for the underlying MPC protocol). This table is from \cite{feneuil2023threshold}.}\label{tbl:tcith-performance}
+  \caption{Performance for prover and verifier for TCitH compared to MPCitH. I.e. the approximate number of party emulations to achieve a soundness error of $2-\lambda$ (assuming a negligible false positive rate for the underlying MPC protocol)~\cite{feneuil2023threshold}.}\label{tbl:tcith-performance}
 \end{table}
 
-We define a threshold MPC protocol, $ f_{thr} $, based on a $ (\ell, N) $-private SSS. In the context of the SDitH protocol, this can be instantiated with Shamir's Secret Sharing (\autoref{sub:shamir}).
+We define a threshold MPC protocol based on a $(\ell + 1, N)$-threshold SSS. In the context of the SDitH protocol, this can be instantiated with Shamir's Secret Sharing (\autoref{sub:shamir}).
 
-On the other hand, the TCitH model described by~\cite{feneuil2023threshold} results in a slightly larger proof size due to the increased flexibility in the number of input shares the prover must open. While the prover still commits to all input sharings, only a subset of these needs to be opened during the protocol.
+On the other hand, the TCitH model~\cite{feneuil2023threshold} results in increased flexibility in the number of input shares the prover must open. While the prover still commits to all input sharings, only a subset of these needs to be opened during the protocol.
 
 To facilitate this, a Merkle Tree Commitment Scheme (\autoref{sub:merkle_tree_prelim}) is employed. This scheme enables the prover to efficiently prove the consistency of a subset of committed inputs by providing additionally the authentication path along with the tree root -- introducing the slight increase in communicational complexity.
 
 \begin{lemma}[Soundness of TCitH based ZK]
-  Given a threshold MPC protocol $ f_{thr} $ with threshold $ \ell $ and $ N $ parties, we have a soundness error of:
+  Given a $(\ell +1,N)$-threshold MPC protocol with false positive probability of $p_{\ell}$, we have a soundness error of
   \begin{align*}
-    \frac{1}{\binom{N}{\ell}} + p_{f_{thr}} \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1}
+    \frac{1}{\binom{N}{\ell}} + p_{\ell} \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1}
   \end{align*}
 \end{lemma}
 
-\textit{Proof:} Soundness follows the same principle as before, with a slight modification. First, assume that the MPC protocol has a perfect error rate $  p_{f_{thr}} = 0  $.
+\textit{Proof:} Soundness follows the same principle as before, with a slight modification. First, we assume that the MPC protocol has a perfect error rate $p_{\ell} = 0$. 
 
-\begin{proposition}
-  The malicious prover must tamper with exactly $  N - \ell  $ MPC party emulations to successfully cheat the verifier.
-\end{proposition}
+We note that a malicious prover must tamper with exactly $N - \ell$ party emulations to successfully cheat the verifier. This can be shown by considering the case where the malicious prover attempts to cheat on fewer than $N - \ell$ parties. In such a scenario, at least $\ell + 1$ parties will have consistent views. Since $p_{\ell} = 0$, these consistent views define a valid witness $w$ such that $\mathcal{R}(x, w) = 1$, as required by the definition of the MPC protocol. Conversely, if the prover tampers with more than $N - \ell$ parties, the verifier will always detect the inconsistency.
 
-Consider the case where the malicious prover attempts to cheat on fewer than $  N - \ell  $ parties. In this scenario, at least $  \ell + 1  $ parties have consistent views. Since $  p_{f_{thr}} = 0  $, these consistent views define a valid witness $  w  $ such that $  \mathcal{R}(x, w) = 1  $, by the definition of the MPC protocol. Conversely, if the prover tampers with more than $  N - \ell  $ parties, the verifier will always detect the inconsistency.
 
-Given $  p_{f_{thr}} = 0  $ and the verifier opening $  \ell  $ inputs, the malicious prover can succeed in cheating the verifier with probability at most:
+Given $p_{\ell} = 0$ and the verifier opening $\ell$ inputs, the malicious prover can succeed in cheating the verifier with probability at most:
 \begin{align*}
   \frac{1}{\binom{N}{\ell}}
 \end{align*}
 
-Now, consider the case where $  p_{f_{thr}} \neq 0  $. The malicious prover may exploit the possibility of cheating the MPC protocol itself, resulting in a soundness error of:
+Now, consider the case where $p_{\ell} \neq 0$. The malicious prover may exploit the possibility of cheating the MPC protocol itself, resulting in a soundness error of:
 \begin{align*}
-  \frac{1}{\binom{N}{\ell}} + \left(1 - \frac{1}{\binom{N}{\ell}}\right) \cdot p_{f_{thr}}.
+  \frac{1}{\binom{N}{\ell}} + \left(1 - \frac{1}{\binom{N}{\ell}}\right) \cdot p_{\ell}.
 \end{align*}
 
 Finally, the malicious prover could provide an invalid sharing of the input witness $ \sh{w} $. Under such an attack, the final soundness error becomes:
 \begin{align*}
-  \frac{1}{\binom{N}{\ell}} + p_{f_{thr}} \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1} \geq \frac{1}{\binom{N}{\ell}} + \left(1 - \frac{1}{\binom{N}{\ell}}\right) \cdot p_{f_{thr}}. \qed
+  \frac{1}{\binom{N}{\ell}} + p_{\ell} \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1} \geq \frac{1}{\binom{N}{\ell}} + \left(1 - \frac{1}{\binom{N}{\ell}}\right) \cdot p_{\ell}. \qed
 \end{align*}
 
 This final step is formally proven in~\cite[p20]{feneuil2023threshold} but we will go over the main ideas of the proof.
 
-The first thing to realise is the fact that the verifier only ever sees at most $\ell$ shares of the secret sharing $\sh{w}$, this allows the malicious prover to pick different sharings for a set of subsets of $N$.
-We can denote such a subset:
-\begin{align}
-  \mathcal{J} = \{J \subset [N] \mid |J| = \ell + 1\}
-\end{align}
-The malicious prover can then pick different witness values $w_J$ for each $J \in \mathcal{J}$ corresponding to the shares $\sh{w}_J$.
-This fact allows the maliciour prover to pick:
+The first key observation is that the verifier only ever sees at most $\ell$ shares of the secret sharing $\sh{w}$. This limitation allows a malicious prover to construct multiple inconsistent sharings for subsets of $N$ parties while maintaining apparent consistency within any subset revealed to the verifier. 
 
+We define the set of all possible subsets of $N$ parties containing exactly $\ell + 1$ elements as:
 \begin{align}
-  w_{J_1} \neq w_{J_2} \text{ for } J_1, J_2 \in \mathcal{J}
+  \mathcal{J} = \{J \subseteq [N] \mid |J| = \ell + 1\}.
 \end{align}
 
-The authors then describes a \textit{Soundness attack} where the malicious prover samples different witness values for each $J \in \mathcal{J}$. When the verifier sends the challenge value $\epsilon$ the malicious prover does the following:
+The malicious prover can then choose different witness values $w_J$ for each subset $J \in \mathcal{J}$, corresponding to shares $\sh{w}_J$. Specifically, the malicious prover selects:
+\begin{align}
+  w_{J_1} \neq w_{J_2} \quad \text{for } J_1, J_2 \in \mathcal{J}, \; J_1 \neq J_2.
+\end{align}
+
+\subsubsection{Soundness Attack Strategy}
+This construction allows the malicious prover to perform a \textit{soundness attack}, where different witness values are sampled for each subset $J \in \mathcal{J}$. When the verifier sends a challenge value $\epsilon$, the malicious prover employs the following strategy:
 \begin{itemize}
-  \item If $\epsilon = w_{J_0}$ for some $J_0 \in \mathcal{J}$, the malicious prover defines the broadcast values and shares upon this set of shares $J_0$. This ensures that if $I \subset J_0$ then the malicious prover can convince the verifier that the shares are consistent.
-  \item Otherwise, if no such $w_{J_0}$ exists the malicious prover has to guess the which set $I$ the verifier will pick.
+  \item \textbf{Case 1:} The challenge $\epsilon$ matches $w_{J_0}$ for some $J_0 \in \mathcal{J}$.  
+  In this case, the malicious prover defines the broadcast values and shares based on the subset $J_0$. This ensures that, for any subset $I \subseteq J_0$, the shares appear consistent to the verifier.
+
+  \item \textbf{Case 2:} The challenge $\epsilon$ does not match any $w_{J_0}$.  
+  If no subset $J_0$ contains a witness value matching the challenge $\epsilon$, the malicious prover must guess which subset $I$ the verifier will check. If the guess is incorrect, the inconsistency will be detected.
 \end{itemize}
 
-The authors then proove that using the above strategy is in fact optimal for the malicious prover, and that the propability that the malicious prover convinces the verifier is the same as mentioned before. This is done by showing that if we have an efficient prover $\mathcal{P}$, we can use this to find commitment collisions using an average number of calls to $\mathcal{P}$. Which in turn would break the underlying commitment protocol.
+The authors prove that the above strategy is optimal for the malicious prover and that the probability of success matches the previously analyzed bound. Showing that the success of such a strategy is directly tied to the security of the underlying commitment scheme, and any efficient prover capable of consistent cheating would break the commitment scheme.
+
+As a result, the protocol's soundness holds under the assumption that the commitment scheme is secure.
+
 
 \section{Fiat-Shamir Heuristic}\label{sec:fiatshamir}
 To transform any zero-knowledge protocol into a signature scheme, one can use the approach described in~\cite{fiat1986prove}. Here, we outline the general concept.
 
-Zero-knowledge protocols, such as the MPCitH protocols discussed above, depend on the verifier to issue a challenge to the prover. This challenge acts as a source of randomness, which the prover must not control. The original Fiat-Shamir protocol is based on the problem of factoring integers. Nevertheless, the essential method of transforming a zero-knowledge protocol into a signature scheme remains unchanged.
+ZK-PoK interactive protocols, such as the MPCitH protocols discussed above, depend on the verifier to issue a challenge to the prover. This challenge acts as a source of randomness, which the prover cannot not control.
 
-To adapt a zero-knowledge protocol into a signature scheme, the prover must eliminate the verifier's role in providing the randomness. This is achieved by allowing the prover to independently generate the challenge using a pseudo-random function, such as a secure hash function. By modeling the hash function as a random oracle, its security guarantees ensure that the prover cannot manipulate the randomness of the verification challenge. This maintains the fundamental property of zero-knowledge interactive protocols while enabling the transformation into a non-interactive signature scheme.
+To adapt such a protocol into a signature scheme, the prover must eliminate the verifier's role in providing the randomness. This is achieved by allowing the prover to independently generate the challenge using a pseudo-random function, such as a collision-resistant hash function. By modeling the hash function as a random oracle, its security guarantees ensure that the prover cannot manipulate the randomness of the verification challenge. This maintains the fundamental property of ZK interactive protocols while enabling the transformation into a non-interactive signature scheme.
 
-Within the context of the SDitH protocol, the transformation from a ZK to a signature scheme is accomplished by substituting the verifier's challenge with the output of hash functions, where these hash functions take as input the prover's prior communications.
+Within the context of the SDitH protocol, the transformation from a ZK to a signature scheme is accomplished by substituting the verifier's \textit{MPC challenge} and \textit{view opening challenge} with the output of hash functions, where these hash functions take as input the prover's prior communications.
 
 \section{The Rust Programming language}\label{sec:rust}
 As a preliminary to our implementation, we need to answer the question: ``Why is Rust a good choice for PQC?''.
@@ -1643,13 +1653,13 @@ The SDitH protocol is founded on the computational hardness of the Syndrome Deco
 The SDitH protocol establishes a signature scheme by demonstrating the correctness of a public SD instance $(H, y)$ using a secret witness derived from $x$. Its construction unfolds in three main steps:
 \begin{enumerate}
   \item \textbf{Defining an MPC protocol:} Define a multi-party computation (MPC) protocol that enables $N$ parties to collaboratively verify the correctness of the public SD instance $(H, y)$ using a private witness $x$.
-  \item \textbf{Transforming into a ZK-POK:} Convert the MPC protocol into a zero-knowledge proof of knowledge (ZK-POK) through the MPC-in-the-Head (MPCitH) framework, detailed in \autoref{sec:mpcinth}.
+  \item \textbf{Transforming into a ZK-PoK:} Convert the MPC protocol into a zero-knowledge proof of knowledge (ZK-PoK) through the MPC-in-the-Head (MPCitH) framework, detailed in \autoref{sec:mpcinth}.
   \item \textbf{Deriving a signature scheme:} Adapt the ZKP into a digital signature scheme using the Fiat-Shamir transformation, as described in \autoref{sec:fiatshamir}.
 \end{enumerate}
 
 The construction is highly modular, allowing flexibility and adaptability, as you can tweak the SD instance, the MPC protocol, the MPCitH and Fiat-Shamir transformations. The authors propose two distinct protocol variants: the \textit{hypercube} variant and the \textit{threshold} variant. For this work, we focus on the \textit{threshold} variant~\cite{aguilarsyndrome11,feneuil2023threshold,feneuil2023threshold2}, as it offers significant performance enhancements compared to both the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11,aguilar2023return,feneuil2023threshold2}, albeit at the cost of slightly larger signature sizes.
 
-This chapter presents a comprehensive specification of the SDitH Signature Scheme in the Threshold variant. The construction is based on the SDitH MPC protocol in \autoref{sec:sdith-mpc}, its transformation into ZK-POK using MPCitH (described in \autoref{sec:sdith-zkpok}) and finally transformation into a signature scheme in \autoref{sec:sdith-signature}. Additionally, we describe optimizations applied to the protocol, such as avoiding interpolation and utilizing the $d$-split variant of the SD instance. A detailed table summarizing the protocol parameters and security assumptions is provided in \autoref{tab:sdith-protocol-parameters}.
+This chapter presents a comprehensive specification of the SDitH Signature Scheme in the Threshold variant. The construction is based on the SDitH MPC protocol in \autoref{sec:sdith-mpc}, its transformation into ZK-PoK using MPCitH (described in \autoref{sec:sdith-zkpok}) and finally transformation into a signature scheme in \autoref{sec:sdith-signature}. Additionally, we describe optimizations applied to the protocol, such as avoiding interpolation and utilizing the $d$-split variant of the SD instance. A detailed table summarizing the protocol parameters and security assumptions is provided in \autoref{tab:sdith-protocol-parameters}.
 
 \begin{table}[]
   \begin{tabular}{p{0.12\textwidth}p{0.78\textwidth}}
@@ -1793,10 +1803,10 @@ Due to the linearity of the MPC computation, the output shares can be reconstruc
 \subsubsection{PK setup}
 The nature of an SD instance allows the protocol to seamlessly transform into a \textit{public-key signature scheme}. Here, the pair $(H, y)$ acts as the public key, while the solution to the SD instance $x$ serves as the private key. The keys is then expanded to $(H', y), (s_A, P, Q)$ following the transformations detailed in \autoref{sec:syndrome}. Furthermore, the public key can be optimised for communication by instead sampling $H'$ from a seed $sd_H$ making the secret key $(sd_H, y)$.
 
-\subsubsection{ZK-POK protocol}
-First, the MPC protocol (\autoref{def:sdith-mpc}) is transformed into a ZK-POK using the Threshold MPCitH protocols described by~\cite{feneuil2023threshold,feneuil2023threshold2}. This transformation in full lies outside the scope of this report and is deferred to the appendix in \autoref{sec:sdith-zkpok}. Here we leave a short overview of the transformation~\cite{aguilarsyndrome11}.
+\subsubsection{ZK-PoK protocol}
+First, the MPC protocol (\autoref{def:sdith-mpc}) is transformed into a ZK-PoK using the Threshold MPCitH protocols described by~\cite{feneuil2023threshold,feneuil2023threshold2}. This transformation in full lies outside the scope of this report and is deferred to the appendix in \autoref{sec:sdith-zkpok}. Here we leave a short overview of the transformation~\cite{aguilarsyndrome11}.
 
-\begin{protocol}[SDitH ZK-POK protocol]
+\begin{protocol}[SDitH ZK-PoK protocol]
   \label{pro:sdith-zkpok}
   For a $(\ell + 1, N)$-threshold MPC protocol
   \begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
@@ -1810,9 +1820,9 @@ First, the MPC protocol (\autoref{def:sdith-mpc}) is transformed into a ZK-POK u
 \end{protocol}
 
 The zero-knowledge property of the protocol is guaranteed by the fact that the verifier only receives $\ell$ shares from an $\ell + 1$-private secret-sharing scheme (SSS).
-The soundness of the ZK-POK protocol relies on the binding property of the commitment scheme and the prover's inability to simulate multiple inconsistent views of the MPC protocol. By incorporating hash consistency checks and commitment verification, the ZK-POK protocol ensures that a cheating prover cannot deviate significantly from the behavior expected in an honest execution.
+The soundness of the ZK-PoK protocol relies on the binding property of the commitment scheme and the prover's inability to simulate multiple inconsistent views of the MPC protocol. By incorporating hash consistency checks and commitment verification, the ZK-PoK protocol ensures that a cheating prover cannot deviate significantly from the behavior expected in an honest execution.
 
-As outlined in~\cite{feneuil2023threshold}, the general ZK-POK (without threshold) soundness error is defined as:
+As outlined in~\cite{feneuil2023threshold}, the general ZK-PoK (without threshold) soundness error is defined as:
 \begin{align*}
   \epsilon = \frac{1}{N} + p \cdot \left(1 - \frac{1}{N}\right).
 \end{align*}
@@ -1825,7 +1835,7 @@ By applying the threshold-based approach, the soundness error is modified and be
   where $p$ represents the false positive probability of the MPC protocol, $N$ is the total number of parties, and $\ell$ is the threshold parameter~\cite{feneuil2023threshold}.
 \end{lemma}
 We can see that the threshold-based approach introduces a slight degradation in the soundness of the protocol. This comes from the fact that we now require less views to be validated, which in turn increases the probability of a false positive.
-To mitigate this, \textit{parallel repetition} is employed to strengthen the soundness signature protocol. Specifically, the SDitH protocol repeats the underlying ZK-POK protocol $\tau$ times, where:
+To mitigate this, \textit{parallel repetition} is employed to strengthen the soundness signature protocol. Specifically, the SDitH protocol repeats the underlying ZK-PoK protocol $\tau$ times, where:
 \begin{align*}
   \tau = \left\lceil \log_2\left(\frac{1}{\epsilon}\right) \cdot \lambda \right\rceil,
 \end{align*}
@@ -1834,7 +1844,7 @@ with $\lambda$ as the security parameter and $2^{-\lambda}$ as the target soundn
 To accommodate the repetitions, the authors incorporate a slight modification inspired by the Limbo proof system~\cite{delpech2021limbo}. Specifically, we reuse the same MPC challenges $r$ and $\varepsilon$, as well as the Beaver triples, across all $\tau$ repetitions. This tweak allows us to modify the MPC computation input so that \textit{plain bradcast} value only needs to be computed once.
 
 \subsubsection{Fiat-Shamir transform}
-Next, we apply the \textit{Fiat-Shamir heuristic} -- detailed in \autoref{sec:fiatshamir} -- to transform the challenges of the ZK-POK protocol into a non-interactive form. This transformation is achieved by having the prover derive the challenges for MPC randomness and opening challenge directly from the commitments of the MPC inputs and the outputs of the MPC computation in the hashes $h_1, h_2$ computed from secure hash functions~\autoref{sec:prelim_hash}.
+Next, we apply the \textit{Fiat-Shamir heuristic} -- detailed in \autoref{sec:fiatshamir} -- to transform the challenges of the ZK-PoK protocol into a non-interactive form. This transformation is achieved by having the prover derive the challenges for MPC randomness and opening challenge directly from the commitments of the MPC inputs and the outputs of the MPC computation in the hashes $h_1, h_2$ computed from secure hash functions~\autoref{sec:prelim_hash}.
 \begin{align}
   h_n = \texttt{Hash}_n(d) \rightarrow \texttt{Hash}(n || d)\label{eq:fiatshamirhash}
 \end{align}
@@ -3174,7 +3184,7 @@ To ensure correctness, we created tests to verify the statement above.
 
 \subsubsection{MPC Challenge Generation}
 
-The MPC challenge generated for the ZK-POK (\autoref{sec:sdith-zkpok}) and the resulting signature scheme (\autoref{sec:sdith-signature}) involves sampling $t$ challenge pairs $(r, \varepsilon)$ for the \autoref{def:sacrifice} protocol.
+The MPC challenge generated for the ZK-PoK (\autoref{sec:sdith-zkpok}) and the resulting signature scheme (\autoref{sec:sdith-signature}) involves sampling $t$ challenge pairs $(r, \varepsilon)$ for the \autoref{def:sacrifice} protocol.
 
 To facilitate this, we encapsulated the values in a \rust{MPCChallenge} struct, providing a convenient interface. The random values are generated using our \rust{PRG} interface, which is initiated with the $h_1$ hash.
 
@@ -4007,11 +4017,11 @@ Next, the verifier computes the inverse of the broadcast share to recompute $(\s
 \end{align*}
 \todo{Want to explain the above in a more detailed manner? Specifically ${Q^*}_0(r) - {\sh{Q}}_1(r) = Q_1(r)$}
 
-\section{ZK-POK Protocol}\label{sec:sdith-zkpok}
+\section{ZK-PoK Protocol}\label{sec:sdith-zkpok}
 
-To obtain a signature scheme from \autoref{def:sdith-mpc}, two transformations are needed. First, we will transform the MPC protocol into a zero-knowledge proof of knowledge (ZK-POK) using MPCitH. The ZK-POK described \autoref{def:sdith-zkpok} in is based on the verification by sacrificing triples strategy for MPCitH~\cite{baum2020concretely} detailed in \autoref{sec:mpc_sacrificing} but has key changes to accommodate the threshold variant of the protocol~\cite{feneuil2023threshold,feneuil2023threshold2}.
+To obtain a signature scheme from \autoref{def:sdith-mpc}, two transformations are needed. First, we will transform the MPC protocol into a zero-knowledge proof of knowledge (ZK-PoK) using MPCitH. The ZK-PoK described \autoref{def:sdith-zkpok} in is based on the verification by sacrificing triples strategy for MPCitH~\cite{baum2020concretely} detailed in \autoref{sec:mpc_sacrificing} but has key changes to accommodate the threshold variant of the protocol~\cite{feneuil2023threshold,feneuil2023threshold2}.
 
-\begin{protocol}[ZK-POK from MPCitH~\cite{feneuil2022syndrome}]\label{def:sdith-zkpok}
+\begin{protocol}[ZK-PoK from MPCitH~\cite{feneuil2022syndrome}]\label{def:sdith-zkpok}
   \setlength{\parskip}{5pt}
   \setlength{\parindent}{0pt}
   \titlespacing*{\paragraph}{0pt}{1pt}{1em}
