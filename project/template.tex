@@ -156,25 +156,40 @@
 \addcontentsline{toc}{chapter}{Abstract}
 As part of the ongoing efforts to develop post-quantum cryptographic solutions under the NIST call for standardization, the \textit{Syndrome Decoding in the Head} (SDitH) protocol has emerged as a promising candidate. Combining the modularity and efficiency of the MPC-in-the-Head paradigm with threshold-based MPC techniques, this protocol delivers a code-based, quantum-resilient digital signature.
 
-In this work, we present an implementation of the SDitH protocol in Rust, a modern, memory-safe programming language. Our implementation prioritizes modularity and readability to serve as a comprehensive reference for future developers and the protocol's authors. Additionally, we leveraged modern Rust language features and developed a robust test suite to ensure the implementation's reliability and maintainability.
+In this work, we present an implementation of the SDitH protocol in Rust, a modern, memory-safe programming language. Our implementation prioritizes modularity and readability to serve as a comprehensive reference for future developers and the protocol's authors. Additionally, we leveraged modern Rust language features to develop a flexible and maintainable protocol.
 
-This report also provides an in-depth review of the theoretical foundations underpinning the protocol, offering readers a thorough understanding of its principles and design.
+This report provides an in-depth review of the theoretical foundations underpinning the protocol, offering readers a thorough understanding of its principles and design. Furthermore, the report outlines the features of the Rust programming language that makes it an ideal choice for implementing the SDitH protocol. We discuss the challenges and limitations of the reference implementation in C, highlighting areas for future improvement.
 
-Benchmarking against the optimized reference implementation demonstrated comparable performance in key generation and verification, with a minor performance gap observed in the signing operation. Our analysis points to a need for more specialized optimisations.
+We performed benchmarking against the optimized reference implementation demonstrated comparable performance in key generation and verification, with a minor performance gap observed in the signing operation. Our analysis points to a need for more specialized optimisations.
 
-Our implementation demonstrates the protocol's flexibility, enabling the exploration of alternative hash functions and customizable parameters. We also propose future optimizations, such as replacing the Merkle Commitment Scheme with Verkle Trees, to address current performance bottlenecks in hashing operations.
+Our implementation demonstrates the protocol's flexibility, enabling the exploration of alternative hash functions and customizable parameters. We also propose explorative future optimizations, such as replacing the Merkle Commitment Scheme with Verkle Trees, to address current performance bottlenecks in hashing operations.
 
-In conclusion, we believe that our Rust implementation provides a valuable resource for future research and development, supporting the ongoing refinement and practical deployment of post-quantum cryptographic protocols.
+In conclusion, we believe that our implementation provides a valuable resource for future development, supporting the ongoing standardization and practical deployment of post-quantum cryptographic protocols.
 
 \chapter*{Resum\'e}
 \addcontentsline{toc}{chapter}{Resum\'e}
 
-\todo{in Danish\dots}
+Som en del af de igangværende bestræbelser på at udvikle \textit{post-quantum} kryptografiske protokoller under NIST's standardiseringsproces står \textit{Syndrome Decoding in the Head} (SDitH) protokollen som en lovende kandidat. Ved at kombinere modularitet og performance fra \textit{MPC-in-the-Hea}d-paradigmet med \textit{threshold MPC} teknikker leverer denne protokol en post-quantum digital signatur baseret på sikkerhedskoder.
+
+I denne rapport præsenterer vi en implementering af SDitH-protokollen i Rust, et moderne og memory-safe programmeringssprog. Vores implementering prioriterer læsbarhed for at give en omfattende reference for fremtidige udviklere og protokollens forfattere. Derudover har vi udnyttet moderne løsninger fra Rust til at udvikle en fleksibel og vedligeholdelsesvenlig protokol.
+
+Derudover, giver vi en dybdegående gennemgang af de teoretiske grundlag, der understøtter protokollen, og tilbyder læserne en grundig forståelse af dens principper og design. Rapporten fremhæver også den funktionalitet i Rust, der gør det til et ideelt valg til implementering af SDitH-protokollen. Vi diskuterer udfordringerne og begrænsningerne ved den reference implementeringen i C og peger på områder, hvor der kan foretages forbedringer i fremtiden.
+
+Vi har udført benchmarks mod den optimerede reference implementering og fandt i sin nuværende form en sammenlignelig ydeevne i \textit{key generation} og \textit{verification}, med et mindre tab observeret i signeringsoperationen. Vores analyse peger på et behov for mere specialiserede optimeringer.
+
+Vores implementering demonstrerer protokollens fleksibilitet og gør det muligt at udforske alternative hash-funktioner og brugertilpassede parametre. Vi foreslår også fremtidige optimeringsmuligheder, såsom at erstatte \textit{Merkle Tree Commitment Scheme} med \textit{Verkle Trees}, for at adressere nuværende optimerings problemer.
+
+Til slut mener vi, at vores implementering udgør en værdifuld ressource for fremtidig udvikling og understøtter den fortsatte standardisering og praktiske implementering af post-quantum protokoller.
+
 
 \chapter*{Acknowledgments}
 \addcontentsline{toc}{chapter}{Acknowledgments}
 
-\todo{\dots}
+We would like to extend a huge thanks to our supervisor, Professor Diego F. Aranha, for his unwavering optimism and enthusiasm, which have been invaluable throughout the development of this project. Our weekly meetings have been a source of both valuable insights and great humor. You prove to us that that computer scientists not only solve complex problems but also know how to have fun while doing it.
+
+Furthermore, we would like give a heartfelt thanks to friends, family and partners who have each shown their support in encouragement and food or snack deliveries when needed! Their support has been invaluable in keeping us motivated and focused on our goals (and with full bellies)
+
+Finally, we would like to express our gratitude to the authors of the SDitH protocol. Without their work and dedication, this project would not have been possible. 
 
 \vspace{2ex}
 \begin{flushright}
@@ -219,7 +234,7 @@ In the Syndrome Decoding in the Head (SDitH) protocol such techniques are combin
 
 The threshold variant, in particular, provides an opportunity to explore and implement several cryptographic primitives, including Merkle Trees~\cite{becker2008merkle}, Linear Secret Sharing (Shamir), Galois Fields~\cite{brownadvanced}, and Multi-Party Computation in the Head (MPCitH)~\cite{ishai2007zero,katz2018improved,baum2020concretely}.
 
-The authors supply a detailed and well-crafted specification, along with a reference implementation in C++, which serves as a robust starting point for our work.
+The authors supply a detailed and well-crafted specification, along with a reference implementation in C, which serves as a robust starting point for our work.
 
 Of course, selfishly, a key consideration in our work was the belief that the protocol could be a strong contender for selection as the final ``winner'' in the NIST additional round~\cite{nistcall}. This belief was introduced by our supervisor, a trust that appears to have been well-placed. As we were developing our implementation, the NIST process advanced to the second round, with the SDitH protocol successfully moving forward. The NIST internal report highlights certain features which are valued by the NIST committee of the protocol, such as its flexibility  -- a promising indication for the future of the protocol.
 
@@ -721,9 +736,9 @@ The intuition behind a ZK-PoK is that the prover can convince the verifier that 
 
   Let $x$ be a statement of language $L$ in \textbf{NP}, and $W(x)$ the set of witnesses for $x$ such that the following relation holds~\cite{feneuil2023threshold}   \[
     \mathcal{R}(x,w) = \begin{cases}
-                         1 & \text{if } x \in L \text{ and } w \in W(x) \\
-                         0 & \text{otherwise}
-                       \end{cases}
+      1 & \text{if } x \in L \text{ and } w \in W(x) \\
+      0 & \text{otherwise}
+    \end{cases}
   \]  We have the following properties:
   \begin{itemize}
     \item \textit{Completeness}: If $x$ is true, then $\mathcal{R}(x, w)$ holds for some $w$.
@@ -779,13 +794,13 @@ Secondly, the prover could have tampered with the views. In this, the prover mus
 
 \section{Efficient product verification}\label{sec:mpc_sacrificing}
 
-The basic MPCitH protocol serves as a foundation for constructing ZK-PoK for any \textbf{NP} relation and it has been demonstrated to yield relatively efficient ZK protocols~\cite{feneuil2022syndrome,baum2020concretely,katz2018improved}. Giacomelli et al. and Chase et al.~\cite{katz2018improved,giacomelli2016zkboo,chase2017post} provided concrete implementations of the \textit{MPC-in-the-Head} approach and observed that employing a 3-party MPC protocol achieved optimal performance within the space of protocols they analyzed. 
+The basic MPCitH protocol serves as a foundation for constructing ZK-PoK for any \textbf{NP} relation and it has been demonstrated to yield relatively efficient ZK protocols~\cite{feneuil2022syndrome,baum2020concretely,katz2018improved}. Giacomelli et al. and Chase et al.~\cite{katz2018improved,giacomelli2016zkboo,chase2017post} provided concrete implementations of the \textit{MPC-in-the-Head} approach and observed that employing a 3-party MPC protocol achieved optimal performance within the space of protocols they analyzed.
 
 However, due to the small number of parties, the soundness of the resulting protocols is relatively weak. Consequently, a large number of parallel repetitions is required to achieve a negligible soundness error. This significantly increases both the size of the proofs and the communication overhead of the protocols. In this section, we describe a variant of the MPC-in-the-Head protocol that is specifically sound for the addition relation.
 
 In an effort to improve this, Baum and Nof introduced a variant of the framework based on a specialized MPC protocol. This protocol efficiently verifies a product relation $a \cdot b = c$. Their contributions significantly enhanced the efficiency of MPCitH-based ZK-PoK protocols and serve as the foundation for the underlying MPC protocol used in the SDitH protocol.
 
-The underlying MPC protocol is based on arithmetic circuits, where addition operations are straightforward to perform using any $(+,+)$-homomorphic secret sharing scheme. 
+The underlying MPC protocol is based on arithmetic circuits, where addition operations are straightforward to perform using any $(+,+)$-homomorphic secret sharing scheme.
 
 However, performing multiplication -- which is required for the product relation -- is significantly more challenging. The simplest approach would be to verify the relation by directly computing the product. A common technique for handling multiplication in MPC protocols is the use of Beaver triples.
 
@@ -854,7 +869,7 @@ The second challenge is a \textit{view opening challenge} $I \subseteq [N]$, whe
 
 \section{Threshold Computation in the Head (TCitH)}\label{sec:threshold-mpc}
 
-\autoref{def:sacrifice} forms the foundational mechanism underpinning the SDitH protocol. While this approach delivers significant improvements~\cite{baum2020concretely,feneuil2022syndrome} in efficiency and soundness for ZK-PoK protocols, further advancements can be achieved by revisiting the secret sharing schemes utilized within the MPCitH framework. The majority of constructions within the MPCitH framework~\cite{baum2020concretely,feneuil2022syndrome,katz2018improved} rely on $(N-1, N)$ additive secret sharing schemes (SSS). 
+\autoref{def:sacrifice} forms the foundational mechanism underpinning the SDitH protocol. While this approach delivers significant improvements~\cite{baum2020concretely,feneuil2022syndrome} in efficiency and soundness for ZK-PoK protocols, further advancements can be achieved by revisiting the secret sharing schemes utilized within the MPCitH framework. The majority of constructions within the MPCitH framework~\cite{baum2020concretely,feneuil2022syndrome,katz2018improved} rely on $(N-1, N)$ additive secret sharing schemes (SSS).
 
 Recently, Feneuil and Rivain~\cite{feneuil2023threshold,feneuil2023threshold2} proposed the application of threshold secret sharing schemes -- see \autoref{sub:threshold-sss}. For low-threshold SSS, their approach dramatically reduces computational overhead, as the prover emulates only $\ell + 1$ parties, while the verifier needs to verify and emulate just $\ell$ parties.
 
@@ -862,7 +877,7 @@ Recently, Feneuil and Rivain~\cite{feneuil2023threshold,feneuil2023threshold2} p
   \centering
   \def\arraystretch{1.5}%  1 is the default, change whatever you need
   \begin{tabular}{ccc}
-    \textbf{} & MPCitH                                  & TCitH                                                      \\ \arrayrulecolor{darkgray}\hline
+    \textbf{} & MPCitH                          & TCitH                                              \\ \arrayrulecolor{darkgray}\hline
     Prover    & $ \lambda \frac{N}{\log_2 N}$   & $ \lambda \frac{\ell + 1}{\log_2 \binom{N}{\ell}}$ \\ \arrayrulecolor{lightgray}\hline
     Verifier  & $ \lambda \frac{N-1}{\log_2 N}$ & $ \lambda \frac{\ell + 1}{\log_2 \binom{N}{\ell}}$ \\ \arrayrulecolor{darkgray}\hline
   \end{tabular}
@@ -882,7 +897,7 @@ To facilitate this, a Merkle Tree Commitment Scheme (\autoref{sub:merkle_tree_pr
   \end{align*}
 \end{lemma}
 
-\textit{Proof:} Soundness follows the same principle as before, with a slight modification. First, we assume that the MPC protocol has a perfect error rate $p_{\ell} = 0$. 
+\textit{Proof:} Soundness follows the same principle as before, with a slight modification. First, we assume that the MPC protocol has a perfect error rate $p_{\ell} = 0$.
 
 We note that a malicious prover must tamper with exactly $N - \ell$ party emulations to successfully cheat the verifier. This can be shown by considering the case where the malicious prover attempts to cheat on fewer than $N - \ell$ parties. In such a scenario, at least $\ell + 1$ parties will have consistent views. Since $p_{\ell} = 0$, these consistent views define a valid witness $w$ such that $\mathcal{R}(x, w) = 1$, as required by the definition of the MPC protocol. Conversely, if the prover tampers with more than $N - \ell$ parties, the verifier will always detect the inconsistency.
 
@@ -904,7 +919,7 @@ Finally, the malicious prover could provide an invalid sharing of the input witn
 
 This final step is formally proven in~\cite[p20]{feneuil2023threshold} but we will go over the main ideas of the proof.
 
-The first key observation is that the verifier only ever sees at most $\ell$ shares of the secret sharing $\sh{w}$. This limitation allows a malicious prover to construct multiple inconsistent sharings for subsets of $N$ parties while maintaining apparent consistency within any subset revealed to the verifier. 
+The first key observation is that the verifier only ever sees at most $\ell$ shares of the secret sharing $\sh{w}$. This limitation allows a malicious prover to construct multiple inconsistent sharings for subsets of $N$ parties while maintaining apparent consistency within any subset revealed to the verifier.
 
 We define the set of all possible subsets of $N$ parties containing exactly $\ell + 1$ elements as:
 \begin{align}
@@ -919,11 +934,11 @@ The malicious prover can then choose different witness values $w_J$ for each sub
 \subsubsection{Soundness Attack Strategy}
 This construction allows the malicious prover to perform a \textit{soundness attack}, where different witness values are sampled for each subset $J \in \mathcal{J}$. When the verifier sends a challenge value $\epsilon$, the malicious prover employs the following strategy:
 \begin{itemize}
-  \item \textbf{Case 1:} The challenge $\epsilon$ matches $w_{J_0}$ for some $J_0 \in \mathcal{J}$.  
-  In this case, the malicious prover defines the broadcast values and shares based on the subset $J_0$. This ensures that, for any subset $I \subseteq J_0$, the shares appear consistent to the verifier.
+  \item \textbf{Case 1:} The challenge $\epsilon$ matches $w_{J_0}$ for some $J_0 \in \mathcal{J}$.
+        In this case, the malicious prover defines the broadcast values and shares based on the subset $J_0$. This ensures that, for any subset $I \subseteq J_0$, the shares appear consistent to the verifier.
 
-  \item \textbf{Case 2:} The challenge $\epsilon$ does not match any $w_{J_0}$.  
-  If no subset $J_0$ contains a witness value matching the challenge $\epsilon$, the malicious prover must guess which subset $I$ the verifier will check. If the guess is incorrect, the inconsistency will be detected.
+  \item \textbf{Case 2:} The challenge $\epsilon$ does not match any $w_{J_0}$.
+        If no subset $J_0$ contains a witness value matching the challenge $\epsilon$, the malicious prover must guess which subset $I$ the verifier will check. If the guess is incorrect, the inconsistency will be detected.
 \end{itemize}
 
 The authors prove that the above strategy is optimal for the malicious prover and that the probability of success matches the previously analyzed bound. Showing that the success of such a strategy is directly tied to the security of the underlying commitment scheme, and any efficient prover capable of consistent cheating would break the commitment scheme.
@@ -959,7 +974,7 @@ Cargo is a command-line tool -- run through \texttt{cargo} -- that facilitates t
 
 
 \subsection{Memory safety}\label{sec:rustborrow} % mut references
-Rust guarantees both type safety (\autoref{sub:rusttypes}) and memory safety. While we will not delve into the details, significant progress has been made toward formal proofs of these guarantees~\cite{jung2017rustbelt}. Unlike many other languages that rely on sophisticated garbage collection mechanisms to ensure memory safety, Rust avoids the associated performance overhead through two key features: the \textit{ownership} and \textit{lifetimes}. Along with a compile time functionality called the \textit{borrow checker}, these features ensure the memory safety of Rust programs. 
+Rust guarantees both type safety (\autoref{sub:rusttypes}) and memory safety. While we will not delve into the details, significant progress has been made toward formal proofs of these guarantees~\cite{jung2017rustbelt}. Unlike many other languages that rely on sophisticated garbage collection mechanisms to ensure memory safety, Rust avoids the associated performance overhead through two key features: the \textit{ownership} and \textit{lifetimes}. Along with a compile time functionality called the \textit{borrow checker}, these features ensure the memory safety of Rust programs.
 
 While the borrow checker is often the biggest challenge for new Rust developers, it is also the feature that makes Rust exceptionally powerful for secure applications.
 
@@ -997,7 +1012,7 @@ Between the two memory allocations there exists a \textit{performance versus dyn
   let b: [u8; 3] = [1, 2, 3];
 \end{minted}
 
-This code demonstrates two data types being allocated. The first, \rust{a}, is a vector type, while the second, \rust{b}, is a fixed-size array type. The vector type is always allocated on the heap, whereas the fixed array is allocated on the stack. Pushing and accessing the stack is faster than for on the heap. Therefore, keeping values on the stack tends to outperform heap allocations. This is because heap allocation involves searching for a suitable location in memory to store the data. 
+This code demonstrates two data types being allocated. The first, \rust{a}, is a vector type, while the second, \rust{b}, is a fixed-size array type. The vector type is always allocated on the heap, whereas the fixed array is allocated on the stack. Pushing and accessing the stack is faster than for on the heap. Therefore, keeping values on the stack tends to outperform heap allocations. This is because heap allocation involves searching for a suitable location in memory to store the data.
 
 Accessing data on the heap is slower because you have to follow a pointer from the stack to the allocated data. Note that there are several optimisations you can do when allocating to the heap, like changing the allocator for specific use cases, instantiating the vector with a capacity or the \rust{SmallVec} that dynamically changes from the stack to the heap when allocation surpasses its defined capacity. See~\cite{rustlangPerformanceBook} for more.
 
@@ -1183,7 +1198,7 @@ Every value in Rust has a \textit{data type}. Programs written in Rust are \text
   let guess: u32 = "42".parse().expect("Not a number!"); 
 \end{minted}
 
-Here, the \rust{parse} function requires the annotation of the variable \rust{guess} to determine how the string should be parsed. Additionally, if you annotate \rust{guess} with a type that does not implement the \rust{parse} function for strings, the compiler will produce an error. 
+Here, the \rust{parse} function requires the annotation of the variable \rust{guess} to determine how the string should be parsed. Additionally, if you annotate \rust{guess} with a type that does not implement the \rust{parse} function for strings, the compiler will produce an error.
 
 The type system ensures that Rust minimizes the possibility of writing incorrect code -- at least in terms of the bounds of the language and the program. While Rust enforces correctness in type usage, ensuring that a program operates semantically as intended, such as adhering to a protocol specification, often requires additional validation methods.
 
@@ -1272,7 +1287,7 @@ There are several reasons why a signature might fail to generate, but a straight
 A key goal of this project was to create an implementation that is easy to read, enabling future implementers to understand the protocol. Rust was chosen in one part for its robust set of tools and features, which facilitate writing maintainable and readable code.
 
 \subsubsection{Code Documentation}\label{sub:code-documentation}
-First things first, good written code should either be written in a way so that it is self-explanatory or the developer should instead supply the necessary documentation in order for the reader to quickly grasp the concepts and functionality. 
+First things first, good written code should either be written in a way so that it is self-explanatory or the developer should instead supply the necessary documentation in order for the reader to quickly grasp the concepts and functionality.
 
 Often times you would want to supply documentation in the form of comments, above functions and variables to explain their purpose and functionality. Furthermore, you would want to supply the user with a \textit{manual} where the user can read about the exposed library.
 
@@ -1525,7 +1540,7 @@ fn main() {
 }
 \end{minted}
 
-In the example above we use the feature flag to change which trait is implemented for the \rust{u8} type. 
+In the example above we use the feature flag to change which trait is implemented for the \rust{u8} type.
 
 In our implementation, we use feature flags to toggle between different categories and enable specific optimizations -- like parallelisation or SIMD. This approach allows dynamic testing and comparison of various configurations without the need for manual code changes or duplication.
 
@@ -2126,9 +2141,17 @@ In terms of quantum security, the complexity and capability of quantum algorithm
 
 The SDitH specification provides security parameters adhering to categories one, three and five. Therefore, according to the proposal by NIST, the SDitH specification provides security metrics in terms of quantum circuit depth to optimal key recovery for AES-128, AES-192 and AES-256 for categories \textbf{one}, \textbf{three} and \textbf{five} respectively. These are estimated to be $2^{143}$, $2^{207}$ and $2^{272}$ classical gates~\cite{nistcall}.
 
-\subsubsection{Signature Forgery Attack}
+\subsubsection{Security Assumptions}
 
-The SDitH signature scheme ensures \textbf{E}xistential \textbf{U}nforgeability under \textbf{C}hosen \textbf{M}essage \textbf{A}ttack (EUF-CMA), a key security property evaluated by NIST~\cite{nistcall,aguilarsyndrome11}. In the EUF-CMA game, a challenger generates a key pair $(pk, sk)$ and provides $pk$ to the adversary, who can query a signing oracle for up to $2^{64}$ chosen messages $(m_1, \dots, m_r)$, receiving corresponding valid signatures $(\sigma_1, \dots, \sigma_r)$. The adversary wins if it produces a valid signature $(m^*, \sigma^*)$ for a message $m^*$ not queried to the signing oracle.
+The SDitH protocol is secure under the following assumptions:
+
+Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search (see \autoref{def:nistsec}) in terms of quantum circuit size. For this, $\kappa$ is defined as $143$, $207$ and $272$ for the categories~\cite{nistcall}. Furthermore, the XOF primitive used is secure with 128-bit, 192-bit, 256-bit security levels for each of the categories respectively. Finally, the Hash function used \textit{behaves as a random oracle}. Specifically, security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM)~\cite{aguilarsyndrome11} -- see \autoref{sub:qrom}. 
+
+\subsubsection{Security Definition}
+
+Furthermore, the SDitH signature scheme ensures \textbf{E}xistential \textbf{U}nforgeability under \textbf{C}hosen \textbf{M}essage \textbf{A}ttack (EUF-CMA), a key security property evaluated by NIST~\cite{nistcall,aguilarsyndrome11}. In the EUF-CMA game, a challenger generates a key pair $(pk, sk)$ and provides $pk$ to the adversary, who can query a signing oracle for up to $2^{64}$ chosen messages $(m_1, \dots, m_r)$, receiving corresponding valid signatures $(\sigma_1, \dots, \sigma_r)$. The adversary wins if it produces a valid signature $(m^*, \sigma^*)$ for a message $m^*$ not queried to the signing oracle.
+
+\subsubsection{Signature Forgery Attack}
 
 We analyze the generic forgery attack on Fiat-Shamir transformed signature protocols as described by~\cite{kales2020attack}. This attack seeks to minimize the effective cost of a forgery attempt. For the threshold-based SDitH protocol, the adversary can choose between two strategies:
 \begin{enumerate}
@@ -2149,6 +2172,27 @@ Due to the tweak in MPC input generation detailed in \autoref{sub:sdith-threshol
 Therefore, the total cost of a forgery attack is the maximum of the two strategies:
 \begin{align}
   \max \left\{ \frac{1}{1 - (1-p)^{\tau \cdot \binom{N}{\ell + 1}}}, \binom{N}{\ell}^\tau \right\}\label{eq:forgery_attack_cost}
+\end{align}
+
+\subsubsection{Attacks against the SD problem}
+
+The general syndrome decoding problem \autoref{def:syndrome} is a known \textbf{NP}-hard problem. The most well performing attacks are of the family \textit{Information-Set Decoding} (ISD)~\cite{aguilarsyndrome11,prange1962use}. An information-set decoding algorithm iteratively selects a set $I$ of $k$ indices (the information set) and defines $J = [1, \ldots, m] \setminus I$. A step is successful if the submatrix $H_J$ is invertible and the support of $x$ lies entirely in $J$, allowing $x$ to be computed as $x_J = H_J^{-1} y$, with other entries set to $0$. Successive work by~\cite{stern1989method,peters2009information} gives the following bounds for the complexity of an ISD algorithm. The cost of each iteration is
+\begin{align}
+  \begin{split}
+    & C_{iter} =                                                                                  \\
+    & \frac{1}{2}(n-k)^2(n+k) + \left(\left(\frac{k}{2} - p + 1\right) +
+    \left(\binom{\lfloor k/2 \rfloor}{p} + \binom{k - \lfloor k / 2 \rfloor}{p}\right)(q-1)^p\right) \ell \\
+    & + \frac{q}{q-1}(w-2p+1) 2p \left(1 + \frac{q-2}{q-1}\right)
+    \frac{\binom{\lfloor k/2 \rfloor}{p} + \binom{k - \lfloor k / 2 \rfloor}{p}(q-1)^{2p}}{q^\ell},
+  \end{split}
+\end{align}
+while the success probability for each iteration is
+\begin{align}
+  p_{succ} \binom{\left\lfloor k/2 \right\rfloor }{p} \binom{k -\left\lfloor k/2 \right\rfloor }{p} \binom{n-k-\ell}{w-2p} / \binom{n}{w},
+\end{align}
+and a total cost for the ISD algorithm is
+\begin{align}
+  \frac{C_{iter} \cdot \log_2(q)}{p_{succ}}\label{eq:sd_cost}
 \end{align}
 
 \subsubsection{$d$-split Syndrome Decoding Problem}
@@ -2172,11 +2216,19 @@ While the $d$-split variant introduces a slight reduction in security compared t
 \end{align}
 a proof of this can be found in~\cite[p27]{feneuil2022syndrome}
 
-\subsubsection{Parameters for the SDitH protocol}
+\subsection{SDitH Parameters}
 
-The parameters for the SDitH protocol are given in \autoref{tab:secparam} and \autoref{tab:hashparam} are given by \autoref{eq:forgery_attack_cost} and \autoref{eq:d_split_epsilon}
+All parameters provided in \autoref{tab:secparam} and cryptographic primitives in \autoref{tab:hashparam}.
 
-\begin{table}[ht]
+\subsubsection{SD Parameters}
+
+The SD parameters are are calculated to ensure that known attacks like ISD \autoref{eq:sd_cost} have a complexity of at least $2^\kappa$. The field $q$ is chosen due to the fact that it is both convenient to sample, efficient on most architectures and because it yields close to optimal signature sizes~\cite{aguilarsyndrome11}. The splitting parameter $d$ is used to ensure that $m/d \leq q$ for the public $F$ polynomial of degree $m$.
+
+\subsubsection{MPCitH Parameters}
+
+For the MPCitH parameters, $N$ is set to the $q$ which is the maximal according to the field size. $\ell$ is set to $3$ as it provides a good trade-off between signature size and computational overhead~\cite{aguilarsyndrome11}. The parameters $t, \tau$ are given by \autoref{eq:forgery_attack_cost} and \autoref{eq:d_split_epsilon}.
+
+\begin{table}
   \centering
   \def\arraystretch{1.5}%  1 is the default, change whatever you need
   \begin{tabular}{cccccccccccccc}
@@ -2190,7 +2242,7 @@ The parameters for the SDitH protocol are given in \autoref{tab:secparam} and \a
   \caption{Security parameters for the SDitH protocol for categories one, three and five~\cite{aguilarsyndrome11}.}\label{tab:secparam}
 \end{table}
 
-\begin{table}[ht]\label{tab:hashparam}
+\begin{table}
   \centering
   \def\arraystretch{1.5}%  1 is the default, change whatever you need
   \begin{tabular}{clll}
@@ -2199,13 +2251,8 @@ The parameters for the SDitH protocol are given in \autoref{tab:secparam} and \a
     Hash & SHA3-256                       & SHA3-384                         & SHA3-512                       \\
     XOF  & SHAKE-128                      & SHAKE-256                        & SHAKE-256                      \\ \specialrule{.1em}{.05em}{.05em}
   \end{tabular}
-  \caption{Hash and XOF functions used in the SDitH protocol for categories one, three and five~\cite{aguilarsyndrome11}.}
+  \caption{Hash and XOF functions used in the SDitH protocol for categories one, three and five~\cite{aguilarsyndrome11}.}\label{tab:hashparam}
 \end{table}
-
-\subsubsection{Assumptions}\label{sec:assumptions}
-The SDitH protocol is secure under the following assumptions:
-
-Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search (see \autoref{def:nistsec}) in terms of quantum circuit size. For this, $\kappa$ is defined as $143$, $207$ and $272$ for the categories~\cite{nistcall}. Furthermore, the XOF primitive used is secure with 128-bit, 192-bit, 256-bit security levels for each of the categories respectively. Finally, the Hash function used \textit{behaves as a random oracle}. Specifically, security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM)~\cite{aguilarsyndrome11}.
 
 
 
@@ -2525,7 +2572,7 @@ To validate the correctness of the Merkle tree implementation, we perform the fo
 
 Our initial design adheres to Algorithm~5 described in~\cite[p31]{aguilarsyndrome11}. However, through optimization efforts, it became apparent that the Merkle tree construction presented a significant performance bottleneck during the signing process. Profiling results revealed that this stage consumed approximately $52-54\%$ of the execution time on the main thread, highlighting the need for further optimization.
 
-We introduced batching in the tree construction, inspired by the C++ reference implementation. In this approach, four parent hashes are computed simultaneously, improving efficiency during tree-building.
+We introduced batching in the tree construction, inspired by the reference implementation. In this approach, four parent hashes are computed simultaneously, improving efficiency during tree-building.
 
 \begin{minted}{rust}
 fn merkle_hash_x4(parent_indexes, left_child_hashes, right_child_hashes, salt);
@@ -2722,7 +2769,7 @@ mod gf256_tests {
 }
 \end{minted}
 
-\subsection{Rijndael's field}\label{sub:rijndael_field}
+\subsubsection{Rijndael's field}\label{sub:rijndael_field}
 
 First, we implemented the Rijndael's field $\mathbb{F}_{q}$ for $q=2^8$ and for the irreducible polynomial $X^8 + X^4 + X^3 + X + 1$. Field values are represented as unsigned bytes \rust{u8} (\autoref{sec:gf256})
 \begin{minted}{rust}
@@ -3242,11 +3289,11 @@ We then proceed to follow the algorithm described in \autoref{def:sdith-sign} st
 In this section we will discuss our process when finalizing the implementation. We had a few bugs that led us to setup our code to be comparable with the reference implementation. First we will discuss our implementations of the signing and verification algorithms, and how we used the reference implementation to iron out bugs from our own code. Lastly we will discuss how we went about testing our implementation.
 
 
-\subsection{Alignment with the Reference Implementation}\label{sub:comparison_with_spec_impl}
+\subsubsection{Alignment with the Reference Implementation}\label{sub:comparison_with_spec_impl}
 To verify and debug our code, we configured our implementation to align with the reference implementation provided in C. This setup required us to execute the reference code to obtain intermediate data, which we then used to compare internal states between the two implementations. In order to get this to work we ran into the following problems. First we had to setup the same random byte generator to allow our randomness to be the same. Furthermore, during this process, we identified a bug in the calculation of the view-opening challenges. Specifically, the reference implementation neglected to finalize the SHAKE function before squeezing, which posed an issue because the Tiny Keccak Rust library automatically performs this finalization when initializing a hash or XOF.
 Additionally, we discovered that, to produce identical outputs from the XOF, we needed to first rotate the permutation once by supplying an empty vector before invoking the function.
 
-\subsection{Marshalling and reusable testing}\label{sub:testing_our_implementation}
+\subsubsection{Marshalling and reusable testing}\label{sub:testing_our_implementation}
 
 Many structs in our implementation need to be serialized into byte arrays and subsequently parsed back into their respective structs. For instance, the MPC \rust{Input} type needed to be serialized to facilitate the Shamir's Secret Sharing. To address this, we defined a general trait \rust{Marshalling}:
 
@@ -3317,7 +3364,7 @@ Furthermore, in order to interact and use our implementation we create a simple 
 
 We created a README file to explain how to use, test, benchmark and build our implementation. We did this to help other developers understand and run the code for themselves in order to reproduce our benchmarks and test results.
 
-\subsection{Rust crate \texttt{rsdith}}
+\subsubsection{Rust crate \texttt{rsdith}}
 To allow for our implementation to be used in other projects, we have created it as a create. This is done creating a \rust{lib.rs} file within the root folder of the project. We tried to adhere to the best practices when creating a crate. For the interested reader, look in the \rust{cargo.toml} file to see how we have setup the crate.
 We then exported the following modules:
 \begin{itemize}
@@ -3331,7 +3378,7 @@ We then exported the following modules:
 
 Some of them are not needed but are included due to benchmarking.
 
-\subsection{\texttt{rsdith} CLI}
+\subsubsection{\texttt{rsdith} CLI}
 As a small addition to the crate we created a simple CLI using the crate \textit{clap}. We created the following commands:
 \begin{itemize}
   \item \textbf{Keygen}: Used to generate a key pair $(pk,sk)$ either as a file or raw output.
@@ -3642,7 +3689,7 @@ Given these findings, we have set the \texttt{Lookup} implementation as the defa
   \caption{Multiplication performance comparison between \texttt{Lookup} and \texttt{Shift-and-Add} implementations. Running tests for multiplication alone and the signing operation}\label{tab:mul_comparison}
 \end{table}
 
-\subsection{Blake3}
+\subsubsection{Blake3}
 
 We performed a comparison between the defined \texttt{SHA3} and \texttt{SHAKE} hashing algorithms from \cite{aguilarsyndrome11} and the \texttt{Blake3} implementation. Benchmarks were executed with full optimizations and turbo boost enabled. The results, shown in \autoref{tab:blake3}, indicate that the \texttt{Blake3} implementation is significantly faster, highlighting the hash functionality as a bottleneck in the protocol implementation. For future practical implementations, it is evident that the development of efficient hashing mechanisms for the SDitH protocol should be prioritized.
 
@@ -3659,7 +3706,7 @@ We performed a comparison between the defined \texttt{SHA3} and \texttt{SHAKE} h
   \caption{Performance comparison of the \texttt{one} profile, with and without the \texttt{blake3} feature flag. Run with full optimizations and turbo boost enabled.}\label{tab:blake3}
 \end{table}
 
-\subsection{Signature size}
+\subsubsection{Signature size}
 We ran a benchmark on the signature size to check if it aligned with the expected sizes. The results are shown in Table~\ref{tab:sig_size}. The results align with the expected averages reported by \cite{aguilarsyndrome11}.
 
 \begin{table}[ht!]
@@ -3683,9 +3730,9 @@ In this project, we set out to implement the threshold variant of the SDitH Prot
 
 \subsubsection{Rust}
 
-In comparison to the reference implementation in C++, the decision to adopt Rust as the programming language for this project brings significant advantages. Rust, a modern language designed with an emphasis on memory safety, has been gaining a robust and expanding developer community. By selecting Rust, our implementation is poised to be more future-proof and accessible to new developers.
+In comparison to the reference implementation in C, the decision to adopt Rust as the programming language for this project brings significant advantages. Rust, a modern language designed with an emphasis on memory safety, has been gaining a robust and expanding developer community. By selecting Rust, our implementation is poised to be more future-proof and accessible to new developers.
 
-Rust's feature set contributes extensively to the project's code quality. Its guarantees for memory safety without a garbage collector ensure that potential issues like null pointer dereferencing and data races are mitigated at compile time. Furthermore, the language's expressive type system and ownership model enhance code readability and maintainability, aligning well with the objectives of this project. These attributes not only foster more reliable software but also streamline collaborative development efforts.
+Rust's feature set contributes extensively to the project's code quality. Its guarantees for memory safety without a garbage collector ensure that potential issues like null pointer dereferencing and data races are mitigated at compile time. Furthermore, the language's expressive type system and ownership model enhance code maintainability, while its documentation and flexibility aligning well with the objectives of this project in terms of creating a readable code base. These attributes not only foster more reliable software but also streamline collaborative development efforts.
 
 \begin{itemize}
   \item \textit{Conditional compilation} -- Unlike the reference implementation, which is divided into multiple codebases for different categories, our implementation employs Rust's conditional compilation features. This approach consolidates all categories into a single, cohesive codebase, greatly simplifying the overall structure and reducing complexity.
@@ -3695,34 +3742,38 @@ Rust's feature set contributes extensively to the project's code quality. Its gu
 
 \subsubsection{Documentation and code alignment}
 
-One of the key reasons for selecting the SDitH protocol was its modular design. While the authors provided a well-written specification and a functional reference implementation, we encountered challenges in interpreting and aligning the finer details of the protocol.
+One of the key reasons for selecting the SDitH protocol was its modular design. While the authors provided a well-written specification and a functional reference implementation, we did encounter challenges in interpreting and aligning the finer details of the protocol.
 
-A significant challenge arose from the specification's inclusion of two variants, which share considerable overlap. This overlap complicated efforts to clearly distinguish and implement the specifics of the threshold variant. Additionally, we observed discrepancies between the specification and the reference implementation, particularly in naming conventions and minor implementation details. Reconciling these differences required substantial effort and to address these challenges, we prioritized the development of clear and well-documented code. Our report includes a detailed overview of the underlying theories and protocols, along with formal definitions provided in \autoref{def:sdith-sign} and \autoref{def:sdith-verify}. We ensured that our implementation adhered to consistent terminology and closely followed the protocol descriptions, promoting both accuracy and clarity throughout the project.
+A significant challenge stemmed from the specification's inclusion of two variants, which shared considerable overlap. This overlap made it difficult to clearly differentiate and implement the specifics of the threshold variant. Furthermore, we identified discrepancies between the specification and the reference implementation, particularly in naming conventions and minor implementation details. To address these challenges, we focused on developing clear and well-documented code, ensuring consistency and clarity throughout the implementation process.
+
+Our report includes a detailed overview of the underlying theories and protocols, along with formal definitions provided in \autoref{def:sdith-sign} and \autoref{def:sdith-verify}. We ensured that our implementation adhered to consistent terminology and closely followed the protocol descriptions, promoting both accuracy and clarity throughout the project.
 
 \subsubsection{Performance}
 
-Our goal was to match the performance of the optimized reference implementation. Overall, we achieved comparable results, with performance gains in key generation and verification (see \autoref{tab:api_percentage_increase}). However, a small performance gap remains in the signing operation. It is worth mentioning that achieving the final incremental performance improvements often involves highly specific and sometimes less readable implementation techniques.
+Our goal was to match the performance of the optimized reference implementation. Overall, we achieved comparable results, with performance gains in key generation and verification (see \autoref{tab:api_percentage_increase}). However, a small performance gap remains in the signing operation.
 
-The most significant performance bottlenecks in our implementation are the Merkle Commitment Scheme, the underlying hashing operations, and the MPC protocol. Targeted parallelization optimizations in these areas could potentially result in substantial performance improvements. While we explored various parallelization strategies, these efforts did not yield significant performance gains. For parallelization, we primarily relied on the \texttt{rayon} library~\cite{rayon}, which provides a simple and intuitive interface for parallel computation. Although \texttt{rayon} is effective in certain cases, we believe future work could benefit from exploring custom parallelization strategies tailored specifically to the unique demands of this implementation.
+It is worth to noting that achieving the final performance improvements often requires highly specific and sometimes less readable or understandable implementation techniques, resulting in a trade-off between performance and code readability.
+
+The most significant performance bottlenecks in our implementation are the Merkle Commitment Scheme, the underlying hashing operations, and the MPC protocol. Targeted parallelization optimizations in these areas could potentially result in substantial performance improvements. While we explored various parallelization strategies, these efforts did not yield significant performance gains. However, we believe that parallelization is a crucial aspect of achieving high-performance in these areas.
+
+For parallelization, we primarily relied on the \texttt{rayon} library~\cite{rayon}, which provides a simple and intuitive interface for parallel computation. Although \texttt{rayon} is effective in certain cases, we believe future work could benefit from exploring custom parallelization strategies tailored specifically to the unique demands of this implementation.
 
 \subsubsection{Future work}
 
-The most apparent direction for future work involves implementing aspects of the SDitH protocol that we have not yet covered, such as the hypercube variant and the $\mathbb{F}_{251}$ field variant. However, as demonstrated in our implementation, the use of feature flags, traits, and conditional compilation provides significant flexibility to incorporate these variants in the future. This modular and extensible approach ensures that the protocol can be efficiently expanded to support additional features and configurations.
+The most evident direction for future work lies in implementing aspects of the SDitH protocol that remain unaddressed, such as the hypercube variant and the $\mathbb{F}_{251}$ field variant. However, our implementation demonstrates that the use of feature flags, traits, and conditional compilation offers substantial flexibility to integrate these variants in the future. This modular and extensible design ensures that the protocol can be efficiently expanded to support additional features and configurations, making it well-suited for further development.
 
 Additionally, we aim to explore more specialized and efficient parallelization strategies, as well as SIMD optimizations, to further enhance performance.
 
-One of the key strengths of the SDitH protocol is its inherent modularity. This characteristic is evident in the authors' work, where they initially developed the base protocol and subsequently introduced the hypercube and threshold variants~\cite{feneuil2023threshold,aguilar2023return}. Building on this principle, we introduced a feature in our implementation that allows for swapping the \texttt{SHA3} and \texttt{SHAKE} hash functions with the \texttt{Blake3} implementation. This substitution yielded significant performance improvements, further demonstrating the protocol's flexibility and its potential for enabling alternative optimizations.
+One of the key strengths of the SDitH protocol is its inherent modularity. Building on this principle, we introduced a feature in our implementation that allows for swapping the \texttt{SHA3} and \texttt{SHAKE} hash functions with the \texttt{Blake3} implementation. This substitution yielded significant performance improvements, further demonstrating the protocol's flexibility and its potential for enabling alternative optimizations.
 
-Furthermore, our implementation allows users to manually specify custom parameters. This feature empowers future users of the protocol to experiment with various configurations and tailor performance to their specific use cases.
+Our implementation enables developers to manually specify custom parameters (\autoref{sub:constants}), allowing them to experiment with different configurations and tailor the protocol's performance to their specific use cases. We aim to enhance this functionality by adding a script or CLI feature to automatically calculate the security of the SD problem (\autoref{eq:sd_cost}) and the MPCitH parameters (\autoref{eq:forgery_attack_cost}) based on the chosen configuration.
 
 Currently, the greatest parallelization gains in our implementation occur during the commitment of input shares. This opens up opportunities for further optimizations, such as playing with the number of parties, adjusting the threshold or the SD instance. We believe that exploring and benchmarking these configurations could provide substantial improvements and represent a promising avenue for future work.
-
-\todo{Create sage script for calculating security}
 
 Another potential enhancement involves optimizing the Merkle Commitment Scheme by replacing it with Verkle Trees~\cite{kuszmaul2019verkle, iavich2023verkle}. Although Verkle Trees are theoretically more complex, they avoid reliance on hash functions, which are the most significant performance bottleneck in the current implementation. Additionally, Verkle Trees could improve both signature size and verification time, making them a compelling direction for future exploration.
 
 \subsubsection{Learning and Collaboration}
-Overall, this project has been an invaluable learning experience, enabling us to explore a diverse range of topics. These included gaining a deeper understanding of the foundational protocols that underpin the SDitH protocol and refining our skills in developing and optimizing a Rust codebase.
+Overall, this project has been an invaluable learning experience, enabling us to explore both theoretical and practical aspects of the SDitH protocol. These included gaining an understanding of the foundational protocols that underpin the SDitH protocol and refining our skills in developing and optimizing a Rust codebase.
 
 We hope that the experiences and insights gained during this implementation process will provide valuable feedback to the authors of the protocol, offering constructive suggestions to streamline and improve future implementation efforts.
 
