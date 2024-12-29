@@ -177,8 +177,8 @@ In conclusion, we believe that our Rust implementation provides a valuable resou
 
 \vspace{2ex}
 \begin{flushright}
-  \emph{Hugh Benjamin Zachariae and Magnus Jensen}\\
-  \emph{Aarhus, \today.}
+  \textit{Hugh Benjamin Zachariae and Magnus Jensen}\\
+  \textit{Aarhus, \today.}
 \end{flushright}
 
 \tableofcontents
@@ -455,7 +455,7 @@ The common commitment scheme described above requires the prover to reveal all v
   Given a collision-resistant hash function \texttt{Hash} and $N$ input values $v_1, \dots, v_N$. We define the \texttt{MerkleTree}
   {\small\begin{align*}
       \texttt{MerkleTree}(v_1, \dots, v_N) = \begin{cases}
-                                               \texttt{Hash}(\texttt{MerkleTree}(v_1, \dots, v_{N/2})\ |\ \texttt{MerkleTree}(v_{N/2+1}, \dots, v_N)) & N > 1 \\
+                                               \texttt{Hash}(\texttt{MerkleTree}(v_1, \dots, v_{N/2}) \mid \texttt{MerkleTree}(v_{N/2+1}, \dots, v_N)) & N > 1 \\
                                                \texttt{Hash}(v_i, i)                                                                                  & N = 1 \\
                                              \end{cases}
     \end{align*}}%
@@ -475,16 +475,17 @@ The hiding property of the protocol is ensured by the use of a secure hash funct
 
 Conversely, the binding property \autoref{lem:binding} is upheld by the fact that the adversary would have to find a collision for the hash function to change the commitment value.
 
-A notable property of the Merkle tree is its ability to open a partial subset of the committed values by providing only the necessary authentication paths for the values in the subset. The verifier can still validate these values using a single global root value.
+% Repeated:
+% A notable property of the Merkle tree is its ability to open a partial subset of the committed values by providing only the necessary authentication paths for the values in the subset. The verifier can still validate these values using a single global root value.
 
-This property is particularly advantageous in protocols like the SDitH threshold protocol, where only a subset of the committed values needs to be opened while keeping the rest concealed. By leveraging this feature, the prover can efficiently prove the validity of the subset without revealing the entire set of commitments.
+% This property is particularly advantageous in protocols like the SDitH threshold protocol, where only a subset of the committed values needs to be opened while keeping the rest concealed. By leveraging this feature, the prover can efficiently prove the validity of the subset without revealing the entire set of commitments.
 
 \subsection{Secret Sharing Schemes (SSS)}
 
-Secret Sharing Schemes (SSS) are a class of cryptographic primitives that allow a secret to be dispersed into multiple \textit{shares}, each of which can be distributed to different parties. These shares can then be recombined to reconstruct the original secret. SSS was initially invented~\cite{shamir1979share} to alleviate the single-point-of-failure problem for storage. Below we supply a definition of a secret sharing scheme~\cite{cramer2015secure} and the notation used in this report.
+Secret Sharing Schemes (SSS) are a class of cryptographic primitives that allow a secret to be split into multiple \textit{shares}, each of which can be distributed to different parties. These shares can then be recombined to reconstruct the original secret. SSS was initially invented~\cite{shamir1979share} to alleviate the single-point-of-failure problem for storage. Below we supply a definition of a secret sharing scheme~\cite{cramer2015secure} and the notation used in this report.
 
 \begin{definition}[Secret Sharing Scheme (SSS)]\label{def:ss-share}
-  We denote a SSS to be a system that ``disperses'' a secret $s$ into a sequence of $N$ pieces of data $\sh{s} = [s_1, \dots, s_n]$, called \emph{shares}, with the following functions:
+  We denote a SSS to be a system that ``disperses'' a secret $s$ into a sequence of $N$ pieces of data $\sh{s} = [s_1, \dots, s_n]$, called \textit{shares}, with the following functions:
   \begin{itemize}
     \item \texttt{share}: We denote a function \texttt{share}$_n(s) \rightarrow \sh{s}$ to be a function that takes a secret $s$ and returns a sharing $\sh{s}$ consisting of $n$ shares $s_i$ such that \texttt{open}$(\sh{s}) = s$.
     \item \texttt{open}: We denote a function \texttt{open}$(\sh{s}) \rightarrow s$ to be the opening of the shared value $\sh{s}$ where each party $P_i$ broadcasts its share $s_i$ allowing all participants to recover the secret value $s$.
@@ -498,26 +499,28 @@ Secret Sharing Schemes (SSS) are a class of cryptographic primitives that allow 
 
 \subsubsection{Additive SSS and additive homomorphism}\label{sec:additive-sss}
 
-In its simple form, a SSS can be based on the same ideas as the \textit{one-time pad} encryption. Assume a Abelian group $F$ and a share $\sh{s} \in F^n$ of a secret $s \in F$. Sample $n-1$ uniformly random elements $[s_1, \dots, s_{n-1}] \in \mathbb{F}^{n-1}$ and set $s_n = s - \sum_{i=1}^{n-1} s_i$. Then we have that
+A simple Secret Sharing Scheme (SSS) can be constructed using principles similar to the \textit{one-time pad} encryption. Let $F$ be an Abelian group, and consider a secret $s \in F$ that is split into $n$ shares, $\sh{s} \in F^n$. To generate these shares, sample $n-1$ random elements $[s_1, \dots, s_{n-1}] \in F^{n-1}$ uniformly at random, and compute the last share as:
 \begin{align*}
-  s = \sum_{i=1}^{n} s_i
+  s_n = s - \sum_{i=1}^{n-1} s_i.
 \end{align*}
-A notable feature of this construction is that if the parties possess two shares, $\sh{x}$ and $\sh{y}$, they can easily compute $\sh{x + y}$ by simply adding their individual shares. This property is referred to as \textit{partial homomorphic} or \textit{additively homomorphic}. The correctness of $\sh{x} + \sh{y} = \sh{c}$ for $c = x + y$ can be demonstrated as follows:
+This ensures that the secret can be reconstructed by summing all the shares:
 \begin{align*}
-  c & = \texttt{open}(\sh{c})                         \\
-    & = \texttt{open}(\sh{x} + \sh{y})                \\
-    & = \texttt{open}([x_i + y_i])                    \\
-    & = \sum_{i=1}^{n} x_i + y_i                      \\
-    & = \sum_{i=1}^{n} x_i + \sum_{i=1}^{n} y_i       \\
-    & = \texttt{open}(\sh{x}) + \texttt{open}(\sh{y}) \\
-    & = x + y
+  s = \sum_{i=1}^n s_i.
 \end{align*}
-This property enables us to easily produce Multi-Party Computation (MPC) (see \autoref{sec:mpc}) on top of such a SSS\@. However, to allow full arithmetic circuits, we need more elaborate protocols, which we will discuss in \autoref{sec:mpc_sacrificing}.
+
+A key feature of this construction is that if the parties hold two shared secrets, $\sh{x}$ and $\sh{y}$, they can compute the share of their sum, $\sh{x + y}$, simply by adding their respective shares. This property is known as \textit{additive homomorphism} or $(+, +)$-homomorphism, meaning that addition in the ciphertext domain corresponds directly to addition in the plaintext domain:
+\begin{align*}
+  \sh{x} + \sh{y} = \sh{x + y}.
+\end{align*}
+For additive SSS, this property follows directly from its construction.
+
+This property enables straightforward construction of Multi-Party Computation (MPC) protocols on top of the given Secret Sharing Scheme (SSS)\@. However, to support comprehensive arithmetic circuits, including multiplication gates, more advanced protocols are necessary -- detailed in \autoref{sec:mpc_sacrificing}.
 
 \subsubsection{Threshold SSS}\label{sub:threshold-sss}
 
-In many situations such schemes are not sufficient. Imagine wanting to solve the distribution of a secret (e.g. a password) among a set of locations to ensure that you do not have a single-point-of-failure. To solve this, we require a SSS that can reconstruct the secret from a subset of shares up to a threshold $\ell$. This is called a $(\ell + 1, N)$-threshold SSS\@.
-In this case, the SSS described above would not suffice as losing even one share would result in the loss of the secret. There are several ways to solve this problem. We could distribute more than one share to each location. If distributed correctly, we can ensure that only $t \leq N$ parties need to be available. However, there are also other more sophisticated schemes that can be used to ensure that the secret is not lost.
+In many situations such schemes are not sufficient. In the scheme described above, if a single share is lost, the secret is lost. Imagine the distribution of a secret among a set of locations. The current scheme would not ensure that you do not have a single-point-of-failure. To solve this, we require a SSS that can reconstruct the secret from a subset of shares up to a threshold $\ell$. This is called a $(\ell + 1, N)$-threshold SSS\@.
+
+There are several ways to solve this problem. We could distribute more than one share to each location. If distributed correctly, we can ensure that only $t \leq N$ parties need to be available. However, there are also other more sophisticated schemes that can be used to ensure that the secret is not lost.
 
 \begin{definition}[$(\ell + 1)$-private (threshold) SSS]\label{def:mpc-ss-threshold}
   A $(\ell + 1, N)$-threshold SSS~\cite{cramer2015secure}, where $\ell, n$ are integers with $0 \leq \ell < n$, denotes a SSS such that:
@@ -529,7 +532,9 @@ In this case, the SSS described above would not suffice as losing even one share
 
 \subsubsection{Shamir's Secret Sharing}\label{sub:shamir}
 
-One particular example, and the one utilized by the SDitH protocol, is Shamir's Secret Sharing scheme~\cite{shamir1979share,cramer2015secure}. This $(\ell + 1, N)$-threshold SSS is based on polynomials over a finite field $\mathbb{F}$. A secret $s$ is shared by choosing a random polynomial $P_s$ of degree at most $\ell \geq 2$ with $s = P_s(0)$. For each participant $i \in [n]$, $P_i$, a share $s_i$ is generated by evaluating $P(i)$. The secret can then be reconstructed by interpolating the polynomial from a $\ell + 1$ shares and with $\ell$ or less shares we gain no information about the secret -- i.e. we have $\ell$-privacy. We can prove reconstruction, correctness and privacy using \textit{Lagrange interpolation}.
+One particular example, and the one utilized by the SDitH protocol, is Shamir's Secret Sharing scheme~\cite{shamir1979share,cramer2015secure}. This $(\ell + 1, N)$-threshold SSS is based on polynomials over a finite field $\mathbb{F}$. A secret $s$ is shared by choosing a random polynomial $P_s$ of degree at most $\ell \geq 2$ with $s = P_s(0)$. For each participant $i \in [n]$, $P_i$, a share $s_i$ is generated by evaluating $P(i)$.
+
+The secret can then be reconstructed by interpolating the polynomial from $\ell + 1$ shares. With $\ell$ or less shares we gain no information about the secret -- i.e. we have $\ell$-privacy. We can prove reconstruction, correctness and privacy using \textit{Lagrange interpolation}.
 
 \begin{definition}[Lagrange interpolation]\label{def:lagrange}
   If $h(X)$ is a polynomial over $\mathbb{F}$ of degree at most $\ell$ and if $C$ is a subset of $\mathbb{F}$ with $|C| = \ell + 1$, then
@@ -543,24 +548,27 @@ One particular example, and the one utilized by the SDitH protocol, is Shamir's 
 \end{definition}
 
 \begin{lemma}\label{lem:lagrange}
-  Given any set of pairs $S = \{x_i, y_i \in F| i \in C\}$, $|C| = \ell + 1$, we can construct exactly one polynomial $h$ with $h(i) = y_i$ of degree at most $\ell$ as
+  Given any set of pairs $S = \{(x_i, y_i) \in F^2 \mid i \in C\}$, where $|C| = \ell + 1$, there exists exactly one polynomial $h(x)$ of degree at most $\ell$ that satisfies $h(x_i) = y_i$ for all $i \in C$. This polynomial can be expressed as:
   \begin{align*}
-    h(X) = \sum_{i \in C} y_i \delta_i(X)
+    h(x) = \sum_{i \in C} y_i \delta_i(x),
   \end{align*}
-  \noindent and that all coefficients of this polynomial can be efficiently computed from $S$.
+  where $\delta_i(x)$ are Lagrange basis polynomials. Moreover, all coefficients of $h(x)$ can be efficiently computed from $S$.
 \end{lemma}
 
-It follows from \autoref{def:lagrange} and \autoref{eq:lagrange1} that the secret can be easily \textit{reconstructed}. Furthermore, if there existed two solution polynomials $h, h'$ then $h(x) - h'(x)$ would be a non-zero polynomial of degree at most $\ell$ and would have at least $\ell + 1$ roots, which cannot exist.
+From \autoref{def:lagrange} and \autoref{eq:lagrange1}, it follows that the secret can be uniquely \textit{reconstructed} using any $\ell + 1$ shares. If there were two distinct solution polynomials, say $h(x)$ and $h'(x)$, then their difference $h(x) - h'(x)$ would be a non-zero polynomial of degree at most $\ell$. However, this polynomial would also have at least $\ell + 1$ roots (corresponding to the points in $S$), which is impossible since a non-zero polynomial of degree $\ell$ cannot have more than $\ell$ roots. Thus, the polynomial $h(x)$ is unique.
 
-For \textit{$\ell$-privacy}, consider an index set $I$ with $|I| \leq \ell$. For a sharing of a secret $s$ and the resulting polynomial $h(x)$, where $h(0) = s$, it evaluates to a set of shares $\{h(i) \mid i \in I\}$.
-Conversely, consider a random set of shares $A = \{s_i \mid i \in I\}$. It follows from \autoref{lem:lagrange} that there exists exactly one polynomial $h_A(x)$ such that
+To establish $\ell$-privacy, consider any subset of indices $I$ such that $|I| \leq \ell$. For a given secret $s$ and its corresponding sharing polynomial $h(x)$, where $h(0) = s$, the shares are given by $\{h(i) \mid i \in I\}$. 
+
+Now, consider a random set of shares \( A = \{s_i \mid i \in I\} \). By \autoref{lem:lagrange}, there exists exactly one polynomial \( h_A(x) \) of degree at most $\ell$ that satisfies:
 \begin{align*}
-  h_A(0) & = s,                                 \\
-  h_A(i) & = s_i \quad \text{for all } i \in I.
+  h_A(0) &= s, \\
+  h_A(i) &= s_i \quad \text{for all } i \in I.
 \end{align*}
-This implies that there are $|\mathbb{F}|^\ell$ possible polynomials which in turn implies that for any set of $\ell$ shares, the possible reconstructed secret $s$ is uniform in $\mathbb{F}$. See~\autoref{fig:shamir} for a visual example.
+Since there are no constraints on the coefficients of \( h_A(x) \) beyond the $\ell$ known shares and the secret at $h(0)$, the remaining coefficients of \( h_A(x) \) are free to take any values in $F$. This means that for every possible set of $\ell$ shares, there are $|F|^{\ell}$ distinct polynomials consistent with these shares, each corresponding to a different possible secret \( s \). 
 
-Furthermore, the $(\ell + 1, N)$ the scheme is $(+, +)$-homomorphic. This follows from the fact that polynomials over $\mathbb{F}$ are \textit{distributive over addition}. In other words, given two secrets $a, b$ and their corresponding polynomials $h_a(x)$ and $h_b(x)$, we have
+Thus, the secret \( s \) is uniformly distributed over \( F \) when conditioned on any subset of $\ell$ shares, ensuring \textit{$\ell$-privacy}. For a visual demonstration, refer to \autoref{fig:shamir}.
+
+Furthermore, this $(\ell + 1, N)$ threshold scheme is $(+, +)$-homomorphic. This follows from the fact that polynomials over $\mathbb{F}$ are \textit{distributive over addition}. In other words, given two secrets $a, b$ and their corresponding polynomials $h_a(x)$ and $h_b(x)$, we have
 \begin{align*}
                 & (h_a + h_b)(i) = h_a(i) + h_b(i)          \\
   \Rightarrow\  & (h_a + h_b)(0) = h_a(0) + h_b(0) = a + b.
@@ -754,7 +762,7 @@ Secondly, the prover could have tampered with the views. In this, the prover mus
   \end{align*}
 \end{lemma}
 
-The basic MPC-in-the-Head protocol serves as a foundation for constructing zero-knowledge (ZK) proofs for any NP relation and has been demonstrated to yield relatively efficient ZK protocols~\cite{feneuil2022syndrome,baum2020concretely,katz2018improved}. Giacomelli et al. and Chase et al.~\cite{katz2018improved,giacomelli2016zkboo,chase2017post} provided concrete implementations of the \emph{MPC-in-the-Head} approach and observed that employing a 3-party protocol $\Pi$ achieved optimal performance within the space of protocols they analyzed. However, due to the small number of parties, the soundness of the resulting honest-verifier zero-knowledge (HVZK) proof is relatively weak. As a consequence, a large number of parallel repetitions is required to achieve negligible soundness error. This increases the size of the proofs and the communication overhead of the protocols. In this section we will describe a variant of the MPC-in-the-Head protocol which is sound for the addition relation.
+The basic MPC-in-the-Head protocol serves as a foundation for constructing zero-knowledge (ZK) proofs for any NP relation and has been demonstrated to yield relatively efficient ZK protocols~\cite{feneuil2022syndrome,baum2020concretely,katz2018improved}. Giacomelli et al. and Chase et al.~\cite{katz2018improved,giacomelli2016zkboo,chase2017post} provided concrete implementations of the \textit{MPC-in-the-Head} approach and observed that employing a 3-party protocol $\Pi$ achieved optimal performance within the space of protocols they analyzed. However, due to the small number of parties, the soundness of the resulting honest-verifier zero-knowledge (HVZK) proof is relatively weak. As a consequence, a large number of parallel repetitions is required to achieve negligible soundness error. This increases the size of the proofs and the communication overhead of the protocols. In this section we will describe a variant of the MPC-in-the-Head protocol which is sound for the addition relation.
 
 \section{MPC Product verification using sacrificing}\label{sec:mpc_sacrificing}
 
@@ -1965,12 +1973,12 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
           \end{align*}
     \item Build the signature
           \begin{align*}
-            \sigma = & \ (\ m\ |\ \texttt{salt}\ |\ h_1                                  \\
-                     & \ |\ \texttt{broad\_plain}                                        \\
-                     & \ |\ \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \\
-                     & \ |\ \texttt{auth}^e                                              \\
-                     & \ |\ \sh{\texttt{wit}}_i^e                                        \\
-                     & \ |\ I\ )
+            \sigma = & \ (\ m \mid \texttt{salt} \mid h_1                                  \\
+                     &  \mid \texttt{broad\_plain}                                        \\
+                     &  \mid \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \\
+                     &  \mid \texttt{auth}^e                                              \\
+                     &  \mid \sh{\texttt{wit}}_i^e                                        \\
+                     &  \mid I\ )
           \end{align*}
   \end{enumerate}
 \end{protocol}
@@ -1981,12 +1989,12 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
   \titlespacing*{\paragraph}{0pt}{1pt}{1em}
   Given a public SD instance $pk = (H, y)$, security parameters $\lambda, \tau$, and a signature
   \begin{align*}
-    \sigma = & \ (\ m\ |\ \texttt{salt}\ |\ h_1                                  \\
-             & \ |\ \texttt{broad\_plain}                                        \\
-             & \ |\ \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \\
-             & \ |\ \texttt{auth}^e                                              \\
-             & \ |\ \sh{\texttt{wit}}_i^e                                        \\
-             & \ |\ I\ )
+    \sigma = & \ (\ m \mid \texttt{salt} \mid h_1                                  \\
+             &  \mid \texttt{broad\_plain}                                        \\
+             &  \mid \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \\
+             &  \mid \texttt{auth}^e                                              \\
+             &  \mid \sh{\texttt{wit}}_i^e                                        \\
+             &  \mid I\ )
   \end{align*}
 
   \paragraph{Assumptions}
@@ -2067,12 +2075,12 @@ For the NIST categories presented in \autoref{tab:secparam} we get the following
   \centering
   \begin{tabular}{|l|r|r|r|}
     \hline
-    & \multicolumn{3}{c}{\textbf{Sizes (in bytes)}} \\
-    \textbf{Category} & Public key & Secret key & Signature (Max) \\
+                      & \multicolumn{3}{c}{\textbf{Sizes (in bytes)}}                                \\
+    \textbf{Category} & Public key                                    & Secret key & Signature (Max) \\
     \hline
-    One               & $132$         & $432$         & $10684$           \\
-    Three             & $180$         & $628$         & $25964$           \\
-    Five              & $244$         & $838$         & $45676$           \\
+    One               & $132$                                         & $432$      & $10684$         \\
+    Three             & $180$                                         & $628$      & $25964$         \\
+    Five              & $244$                                         & $838$      & $45676$         \\
     \hline
   \end{tabular}
   \caption{Sizes (in bytes) for the categories in the SDitH protocol.}
@@ -2316,7 +2324,7 @@ The modularity of the SDitH protocol allowed us to implement its initial compone
 \subsection{PRG}\label{sub:prg}
 To begin our implementation, we started by developing a pseudo-random generator (PRG) using an extendable output function (XOF) as the underlying mechanism. Although building custom cryptographic components can be a complex effort in its own right -- and one that may limit certain manual optimizations -- we chose to rely on the \textit{tiny-keccak}~\cite{tinykeccak} crate for convenience and reliability. This library provides established implementations of Keccak-derived functions aligned with NIST FIPS 202, SP800-185, and KangarooTwelve standards, ensuring both proper compliance and a secure foundation for our PRG.
 
-The \texttt{PRG} struct was designed to produce random bytes and includes straightforward methods for generating vectors over the $F_q$ and $F_{q^4}$ fields. Instead of cloning data, it uses \emph{in-place mutation} through mutable references. This approach, relying on an underlying XOF as the randomness source, helps streamline the code and limit unnecessary data copies -- which is important in terms of performance.
+The \texttt{PRG} struct was designed to produce random bytes and includes straightforward methods for generating vectors over the $F_q$ and $F_{q^4}$ fields. Instead of cloning data, it uses \textit{in-place mutation} through mutable references. This approach, relying on an underlying XOF as the randomness source, helps streamline the code and limit unnecessary data copies -- which is important in terms of performance.
 
 \begin{minted}{rust}
   pub struct PRG {
