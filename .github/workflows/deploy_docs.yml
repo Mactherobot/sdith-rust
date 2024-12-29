@@ -24,12 +24,16 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
       - name: Clean docs folder
+        working-directory: ./sdith
         run: cargo clean --doc
       - name: Build docs
+        working-directory: ./sdith
         run: cargo doc --no-deps
       - name: Add redirect
+        working-directory: ./sdith
         run: echo '<meta http-equiv="refresh" content="0;url=aoc/index.html">' > target/doc/index.html
       - name: Remove lock file
+        working-directory: ./sdith
         run: rm target/doc/.lock
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
