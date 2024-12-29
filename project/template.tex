@@ -32,6 +32,7 @@
 \usepackage{mdframed}
 \usepackage{listings}
 \usepackage{titlesec}
+\usepackage{tcolorbox}
 \usepackage{multirow}
 \lstdefinestyle{tree}{
   literate=
@@ -177,8 +178,8 @@ In conclusion, we believe that our Rust implementation provides a valuable resou
 
 \vspace{2ex}
 \begin{flushright}
-  \emph{Hugh Benjamin Zachariae and Magnus Jensen}\\
-  \emph{Aarhus, \today.}
+  \textit{Hugh Benjamin Zachariae and Magnus Jensen}\\
+  \textit{Aarhus, \today.}
 \end{flushright}
 
 \tableofcontents
@@ -455,8 +456,8 @@ The common commitment scheme described above requires the prover to reveal all v
   Given a collision-resistant hash function \texttt{Hash} and $N$ input values $v_1, \dots, v_N$. We define the \texttt{MerkleTree}
   {\small\begin{align*}
       \texttt{MerkleTree}(v_1, \dots, v_N) = \begin{cases}
-                                               \texttt{Hash}(\texttt{MerkleTree}(v_1, \dots, v_{N/2})\ |\ \texttt{MerkleTree}(v_{N/2+1}, \dots, v_N)) & N > 1 \\
-                                               \texttt{Hash}(v_i, i)                                                                                  & N = 1 \\
+                                               \texttt{Hash}(\texttt{MerkleTree}(v_1, \dots, v_{N/2}) \mid \texttt{MerkleTree}(v_{N/2+1}, \dots, v_N)) & N > 1 \\
+                                               \texttt{Hash}(v_i, i)                                                                                   & N = 1 \\
                                              \end{cases}
     \end{align*}}%
 \end{definition}
@@ -475,16 +476,17 @@ The hiding property of the protocol is ensured by the use of a secure hash funct
 
 Conversely, the binding property \autoref{lem:binding} is upheld by the fact that the adversary would have to find a collision for the hash function to change the commitment value.
 
-A notable property of the Merkle tree is its ability to open a partial subset of the committed values by providing only the necessary authentication paths for the values in the subset. The verifier can still validate these values using a single global root value.
+% Repeated:
+% A notable property of the Merkle tree is its ability to open a partial subset of the committed values by providing only the necessary authentication paths for the values in the subset. The verifier can still validate these values using a single global root value.
 
-This property is particularly advantageous in protocols like the SDitH threshold protocol, where only a subset of the committed values needs to be opened while keeping the rest concealed. By leveraging this feature, the prover can efficiently prove the validity of the subset without revealing the entire set of commitments.
+% This property is particularly advantageous in protocols like the SDitH threshold protocol, where only a subset of the committed values needs to be opened while keeping the rest concealed. By leveraging this feature, the prover can efficiently prove the validity of the subset without revealing the entire set of commitments.
 
 \subsection{Secret Sharing Schemes (SSS)}
 
-Secret Sharing Schemes (SSS) are a class of cryptographic primitives that allow a secret to be dispersed into multiple \textit{shares}, each of which can be distributed to different parties. These shares can then be recombined to reconstruct the original secret. SSS was initially invented~\cite{shamir1979share} to alleviate the single-point-of-failure problem for storage. Below we supply a definition of a secret sharing scheme~\cite{cramer2015secure} and the notation used in this report.
+Secret Sharing Schemes (SSS) are a class of cryptographic primitives that allow a secret to be split into multiple \textit{shares}, each of which can be distributed to different parties. These shares can then be recombined to reconstruct the original secret. SSS was initially invented~\cite{shamir1979share} to alleviate the single-point-of-failure problem for storage. Below we supply a definition of a secret sharing scheme~\cite{cramer2015secure} and the notation used in this report.
 
 \begin{definition}[Secret Sharing Scheme (SSS)]\label{def:ss-share}
-  We denote a SSS to be a system that ``disperses'' a secret $s$ into a sequence of $N$ pieces of data $\sh{s} = [s_1, \dots, s_n]$, called \emph{shares}, with the following functions:
+  We denote a SSS to be a system that ``disperses'' a secret $s$ into a sequence of $N$ pieces of data $\sh{s} = [s_1, \dots, s_n]$, called \textit{shares}, with the following functions:
   \begin{itemize}
     \item \texttt{share}: We denote a function \texttt{share}$_n(s) \rightarrow \sh{s}$ to be a function that takes a secret $s$ and returns a sharing $\sh{s}$ consisting of $n$ shares $s_i$ such that \texttt{open}$(\sh{s}) = s$.
     \item \texttt{open}: We denote a function \texttt{open}$(\sh{s}) \rightarrow s$ to be the opening of the shared value $\sh{s}$ where each party $P_i$ broadcasts its share $s_i$ allowing all participants to recover the secret value $s$.
@@ -498,26 +500,28 @@ Secret Sharing Schemes (SSS) are a class of cryptographic primitives that allow 
 
 \subsubsection{Additive SSS and additive homomorphism}\label{sec:additive-sss}
 
-In its simple form, a SSS can be based on the same ideas as the \textit{one-time pad} encryption. Assume a Abelian group $F$ and a share $\sh{s} \in F^n$ of a secret $s \in F$. Sample $n-1$ uniformly random elements $[s_1, \dots, s_{n-1}] \in \mathbb{F}^{n-1}$ and set $s_n = s - \sum_{i=1}^{n-1} s_i$. Then we have that
+A simple Secret Sharing Scheme (SSS) can be constructed using principles similar to the \textit{one-time pad} encryption. Let $F$ be an Abelian group, and consider a secret $s \in F$ that is split into $n$ shares, $\sh{s} \in F^n$. To generate these shares, sample $n-1$ random elements $[s_1, \dots, s_{n-1}] \in F^{n-1}$ uniformly at random, and compute the last share as:
 \begin{align*}
-  s = \sum_{i=1}^{n} s_i
+  s_n = s - \sum_{i=1}^{n-1} s_i.
 \end{align*}
-A notable feature of this construction is that if the parties possess two shares, $\sh{x}$ and $\sh{y}$, they can easily compute $\sh{x + y}$ by simply adding their individual shares. This property is referred to as \textit{partial homomorphic} or \textit{additively homomorphic}. The correctness of $\sh{x} + \sh{y} = \sh{c}$ for $c = x + y$ can be demonstrated as follows:
+This ensures that the secret can be reconstructed by summing all the shares:
 \begin{align*}
-  c & = \texttt{open}(\sh{c})                         \\
-    & = \texttt{open}(\sh{x} + \sh{y})                \\
-    & = \texttt{open}([x_i + y_i])                    \\
-    & = \sum_{i=1}^{n} x_i + y_i                      \\
-    & = \sum_{i=1}^{n} x_i + \sum_{i=1}^{n} y_i       \\
-    & = \texttt{open}(\sh{x}) + \texttt{open}(\sh{y}) \\
-    & = x + y
+  s = \sum_{i=1}^n s_i.
 \end{align*}
-This property enables us to easily produce Multi-Party Computation (MPC) (see \autoref{sec:mpc}) on top of such a SSS\@. However, to allow full arithmetic circuits, we need more elaborate protocols, which we will discuss in \autoref{sec:mpc_sacrificing}.
+
+A key feature of this construction is that if the parties hold two shared secrets, $\sh{x}$ and $\sh{y}$, they can compute the share of their sum, $\sh{x + y}$, simply by adding their respective shares. This property is known as \textit{additive homomorphism} or $(+, +)$-homomorphism, meaning that addition in the ciphertext domain corresponds directly to addition in the plaintext domain:
+\begin{align*}
+  \sh{x} + \sh{y} = \sh{x + y}.
+\end{align*}
+For additive SSS, this property follows directly from its construction.
+
+This property enables straightforward construction of Multi-Party Computation (MPC) protocols on top of the given Secret Sharing Scheme (SSS)\@. However, to support comprehensive arithmetic circuits, including multiplication gates, more advanced protocols are necessary -- detailed in \autoref{sec:mpc_sacrificing}.
 
 \subsubsection{Threshold SSS}\label{sub:threshold-sss}
 
-In many situations such schemes are not sufficient. Imagine wanting to solve the distribution of a secret (e.g. a password) among a set of locations to ensure that you do not have a single-point-of-failure. To solve this, we require a SSS that can reconstruct the secret from a subset of shares up to a threshold $\ell$. This is called a $(\ell + 1, N)$-threshold SSS\@.
-In this case, the SSS described above would not suffice as losing even one share would result in the loss of the secret. There are several ways to solve this problem. We could distribute more than one share to each location. If distributed correctly, we can ensure that only $t \leq N$ parties need to be available. However, there are also other more sophisticated schemes that can be used to ensure that the secret is not lost.
+In many situations such schemes are not sufficient. In the scheme described above, if a single share is lost, the secret is lost. Imagine the distribution of a secret among a set of locations. The current scheme would not ensure that you do not have a single-point-of-failure. To solve this, we require a SSS that can reconstruct the secret from a subset of shares up to a threshold $\ell$. This is called a $(\ell + 1, N)$-threshold SSS\@.
+
+There are several ways to solve this problem. We could distribute more than one share to each location. If distributed correctly, we can ensure that only $t \leq N$ parties need to be available. However, there are also other more sophisticated schemes that can be used to ensure that the secret is not lost.
 
 \begin{definition}[$(\ell + 1)$-private (threshold) SSS]\label{def:mpc-ss-threshold}
   A $(\ell + 1, N)$-threshold SSS~\cite{cramer2015secure}, where $\ell, n$ are integers with $0 \leq \ell < n$, denotes a SSS such that:
@@ -529,7 +533,9 @@ In this case, the SSS described above would not suffice as losing even one share
 
 \subsubsection{Shamir's Secret Sharing}\label{sub:shamir}
 
-One particular example, and the one utilized by the SDitH protocol, is Shamir's Secret Sharing scheme~\cite{shamir1979share,cramer2015secure}. This $(\ell + 1, N)$-threshold SSS is based on polynomials over a finite field $\mathbb{F}$. A secret $s$ is shared by choosing a random polynomial $P_s$ of degree at most $\ell \geq 2$ with $s = P_s(0)$. For each participant $i \in [n]$, $P_i$, a share $s_i$ is generated by evaluating $P(i)$. The secret can then be reconstructed by interpolating the polynomial from a $\ell + 1$ shares and with $\ell$ or less shares we gain no information about the secret -- i.e. we have $\ell$-privacy. We can prove reconstruction, correctness and privacy using \textit{Lagrange interpolation}.
+One particular example, and the one utilized by the SDitH protocol, is Shamir's Secret Sharing scheme~\cite{shamir1979share,cramer2015secure}. This $(\ell + 1, N)$-threshold SSS is based on polynomials over a finite field $\mathbb{F}$. A secret $s$ is shared by choosing a random polynomial $P_s$ of degree at most $\ell \geq 2$ with $s = P_s(0)$. For each participant $i \in [n]$, $P_i$, a share $s_i$ is generated by evaluating $P(i)$.
+
+The secret can then be reconstructed by interpolating the polynomial from $\ell + 1$ shares. With $\ell$ or less shares we gain no information about the secret -- i.e. we have $\ell$-privacy. We can prove reconstruction, correctness and privacy using \textit{Lagrange interpolation}.
 
 \begin{definition}[Lagrange interpolation]\label{def:lagrange}
   If $h(X)$ is a polynomial over $\mathbb{F}$ of degree at most $\ell$ and if $C$ is a subset of $\mathbb{F}$ with $|C| = \ell + 1$, then
@@ -543,24 +549,27 @@ One particular example, and the one utilized by the SDitH protocol, is Shamir's 
 \end{definition}
 
 \begin{lemma}\label{lem:lagrange}
-  Given any set of pairs $S = \{x_i, y_i \in F| i \in C\}$, $|C| = \ell + 1$, we can construct exactly one polynomial $h$ with $h(i) = y_i$ of degree at most $\ell$ as
+  Given any set of pairs $S = \{(x_i, y_i) \in F^2 \mid i \in C\}$, where $|C| = \ell + 1$, there exists exactly one polynomial $h(x)$ of degree at most $\ell$ that satisfies $h(x_i) = y_i$ for all $i \in C$. This polynomial can be expressed as:
   \begin{align*}
-    h(X) = \sum_{i \in C} y_i \delta_i(X)
+    h(x) = \sum_{i \in C} y_i \delta_i(x),
   \end{align*}
-  \noindent and that all coefficients of this polynomial can be efficiently computed from $S$.
+  where $\delta_i(x)$ are Lagrange basis polynomials. Moreover, all coefficients of $h(x)$ can be efficiently computed from $S$.
 \end{lemma}
 
-It follows from \autoref{def:lagrange} and \autoref{eq:lagrange1} that the secret can be easily \textit{reconstructed}. Furthermore, if there existed two solution polynomials $h, h'$ then $h(x) - h'(x)$ would be a non-zero polynomial of degree at most $\ell$ and would have at least $\ell + 1$ roots, which cannot exist.
+From \autoref{def:lagrange} and \autoref{eq:lagrange1}, it follows that the secret can be uniquely \textit{reconstructed} using any $\ell + 1$ shares. If there were two distinct solution polynomials, say $h(x)$ and $h'(x)$, then their difference $h(x) - h'(x)$ would be a non-zero polynomial of degree at most $\ell$. However, this polynomial would also have at least $\ell + 1$ roots (corresponding to the points in $S$), which is impossible since a non-zero polynomial of degree $\ell$ cannot have more than $\ell$ roots. Thus, the polynomial $h(x)$ is unique.
 
-For \textit{$\ell$-privacy}, consider an index set $I$ with $|I| \leq \ell$. For a sharing of a secret $s$ and the resulting polynomial $h(x)$, where $h(0) = s$, it evaluates to a set of shares $\{h(i) \mid i \in I\}$.
-Conversely, consider a random set of shares $A = \{s_i \mid i \in I\}$. It follows from \autoref{lem:lagrange} that there exists exactly one polynomial $h_A(x)$ such that
+To establish $\ell$-privacy, consider any subset of indices $I$ such that $|I| \leq \ell$. For a given secret $s$ and its corresponding sharing polynomial $h(x)$, where $h(0) = s$, the shares are given by $\{h(i) \mid i \in I\}$.
+
+Now, consider a random set of shares \( A = \{s_i \mid i \in I\} \). By \autoref{lem:lagrange}, there exists exactly one polynomial \( h_A(x) \) of degree at most $\ell$ that satisfies:
 \begin{align*}
   h_A(0) & = s,                                 \\
   h_A(i) & = s_i \quad \text{for all } i \in I.
 \end{align*}
-This implies that there are $|\mathbb{F}|^\ell$ possible polynomials which in turn implies that for any set of $\ell$ shares, the possible reconstructed secret $s$ is uniform in $\mathbb{F}$. See~\autoref{fig:shamir} for a visual example.
+Since there are no constraints on the coefficients of \( h_A(x) \) beyond the $\ell$ known shares and the secret at $h(0)$, the remaining coefficients of \( h_A(x) \) are free to take any values in $F$. This means that for every possible set of $\ell$ shares, there are $|F|^{\ell}$ distinct polynomials consistent with these shares, each corresponding to a different possible secret \( s \).
 
-Furthermore, the $(\ell + 1, N)$ the scheme is $(+, +)$-homomorphic. This follows from the fact that polynomials over $\mathbb{F}$ are \textit{distributive over addition}. In other words, given two secrets $a, b$ and their corresponding polynomials $h_a(x)$ and $h_b(x)$, we have
+Thus, the secret \( s \) is uniformly distributed over \( F \) when conditioned on any subset of $\ell$ shares, ensuring \textit{$\ell$-privacy}. For a visual demonstration, refer to \autoref{fig:shamir}.
+
+Furthermore, this $(\ell + 1, N)$ threshold scheme is $(+, +)$-homomorphic. This follows from the fact that polynomials over $\mathbb{F}$ are \textit{distributive over addition}. In other words, given two secrets $a, b$ and their corresponding polynomials $h_a(x)$ and $h_b(x)$, we have
 \begin{align*}
                 & (h_a + h_b)(i) = h_a(i) + h_b(i)          \\
   \Rightarrow\  & (h_a + h_b)(0) = h_a(0) + h_b(0) = a + b.
@@ -574,10 +583,10 @@ Furthermore, the $(\ell + 1, N)$ the scheme is $(+, +)$-homomorphic. This follow
 
 \subsection{Secure Multi-Party Computation}\label{sec:mpc}
 
-Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following sections we will denote a MPC protocol by $f$ for an $n$-party functionality $f(x, w_1, \dots, w_n)$, a public input $x$ and secret inputs $w_i$ of the party $P_i$. The goal is to compute the function $f$ on the inputs of the $n$ parties while upholding the following properties~\cite{cramer2015secure}
+Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following sections we will denote a MPC protocol by $f$ for an $N$-party functionality $f(x, w_1, \dots, w_n)$, a public input $x$ and secret inputs $w_i$ of the party $P_i$. The goal is to compute the function $f$ on the inputs of the $N$ parties while upholding the following properties~\cite{cramer2015secure}
 
 \begin{definition}[Correctness]\label{def:mpc-correctness}
-  We say that $\Pi$ realizes a deterministic $n$-party functionality $f(x, w_1, \dots, w_n)$ with perfect (resp., statistical) correctness if for all inputs $x, w_1, \dots, w_n$, the probability that the output of some player is different from the output of $f$ is $0$ (resp., negligible in the security parameter $k$), where the probability is over the independent choices of the random inputs $r_1, \dots, r_n$.
+  We say that $\Pi$ realizes a deterministic $N$-party functionality $f(x, w_1, \dots, w_n)$ with perfect correctness if for all inputs $x, w_1, \dots, w_n$, the probability that the output of some player is different from the output of $f$ is negligible in the security parameter $k$, where the probability is over the independent choices of the random inputs $r_1, \dots, r_n$.
 \end{definition}
 
 \begin{definition}[Privacy]\label{def:mpc-privacy}
@@ -598,39 +607,38 @@ In terms of security needed for the SDitH protocol, we define the following secu
 In order to prove the validity of a MPC protocol that have been run in the head, we define the following notion of \textit{consistency}~\cite{ishai2007zero}.
 
 \begin{definition}[MPC view]\label{def:mpc-view}
-  We denote the view $V_i$ of a party $P_i$ in the protocol as $(i, x, r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share, and $(m_1, \dots, m_j)$ are the messages received by $P_i$ in the first $j$ rounds of the protocol. Note that the messages sent by the parties can be inferred from the $V_i$ by invoking $\Pi$.
+  We denote the view $V_i$ of a party $P_i$ in the protocol as $(i, x, r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share, and $(m_1, \dots, m_j)$ are the messages received by $P_i$ in the first $j$ rounds of the protocol.
 \end{definition}
+
+\noindent Note that the messages sent by the parties can be inferred from the $V_i$ by invoking $\Pi$.
 
 \begin{definition}[Consistent views]\label{def:mpc-consistent-view}
   We say that a pair of views $V_i, V_j$ are consistent (with respect to the protocol $\Pi$ and some public input $x$) if the outgoing messages implicit in $V_i, x$ are identical to the incoming messages reported in $V_j$ and vice versa.
 \end{definition}
 
-\begin{lemma}[Local vs. global consistency]\label{lem:consistency}
-  Let $\Pi$ be an $n$-party protocol as above and $x$ be a public input.
-  Let $V_1, \dots, V_n$ be an $n$-tuple of (possibly incorrect) views. Then all pairs of views $V_i, V_j$ are consistent with respect to $\Pi$ and $x$ if and only if there exists an honest execution of $\Pi$ with public input $x$ (and some choice of private inputs $w_i$ and random inputs $r_i$) in which $V_i$ is the view of $P_i$ for every $1 \leq i \leq n$.
+\begin{lemma}[Local and global consistency]\label{lem:consistency}
+  Let $\Pi$ be an $N$-party protocol with a public input $x$. The following statements hold:
+  \begin{enumerate}
+    \item If all pairs of views $V_i$ and $V_j$ (for $i, j \in \{1, \dots, N\}$) are consistent with respect to $\Pi$, then there exists a full execution of $\Pi$ such that $V_i$ corresponds to the view of party $P_i$, for each $i$.
+    \item Conversely, if such a full execution of $\Pi$ exists, then the pairwise consistency condition holds for all $V_i$ and $V_j$.
+  \end{enumerate}
 \end{lemma}
 
 \textbf{Proof of \autoref{lem:consistency}} The \textit{if} direction is trivial and follows from \autoref{def:mpc-view} and \autoref{def:mpc-consistent-view}.
+
 The \textit{only if} direction is shown by the following. Consider $n$ pairwise consistent views $V_1, \dots, V_n$ \autoref{def:mpc-view}. Let us define an MPC protocol $\Pi$ by its \textit{next sent message} function $\Pi_j(i,x,w_i,r_i, (m_1, \dots, m_j)) = m_{j+1}$. The pairwise consistency, \autoref{def:mpc-consistent-view} and $\Pi_j$ implies, by induction that after $d$ rounds, that the actual view of all parties $P_i$ is the same as the view of $P_i$ in the first $d$ rounds. It follows that the views $V_i, \dots, V_n$ are consistent with the full execution of $\Pi$. \qed
 
-\subsection{Zero-Knowledge Proofs}\label{sec:zk}
-The intuition behind a Zero-Knowledge proof of knowledge is that the prover can convince the verifier that they know a secret $w$, such that $x$ is true, without revealing the secret $w$ to the verifier. This could be someone wanting to prove that they are above the age of 18 without revealing their age.
-
-We denote a ZK $\Pi_{\mathcal{R}}$ for some NP relation $\mathcal{R}(x, w)$. Let $x$ be a public statement in \textbf{NP} and $w$ be a witness such that $(x, w) \in \mathcal{R}$~\cite{feneuil2023threshold}.
-\begin{definition}
-  Let $x$ be a statement of language $L$ in \textbf{NP}, and $W(x)$ the set of witnesses for $x$ such that the following relation holds:
-  \begin{align*}
-    \mathcal{R} = \{(x, w)\; x \in L, w \in W(x)\}
-  \end{align*}
-\end{definition}
+This property is crucial as it enables a verifier in the MPCitH framework to validate the protocol's correctness.
 
 \section{Syndrome Decoding Problem}\label{sec:syndrome}
 
-The SDitH protocol is built on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field (see \autoref{sec:gf256}). This protocol uses a variant of the SD problem, referred to as the \textit{coset weights} problem, first introduced by Berlekamp and McEliece in 1978~\cite{berlekamp1978inherent}. The problem is defined as follows:
+The SDitH protocol is built on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field (see \autoref{sec:gf256}). Specifically, SDitH utilises a variant of the SD problem, referred to as the \textit{coset weights} problem, first introduced by Berlekamp and McEliece in 1978~\cite{berlekamp1978inherent}. We state the problem as follows:
+
 \begin{definition}\label{def:syndrome}
-  Given $H \in \mathbb{F}^{(m-k)\times m}_q$ and $y \in \mathbb{F}^{m-k}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t.\ wt$(x) \leq w$ and $Hx = y$.
+  Given $H \in \mathbb{F}^{w\times m}_q$ and $y \in \mathbb{F}^{w}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t.\ wt$(x) \leq w$ and $Hx = y$.
 \end{definition}
-Generating such an instance is straightforward: one can construct a uniformly random parity-check matrix $H$ and a codeword $x$ (with $wt(x) \leq w$), and then compute the syndrome $y = Hx$. In the SDitH protocol, the values of the matrix $H$ and the syndrome $y$ are elements of the finite field $\mathbb{F}_q$ explained previously in \autoref{sec:gf256}. The SD problem is well-known to be NP-complete for random instances~\cite{berlekamp1978inherent} also referred to as the general decoding problem.To illustrate the computational difficulty, solving the problem using brute force would require $O(\binom{m}{w} q^w)$ operations, which is computationally infeasible for large $m$ and $k$.
+
+Generating such an instance is straightforward: one can construct a uniformly random parity-check matrix $H$ and a codeword $x$ (with $wt(x) \leq w$), and then compute the syndrome $y = Hx$. In the SDitH protocol, the values of the matrix $H$ and the syndrome $y$ are elements of the finite field $\mathbb{F}_q$ explained previously in \autoref{sec:gf256}. The SD problem is well-known to be NP-complete for random instances~\cite{berlekamp1978inherent} also referred to as the \textit{general decoding problem}. To illustrate the computational difficulty, solving the problem using brute force would require $O(\binom{m}{w} q^w)$ operations, which is computationally infeasible for large enough $m$ and $w$.
 
 \subsubsection{Standard form of the parity-check matrix}\label{sub:standard_form_of_the_parity_check_matrix}
 To improve the performance and reduce the key size of the protocol, its possible to utilize the fact that the matrix $H$ can be in standard form. $H = (H'|I_{m-k}) $ Where $H' \in \mathbb{F}^{(m-k)\times k}_q$, and $I_{m-k}$ is the identity matrix of size $m-k$. This allows for the following representation of the syndrome:
@@ -647,7 +655,7 @@ with $x = (x_A | x_B)$. This improves the performance of the algorithms used in 
 
 The SDitH MPC protocol must prove that the SD problem $ y = Hx $ is satisfied. As outlined in \autoref{def:sdith-mpc}, the shared input $\sh{x_A}$ is provided to the MPC protocol. Consequently, the correctness of the initial statement $ y = Hx $ follows directly~\cite{feneuil2022syndrome}.
 
-In addition to this, we need to verify that the Hamming weight condition $ \text{wt}(x) \leq w $ holds. To achieve this, the prover constructs three polynomials $ S $, $ Q $, and $ P $, alongside one public polynomial $ F $. These polynomials play a critical role in ensuring the weight condition is satisfied while preserving the zero-knowledge property of the protocol. The polynomials are defined as follows:
+In addition to this, we need to verify that the Hamming weight condition $ \text{wt}(x) \leq w $ holds. To achieve this, the prover constructs three polynomials $ S $, $ Q $, and $ P $, alongside one public polynomial $ F $. The polynomials are defined as follows:
 
 \begin{definition}[SDitH polynomials representation]\label{def:sdith-polynomials}
   Let $f_1,\dots, f_q$ denote all the elements of $\mathbb{F}_q$ and $x\in \mathbb{F}^m_q$ is a binary vector with Hamming weight $wt(x) \leq w$, then the polynomials are defined as:
@@ -659,7 +667,7 @@ In addition to this, we need to verify that the Hamming weight condition $ \text
   \end{itemize}
 \end{definition}
 
-We can now look at the relation
+\noindent We can now look at the relation
 \begin{equation}
   \centering
   S\cdot Q = P\cdot F\label{eq:polynomial_representation}
@@ -669,98 +677,117 @@ If we look at the left-hand side, which has the following property by design $S\
 
 For the right-hand side, the polynomial $F$ is the vanishing polynomial for the set ${f_1, \dots, f_m}$, so $F(f_i) = 0\ \forall\ f_i \in [1:m]$. The polynomial $P$ is needed to match the degree of $S \cdot Q$. As the degree of $F$ is $m \leq \text{deg}(S\cdot Q) \leq m + w - 1$.
 
-It is now apparent that if the prover can convince the verifier that they know of polynomials $P,Q$ such that $S\cdot Q = F \cdot P = 0$ at all points $f_i \in [1:m]$. The following must hold, either $S(f_i) = x_i = 0$ or $Q(f_i) = 0$. However, the polynomial $Q$ can be zero in at most $w$ points based on the degree, this means that $S$ is non-zero in at most $w$ points, based on the construction, which in turn implies that $wt(x) \leq w$.
+It is now evident that if the prover can convince the verifier of the existence of polynomials $P, Q$ such that the relation $S \cdot Q = F \cdot P = 0$ holds at all points $f_i \in [1 : m]$, the following must be true: either $S(f_i) = x_i = 0$ or $Q(f_i) = 0$ for each $f_i$.
 
-With this, we can define the soundness of the language for ZKP as follows:
+By the degree constraint of $Q$, the polynomial $Q$ can have at most $w$ roots (i.e., points $f_i$ where $Q(f_i) = 0$). Consequently, there are at most $w$ points where $S(f_i) \neq 0$, as $S(f_i)$ must be zero for all other $f_i$ to satisfy the given relation. This directly implies that $S$, and hence the vector $x$ it interpolates, has at most $w$ non-zero entries.
+
+Thus, the weight constraint $\text{wt}(x) \leq w$ is satisfied, completing the proof. With this, we can define the soundness of the language for ZKP as follows:
 \begin{equation}
   wt(x) \leq w \Leftrightarrow \exists P,Q \text{  with  }\text{deg}(P)\leq w-1\text{  and  }\text{deg}(Q) = w\text{ s.t. \autoref{eq:polynomial_representation} holds}\label{eq:soundness}
 \end{equation}
 
 \subsubsection{False positive probability}\label{sub:equality_test}
-The equality test from \autoref{eq:polynomial_representation} has a small probability of false positives, denoted $p$. To reduce this probability, the relation is evaluated at random points $\{r_k \in \mathbb{F}_q\}_{k\in[t]}$. By Schwartz-Zippel \autoref{lem:schwartz}, the probability of a false positive is bounded by $p \leq \frac{t}{q}$, where $q$ is the size of the finite field $\mathbb{F}_q$. In short, this makes it unlikely that the relation will hold for all points $r_k$ if the relation is not sound according to \autoref{eq:soundness}. Furthermore, we can tweak the parameters $t$ and $q$ to reduce $p$.
+The equality test from \autoref{eq:polynomial_representation} has a small probability of false positives, denoted $p$. To reduce this probability, we can evaluate the relation at random points $\{r_k \in \mathbb{F}_q\}_{k\in[t]}$. By the Schwartz-Zippel \autoref{lem:schwartz}, the probability of a false positive is bounded by $p \leq \frac{t}{q}$, where $q$ is the size of the finite field $\mathbb{F}_q$. In short, this makes it unlikely that the relation will hold for all points $r_k$ if the relation is not sound according to \autoref{eq:soundness}. Furthermore, we can tweak the parameters $t$ and $q$ to reduce $p$.
 
 \begin{lemma}[Schwartz-Zippel]\label{lem:schwartz}
   For a non-zero polynomial $P \in \mathbb{S}[X]$ of degree $d \geq 0$. Let $\mathbb{R}$ be a finite subset of $\mathbb{S}$ and set of random points $[r_1, \dots, r_n] \in \mathbb{R}$, the probability that $\Pr[P(r_1, \dots, r_n) = 0] \leq d/|\mathbb{R}|$.
 \end{lemma}
 
 \subsubsection{Avoiding interpolations for $S$}\label{sec:syndrome-avoid-interpolation}
-Recall the sharing of the witness $\sh{x_A}$ for $x = (x_A | x_B)$ detailed in \autoref{sec:syndrome}. We would have to use interpolation to compute $\sh{S}$ for each share $\sh{x_A}$. However, interpolation is of quadratic complexity and therefore not suitable for MPC. To mitigate this, we redefine the SD instance as follows:
+Recall the sharing of the witness $\sh{x_A}$ for $x = (x_A \mid x_B)$ as described in \autoref{sec:syndrome}. In the current setup, each party in the MPC protocol would need to perform interpolation to compute their share $\sh{S}$. However, interpolation incurs quadratic complexity, leading to significant computational overhead. To address this issue, we redefine the SD instance as follows:
 
 \begin{definition}[Redefined SD instance $y = Hx$]
-  Let $s$ represent the coefficients of the polynomial $S$ in \autoref{eq:polynomial_representation}, and let $V$ be a matrix such that:
-  \begin{align*}
-    S = \text{Lagrange Interpolation}(x) \Leftrightarrow s = Vx.
-  \end{align*}
-  The SD instance is then redefined as:
-  \begin{align*}
-    y = HVx.
-  \end{align*}
+  Let $s$ represent the coefficients of the polynomial $S$ in \autoref{eq:polynomial_representation}, and let $V$ be a matrix such that \[ S = \text{Lagrange Interpolation}(x) \Leftrightarrow s = Vx. \]
+  The SD instance is then redefined as $y = HVx$.
 \end{definition}
 
 This redefinition preserves the security properties of the original SD problem, as the linear code $\mathcal{C}_{HV}$ remains uniformly random. This is due to the randomness of $\mathcal{C}_H$ and the invertibility of $V$.
 
-With this modification, we can replace the sharing $\sh{x_A}$ by representing $s = (s_A \mid s_B) = Vx$. The parties can then compute $\sh{s_B}$ and $\sh{s}$ from the sharing of $\sh{s_A}$ using:
-\begin{align*}
+With this modification, we can replace the sharing $\sh{x_A}$ with $\sh{s_A}$ by representing $s = (s_A \mid s_B) = Vx$. The parties can then compute $\sh{s_B}$ and $\sh{s}$ from the sharing of $\sh{s_A}$ using:
+\[
   \sh{s_B} = y - H'\sh{s_A}.
-\end{align*}
+\]
+This modification significantly improves the efficiency of the MPC protocol and the computational overhead of the SDitH protocol.
 
 \section{MPC-in-the-Head}\label{sec:mpcinth}
 
-The SDitH protocol construction is based on the \textit{Multi-Party Computation in the Head} (MPCitH) framework. In this section we will give an introduction to the framework and how it can be used to construct ZK proofs, which in turn can be combined with the Fiat-Shamir heuristic to create a signature scheme.
+The SDitH protocol construction is built upon the \textit{Multi-Party Computation in the Head} (MPCitH) framework introduced by~\cite{ishai2007zero}. In this section, we provide an introduction to the MPCitH framework and demonstrate how it can be used to construct Zero-Knowledge Proofs of Knowledge (ZK-PoK). These proofs can then be combined with the \hyperref[sec:fiatshamir]{Fiat-Shamir heuristic} to derive a signature scheme. To begin, we first describe the concept of a ZK-PoK.
 
-The MPC-in-the-Head (MPCitH) framework, introduced by~\cite{ishai2007zero}, builds upon these techniques to construct generic zero-knowledge protocols (ZK). A ZK protocol allows a \textit{prover} to convince a \textit{verifier} of the validity of a statement without revealing any information about the inputs to the statement. The framework provides a versatile method of constructing protocols that are quantum safe as its security relies on assumptions that are still believed to be quantum secure. Namely, commitment schemes and hash functions~\cite{feneuil2023threshold} which have no known quantum algorithms that break their security.
+\subsubsection{Zero-Knowledge Proofs of Knowledge}\label{sec:zk}
+The intuition behind a ZK-PoK is that the prover can convince the verifier that they know a secret $w$, such that $x$ is true, without revealing the secret $w$ to the verifier. For example, this could be someone wanting to prove that they are above the age of 18 without revealing their specific age.
 
-We will describe the basic construction suggested by Ishai et al~\cite{ishai2007zero}. For now, we will only consider an underlying semi-honest MPC protocol $f_{add}$ for $N$ parties with $N-1$ secrecy based on \textit{additive} secret sharing \autoref{sec:additive-sss}.
+\begin{definition}
+  We denote a ZK-PoK $\Pi_{\mathcal{R}}$ for some \textbf{NP} relation $\mathcal{R} = \{(x, w)\; x \in L, w \in W(x)\}$.
+
+  Let $x$ be a statement of language $L$ in \textbf{NP}, and $W(x)$ the set of witnesses for $x$ such that the following relation holds~\cite{feneuil2023threshold}   \[
+    \mathcal{R}(x,w) = \begin{cases}
+                         1 & \text{if } x \in L \text{ and } w \in W(x) \\
+                         0 & \text{otherwise}
+                       \end{cases}
+  \]  We have the following properties:
+  \begin{itemize}
+    \item \textit{Completeness}: If $x$ is true, then $\mathcal{R}(x, w)$ holds for some $w$.
+    \item \textit{Soundness}: If $x$ is false, then the prover can convince the verifier that $\mathcal{R}(x, w)$ holds with negligible probability.
+    \item \textit{Zero-knowledge}: The verifier learns nothing about the statement $x$.
+  \end{itemize}
+\end{definition}
+
+\subsubsection{Generic ZK-PoK Construction}\label{sec:zk-generic}
+
+The framework provides a versatile method for constructing ZK-PoK protocols. These protocols are typically considered quantum-safe because they can be built exclusively on symmetric-key assumptions, such as the hardness of inverting a cryptographic hash function, rather than on number-theoretic assumptions, such as factoring or discrete logarithms.
+
+We will describe the basic construction suggested by Ishai et al~\cite{ishai2007zero}. For now, we will only consider an underlying semi-honest MPC protocol $\Pi_+$ for $N$ parties with $N-1$ secrecy based on \textit{additive} secret sharing -- see \autoref{sec:additive-sss}.
 
 \begin{protocol}\label{def:mpcinth_basic}
-  Given $f_{add}$ a ZK relation $\mathcal{R}$ for some public statement $x$, and a witness $w$ (\autoref{sec:zk}).
-  Let $w_i$ be an additive secret share of $\sh{w}$ for the party $P_i$. Let $f_{add}(x, w_1, \dots, w_n) = \mathcal{R}(x, w)$, i.e. $f_{add}(x,w)$ accepts if $(x,w) \in \mathcal{R}$.
+  Given $\Pi_+$ a ZK relation $\mathcal{R}$ for some public statement $x$, and a witness $w$. Let $w_i$ be an additive secret share of $\sh{w}$ for the party $P_i$. Let \[ \Pi_+(x, w_1, \dots, w_n) = \mathcal{R}(x, w), \] i.e. $\Pi_+(x,w)$ outputs \texttt{Accept} if $\mathcal{R}(x,w) = 1$. We assume an underlying commitment scheme \texttt{Commit}.
 
   \begin{enumerate}[parsep=2pt, itemsep=0pt]
     \item The prover builds a random sharing of $\sh{w} = w_1, \dots, w_n$. Then
           \begin{enumerate}[nolistsep]
-            \item Simulates the outputs of the MPC protocol $f$ on the inputs $(x, w_1, \dots, w_n)$ and the randomness $r_1, \dots, r_n$.
-            \item Prepares views $V_1, \dots, V_n$ of the parties in the protocol $f$.\footnote{Remember that the views include the inputs, randomness and messages received by the parties.}
-            \item Commits to each view $V_i$ using a secure commitment scheme, and sends ($\text{Commit}(V_1), \dots, \text{Commit}(V_n)$) to the verifier.
+            \item Simulates the outputs of the MPC protocol $\Pi_+$ on the inputs $(x, w_1, \dots, w_n)$ and the randomness $r_1, \dots, r_n$.
+            \item Prepares views $V_1, \dots, V_n$ of the parties in the protocol $f$.
+            \item Commits to each view $V_i$ and sends ($\texttt{Commit}(V_1), \dots, \texttt{Commit}(V_n)$) to the verifier.
           \end{enumerate}
     \item The verifier picks $\ell$ random distinct indices $i \in [n]$ and sends them to the prover.
     \item The prover opens the corresponding $\ell$ commitments into the views $V_i$ and sends the openings to the verifier.
     \item The verifier accepts if and only if:
           \begin{enumerate}[nolistsep]
-            \item\label{prop:mpcinth_commit} The views are valid according to the commitment scheme.
-            \item\label{prop:mpcinth_consistent} The views are consistent according to the public input $x$.
-            \item\label{prop:mpcinth_knowledge} The views output $1$ according to $\mathcal{R}$ meaning that $\mathcal{R}(x,w) = 1$.
+            \item\label{prop:mpcinth_commit} The views are consistent according to the commitment scheme.
+            \item\label{prop:mpcinth_consistent} The views are consistent according to the public input $x$ and the randomness $r_1, \dots, r_n$.
+            \item\label{prop:mpcinth_knowledge} The the output of $\Pi_+$ from the views output \texttt{Accept}.
           \end{enumerate}
   \end{enumerate}
 \end{protocol}
 
-We see the following properties of the protocol:
+\noindent We see the following properties of the protocol:
 
 \begin{lemma}[Completeness~\cite{ishai2007zero}]\label{def:mpcinth_completeness}
-  A boolean function is said to be complete if it depends on all inputs of the function. Given an honest prover, $\mathcal{R}(x,w) = 1$ and the correctness of the MPC protocol $f_{add}$, all outputs of $P_i$ are one and all views are consistent.
+  Given an honest prover, $\mathcal{R}(x,w) = 1$ and the correctness of the MPC protocol $\Pi_+$, all outputs of $P_i$ are one and all views are consistent.
 \end{lemma}
 
 \begin{lemma}[Zero-Knowledge~\cite{ishai2007zero}]
-  The verifier only sees $\ell$ views, and therefore from the definition of the MPC protocol $f_{add}$ learns nothing of the secret witness $w$.
+  The verifier only sees $\ell$ views, and therefore from the definition of the MPC protocol $\Pi_+$ learns nothing of the secret witness $w$.
 \end{lemma}
 
-We consider soundness of the MPCitH framework. We assume that the verifier accepts the relation $\mathcal{R}(x,w)$ for $x \notin L$ -- i.e. the verifier accepts the relation even though the prover has created a false statement. This means that the prover must have cheated on of two ways. First, the prover may have cheated in the underlying MPC protocol which is defined by the error probability $p_{f_{add}}$.
+We consider soundness of the MPCitH framework. We assume that the verifier accepts the relation $\mathcal{R}(x,w)$ for $x \notin L$ -- i.e. the verifier accepts the relation even though the prover has created a false statement. This means that the prover must have cheated on of two ways. First, the prover may have cheated in the underlying MPC protocol which is defined by the error probability $p$.
 
 Secondly, the prover could have tampered with the views. In this, the prover must have corrupted one party and creating a inconsistent view. The probability that the prover succeeds with this is at most $1 / N$. This gives us an overall soundness
 
-\begin{lemma}[Soundness of MPCitH for $f_{add}$~\cite{feneuil2022syndrome}]\label{lem:soundness_mpcinth}
-  \begin{align*}
-    1 - (1 - \frac{1}{N}) (1 - p_{f_{add}}) = \frac{1}{N} + p - \frac{1}{N} p_{f_{add}}
-  \end{align*}
+\begin{lemma}[Soundness of MPCitH for $\Pi_+$~\cite{feneuil2022syndrome}]\label{lem:soundness_mpcinth} Given a false positive probability $p$ for the underlying MPC protocol $\Pi_+$, the probability that the verifier outputs \texttt{Accept} for $\mathcal{R}(x,w) \neq 1$ is at most \[ \frac{1}{N} + p - \frac{1}{N} p \]
 \end{lemma}
 
-The basic MPC-in-the-Head protocol serves as a foundation for constructing zero-knowledge (ZK) proofs for any NP relation and has been demonstrated to yield relatively efficient ZK protocols~\cite{feneuil2022syndrome,baum2020concretely,katz2018improved}. Giacomelli et al. and Chase et al.~\cite{katz2018improved,giacomelli2016zkboo,chase2017post} provided concrete implementations of the \emph{MPC-in-the-Head} approach and observed that employing a 3-party protocol $\Pi$ achieved optimal performance within the space of protocols they analyzed. However, due to the small number of parties, the soundness of the resulting honest-verifier zero-knowledge (HVZK) proof is relatively weak. As a consequence, a large number of parallel repetitions is required to achieve negligible soundness error. This increases the size of the proofs and the communication overhead of the protocols. In this section we will describe a variant of the MPC-in-the-Head protocol which is sound for the addition relation.
 
-\section{MPC Product verification using sacrificing}\label{sec:mpc_sacrificing}
+\section{Efficient product verification}\label{sec:mpc_sacrificing}
 
-To enhance the performance of MPCitH-based zero-knowledge protocols, Baum and Nof introduced a variant of the framework built around a specialized MPC protocol. This protocol efficiently verifies a product relation between three values, $  a \cdot b = c  $. Their contributions significantly improved the efficiency of MPCitH-based zero-knowledge protocols and laid the foundation for the SDitH protocol, which is designed to prove the SD relation (\autoref{sec:syndrome}).
+The basic MPCitH protocol serves as a foundation for constructing ZK-PoK for any \textbf{NP} relation and it has been demonstrated to yield relatively efficient ZK protocols~\cite{feneuil2022syndrome,baum2020concretely,katz2018improved}. Giacomelli et al. and Chase et al.~\cite{katz2018improved,giacomelli2016zkboo,chase2017post} provided concrete implementations of the \textit{MPC-in-the-Head} approach and observed that employing a 3-party MPC protocol achieved optimal performance within the space of protocols they analyzed. 
 
-The underlying MPC protocol is based on arithmetic circuits, where addition operations are straightforward to perform using any $ + $-homomorphic secret sharing scheme. However, performing multiplication -- which is required for the product relation -- is significantly more challenging. In this section, we describe the techniques and mechanisms used to address this challenge. The simplest idea would be to verify the relation by simply computing the product. A common technique is to use Beaver triples.
+However, due to the small number of parties, the soundness of the resulting protocols is relatively weak. Consequently, a large number of parallel repetitions is required to achieve a negligible soundness error. This significantly increases both the size of the proofs and the communication overhead of the protocols. In this section, we describe a variant of the MPC-in-the-Head protocol that is specifically sound for the addition relation.
+
+In an effort to improve this, Baum and Nof introduced a variant of the framework based on a specialized MPC protocol. This protocol efficiently verifies a product relation $a \cdot b = c$. Their contributions significantly enhanced the efficiency of MPCitH-based ZK-PoK protocols and serve as the foundation for the underlying MPC protocol used in the SDitH protocol.
+
+The underlying MPC protocol is based on arithmetic circuits, where addition operations are straightforward to perform using any $(+,+)$-homomorphic secret sharing scheme. 
+
+However, performing multiplication -- which is required for the product relation -- is significantly more challenging. The simplest approach would be to verify the relation by directly computing the product. A common technique for handling multiplication in MPC protocols is the use of Beaver triples.
 
 \begin{definition}[Beaver triple~\cite{Beaver1992efficient}]\label{def:Beaver}
   A Beaver triple is a tuple $ (a, b, c) $ such that $ a \cdot b = c $, where $ a, b, c \in \mathbb{F}_q $.
@@ -768,7 +795,7 @@ The underlying MPC protocol is based on arithmetic circuits, where addition oper
 
 \begin{protocol}[MPC Multiplication using Beaver triples]\label{def:Beaver-multiplication}
   Given a $+$-homomorphic additive secret sharing scheme and a preprocessed random Beaver triple $\sh{a}, \sh{b}, \sh{c} $, the parties do the following:
-  \begin{enumerate}
+  \begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
     \item The parties compute $ \sh{\alpha} = \sh{x} - \sh{a} $ and $ \sh{\beta} = \sh{y} - \sh{b} $.
     \item The parties run $ \text{open}(\sh{\alpha}) $ and $ \text{open}(\sh{\beta}) $ to obtain $ \alpha $ and $ \beta $.
     \item Each party computes $ \sh{z} = \sh{c} - \alpha \cdot \sh{b} - \beta \cdot \sh{a} + \alpha \cdot \beta $.
@@ -783,11 +810,14 @@ The above is a well-known technique from~\cite{Beaver1992efficient} where the co
          & = \sh{xy}
 \end{align*}
 
-Proposals for zero-knowledge proofs -- such as the \textit{Cut-and-Choose} protocol~\cite{katz2018improved,baum2020concretely} -- utilize \autoref{def:Beaver-multiplication}, combined with preprocessing techniques, to achieve promising results\footnote{See \autoref{sec:zk-cut-and-choose}}. Building upon these protocols, Baum and Nof~\cite{baum2020concretely} propose a variant that shifts the focus from simulating the computation of a product to simulating the \textit{verification} of the triple relation instead. This verification is achieved by sacrificing another triple, ensuring correctness while improving performance. Consider the following protocol, which is based on the MPC protocol described in~\cite{damgaard2012multiparty}.
+Proposals for ZK-PoK proofs -- such as the \textit{Cut-and-Choose} protocol~\cite{katz2018improved,baum2020concretely} -- utilize \autoref{def:Beaver-multiplication}, combined with preprocessing techniques, to achieve promising results (see appendix \autoref{sec:zk-cut-and-choose}).
+
+Building upon these protocols, Baum and Nof~\cite{baum2020concretely} propose a variant that shifts the focus from computing the product to simulating the \textit{verification} of the triple relation instead. This verification is performed by sacrificing another triple. Consider the following protocol, which is based on the MPC protocol described in~\cite{damgaard2012multiparty}.
+
 
 \begin{protocol}[Verification of a multiplication triple by sacrificing another]\label{def:sacrifice}
   Given an input triple $(x,y,z) \in \mathbb{F}$ random shared triple $(\sh{a}, \sh{b}, \sh{c}) \in \mathbb{F}$, it is possible to verify the correctness of the statement $z = x \cdot y$ without revealing any information on either of the input. Define \texttt{open} according to \autoref{def:ss-share}.
-  \begin{enumerate}
+  \begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
     \item The parties generate a random $\varepsilon \in \mathbb{F}$.
     \item The parties locally set $\sh{\alpha} = \varepsilon\sh{x} + \sh{a}, \sh{\beta} = \sh{y} + \sh{b}$.
     \item The parties run \texttt{open}$(\sh{\alpha})$ and \texttt{open}$(\sh{\beta})$ to obtain $\alpha$ and $\beta$.
@@ -797,7 +827,6 @@ Proposals for zero-knowledge proofs -- such as the \textit{Cut-and-Choose} proto
 \end{protocol}
 
 Observe that if both triples are correct multiplication triples (i.e., $z = xy$ and $c = ab$) then the parties will always accept since
-
 \begin{align*}
   v & = \varepsilon \cdot z - c + \alpha \cdot b + \beta \cdot a - \alpha \cdot \beta                                                     \\
     & = \varepsilon \cdot xy - ab + (\varepsilon \cdot x + a)b + (y + b)a - (\varepsilon \cdot x + a)(y + b)                              \\
@@ -819,123 +848,137 @@ Observe that if both triples are correct multiplication triples (i.e., $z = xy$ 
 
 Consider the cause where one of $\Delta_z$ or $\Delta_c$ is zero and the other is non-zero. In this case the verifier will not accept from~\ref{eq:sacrifice-proof}. Otherwise, we require that $\varepsilon = \Delta_c \cdot \Delta_z^{-1}$ which happens with probability $\frac{1}{|\mathbb{F}|}$. \qed
 
-\autoref{def:sacrifice} forms the foundational mechanism underpinning the SDitH protocol. While this approach delivers significant improvements~\cite{baum2020concretely,feneuil2022syndrome} in efficiency and soundness for ZK protocols, further advancements can be achieved by revisiting the secret sharing schemes utilized within the MPCitH framework.
+Under the MPCitH paradigm, the verifier must issue two challenges. The first challenge is for the randomness used in the MPC protocol computation, denoted by $\varepsilon$, which we refer to as the \textit{MPC challenge}. This challenge ensures that the prover cannot cheat in the computation of the multiplication gates or manipulate the inputs. By doing so, the verifier does not have to recompute the MPC inputs to check the consistency of the committed inputs, thereby significantly reducing the computational overhead for the verifier.
+
+The second challenge is a \textit{view opening challenge} $I \subseteq [N]$, where $|I| = N-1$. This challenge is the same as the one used in the initial MPCitH protocol.
 
 \section{Threshold Computation in the Head (TCitH)}\label{sec:threshold-mpc}
 
-A majority of constructions within the MPCitH framework~\cite{baum2020concretely,feneuil2022syndrome,katz2018improved} rely on $ (N-1, N) $ additive secret sharing schemes (SSS). Feneuil and Rivain~\cite{feneuil2023threshold,feneuil2023threshold2} explore the application of threshold secret sharing schemes (\autoref{sub:threshold-sss}). In addition to improving the soundness of the resulting zero-knowledge protocol, their approach reduces the computational overhead: the prover needs to emulate only $ \ell + 1 $ parties, while the verifier needs to verify and emulate just $ \ell $ parties. This optimization delivers significantly improved performance, particularly for low-threshold schemes.
+\autoref{def:sacrifice} forms the foundational mechanism underpinning the SDitH protocol. While this approach delivers significant improvements~\cite{baum2020concretely,feneuil2022syndrome} in efficiency and soundness for ZK-PoK protocols, further advancements can be achieved by revisiting the secret sharing schemes utilized within the MPCitH framework. The majority of constructions within the MPCitH framework~\cite{baum2020concretely,feneuil2022syndrome,katz2018improved} rely on $(N-1, N)$ additive secret sharing schemes (SSS). 
+
+Recently, Feneuil and Rivain~\cite{feneuil2023threshold,feneuil2023threshold2} proposed the application of threshold secret sharing schemes -- see \autoref{sub:threshold-sss}. For low-threshold SSS, their approach dramatically reduces computational overhead, as the prover emulates only $\ell + 1$ parties, while the verifier needs to verify and emulate just $\ell$ parties.
 
 \begin{table}[]
   \centering
   \def\arraystretch{1.5}%  1 is the default, change whatever you need
-  \begin{tabular}{cc|c}
+  \begin{tabular}{ccc}
     \textbf{} & MPCitH                                  & TCitH                                                      \\ \arrayrulecolor{darkgray}\hline
-    Prover    & $ \approx \lambda \frac{N}{\log_2 N}$   & $ \approx \lambda \frac{\ell + 1}{\log_2 \binom{N}{\ell}}$ \\ \arrayrulecolor{lightgray}\hline
-    Verifier  & $ \approx \lambda \frac{N-1}{\log_2 N}$ & $ \approx \lambda \frac{\ell + 1}{\log_2 \binom{N}{\ell}}$ \\ \arrayrulecolor{darkgray}\hline
+    Prover    & $ \lambda \frac{N}{\log_2 N}$   & $ \lambda \frac{\ell + 1}{\log_2 \binom{N}{\ell}}$ \\ \arrayrulecolor{lightgray}\hline
+    Verifier  & $ \lambda \frac{N-1}{\log_2 N}$ & $ \lambda \frac{\ell + 1}{\log_2 \binom{N}{\ell}}$ \\ \arrayrulecolor{darkgray}\hline
   \end{tabular}
-  \caption{Performance for prover and verifier for TCitH compared to MPCitH. I.e. the number of party emulations to achieve a soundness error of $2-\lambda$ (assuming a negligible false positive rate for the underlying MPC protocol). This table is from \cite{feneuil2023threshold}.}\label{tbl:tcith-performance}
+  \caption{Performance for prover and verifier for TCitH compared to MPCitH. I.e. the approximate number of party emulations to achieve a soundness error of $2-\lambda$ (assuming a negligible false positive rate for the underlying MPC protocol)~\cite{feneuil2023threshold}.}\label{tbl:tcith-performance}
 \end{table}
 
-We define a threshold MPC protocol, $ f_{thr} $, based on a $ (\ell, N) $-private SSS. In the context of the SDitH protocol, this can be instantiated with Shamir's Secret Sharing (\autoref{sub:shamir}).
+We define a threshold MPC protocol based on a $(\ell + 1, N)$-threshold SSS. In the context of the SDitH protocol, this can be instantiated with Shamir's Secret Sharing (\autoref{sub:shamir}).
 
-On the other hand, the TCitH model described by~\cite{feneuil2023threshold} results in a slightly larger proof size due to the increased flexibility in the number of input shares the prover must open. While the prover still commits to all input sharings, only a subset of these needs to be opened during the protocol.
+On the other hand, the TCitH model~\cite{feneuil2023threshold} results in increased flexibility in the number of input shares the prover must open. While the prover still commits to all input sharings, only a subset of these needs to be opened during the protocol.
 
 To facilitate this, a Merkle Tree Commitment Scheme (\autoref{sub:merkle_tree_prelim}) is employed. This scheme enables the prover to efficiently prove the consistency of a subset of committed inputs by providing additionally the authentication path along with the tree root -- introducing the slight increase in communicational complexity.
 
 \begin{lemma}[Soundness of TCitH based ZK]
-  Given a threshold MPC protocol $ f_{thr} $ with threshold $ \ell $ and $ N $ parties, we have a soundness error of:
+  Given a $(\ell +1,N)$-threshold MPC protocol with false positive probability of $p_{\ell}$, we have a soundness error of
   \begin{align*}
-    \frac{1}{\binom{N}{\ell}} + p_{f_{thr}} \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1}
+    \frac{1}{\binom{N}{\ell}} + p_{\ell} \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1}
   \end{align*}
 \end{lemma}
 
-\textit{Proof:} Soundness follows the same principle as before, with a slight modification. First, assume that the MPC protocol has a perfect error rate $  p_{f_{thr}} = 0  $.
+\textit{Proof:} Soundness follows the same principle as before, with a slight modification. First, we assume that the MPC protocol has a perfect error rate $p_{\ell} = 0$. 
 
-\begin{proposition}
-  The malicious prover must tamper with exactly $  N - \ell  $ MPC party emulations to successfully cheat the verifier.
-\end{proposition}
+We note that a malicious prover must tamper with exactly $N - \ell$ party emulations to successfully cheat the verifier. This can be shown by considering the case where the malicious prover attempts to cheat on fewer than $N - \ell$ parties. In such a scenario, at least $\ell + 1$ parties will have consistent views. Since $p_{\ell} = 0$, these consistent views define a valid witness $w$ such that $\mathcal{R}(x, w) = 1$, as required by the definition of the MPC protocol. Conversely, if the prover tampers with more than $N - \ell$ parties, the verifier will always detect the inconsistency.
 
-Consider the case where the malicious prover attempts to cheat on fewer than $  N - \ell  $ parties. In this scenario, at least $  \ell + 1  $ parties have consistent views. Since $  p_{f_{thr}} = 0  $, these consistent views define a valid witness $  w  $ such that $  \mathcal{R}(x, w) = 1  $, by the definition of the MPC protocol. Conversely, if the prover tampers with more than $  N - \ell  $ parties, the verifier will always detect the inconsistency.
 
-Given $  p_{f_{thr}} = 0  $ and the verifier opening $  \ell  $ inputs, the malicious prover can succeed in cheating the verifier with probability at most:
+Given $p_{\ell} = 0$ and the verifier opening $\ell$ inputs, the malicious prover can succeed in cheating the verifier with probability at most:
 \begin{align*}
   \frac{1}{\binom{N}{\ell}}
 \end{align*}
 
-Now, consider the case where $  p_{f_{thr}} \neq 0  $. The malicious prover may exploit the possibility of cheating the MPC protocol itself, resulting in a soundness error of:
+Now, consider the case where $p_{\ell} \neq 0$. The malicious prover may exploit the possibility of cheating the MPC protocol itself, resulting in a soundness error of:
 \begin{align*}
-  \frac{1}{\binom{N}{\ell}} + \left(1 - \frac{1}{\binom{N}{\ell}}\right) \cdot p_{f_{thr}}.
+  \frac{1}{\binom{N}{\ell}} + \left(1 - \frac{1}{\binom{N}{\ell}}\right) \cdot p_{\ell}.
 \end{align*}
 
 Finally, the malicious prover could provide an invalid sharing of the input witness $ \sh{w} $. Under such an attack, the final soundness error becomes:
 \begin{align*}
-  \frac{1}{\binom{N}{\ell}} + p_{f_{thr}} \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1} \geq \frac{1}{\binom{N}{\ell}} + \left(1 - \frac{1}{\binom{N}{\ell}}\right) \cdot p_{f_{thr}}. \qed
+  \frac{1}{\binom{N}{\ell}} + p_{\ell} \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1} \geq \frac{1}{\binom{N}{\ell}} + \left(1 - \frac{1}{\binom{N}{\ell}}\right) \cdot p_{\ell}. \qed
 \end{align*}
 
 This final step is formally proven in~\cite[p20]{feneuil2023threshold} but we will go over the main ideas of the proof.
 
-The first thing to realise is the fact that the verifier only ever sees at most $\ell$ shares of the secret sharing $\sh{w}$, this allows the malicious prover to pick different sharings for a set of subsets of $N$.
-We can denote such a subset:
-\begin{align}
-  \mathcal{J} = \{J \subset [N] \mid |J| = \ell + 1\}
-\end{align}
-The malicious prover can then pick different witness values $w_J$ for each $J \in \mathcal{J}$ corresponding to the shares $\sh{w}_J$.
-This fact allows the maliciour prover to pick:
+The first key observation is that the verifier only ever sees at most $\ell$ shares of the secret sharing $\sh{w}$. This limitation allows a malicious prover to construct multiple inconsistent sharings for subsets of $N$ parties while maintaining apparent consistency within any subset revealed to the verifier. 
 
+We define the set of all possible subsets of $N$ parties containing exactly $\ell + 1$ elements as:
 \begin{align}
-  w_{J_1} \neq w_{J_2} \text{ for } J_1, J_2 \in \mathcal{J}
+  \mathcal{J} = \{J \subseteq [N] \mid |J| = \ell + 1\}.
 \end{align}
 
-The authors then describes a \textit{Soundness attack} where the malicious prover samples different witness values for each $J \in \mathcal{J}$. When the verifier sends the challenge value $\epsilon$ the malicious prover does the following:
+The malicious prover can then choose different witness values $w_J$ for each subset $J \in \mathcal{J}$, corresponding to shares $\sh{w}_J$. Specifically, the malicious prover selects:
+\begin{align}
+  w_{J_1} \neq w_{J_2} \quad \text{for } J_1, J_2 \in \mathcal{J}, \; J_1 \neq J_2.
+\end{align}
+
+\subsubsection{Soundness Attack Strategy}
+This construction allows the malicious prover to perform a \textit{soundness attack}, where different witness values are sampled for each subset $J \in \mathcal{J}$. When the verifier sends a challenge value $\epsilon$, the malicious prover employs the following strategy:
 \begin{itemize}
-  \item If $\epsilon = w_{J_0}$ for some $J_0 \in \mathcal{J}$, the malicious prover defines the broadcast values and shares upon this set of shares $J_0$. This ensures that if $I \subset J_0$ then the malicious prover can convince the verifier that the shares are consistent.
-  \item Otherwise, if no such $w_{J_0}$ exists the malicious prover has to guess the which set $I$ the verifier will pick.
+  \item \textbf{Case 1:} The challenge $\epsilon$ matches $w_{J_0}$ for some $J_0 \in \mathcal{J}$.  
+  In this case, the malicious prover defines the broadcast values and shares based on the subset $J_0$. This ensures that, for any subset $I \subseteq J_0$, the shares appear consistent to the verifier.
+
+  \item \textbf{Case 2:} The challenge $\epsilon$ does not match any $w_{J_0}$.  
+  If no subset $J_0$ contains a witness value matching the challenge $\epsilon$, the malicious prover must guess which subset $I$ the verifier will check. If the guess is incorrect, the inconsistency will be detected.
 \end{itemize}
 
-The authors then proove that using the above strategy is in fact optimal for the malicious prover, and that the propability that the malicious prover convinces the verifier is the same as mentioned before. This is done by showing that if we have an efficient prover $\mathcal{P}$, we can use this to find commitment collisions using an average number of calls to $\mathcal{P}$. Which in turn would break the underlying commitment protocol.
+The authors prove that the above strategy is optimal for the malicious prover and that the probability of success matches the previously analyzed bound. Showing that the success of such a strategy is directly tied to the security of the underlying commitment scheme, and any efficient prover capable of consistent cheating would break the commitment scheme.
+
+As a result, the protocol's soundness holds under the assumption that the commitment scheme is secure.
+
 
 \section{Fiat-Shamir Heuristic}\label{sec:fiatshamir}
 To transform any zero-knowledge protocol into a signature scheme, one can use the approach described in~\cite{fiat1986prove}. Here, we outline the general concept.
 
-Zero-knowledge protocols, such as the MPCitH protocols discussed above, depend on the verifier to issue a challenge to the prover. This challenge acts as a source of randomness, which the prover must not control. The original Fiat-Shamir protocol is based on the problem of factoring integers. Nevertheless, the essential method of transforming a zero-knowledge protocol into a signature scheme remains unchanged.
+ZK-PoK interactive protocols, such as the MPCitH protocols discussed above, depend on the verifier to issue a challenge to the prover. This challenge acts as a source of randomness, which the prover cannot not control.
 
-To adapt a zero-knowledge protocol into a signature scheme, the prover must eliminate the verifier's role in providing the randomness. This is achieved by allowing the prover to independently generate the challenge using a pseudo-random function, such as a secure hash function. By modeling the hash function as a random oracle, its security guarantees ensure that the prover cannot manipulate the randomness of the verification challenge. This maintains the fundamental property of zero-knowledge interactive protocols while enabling the transformation into a non-interactive signature scheme.
+To adapt such a protocol into a signature scheme, the prover must eliminate the verifier's role in providing the randomness. This is achieved by allowing the prover to independently generate the challenge using a pseudo-random function, such as a collision-resistant hash function. By modeling the hash function as a random oracle, its security guarantees ensure that the prover cannot manipulate the randomness of the verification challenge. This maintains the fundamental property of ZK interactive protocols while enabling the transformation into a non-interactive signature scheme.
 
-Within the context of the SDitH protocol, the transformation from a ZK to a signature scheme is accomplished by substituting the verifier's challenge with the output of hash functions, where these hash functions take as input the prover's prior communications.
+Within the context of the SDitH protocol, the transformation from a ZK to a signature scheme is accomplished by substituting the verifier's \textit{MPC challenge} and \textit{view opening challenge} with the output of hash functions, where these hash functions take as input the prover's prior communications.
 
 \section{The Rust Programming language}\label{sec:rust}
 As a preliminary to our implementation, we need to answer the question: ``Why is Rust a good choice for PQC?''.
 
 In 2024, the government of the United States of America took a stance on the future of cyber secure programming languages~\cite{whitehouse2024memorysafe}. In their report, they underline the need for secure building blocks when developing secure software. They point to the fact that \textit{Common Weakness Enumeration} (CWE) data highlights \textit{memory safety vulnerabilities} (MSV) as one of the most pervasive classes of vulnerabilities. MSV's exploit how memory can be accessed, written, allocated, or deallocated in ways that are beyond the scope of the program. Common examples of programming languages that are vulnerable include C and C++, which are widely used due to their high performance. To prevent such vulnerabilities, the report emphasizes the importance of using programming languages that inherently provide memory safety and does not require the developers to manually ensure security.
 
-The Rust programming language addresses memory safety through its unique \textit{borrow checker}~\autoref{sec:rustborrow}, which enforces strict rules on how memory is accessed and managed. In the same year as the White House's report, NIST also released their recommendations on \textit{Safer Languages}~\cite{nistsaferlanguages}, which highlighted Rust as a leading choice. Together, these endorsements underscore that Rust is well-suited for implementing a protocol that adheres to modern security standards.
+The Rust programming language addresses memory safety through its unique \textit{borrow checker}~\autoref{sec:rustborrow}, which enforces strict rules on how memory is accessed and managed. In the same year as the White House's report, NIST also released their recommendations on \textit{Safer Languages}~\cite{nistsaferlanguages}, which highlighted Rust as a potential choice. Together, these endorsements underscore that Rust is well-suited for implementing a protocol that must adhere to modern security standards.
 
 In addition to its focus on safety, Rust benefits from an extensive library of community-maintained documentation and resources~\cite{rustlangRustProgramming,rustlangPerformanceBook,lurklurkEffectiveRust}. These resources provide invaluable support for developers, enabling them to better understand the language's features and effectively utilize its capabilities.
 
-In this section we will give an overview of the key features of the Rust programming language that make it an ideal choice for this project as we aimed to build it robust by leveraging Rust's safety mechanisms, performance optimization capabilities, dynamic language features, and strong testing infrastructure.
+In this section, we provide an overview of the key features of the Rust programming language that will be utilized in this project. Specifically, how we might leverage Rust's safety mechanisms, performance optimization capabilities, dynamic language features, and robust testing infrastructure.
+
 
 \subsection{Cargo - Rust package manager}\label{sec:cargo}
-A Rust program, often referred to as a \textit{crate}, is typically compiled using the Rust Compiler with a command such as \texttt{rustc hello.rs}. However, manually managing versions and dependencies can be tedious and error-prone. To simplify this process, Rust provides a \textit{package manager} called Cargo~\cite{rustlangCargo}.
+A Rust program, referred to as a \textit{crate}, is typically compiled using the Rust Compiler with a command such as \texttt{rustc hello.rs}. However, manually managing versions and dependencies can be tedious and error-prone. To simplify this process, Rust provides a \textit{package manager} called Cargo~\cite{rustlangCargo}.
 
 Cargo is a command-line tool -- run through \texttt{cargo} -- that facilitates the management of dependencies, building, testing, and benchmarking of your crate, as well as generating documentation. It is the officially recommended method for managing and building Rust projects.
 
 
 \subsection{Memory safety}\label{sec:rustborrow} % mut references
-Rust guarantees both type safety (\autoref{sub:rusttypes}) and memory safety. While we will not delve into the details, significant progress has been made toward formal proofs of these guarantees~\cite{jung2017rustbelt}. Unlike many other languages that rely on sophisticated garbage collection mechanisms to ensure memory safety, Rust avoids the associated performance overhead through two key features: the \textit{ownership} and \textit{lifetimes}. Along with a compile time functionality called the \textit{borrow checker}, these features ensure the memory safety of Rust programs. While the borrow checker is often the biggest hurdle for new Rust developers, it is also the feature that makes Rust so powerful.
+Rust guarantees both type safety (\autoref{sub:rusttypes}) and memory safety. While we will not delve into the details, significant progress has been made toward formal proofs of these guarantees~\cite{jung2017rustbelt}. Unlike many other languages that rely on sophisticated garbage collection mechanisms to ensure memory safety, Rust avoids the associated performance overhead through two key features: the \textit{ownership} and \textit{lifetimes}. Along with a compile time functionality called the \textit{borrow checker}, these features ensure the memory safety of Rust programs. 
 
-In this section, we will explore the fundamental aspects of how the borrow checker and ownership work. Only the most critical aspects will be discussed, as more comprehensive information is available in the official documentation~\cite{rustlangRustProgramming}.
+While the borrow checker is often the biggest challenge for new Rust developers, it is also the feature that makes Rust exceptionally powerful for secure applications.
 
-\subsubsection{Data races vulnerability}
-In the section, we consider the problem of \textit{data races}. These are similar to a race condition and cause undefined behavior that in the end can lead to security vulnerabilities. They occur when
-\begin{enumerate}[parsep=0pt, itemsep=0pt]
-  \item Two or more pointers access the same memory location concurrently.
-  \item At least one of the pointers is being used to write to the memory location.
-  \item The is no mechanism to synchronize the data access
+In this section, we will explore the fundamental aspects of how the borrow checker and ownership work. We will focus on the most critical aspects, as more comprehensive information is available in the official documentation~\cite{rustlangRustProgramming}.
+
+\subsubsection{Data Race Vulnerability}
+\textit{Data races} are similar to race conditions and occur when
+\begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
+  \item Two or more pointers access the same memory location concurrently,
+  \item At least one of the pointers is used to write to the memory location, and
+  \item There is no mechanism to synchronize the data access.
 \end{enumerate}
-In Rust, the borrow checker ensures that no data races can occur and it diagnoses them at compile time.
+
+Data races most often result in undefined behavior that can crash a program. However, they can also introduce severe security vulnerabilities, which malicious actors may exploit\footnote{e.g., \href{https://nvd.nist.gov/vuln/detail/cve-2024-35898}{CVE-2024-35898}}.
+
+In Rust, the borrow checker ensures that data races cannot occur by diagnosing them at compile time and preventing the program from compiling if such conditions are detected.
 
 \subsubsection{The Stack and Heap}
-First, it is crucial to first grasp the distinction between the stack and the heap. These are two memory management systems available at runtime~\cite[ch.4]{rustlangRustProgramming}, each with unique characteristics and use cases.
+To understand how Rust manages memory, it is first essential to grasp the distinction between the stack and the heap. These are two memory management systems available at runtime~\cite[ch.4]{rustlangRustProgramming}, each with unique characteristics and use cases.
 
 \begin{definition}[The Stack]
   The stack stores values in a last-in-first-out (LIFO) order, meaning the last value added is the first to be removed. All data stored on the stack must have a fixed, known size at compile time. This gives the stack its \textit{fixed-sized} structure.
@@ -947,22 +990,24 @@ First, it is crucial to first grasp the distinction between the stack and the he
 
 \subsubsection{Performance versus Dynamism}
 
-Between the two systems, there exists a \textit{performance versus dynamism} trade-off. Consider the following code example:
+Between the two memory allocations there exists a \textit{performance versus dynamism} trade-off. Consider the following code example:
 
 \begin{minted}{rust}
   let a: Vec<u8> = vec![1, 2, 3];
   let b: [u8; 3] = [1, 2, 3];
 \end{minted}
 
-This code demonstrates two data types being allocated. The first, \rust{a}, is a vector type, while the second, \rust{b}, is a fixed-size array type. The vector type is always allocated on the heap, whereas the fixed array is allocated on the stack. Pushing  and accessing the stack is faster than for on the heap. Therefore, keeping values on the stack tends to outperform heap allocations. This is because heap allocation involves searching for a suitable location in memory to store the data. Accessing data on the heap is slower as you have to follow a pointer from the stack to allocated data. Note that there are several optimisations you can do when allocating to the heap, like changing the allocator for specific use cases, instantiating the vector with a capacity or the \rust{SmallVec} that dynamically changes from the stack to the heap when allocation surpasses its defined capacity. See~\cite{rustlangPerformanceBook} for more.
+This code demonstrates two data types being allocated. The first, \rust{a}, is a vector type, while the second, \rust{b}, is a fixed-size array type. The vector type is always allocated on the heap, whereas the fixed array is allocated on the stack. Pushing and accessing the stack is faster than for on the heap. Therefore, keeping values on the stack tends to outperform heap allocations. This is because heap allocation involves searching for a suitable location in memory to store the data. 
 
-However, the vector type is far more dynamic. For instance, using the \rust{push} method, you can add more elements to a vector, and the allocator will automatically find additional space on the heap if needed. Conversely, stack allocations in Rust require that the size of the data be known at compile time, which imposes significant restrictions on how dynamic your code can be. This limitation became particularly evident when designing around the different category variants in \autoref{sub:categories}. However, this also ensures at compile time that you cannot access memory outside of the stack, a common vulnerability exposed in C and C++.
+Accessing data on the heap is slower because you have to follow a pointer from the stack to the allocated data. Note that there are several optimisations you can do when allocating to the heap, like changing the allocator for specific use cases, instantiating the vector with a capacity or the \rust{SmallVec} that dynamically changes from the stack to the heap when allocation surpasses its defined capacity. See~\cite{rustlangPerformanceBook} for more.
+
+However, the vector type is far more dynamic. For instance, using the \rust{push} method, you can add more elements to a vector, and the allocator will automatically find additional space on the heap if needed. Conversely, stack allocations in Rust require that the size of the data be known at compile time, which imposes significant restrictions on how dynamic your code can be. This limitation became particularly evident when designing around the different category variants in \autoref{sub:constants}. However, this also ensures at compile time that you cannot access memory outside of the stack, a common vulnerability exposed in C/C++.
 
 Additionally, the stack, due to its fixed-size structure, can only hold a limited amount of data. Attempting to allocate more memory than the stack can accommodate results in a \textit{stack overflow} error. In contrast, the heap offers virtually unlimited storage, as it can dynamically allocate memory as required.
 
 \subsubsection{Ownership and Variable scope}
 Now that we have given a brief introduction to the memory allocation, we can delve into the \textit{ownership system}. This system is a crucial aspect of Rust's memory management, as it ensures that memory is allocated and deallocated correctly. Ownership in Rust follows three rules
-\begin{enumerate}[parsep=0pt, itemsep=0pt]
+\begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
   \item Each value has an \textit{owner}
   \item There can only be one owner at one time
   \item When a owner goes out of scope, the value will be \textit{dropped}.
@@ -970,7 +1015,7 @@ Now that we have given a brief introduction to the memory allocation, we can del
 First, we consider the \textit{variable scope} in the following example
 \begin{minted}{rust}
 {
-  // d can not be accessed yet because it has not been assigned to the current scope
+  // d is inaccessible before it has been assigned to the current scope
   let d = "Peace is a lie";
   println!("{d}") // Now we can use d
 } // d is dropped here
@@ -980,12 +1025,15 @@ In this example, the variable \rust{d} comes into the scope and remains valid un
 \subsubsection{Variable and data interaction with \textit{Move}}
 
 To illustrate where Rust differs, we need a data type that is more complex and stored on the heap instead. We will change the example to use a \rust{String} type
+
 \begin{minted}{rust}
   let mut d = String::from("Peace is a lie");
   d.pust_str(", there is only passion."); // We can mutate d
-  println!("{d}"); // prints "Peace is a lie, there is only passion."
+  println!("{d}"); // > "Peace is a lie, there is only passion."
 \end{minted}
+
 A variable instantiated with the \rust{String} type is dynamically allocated on the heap, and a \textit{pointer} is instead saved on the stack. Now consider both types of assignments with a \textit{re-assignment}
+
 \begin{minted}{rust}
   // Case 1: Stack allocated type
   let d = "Through passion, I gain strength"
@@ -1011,34 +1059,30 @@ However, for Case 2; The variable \rust{d} is instead a \textit{pointer} to a he
 
 \subsubsection{Why the Restriction?}
 
-Allowing \rust{d} to be used after the move could lead to undefined behavior. For one, due to the variable scoping, the runtime would drop the data for both \rust{d} and \rust{v}. As these would be pointing to the same data, this would case a \textit{double free} memory safety bug. Furthermore, if multiple pointers were allowed to simultaneously access or modify the heap-allocated data, it could result in data races. To avoid such risks and ensure memory safety, Rust enforces its ownership rules. If you need to continue using \rust{d} after a move, you must explicitly \textit{clone} the heap data before transferring ownership. This approach encourages developers to carefully manage how data is accessed and modified, promoting safe and predictable memory usage.
+Allowing \rust{d} to be used after the move could lead to undefined behavior, such as a \textit{double free} memory safety bug, as both \rust{d} and \rust{v} would attempt to drop the same data. Additionally, simultaneous access or modification of heap-allocated data could cause data races. To prevent such issues, Rust enforces ownership rules. If \rust{d} needs to be used after a move, the heap data must be explicitly \textit{cloned} before transferring ownership, ensuring safe and predictable memory usage.
 
-\subsubsection{Functions and ownership}\label{sub:rustlifetimes} % (fold)
+\subsubsection{Function ownership}\label{sub:rustlifetimes}
 Now that we have covered the basics of ownership, we explore how it interacts with functions. When passing a value to a function, the function takes ownership of the value. This means that the function takes over managing the \textit{lifetime} of the value, ensuring that it is not used after the function call, unless it is copied.
-\begin{minted}{rust}
-  // Case 1: Stack allocated type
-  fn makes_copy(some_integer: i32) { // some_integer comes into scope
-    println!("{some_integer}");
-  } // Here, some_integer goes out of scope. Nothing special happens.
 
-  // Case 2: Heap allocated type
+For stack allocated types, the structure of the stack and known compile time size, nothing special needs to happens when the function exits. However for heap allocated types
+\begin{minted}{rust}
   fn takes_ownership(some_string: String) { // some_string comes into scope
     println!("{some_string}");
   } // Here, some_string goes out of scope and `drop` is called.
     // The memory on the heap is freed.
 \end{minted}
 
-In Case 1, again the structure of the stack and known compile time size, nothing special needs to happen. However, in Case 2, the function \rust{takes_ownership} takes ownership of the \rust{String} value \rust{some_string}. When the function ends, the \rust{String} value is dropped, and the memory on the heap is freed. This is because the function takes ownership of the value, and the value is no longer valid after the function call.
+The function takes ownership of the \rust{String} value \rust{some_string}. When the function ends, the \rust{String} value is dropped, and the memory on the heap is freed. This is because the value is no longer valid after the function call has ended.
 
-However, a function can also take ownership of a value. Here's an example:
+However, a function can also take ownership of a value. Here's an example where the function takes ownership of the value and then transfers the ownership back to a new variable \rust{v} making the old allocation invalid.
 \begin{minted}{rust}
   fn main() {
-    let d = String::from("hello");
-    let (v, len) = calculate_length(d);
-    println!("The length of '{v}' is {len}."); // v is valid
-    println!("The length of '{d}' is {len}."); // d is not valid
-    //                        ^ value borrowed here after move
-    // error[E0382]: borrow of moved value: `d`
+      let d = String::from("hello");
+      let (v, len) = calculate_length(d);
+//                                    - value moved here
+       println!("The length of '{v}' is {len}."); // v is valid
+       println!("The length of '{d}' is {len}."); // d is no longer valid
+//                              ^^^ value borrowed here after move
   }
 
   fn calculate_length(s: String) -> (String, usize) {
@@ -1046,21 +1090,14 @@ However, a function can also take ownership of a value. Here's an example:
     (s, length)
   }
 \end{minted}
-The function \rust{fn calculate_length()} takes a pointer and the ownership of the \rust{String} value \rust{d}. It returns the same pointer and ownership of the value along with the computed value. Notice that the ownership of the value works the same as it did before with variable assignment. The function \rust{calculate_length} takes ownership of the value, and \rust{d} is no longer valid after the function call.
-
 
 \subsubsection{Borrowing with references}
-However, often it is tedious to keep transferring ownership of values, whenever they need to be used in a function. So how can we avoid this boilerplate of returning ownership? Rust provides a way of avoiding this transfer of ownership by using \textit{references}. References allow you to \textit{borrow} the value without taking ownership of it. This is done by using the \rust{&} symbol. Consider the example
+However, often it is tedious to keep transferring ownership of values, whenever they need to be used in a function. Rust provides a way of avoiding this transfer of ownership by using \textit{references}. References allow you to \textit{borrow} the value without taking ownership of it. This is done by using the \rust{&} symbol. Consider the same augmented example
 \begin{minted}{rust}
   fn main() {
     let d = String::from("hello");
     let len = calculate_length(&d);
     println!("The length of '{d}' is {len}."); // d is valid
-  }
-
-  fn calculate_length(s: &String) -> (String, usize) {
-    //                   ^ the function takes a reference to a String with the `&` symbol
-    s.len()
   }
 \end{minted}
 
@@ -1121,46 +1158,43 @@ The \textit{lifetime} of a value on the stack refers to the period during which 
   //                          ^^^^^^^^^^ borrow later used here
   // error[E0597]: `item` does not live long enough
 \end{minted}
-While the Rust compiler, most often can infer the lifetime of a value it can sometimes be necessary to explicitly define the lifetime. This is done by using the \textit{lifetime annotation} \rust{'a}. This is most often used when working with references in structs or functions.
+While the Rust compiler, most often can infer the lifetime of a value it can sometimes be necessary to explicitly define the lifetime. This is done by using the \textit{lifetime annotation} \rust{'a}. Consider the example below
 \begin{minted}{rust}
-  pub fn find(haystack: &[u8], needle: &[u8]) -> Option<&[u8]> {
+  pub fn find(haystack: &[u8], needle: &[u8]) -> Option<&[u8]> 
     //                  -----          -----            ^ expected named lifetime parameter
-    // ...
-  } // error[E0106]: missing lifetime specifier
+    // ... // error[E0106]: missing lifetime specifier
 \end{minted}
-In this example, there are two choices for the output lifetime for the reference returned by the function. The compiler cannot infer which lifetime to use, so it requires the developer to specify it. This is done by adding the lifetime annotation to the function signature.
+There are two choices for the output lifetime for the reference returned by the function. The compiler cannot infer which lifetime to use, so it requires the developer to specify it. This is done by adding the lifetime annotation to the function signature.
 \begin{minted}{rust}
-  pub fn find<'a, 'b>(h: &'a[u8], n: &'b[u8]) -> Option<&'a[u8]> {
-    // ...
-  }
+  pub fn find<'a, 'b>(haystack: &'a[u8], needle: &'b[u8]) -> Option<&'a[u8]>
 \end{minted}
-In the example above we have used the \rust{<'a,'b>} to define that the function accepts 2 generic lifetimes $'a$ and $'b$. These can now be used on the signature of the function to ensure that the lifetime of $h$ is $'a$. Allowing the compiler to easily analyze if the reference being passed as $h$ lives long enough.
-Furthermore, the compiler can determine that the lifetime of the output reference is the same as the input reference \rust{haystack}.
+In the example above, we define two generic lifetimes, \rust{<'a, 'b>}, ensuring that the lifetime of $h$ is $'a$. This allows the compiler to verify that $h$ lives long enough. Additionally, the compiler infers that the output reference shares the same lifetime as the input reference \rust{haystack}.
 
 \subsubsection{Conclusions on Memory Safety in Rust}
-This overview only scratches the surface of the power and features that Rust offers. However, it provides a brief introduction to the core features that make Rust a powerful programming language for developing secure and high-performance software. As mentioned, Rust comes with a steep learning curve, but it is supported by a large and active community that offers extensive documentation and resources. We suggest that the reader explore the official Rust Book~\cite{rustlangRustProgramming} or its community made books, like \textit{Effective Rust}~\cite{lurklurkEffectiveRust} and \textit{The Rust Performance book}~\cite{rustlangPerformanceBook}.
+This overview only touches on the features that make Rust a powerful programming language for developing secure and high-performance software. While Rust has a steep learning curve, its large and active community provides extensive documentation and resources. Readers are encouraged to explore the official Rust Book~\cite{rustlangRustProgramming} or community-authored books such as \textit{Effective Rust}~\cite{lurklurkEffectiveRust} and \textit{The Rust Performance Book}~\cite{rustlangPerformanceBook}.
 
-\subsection{Correctness (Types, Testing and Errors)}
-When creating and iterating on software, it is crucial that you develop in a way that you can continually deliver functional and correct code. There are many patterns that help ensuring this. Rust provides several. In this section we will describe two -- Types and Automated tests.
+\subsection{Correctness (Types, Testing and Error handling)}
+When developing and iterating on software, it is essential to ensure the continuous delivery of functional and correct code. Various patterns can help achieve this, and Rust provides several. In this section, we will focus on three: Types, Automated Tests, and Error Handling.
 
 \subsubsection{The Type System}\label{sub:rusttypes}
-Every value in Rust has a \textit{data type}. Programs written in Rust are \textit{statically typed}, meaning the type of each value must be determined at compile time. The type informs the compiler about what operations the value supports and helps catch errors before they reach runtime~\cite[ch.3.2]{rustlangRustProgramming}. Rust's compiler often infers types automatically, but if it cannot, you must explicitly annotate the type of the value. Consider the following example:
+Every value in Rust has a \textit{data type}. Programs written in Rust are \textit{statically typed}, meaning the type of each value must be determined at compile time. The type informs the compiler about what operations the value supports and helps catch errors before they reach runtime~\cite[ch.3.2]{rustlangRustProgramming}. The Rust compiler often infers types automatically, but if it cannot, you must explicitly annotate the type of the value. Consider the following example:
 
 \begin{minted}{rust} 
   let guess: u32 = "42".parse().expect("Not a number!"); 
 \end{minted}
 
-Here, the \rust{parse} function requires the annotation of the variable \rust{guess} to determine how the string should be parsed. Additionally, if you annotate \rust{guess} with a type that does not implement the \rust{parse} function for strings, the compiler will produce an error. This strict type system ensures that Rust minimizes the possibility of writing incorrect code -- at least in terms of the bounds of the language. While Rust enforces correctness in type usage, ensuring that a program operates semantically as intended, such as adhering to a protocol specification, often requires additional validation methods.
+Here, the \rust{parse} function requires the annotation of the variable \rust{guess} to determine how the string should be parsed. Additionally, if you annotate \rust{guess} with a type that does not implement the \rust{parse} function for strings, the compiler will produce an error. 
+
+The type system ensures that Rust minimizes the possibility of writing incorrect code -- at least in terms of the bounds of the language and the program. While Rust enforces correctness in type usage, ensuring that a program operates semantically as intended, such as adhering to a protocol specification, often requires additional validation methods.
 
 \subsubsection{Automated Testing}
-Say that you are implementing field arithmetic -- \textit{funny enough, we needed to do exactly that!} -- you would want your impletation to follow the properties that define the field. For example \textit{associativity over addition}
+Say that you are implementing field arithmetic -- \textit{funny enough, we needed to do exactly that!} -- you would want your implementation to follow the properties that define the field. For example \textit{associativity over addition}
 \begin{align}
   a + (b + c) = (a + b) + c
 \end{align}
 Such a property is hard to enforce using the type system. However, it is possible to enforce it using \textit{automated testing}. Consider the following examples
-\begin{minted}{rust}
-  // gf256.rs
 
+\begin{minted}{rust}
   fn gf256_add(a: u8, b: u8) -> u8 {
     a ^ b
   }
@@ -1182,7 +1216,8 @@ Such a property is hard to enforce using the type system. However, it is possibl
     }
   }
 \end{minted}
-This is a simple example of the features that Rust provides that to support automated testing. First we create an internal module \rust{mod arithmetic_tests}. Note the annotation, \mintinline{rust}|#[cfg(test)]|. This ensures that the module is only included when running tests and not in the final production code.
+
+This example demonstrates how straightforward automated testing is in Rust. First, we create an internal module, \rust{mod arithmetic_tests}, with the annotation \mintinline{rust}|#[cfg(test)]|. This annotation ensures that the module is included only during testing and excluded from the final production code.
 
 Individual tests are made using the \mintinline{rust}|#[test]| and a function. Then we can use the macro \rust{assert_eq!()} to test whether that our property is upheld.
 
@@ -1192,18 +1227,18 @@ To run the tests in our implementation you simply run the following
   running 1 test
   test gf256::arithmetic_tests::test_add_associativity ... ok
 \end{minted}
-Crucially, this test allows us to continue developing or optimising the finite field while rerunning the tests to verify that the property remains valid. The more rigourous we test our function, the easier we can debug issues or bugs that may arise.
+This test ensures we can continue developing or optimizing the finite field while verifying its validity. Rigorous testing simplifies debugging and helps catch potential issues early.
 
-Writing good tests is a subject extensive enough to warrant its own discussion, and delving into the theory behind it is beyond the scope of this report. From the outset, we designed our implementation with testing in mind. This approach ensures that we can iteratively develop each module and confirm that it adheres to theoretical expectations and the given specification.
+Writing good tests is a broad topic beyond the scope of this report. However, our implementation was designed with testing in mind, enabling iterative development while ensuring each module aligns with theoretical expectations and the given specification.
 
-\subsubsection{Error handling}\label{sub:rusterror} % https://www.lurklurk.org/effective-rust/panic.html
-Testing that functions return the correct values based on \textit{correct} inputs are a crucial part of ensuring correctness. But what happens if you have unexpected inputs? For example on the inputs a user to a CLI\@? This can lead to errors. So how do Rust allow us to deal with errors? There are two ways:
-\begin{itemize}
-  \item Using a \rust{panic}: Stopping the execution of the program.
-  \item Returning a \rust{Result<T, Err>}: A type that wraps the return value with an error value allowing the caller to handle the error.
+\subsubsection{Error handling}\label{sub:rusterror}
+Testing that functions return correct values for \textit{valid} inputs is essential for ensuring correctness. But how should unexpected inputs, such as those provided by a user to a CLI, be handled? In Rust, errors can be managed in two ways:
+\begin{itemize}[itemsep=0pt, topsep=0pt, parsep=0pt]
+  \item \rust{panic}: Stops the program's execution.
+  \item \rust{Result<T, Err>}: Wraps the return value with an error type, allowing the caller to handle the error.
 \end{itemize}
-So when is it appropriate to use a panic? The Rust book~\cite[ch.9.3]{rustlangRustProgramming} provides a good guideline for when to use panic.
-The general rule is that, if your code would end up in a bad state from which it can not recover it should panic. Everywhere else, you should return a \rust{Result} type. In this way the caller can handle the error in the appropriate way for their use case.
+So, when should you use \rust{panic}? You should panic only if your code reaches an unrecoverable state~\cite[ch.9.3]{rustlangRustProgramming}. Otherwise, it is better to use \rust{Result} to enable the caller to handle errors in a way that suits their use case.
+
 \begin{minted}{rust}
   fn sign(message: &[u8], secret_key: &[u8]) -> Result<Vec<u8>, Error> {
     if secret_key.len() == 0 {
@@ -1230,13 +1265,16 @@ The general rule is that, if your code would end up in a bad state from which it
     } 
   }
 \end{minted}
-There might be a number of reasons why a signature could not be generated, but a simple one that we want to relay to a potential user is that the secret key is invalid. In this case, we would return an error with the \textit{SigningError} variant. If a panic was used the caller of the sign function would not be able to recover from the error.
+There are several reasons why a signature might fail to generate, but a straightforward one to communicate to the user is an invalid secret key. In this case, we return an error with the \textit{SigningError} variant. Using a \rust{panic} would prevent the caller from recovering from the error.
 
 \subsection{Maintainable and readable code}
-One of the reasons for choosing Rust is that it provides several tools and features that make it easier to write code that is both maintainable and readable. In this section, we will discuss some of the features that we utilized in our implementation to achieve this goal.
+
+A key goal of this project was to create an implementation that is easy to read, enabling future implementers to understand the protocol. Rust was chosen in one part for its robust set of tools and features, which facilitate writing maintainable and readable code.
 
 \subsubsection{Code Documentation}\label{sub:code-documentation}
-First things first, good written code should either be written in a way so that it is self-explanatory or supply the necessary documentation in order for the reader to quickly grasp the concepts and functionality. Often times you would want to supply documentation in the form of comments, above functions and values to explain what they do and how they work. Furthermore, you would want to supply the user with a \textit{manual} where the user can read about the exposed library.
+First things first, good written code should either be written in a way so that it is self-explanatory or the developer should instead supply the necessary documentation in order for the reader to quickly grasp the concepts and functionality. 
+
+Often times you would want to supply documentation in the form of comments, above functions and variables to explain their purpose and functionality. Furthermore, you would want to supply the user with a \textit{manual} where the user can read about the exposed library.
 
 It can be hard to maintain both of these aspects separately. Rust enables the developer to write both at the same time. Consider the following code in a module
 
@@ -1256,20 +1294,22 @@ It can be hard to maintain both of these aspects separately. Rust enables the de
 
 Adding a triple slash \rust{///} above a function or struct generates documentation for it. Hovering over the function in most Rust-compatible editors, such as \href{https://code.visualstudio.com/docs/languages/rust}{Visual Studio Code}, displays the documentation. Similarly, using \rust{//!} creates top-level documentation for the module.
 
-While these comments enable developers to access documentation directly within the code, Rust also provides a powerful feature to automatically generate comprehensive documentation. By running \href{https://doc.rust-lang.org/cargo/commands/cargo-doc.html}{\texttt{cargo doc}}, you can create a webpage with detailed documentation for the project. The generated documentation for our implementation can be viewed here: \todo{link to the documentation}.
+While these comments enable developers to access documentation directly within the code, Rust also provides a powerful feature to automatically generate comprehensive documentation. By running \href{https://doc.rust-lang.org/cargo/commands/cargo-doc.html}{\texttt{cargo doc}}, you can create a webpage with detailed documentation for the project. Checkout out the documentation for our project \href{https://mactherobot.github.io/sdith-rust}{here}.
 
-\subsubsection{Modules}\label{sub:rust_modules}
+\subsubsection{Codebase structure and Modules}\label{sub:rust_modules}
 Rust provides a module system that allow you to organize your code into logical units. Making it it easier to understand and maintain the codebase. A module is a collection of related items, such as functions, structs, and constants, that are grouped together.
 
 Modules can be nested, allowing for a hierarchical structure of code.
 If utilized correctly, this can help organize the logic of a program effectively for readability and reuse. For example, encapsulating field arithmetic within a module and separating components into subfolders and subroutines related to the main signature algorithm.
 
-Rust structures modules either directly in the code or through the file system. There are two files that provides the entry points to your code.
+Rust structures modules either directly in the code or through the file system. There are two files that provides the entry points to your program
 \begin{enumerate}
   \item \texttt{main.rs}: This is the main entry point of the program. It is the first file that is executed when the program is run. You can quickly run the program by running \texttt{cargo run}.
   \item \texttt{lib.rs}: In the case that you are building code that you want to provide for other developers to use in their own Rust code -- named a \textit{crate} -- this is the entry point for such a library.
 \end{enumerate}
-We do not utilize internal modules except for tests so we will only describe the file system module system. Consider a simple example structure below
+
+Consider a simple example structure below
+
 \begin{minted}{rust}
   // main.rs
   use crate::arith::gf256::add;
@@ -1280,7 +1320,7 @@ We do not utilize internal modules except for tests so we will only describe the
     println!("{}", add(3, 4));
   }
 
-  // arith/mod.rs
+  // arith.rs
   pub mod gf256;
 
   // arith/gf256.rs
@@ -1293,23 +1333,25 @@ We do not utilize internal modules except for tests so we will only describe the
     ...
   }
 \end{minted}
+
 The example shows a structure with the main entry file which first declares a module \rust{mod arith}. The compiler then looks for the code of the module in three places
 \begin{itemize}[parsep=0pt, itemsep=0pt]
   \item Inline with curly braces (e.g. like the \rust{mod tests {}})
   \item In the file \texttt{arith.rs}
   \item In the file \texttt{arith/mod.rs}
 \end{itemize}
-In this case, the module \rust{arith} is declared in the file \texttt{arith/mod.rs}. A nested submodule \rust{gf256} is then declared and found in the same recursive way. This structure allows for a clear \textit{separation of concerns} and makes it easier to understand the codebase and reuse code as modules.
+In this case, the module \rust{arith} is declared in the file \texttt{arith.rs}. A nested submodule \rust{gf256} is then declared and found in the same recursive way. This structure allows for a clear \textit{separation of concerns} and makes it easier to understand the codebase and reuse code as modules.
 
-\subsubsection{Visibility} %pub(crate)
-Code from modules can then be accessed using the path from the crate root using the \rust{use crate::arith::gf256::add} statement. However, Rust has a strict visibility system that restricts access to code based on the visibility of the item. By default, items are private to the module they are declared in. It is then possible to control the visibility of the code using the \textit{visibility modifier} \rust{pub}.
+\subsubsection{Visibility}
+Modules in Rust allow code to be accessed using paths, such as \rust{use crate::arith::gf256::add}. Rust enforces a strict visibility system to control access based on an item's visibility. By default, items are kept private to their module, but their visibility can be modified using the \rust{pub} keyword:
 \begin{itemize}[parsep=0pt, itemsep=0pt]
-  \item \rust{pub}: The item is fully accessible from outside the module.
-  \item \rust{pub(crate)}: The item is accessible only within the same crate.
-  \item \rust{pub(super)}: The item is accessible only within the parent module.
-  \item \rust{pub(in path)}: The item is accessible only within the specified path.
+  \item \rust{pub}: Fully accessible outside the module.
+  \item \rust{pub(crate)}: Accessible only within the same crate.
+  \item \rust{pub(super)}: Accessible only within the parent module.
+  \item \rust{pub(in path)}: Accessible only within the specified path.
 \end{itemize}
-This system provides fine-grained control over the visibility of code, making the codebase easier to understand and maintain. Furthermore, it simplifies the process of restricting unwanted access to internal functionality. For instance, consider a scenario where a function conditionally selects between two different implementations based on a program configuration. In such cases, you would want to restrict access to the individual implementation functions, exposing only the function responsible for making the choice. This ensures that the internal functions cannot be accessed accidentally, thereby reducing the likelihood of bugs.
+This system provides fine-grained control, improving code maintainability and preventing unintended access to internal functionality. For example, consider a function that selects between two implementations based on a configuration feature (explained in \autoref{prelim:feature_flags}), you can restrict access to the individual implementation functions and expose only the selector function, reducing the risk of bugs by unwanted access to the underlying private functionality.
+
 \begin{minted}{rust}
   pub fn functionality_handler() {
     if cfg!(feature = "functionality_one") {
@@ -1335,11 +1377,9 @@ sdith_threshold_cat1_p251/   sdith_threshold_cat5_gf256/
 sdith_threshold_cat3_gf256/  sdith_threshold_cat5_p251/
 \end{minted}
 
-Each codebase contains significant shared code. However, to switch between the variants and arithmetic fields, copies of the code with necessary modifications are maintained. While it is unclear whether the authors utilize an automated system to ensure consistency across these instances, such duplication is a common issue in programming and indicates that the codebase may not be as maintainable as it could be.
+Each codebase contains significant shared code, but switching between variants and arithmetic fields requires maintaining separate copies with necessary modifications. It is unclear whether an automated system is used to ensure consistency across these instances. However, such duplication suggests that the codebase may not be as maintainable as it could be.
 
-Rust addresses this problem with two powerful features: \textit{Generics} and \textit{Traits}.
-
-Consider the following example:
+Rust allows us to address this problem with two powerful features: \textit{Generics} and \textit{Traits}. Consider the following example:
 
 \begin{minted}{rust}
 fn add(a: u8, b: u8) -> u8 {
@@ -1357,9 +1397,9 @@ fn main() {
 }
 \end{minted}
 
-In this example, the type system prevents calling the same function with different types. To handle \rust{u16}, you would need to duplicate the function, creating \rust{add_u8} and \rust{add_u16}, leading to issues such as increased maintenance complexity. For instance, if one function is updated, all others must be updated manually.
+In this example, the type system prevents calling the same function with different types. Handling \rust{u16} would require duplicating the function, such as creating \rust{add_u8} and \rust{add_u16}, increasing maintenance complexity.
 
-Rust solves this problem with \textit{Generics}. Generics enable defining functionality that is agnostic to the input type while maintaining Rust's strong type safety. The function \rust{add} can be rewritten as:
+Rust addresses this issue with \textit{Generics}, allowing functionality to be defined independently of input types while preserving strong type safety. The function \rust{add} can be rewritten as:
 
 \begin{minted}{rust}
 fn add<T>(a: T, b: T) -> T {
@@ -1382,7 +1422,7 @@ fn add<T: Add<Output = T>>(a: T, b: T) -> T {
 
 This function can now be called with any type that implements the \rust{Add} trait. For instance, both \rust{u8} and \rust{u16} implement the \rust{Add} trait by default, enabling the creation of generic, reusable code.
 
-Traits also allow you to define custom reusable behavior. For example, consider defining arithmetic operations over finite fields $GF(256)$ and $GF(251)$. Suppose we want a function that calculates a polynomial over a field and works dynamically for both fields, as well as others in the future. We can achieve this by defining a trait to encapsulate the behavior of a field and then implementing the trait for each specific field. Here's an example:
+In our case, consider the example of defining arithmetic operations over finite fields $GF(256)$ and $GF(251)$. Suppose we want a function that calculates a polynomial over a field and works dynamically for both fields, as well as others in the future. We can achieve this by defining a trait to encapsulate the behavior of a field and then implementing the trait for each specific field. Here's an example:
 
 \begin{minted}{rust}
 // arith.rs
@@ -1400,18 +1440,13 @@ pub trait FieldArith {
 // arith/gf256.rs
 struct GF256(u8);
 impl FieldArith for GF256 {
-    fn add(a: Self, b: Self) -> Self {
-        GF256(a.0 ^ b.0)
-    }
-    fn mul(a: Self, b: Self) -> Self {
-        // implementation ...
-    }
+    // implementation for add and mul ...
 }
 
 // arith/gf251.rs
 struct GF251(u8);
 impl FieldArith for GF251 {
-    // implementation ...
+    // implementation for add and mul ...
 }
 
 // main.rs
@@ -1434,56 +1469,46 @@ fn main() {
 Note that with Traits we can define default implementations for functions. For example, the \rust{pow} function is defined in the trait directly. This makes it so that we only need to implement the function for the fields that have a different implementation. With the trait implemented, the \texttt{polynomial} function only has to be defined once and can be used for both fields. This approach promotes code reuse and simplifies future program expansions. To add support for a new field, you only need to implement the \rust{FieldArith} trait for that field, allowing the existing functions to handle it seamlessly.
 
 \subsubsection{Conclusions on Maintainability and Readability}
-Rust offers a range of features that make it easier to write maintainable and readable code. In-built linting and documentation facilitate the creation of well-documented code. The module system enables developers to organize code into logical units while controlling visibility between them. Generics and Traits are powerful tools for writing more agnostic and reusable code across different parts of a program.
-
-However, while these features support good coding practices, they can be further enhanced by leveraging Rust's dynamic compilation features. In the next section, we will explore how these features were utilized to develop a more dynamic and optimizable implementation of the SDitH protocol.
+Rust offers a range of features that make it easier to write maintainable and readable code. In-built linting and code docs facilitate the creation of well-documented code. The module system enables developers to organize code into logical units while controlling visibility between them. Generics and Traits are powerful tools for writing more agnostic and reusable code across different parts of a program.
 
 \subsection{Dynamic compilation}
-In many applications, it is beneficial to have dynamic compilation of the code. This allows for code generation, linking and configuring the package before building the actual binary. As a good example, when creating a submission to NIST you need to have different security levels for each category. This poses a problem of having to change the code based on specific parameters. This is where Cargo build scripts and Rust's feature flags come in handy.
 
-\subsubsection{Build script}
-Build scripts are Rust files executed before the package is compiled, offering significant flexibility in the build process. By putting a build.rs file in the root folder of the package cargo will automatically execute this file before building. Enabling you to generate code, link libraries, or configure the build based on environment variables.
+Next, we explore additional features employed to create a more dynamic and optimized implementation of the SDitH protocol. Dynamic compilation allows for code generation, linking and configuring the package before building the actual binary.
 
-A good example is building and linking C code into a rust package:
-\begin{minted}{rust}
-  fn main() {
-    // Tell cargo to rerun the build script if the file changes
-    println!("cargo:rerun-if-changed=src/foo.c");
-    // `cc` is a create to build and link C code
-    cc::Build::new()
-      .file("src/foo.c")
-      .compile("foo");
-  }
-\end{minted}
-This approach can be particularly useful when incorporating parts of a reference implementation in C or C++. In our case, due to time constraints, we opted to consider using portions of the reference implementation. Additionally, another important use case for our build script is verifying that the selected features during package compilation are correct. This need arose while benchmarking against another hash function with a lower security level.
+A good usecase could be facilitating the NIST security parameters. Note that we want the parameters to be constant at compile time, but we do not want to create several instances of functions that use each parameter for each category. Rust's feature flags come in handy.
 
-\subsubsection{Feature flags}
-Rust offers a robust feature flag system that enables conditional compilation, providing significant flexibility for writing code optimized or configured for various use cases.
-A practical example, as previously mentioned, involves handling different sets of arithmetic fields. To address the challenge of creating a struct to manage functionality for the same type across different fields, we can leverage feature flags. These allow us to conditionally compile code tailored to the specific field required. This is achieved by adding the following configuration to the Cargo.toml file:
+
+\subsubsection{Feature flags}\label{prelim:feature_flags}
+Rust's feature flag system enables conditional compilation, offering flexibility to optimize or configure code for diverse use cases.
+
+A use case could again be handling different Galois fields. First, we define a feature flag in the Cargo.toml file:
+
 \begin{minted}{toml}
 [features]
   default = ["gf256"]
   gf256 = []
   gf251 = []
 \end{minted}
-Or by giving it when running cargo:
+
+In order to use the feature flag, we need to specify it in the \texttt{cargo} command:
+
 \begin{minted}{bash}
   $ cargo build --features "gf251"
 \end{minted}
-Now we can use the feature flags in the code:
+
+In our code we can then use the \rust{cfg} annotation to announce a required feature flag. This means that any code just below the annotation will only be compiled if the feature flag is enabled.
+
 \begin{minted}{rust}
 // arith.rs
 pub trait FieldArith {
     // Trait functions
 }
 
-// arith/gf256.rs
 #[cfg(feature = "gf256")]
 impl FieldArith for u8 {
     // implementation ...
 }
 
-// arith/gf251.rs
 #[cfg(feature = "gf251")]
 impl FieldArith for u8 {
     // implementation ...
@@ -1496,14 +1521,16 @@ fn polynomial<T: FieldArith + Default>(coeffs: &[T]) -> T {
 
 fn main() {
     let coeffs = vec![1u8, 2u8, 3u8];
-    println!("Field evaluation: {:?}", polynomial(&coeffs256));
+    println!("Field evaluation: {:?}", polynomial(&coeffs));
 }
 \end{minted}
-In the example above we use the feature flag to change which trait is implemented for the \rust{u8} type. This means that when we build the binary it only compiles the code that has been specified.
-As our implementation is a reference implementation for the SDitH protocol, we have used feature flags to switch between different categories and optimizations. This allows us to easily test and compare different configurations without having to manually change the code or have duplicates.
+
+In the example above we use the feature flag to change which trait is implemented for the \rust{u8} type. 
+
+In our implementation, we use feature flags to toggle between different categories and enable specific optimizations -- like parallelisation or SIMD. This approach allows dynamic testing and comparison of various configurations without the need for manual code changes or duplication.
 
 \subsection{Optimizations in Rust}\label{sub:rust_optimizations}
-Blazingly fast code does not come without a cost. However, Rust and its community offers several ways to optimize performance. In this section we describe the methods used to measure performance in our implementation. Next, we will explore techniques for Rust that allow us to enhance performance.
+Achieving \textit{blazingly fast} code requires careful optimization. Fortunately, Rust and its community provide numerous tools to improve performance. In this section, we describe the methods used to measure performance in our implementation and explore techniques in Rust that help enhance it further.
 
 \subsubsection*{Measuring performance}\label{sec:rust_benchmarking}
 There are two techniques that we used in order to investigate the performance of our implementation and  to guide the optimizations that were needed. These are \textit{benchmarking} and \textit{profiling}.
@@ -1516,7 +1543,7 @@ Benchmarking provides several benefits. It allows us to compare our implementati
 In native Rust, benchmarking is still in its early stages. However, the \textit{criterion} package~\cite{criterion} offers a statistically driven benchmarking framework that is user-friendly and integrates seamlessly with Rust.
 
 \subsubsection{Profiling}\label{ch:prelim:sec:rust:sub:profiling}
-As opposed to benchmarking, profiling is a process of collecting a detailed \textit{history} of one run of a program. It draws a picture of how much time is spent and how many resources are used during the execution of the program. This information can be used to identify bottlenecks or inefficiencies in the program.
+As opposed to benchmarking, profiling is a process of collecting a detailed \textit{history} of one execution of a program. It draws a picture of how much time is spent and how many resources are used by different parts of the program during its execution. This information can be used to identify bottlenecks or inefficiencies.
 
 In order to profile our implementation, we used the \textit{Samply Commandline Profiler}~\cite{samply}. Running a \textit{debug} version of our program, we were able to collect a detailed profile of the execution. This allowed us to identify the most time-consuming parts of our code and to pinpoint areas that could be optimized \autoref{fig:samply}.
 
@@ -1563,7 +1590,7 @@ A common optimization technique in modern programming is to leverage the multi-c
 
 In many programming languages, multi-threading support is either limited or not guaranteed, often requiring developers to rely on external libraries or frameworks. However, Rust provides robust and native support for \textit{thread-safe} parallelization. With Rust's ownership system and built-in concurrency primitives, developers can write highly performant parallel code while minimizing risks of common concurrency issues such as data races or deadlocks.
 
-The \textit{rayon}~\cite{rayon} package implements easy-to-use and lightweight data-parallelisation through their parallel iterators
+The \textit{rayon}~\cite{rayon} package implements easy-to-use data-parallelisation through their parallel iterators
 \begin{minted}{rust}
   use rayon::prelude::*;
   fn sum_of_squares(input: &[i32]) -> i32 {
@@ -1572,6 +1599,8 @@ The \textit{rayon}~\cite{rayon} package implements easy-to-use and lightweight d
           .sum()
   }
 \end{minted}
+
+Although custom parallelization can sometimes outperform \textit{rayon}, the library provides an intuitive interface that enables parallelization with minimal effort, often requiring just a single line of modification. In this project, we have opted to use \textit{rayon} and reserved custom parallelization for the future.
 
 \subsubsection{Single Instruction Multiple Data (SIMD)}
 Single Instruction Multiple Data or SIMD for short, is a way to better utilize a CPU when dealing with data in the form of Vectors. It is a way for the CPU to do a single instruction but on multiple data points at the same time by splitting the data into chunks that fit into a single register. This can greatly improve performance when dealing with large amounts of data. Rust has support for SIMD through the \texttt{std::simd} module. This module provides access to a portable abstraction for SIMD operations that is not bound to any particular hardware architecture.
@@ -1603,6 +1632,8 @@ fn simple_simd_vector_addition() -> [f32; 4] {
 }
 \end{minted}
 
+In our implementation, we utilize \texttt{std::simd} from Rust's \textit{nightly} version. While it would be preferable to compile with the stable version, this implementation provides largely architecture-independent SIMD support. See \href{https://github.com/rust-lang/rust/issues/86656}{the issue} on the Rust repository for more on its development.
+
 \chapter{Specification}\label{ch:spec}
 
 The SDitH protocol is founded on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field, as described in \autoref{sec:syndrome}. To recall, the problem is formally stated:
@@ -1617,13 +1648,13 @@ The SDitH protocol is founded on the computational hardness of the Syndrome Deco
 The SDitH protocol establishes a signature scheme by demonstrating the correctness of a public SD instance $(H, y)$ using a secret witness derived from $x$. Its construction unfolds in three main steps:
 \begin{enumerate}
   \item \textbf{Defining an MPC protocol:} Define a multi-party computation (MPC) protocol that enables $N$ parties to collaboratively verify the correctness of the public SD instance $(H, y)$ using a private witness $x$.
-  \item \textbf{Transforming into a ZK-POK:} Convert the MPC protocol into a zero-knowledge proof of knowledge (ZK-POK) through the MPC-in-the-Head (MPCitH) framework, detailed in \autoref{sec:mpcinth}.
+  \item \textbf{Transforming into a ZK-PoK:} Convert the MPC protocol into a zero-knowledge proof of knowledge (ZK-PoK) through the MPC-in-the-Head (MPCitH) framework, detailed in \autoref{sec:mpcinth}.
   \item \textbf{Deriving a signature scheme:} Adapt the ZKP into a digital signature scheme using the Fiat-Shamir transformation, as described in \autoref{sec:fiatshamir}.
 \end{enumerate}
 
 The construction is highly modular, allowing flexibility and adaptability, as you can tweak the SD instance, the MPC protocol, the MPCitH and Fiat-Shamir transformations. The authors propose two distinct protocol variants: the \textit{hypercube} variant and the \textit{threshold} variant. For this work, we focus on the \textit{threshold} variant~\cite{aguilarsyndrome11,feneuil2023threshold,feneuil2023threshold2}, as it offers significant performance enhancements compared to both the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11,aguilar2023return,feneuil2023threshold2}, albeit at the cost of slightly larger signature sizes.
 
-This chapter presents a comprehensive specification of the SDitH Signature Scheme in the Threshold variant. The construction is based on the SDitH MPC protocol in \autoref{sec:sdith-mpc}, its transformation into ZK-POK using MPCitH (described in \autoref{sec:sdith-zkpok}) and finally transformation into a signature scheme in \autoref{sec:sdith-signature}. Additionally, we describe optimizations applied to the protocol, such as avoiding interpolation and utilizing the $d$-split variant of the SD instance. A detailed table summarizing the protocol parameters and security assumptions is provided in \autoref{tab:sdith-protocol-parameters}.
+This chapter presents a comprehensive specification of the SDitH Signature Scheme in the Threshold variant. The construction is based on the SDitH MPC protocol in \autoref{sec:sdith-mpc}, its transformation into ZK-PoK using MPCitH (described in \autoref{sec:sdith-zkpok}) and finally transformation into a signature scheme in \autoref{sec:sdith-signature}. Additionally, we describe optimizations applied to the protocol, such as avoiding interpolation and utilizing the $d$-split variant of the SD instance. A detailed table summarizing the protocol parameters and security assumptions is provided in \autoref{tab:sdith-protocol-parameters}.
 
 \begin{table}[]
   \begin{tabular}{p{0.12\textwidth}p{0.78\textwidth}}
@@ -1767,10 +1798,10 @@ Due to the linearity of the MPC computation, the output shares can be reconstruc
 \subsubsection{PK setup}
 The nature of an SD instance allows the protocol to seamlessly transform into a \textit{public-key signature scheme}. Here, the pair $(H, y)$ acts as the public key, while the solution to the SD instance $x$ serves as the private key. The keys is then expanded to $(H', y), (s_A, P, Q)$ following the transformations detailed in \autoref{sec:syndrome}. Furthermore, the public key can be optimised for communication by instead sampling $H'$ from a seed $sd_H$ making the secret key $(sd_H, y)$.
 
-\subsubsection{ZK-POK protocol}
-First, the MPC protocol (\autoref{def:sdith-mpc}) is transformed into a ZK-POK using the Threshold MPCitH protocols described by~\cite{feneuil2023threshold,feneuil2023threshold2}. This transformation in full lies outside the scope of this report and is deferred to the appendix in \autoref{sec:sdith-zkpok}. Here we leave a short overview of the transformation~\cite{aguilarsyndrome11}.
+\subsubsection{ZK-PoK protocol}
+First, the MPC protocol (\autoref{def:sdith-mpc}) is transformed into a ZK-PoK using the Threshold MPCitH protocols described by~\cite{feneuil2023threshold,feneuil2023threshold2}. This transformation in full lies outside the scope of this report and is deferred to the appendix in \autoref{sec:sdith-zkpok}. Here we leave a short overview of the transformation~\cite{aguilarsyndrome11}.
 
-\begin{protocol}[SDitH ZK-POK protocol]
+\begin{protocol}[SDitH ZK-PoK protocol]
   \label{pro:sdith-zkpok}
   For a $(\ell + 1, N)$-threshold MPC protocol
   \begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
@@ -1784,9 +1815,9 @@ First, the MPC protocol (\autoref{def:sdith-mpc}) is transformed into a ZK-POK u
 \end{protocol}
 
 The zero-knowledge property of the protocol is guaranteed by the fact that the verifier only receives $\ell$ shares from an $\ell + 1$-private secret-sharing scheme (SSS).
-The soundness of the ZK-POK protocol relies on the binding property of the commitment scheme and the prover's inability to simulate multiple inconsistent views of the MPC protocol. By incorporating hash consistency checks and commitment verification, the ZK-POK protocol ensures that a cheating prover cannot deviate significantly from the behavior expected in an honest execution.
+The soundness of the ZK-PoK protocol relies on the binding property of the commitment scheme and the prover's inability to simulate multiple inconsistent views of the MPC protocol. By incorporating hash consistency checks and commitment verification, the ZK-PoK protocol ensures that a cheating prover cannot deviate significantly from the behavior expected in an honest execution.
 
-As outlined in~\cite{feneuil2023threshold}, the general ZK-POK (without threshold) soundness error is defined as:
+As outlined in~\cite{feneuil2023threshold}, the general ZK-PoK (without threshold) soundness error is defined as:
 \begin{align*}
   \epsilon = \frac{1}{N} + p \cdot \left(1 - \frac{1}{N}\right).
 \end{align*}
@@ -1799,7 +1830,7 @@ By applying the threshold-based approach, the soundness error is modified and be
   where $p$ represents the false positive probability of the MPC protocol, $N$ is the total number of parties, and $\ell$ is the threshold parameter~\cite{feneuil2023threshold}.
 \end{lemma}
 We can see that the threshold-based approach introduces a slight degradation in the soundness of the protocol. This comes from the fact that we now require less views to be validated, which in turn increases the probability of a false positive.
-To mitigate this, \textit{parallel repetition} is employed to strengthen the soundness signature protocol. Specifically, the SDitH protocol repeats the underlying ZK-POK protocol $\tau$ times, where:
+To mitigate this, \textit{parallel repetition} is employed to strengthen the soundness signature protocol. Specifically, the SDitH protocol repeats the underlying ZK-PoK protocol $\tau$ times, where:
 \begin{align*}
   \tau = \left\lceil \log_2\left(\frac{1}{\epsilon}\right) \cdot \lambda \right\rceil,
 \end{align*}
@@ -1808,7 +1839,7 @@ with $\lambda$ as the security parameter and $2^{-\lambda}$ as the target soundn
 To accommodate the repetitions, the authors incorporate a slight modification inspired by the Limbo proof system~\cite{delpech2021limbo}. Specifically, we reuse the same MPC challenges $r$ and $\varepsilon$, as well as the Beaver triples, across all $\tau$ repetitions. This tweak allows us to modify the MPC computation input so that \textit{plain bradcast} value only needs to be computed once.
 
 \subsubsection{Fiat-Shamir transform}
-Next, we apply the \textit{Fiat-Shamir heuristic} -- detailed in \autoref{sec:fiatshamir} -- to transform the challenges of the ZK-POK protocol into a non-interactive form. This transformation is achieved by having the prover derive the challenges for MPC randomness and opening challenge directly from the commitments of the MPC inputs and the outputs of the MPC computation in the hashes $h_1, h_2$ computed from secure hash functions~\autoref{sec:prelim_hash}.
+Next, we apply the \textit{Fiat-Shamir heuristic} -- detailed in \autoref{sec:fiatshamir} -- to transform the challenges of the ZK-PoK protocol into a non-interactive form. This transformation is achieved by having the prover derive the challenges for MPC randomness and opening challenge directly from the commitments of the MPC inputs and the outputs of the MPC computation in the hashes $h_1, h_2$ computed from secure hash functions~\autoref{sec:prelim_hash}.
 \begin{align}
   h_n = \texttt{Hash}_n(d) \rightarrow \texttt{Hash}(n || d)\label{eq:fiatshamirhash}
 \end{align}
@@ -1965,12 +1996,12 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
           \end{align*}
     \item Build the signature
           \begin{align*}
-            \sigma = & \ (\ m\ |\ \texttt{salt}\ |\ h_1                                  \\
-                     & \ |\ \texttt{broad\_plain}                                        \\
-                     & \ |\ \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \\
-                     & \ |\ \texttt{auth}^e                                              \\
-                     & \ |\ \sh{\texttt{wit}}_i^e                                        \\
-                     & \ |\ I\ )
+            \sigma = & \ (\ m \mid \texttt{salt} \mid h_1                                \\
+                     & \mid \texttt{broad\_plain}                                        \\
+                     & \mid \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \\
+                     & \mid \texttt{auth}^e                                              \\
+                     & \mid \sh{\texttt{wit}}_i^e                                        \\
+                     & \mid I\ )
           \end{align*}
   \end{enumerate}
 \end{protocol}
@@ -1981,12 +2012,12 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
   \titlespacing*{\paragraph}{0pt}{1pt}{1em}
   Given a public SD instance $pk = (H, y)$, security parameters $\lambda, \tau$, and a signature
   \begin{align*}
-    \sigma = & \ (\ m\ |\ \texttt{salt}\ |\ h_1                                  \\
-             & \ |\ \texttt{broad\_plain}                                        \\
-             & \ |\ \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \\
-             & \ |\ \texttt{auth}^e                                              \\
-             & \ |\ \sh{\texttt{wit}}_i^e                                        \\
-             & \ |\ I\ )
+    \sigma = & \ (\ m \mid \texttt{salt} \mid h_1                                \\
+             & \mid \texttt{broad\_plain}                                        \\
+             & \mid \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \\
+             & \mid \texttt{auth}^e                                              \\
+             & \mid \sh{\texttt{wit}}_i^e                                        \\
+             & \mid I\ )
   \end{align*}
 
   \paragraph{Assumptions}
@@ -2067,12 +2098,12 @@ For the NIST categories presented in \autoref{tab:secparam} we get the following
   \centering
   \begin{tabular}{|l|r|r|r|}
     \hline
-    & \multicolumn{3}{c}{\textbf{Sizes (in bytes)}} \\
-    \textbf{Category} & Public key & Secret key & Signature (Max) \\
+                      & \multicolumn{3}{c}{\textbf{Sizes (in bytes)}}                                \\
+    \textbf{Category} & Public key                                    & Secret key & Signature (Max) \\
     \hline
-    One               & $132$         & $432$         & $10684$           \\
-    Three             & $180$         & $628$         & $25964$           \\
-    Five              & $244$         & $838$         & $45676$           \\
+    One               & $132$                                         & $432$      & $10684$         \\
+    Three             & $180$                                         & $628$      & $25964$         \\
+    Five              & $244$                                         & $838$      & $45676$         \\
     \hline
   \end{tabular}
   \caption{Sizes (in bytes) for the categories in the SDitH protocol.}
@@ -2316,7 +2347,7 @@ The modularity of the SDitH protocol allowed us to implement its initial compone
 \subsection{PRG}\label{sub:prg}
 To begin our implementation, we started by developing a pseudo-random generator (PRG) using an extendable output function (XOF) as the underlying mechanism. Although building custom cryptographic components can be a complex effort in its own right -- and one that may limit certain manual optimizations -- we chose to rely on the \textit{tiny-keccak}~\cite{tinykeccak} crate for convenience and reliability. This library provides established implementations of Keccak-derived functions aligned with NIST FIPS 202, SP800-185, and KangarooTwelve standards, ensuring both proper compliance and a secure foundation for our PRG.
 
-The \texttt{PRG} struct was designed to produce random bytes and includes straightforward methods for generating vectors over the $F_q$ and $F_{q^4}$ fields. Instead of cloning data, it uses \emph{in-place mutation} through mutable references. This approach, relying on an underlying XOF as the randomness source, helps streamline the code and limit unnecessary data copies -- which is important in terms of performance.
+The \texttt{PRG} struct was designed to produce random bytes and includes straightforward methods for generating vectors over the $F_q$ and $F_{q^4}$ fields. Instead of cloning data, it uses \textit{in-place mutation} through mutable references. This approach, relying on an underlying XOF as the randomness source, helps streamline the code and limit unnecessary data copies -- which is important in terms of performance.
 
 \begin{minted}{rust}
   pub struct PRG {
@@ -3148,7 +3179,7 @@ To ensure correctness, we created tests to verify the statement above.
 
 \subsubsection{MPC Challenge Generation}
 
-The MPC challenge generated for the ZK-POK (\autoref{sec:sdith-zkpok}) and the resulting signature scheme (\autoref{sec:sdith-signature}) involves sampling $t$ challenge pairs $(r, \varepsilon)$ for the \autoref{def:sacrifice} protocol.
+The MPC challenge generated for the ZK-PoK (\autoref{sec:sdith-zkpok}) and the resulting signature scheme (\autoref{sec:sdith-signature}) involves sampling $t$ challenge pairs $(r, \varepsilon)$ for the \autoref{def:sacrifice} protocol.
 
 To facilitate this, we encapsulated the values in a \rust{MPCChallenge} struct, providing a convenient interface. The random values are generated using our \rust{PRG} interface, which is initiated with the $h_1$ hash.
 
@@ -3981,11 +4012,11 @@ Next, the verifier computes the inverse of the broadcast share to recompute $(\s
 \end{align*}
 \todo{Want to explain the above in a more detailed manner? Specifically ${Q^*}_0(r) - {\sh{Q}}_1(r) = Q_1(r)$}
 
-\section{ZK-POK Protocol}\label{sec:sdith-zkpok}
+\section{ZK-PoK Protocol}\label{sec:sdith-zkpok}
 
-To obtain a signature scheme from \autoref{def:sdith-mpc}, two transformations are needed. First, we will transform the MPC protocol into a zero-knowledge proof of knowledge (ZK-POK) using MPCitH. The ZK-POK described \autoref{def:sdith-zkpok} in is based on the verification by sacrificing triples strategy for MPCitH~\cite{baum2020concretely} detailed in \autoref{sec:mpc_sacrificing} but has key changes to accommodate the threshold variant of the protocol~\cite{feneuil2023threshold,feneuil2023threshold2}.
+To obtain a signature scheme from \autoref{def:sdith-mpc}, two transformations are needed. First, we will transform the MPC protocol into a zero-knowledge proof of knowledge (ZK-PoK) using MPCitH. The ZK-PoK described \autoref{def:sdith-zkpok} in is based on the verification by sacrificing triples strategy for MPCitH~\cite{baum2020concretely} detailed in \autoref{sec:mpc_sacrificing} but has key changes to accommodate the threshold variant of the protocol~\cite{feneuil2023threshold,feneuil2023threshold2}.
 
-\begin{protocol}[ZK-POK from MPCitH~\cite{feneuil2022syndrome}]\label{def:sdith-zkpok}
+\begin{protocol}[ZK-PoK from MPCitH~\cite{feneuil2022syndrome}]\label{def:sdith-zkpok}
   \setlength{\parskip}{5pt}
   \setlength{\parindent}{0pt}
   \titlespacing*{\paragraph}{0pt}{1pt}{1em}

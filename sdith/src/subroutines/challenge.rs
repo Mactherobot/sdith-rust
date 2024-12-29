@@ -3,7 +3,7 @@
 //! MPCitH challenge generation and precomputed values
 //!
 //! - MPCChallenge: pair (r, e) ∈ F_point^t, (F_point^t)^d
-//! - View opening challenge: I ∈ [N] for |I| = l
+//! - View opening challenge: I ∈ \[N\] for |I| = l
 
 use core::fmt;
 use std::fmt::Formatter;

@@ -8,6 +8,14 @@
 //! a given shared input corresponds to the solution of a syndrome decoding instance
 //! By applying the MPC-in-the-Head paradigm, this protocol is turned into a zero-knowledge proof
 //! of knowledge for the syndrome decoding problem that is then transformed into a signature scheme using the Fiat-Shamir heuristic.
+//! 
+//! Find information about
+//! 
+//! - The protocol endpoints in the [`keygen`] and [`signature`] modules.
+//! - The [`subroutines`] module for the subroutines used in the SDitH protocol.
+//! - The [`constants`] module for the constants used in the SDitH protocol.
+//! - The [`utils`] module for utility functions.
+//! - The [`witness`] module for the witness generation in itself a subroutine of the [`keygen`] module.
 
 // Allocator features
 #[cfg_attr(feature = "jemalloc", global_allocator)]

@@ -1,6 +1,13 @@
 //! # Signature
 //!
 //! This module contains the implementation of the signature struct and its methods.
+//! 
+//! Contains the [`Signature`] struct which holds endpoints
+//! - Signing: [`Signature::sign_message`] 
+//! - Verifying: [`Signature::verify_signature`] functions.
+//! 
+//! Check out the [`crate::subroutines`] module for the subroutines used in the signature scheme.
+//! Check out the [`crate::keygen`] module for the key generation.
 
 mod sign;
 mod verify;

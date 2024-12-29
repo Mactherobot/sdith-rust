@@ -7,7 +7,6 @@
 //! - [`merkle_tree`]: Contains the functions for generating and verifying Merkle Trees Commitment Scheme.
 //! - [`prg`]: Contains the functions for generating Pseudo Random Generators.
 //! - [`mpc`]: Contains the functions for the Multi-Party Simulationl.
-//! - [`marshalling`]: Contains the trait and test function for serializing and deserializing data.
 
 pub mod arith;
 pub mod commitments;
