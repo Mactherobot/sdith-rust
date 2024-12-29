@@ -582,10 +582,10 @@ Furthermore, this $(\ell + 1, N)$ threshold scheme is $(+, +)$-homomorphic. This
 
 \subsection{Secure Multi-Party Computation}\label{sec:mpc}
 
-Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following sections we will denote a MPC protocol by $f$ for an $n$-party functionality $f(x, w_1, \dots, w_n)$, a public input $x$ and secret inputs $w_i$ of the party $P_i$. The goal is to compute the function $f$ on the inputs of the $n$ parties while upholding the following properties~\cite{cramer2015secure}
+Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following sections we will denote a MPC protocol by $f$ for an $N$-party functionality $f(x, w_1, \dots, w_n)$, a public input $x$ and secret inputs $w_i$ of the party $P_i$. The goal is to compute the function $f$ on the inputs of the $N$ parties while upholding the following properties~\cite{cramer2015secure}
 
 \begin{definition}[Correctness]\label{def:mpc-correctness}
-  We say that $\Pi$ realizes a deterministic $n$-party functionality $f(x, w_1, \dots, w_n)$ with perfect (resp., statistical) correctness if for all inputs $x, w_1, \dots, w_n$, the probability that the output of some player is different from the output of $f$ is $0$ (resp., negligible in the security parameter $k$), where the probability is over the independent choices of the random inputs $r_1, \dots, r_n$.
+  We say that $\Pi$ realizes a deterministic $N$-party functionality $f(x, w_1, \dots, w_n)$ with perfect correctness if for all inputs $x, w_1, \dots, w_n$, the probability that the output of some player is different from the output of $f$ is negligible in the security parameter $k$, where the probability is over the independent choices of the random inputs $r_1, \dots, r_n$.
 \end{definition}
 
 \begin{definition}[Privacy]\label{def:mpc-privacy}
@@ -606,20 +606,28 @@ In terms of security needed for the SDitH protocol, we define the following secu
 In order to prove the validity of a MPC protocol that have been run in the head, we define the following notion of \textit{consistency}~\cite{ishai2007zero}.
 
 \begin{definition}[MPC view]\label{def:mpc-view}
-  We denote the view $V_i$ of a party $P_i$ in the protocol as $(i, x, r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share, and $(m_1, \dots, m_j)$ are the messages received by $P_i$ in the first $j$ rounds of the protocol. Note that the messages sent by the parties can be inferred from the $V_i$ by invoking $\Pi$.
+  We denote the view $V_i$ of a party $P_i$ in the protocol as $(i, x, r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share, and $(m_1, \dots, m_j)$ are the messages received by $P_i$ in the first $j$ rounds of the protocol. 
 \end{definition}
+
+\noindent Note that the messages sent by the parties can be inferred from the $V_i$ by invoking $\Pi$.
 
 \begin{definition}[Consistent views]\label{def:mpc-consistent-view}
   We say that a pair of views $V_i, V_j$ are consistent (with respect to the protocol $\Pi$ and some public input $x$) if the outgoing messages implicit in $V_i, x$ are identical to the incoming messages reported in $V_j$ and vice versa.
 \end{definition}
 
-\begin{lemma}[Local vs. global consistency]\label{lem:consistency}
-  Let $\Pi$ be an $n$-party protocol as above and $x$ be a public input.
-  Let $V_1, \dots, V_n$ be an $n$-tuple of (possibly incorrect) views. Then all pairs of views $V_i, V_j$ are consistent with respect to $\Pi$ and $x$ if and only if there exists an honest execution of $\Pi$ with public input $x$ (and some choice of private inputs $w_i$ and random inputs $r_i$) in which $V_i$ is the view of $P_i$ for every $1 \leq i \leq n$.
+\begin{lemma}[Local and global consistency]\label{lem:consistency}
+  Let $\Pi$ be an $N$-party protocol with a public input $x$. The following statements hold:
+\begin{enumerate}
+    \item If all pairs of views $V_i$ and $V_j$ (for $i, j \in \{1, \dots, N\}$) are consistent with respect to $\Pi$, then there exists a full execution of $\Pi$ such that $V_i$ corresponds to the view of party $P_i$, for each $i$.
+    \item Conversely, if such a full execution of $\Pi$ exists, then the pairwise consistency condition holds for all $V_i$ and $V_j$.
+\end{enumerate}
 \end{lemma}
 
 \textbf{Proof of \autoref{lem:consistency}} The \textit{if} direction is trivial and follows from \autoref{def:mpc-view} and \autoref{def:mpc-consistent-view}.
+
 The \textit{only if} direction is shown by the following. Consider $n$ pairwise consistent views $V_1, \dots, V_n$ \autoref{def:mpc-view}. Let us define an MPC protocol $\Pi$ by its \textit{next sent message} function $\Pi_j(i,x,w_i,r_i, (m_1, \dots, m_j)) = m_{j+1}$. The pairwise consistency, \autoref{def:mpc-consistent-view} and $\Pi_j$ implies, by induction that after $d$ rounds, that the actual view of all parties $P_i$ is the same as the view of $P_i$ in the first $d$ rounds. It follows that the views $V_i, \dots, V_n$ are consistent with the full execution of $\Pi$. \qed
+
+This property is crucial as it enables a verifier in the MPCitH framework to validate the protocol's correctness.
 
 \subsection{Zero-Knowledge Proofs}\label{sec:zk}
 The intuition behind a Zero-Knowledge proof of knowledge is that the prover can convince the verifier that they know a secret $w$, such that $x$ is true, without revealing the secret $w$ to the verifier. This could be someone wanting to prove that they are above the age of 18 without revealing their age.
