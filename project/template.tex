@@ -944,34 +944,40 @@ As a preliminary to our implementation, we need to answer the question: ``Why is
 
 In 2024, the government of the United States of America took a stance on the future of cyber secure programming languages~\cite{whitehouse2024memorysafe}. In their report, they underline the need for secure building blocks when developing secure software. They point to the fact that \textit{Common Weakness Enumeration} (CWE) data highlights \textit{memory safety vulnerabilities} (MSV) as one of the most pervasive classes of vulnerabilities. MSV's exploit how memory can be accessed, written, allocated, or deallocated in ways that are beyond the scope of the program. Common examples of programming languages that are vulnerable include C and C++, which are widely used due to their high performance. To prevent such vulnerabilities, the report emphasizes the importance of using programming languages that inherently provide memory safety and does not require the developers to manually ensure security.
 
-The Rust programming language addresses memory safety through its unique \textit{borrow checker}~\autoref{sec:rustborrow}, which enforces strict rules on how memory is accessed and managed. In the same year as the White House's report, NIST also released their recommendations on \textit{Safer Languages}~\cite{nistsaferlanguages}, which highlighted Rust as a leading choice. Together, these endorsements underscore that Rust is well-suited for implementing a protocol that adheres to modern security standards.
+The Rust programming language addresses memory safety through its unique \textit{borrow checker}~\autoref{sec:rustborrow}, which enforces strict rules on how memory is accessed and managed. In the same year as the White House's report, NIST also released their recommendations on \textit{Safer Languages}~\cite{nistsaferlanguages}, which highlighted Rust as a potential choice. Together, these endorsements underscore that Rust is well-suited for implementing a protocol that must adhere to modern security standards.
 
 In addition to its focus on safety, Rust benefits from an extensive library of community-maintained documentation and resources~\cite{rustlangRustProgramming,rustlangPerformanceBook,lurklurkEffectiveRust}. These resources provide invaluable support for developers, enabling them to better understand the language's features and effectively utilize its capabilities.
 
-In this section we will give an overview of the key features of the Rust programming language that make it an ideal choice for this project as we aimed to build it robust by leveraging Rust's safety mechanisms, performance optimization capabilities, dynamic language features, and strong testing infrastructure.
+In this section, we provide an overview of the key features of the Rust programming language that will be utilized in this project. Specifically, how we might leverage Rust's safety mechanisms, performance optimization capabilities, dynamic language features, and robust testing infrastructure.
+
 
 \subsection{Cargo - Rust package manager}\label{sec:cargo}
-A Rust program, often referred to as a \textit{crate}, is typically compiled using the Rust Compiler with a command such as \texttt{rustc hello.rs}. However, manually managing versions and dependencies can be tedious and error-prone. To simplify this process, Rust provides a \textit{package manager} called Cargo~\cite{rustlangCargo}.
+A Rust program, referred to as a \textit{crate}, is typically compiled using the Rust Compiler with a command such as \texttt{rustc hello.rs}. However, manually managing versions and dependencies can be tedious and error-prone. To simplify this process, Rust provides a \textit{package manager} called Cargo~\cite{rustlangCargo}.
 
 Cargo is a command-line tool -- run through \texttt{cargo} -- that facilitates the management of dependencies, building, testing, and benchmarking of your crate, as well as generating documentation. It is the officially recommended method for managing and building Rust projects.
 
 
 \subsection{Memory safety}\label{sec:rustborrow} % mut references
-Rust guarantees both type safety (\autoref{sub:rusttypes}) and memory safety. While we will not delve into the details, significant progress has been made toward formal proofs of these guarantees~\cite{jung2017rustbelt}. Unlike many other languages that rely on sophisticated garbage collection mechanisms to ensure memory safety, Rust avoids the associated performance overhead through two key features: the \textit{ownership} and \textit{lifetimes}. Along with a compile time functionality called the \textit{borrow checker}, these features ensure the memory safety of Rust programs. While the borrow checker is often the biggest hurdle for new Rust developers, it is also the feature that makes Rust so powerful.
+Rust guarantees both type safety (\autoref{sub:rusttypes}) and memory safety. While we will not delve into the details, significant progress has been made toward formal proofs of these guarantees~\cite{jung2017rustbelt}. Unlike many other languages that rely on sophisticated garbage collection mechanisms to ensure memory safety, Rust avoids the associated performance overhead through two key features: the \textit{ownership} and \textit{lifetimes}. Along with a compile time functionality called the \textit{borrow checker}, these features ensure the memory safety of Rust programs. 
 
-In this section, we will explore the fundamental aspects of how the borrow checker and ownership work. Only the most critical aspects will be discussed, as more comprehensive information is available in the official documentation~\cite{rustlangRustProgramming}.
+While the borrow checker is often the biggest challenge for new Rust developers, it is also the feature that makes Rust exceptionally powerful for secure applications.
 
-\subsubsection{Data races vulnerability}
-In the section, we consider the problem of \textit{data races}. These are similar to a race condition and cause undefined behavior that in the end can lead to security vulnerabilities. They occur when
-\begin{enumerate}[parsep=0pt, itemsep=0pt]
-  \item Two or more pointers access the same memory location concurrently.
-  \item At least one of the pointers is being used to write to the memory location.
-  \item The is no mechanism to synchronize the data access
+In this section, we will explore the fundamental aspects of how the borrow checker and ownership work. We will focus on the most critical aspects, as more comprehensive information is available in the official documentation~\cite{rustlangRustProgramming}.
+
+\subsubsection{Data Race Vulnerability}
+\textit{Data races} are similar to race conditions and occur when
+\begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
+  \item Two or more pointers access the same memory location concurrently,
+  \item At least one of the pointers is used to write to the memory location, and
+  \item There is no mechanism to synchronize the data access.
 \end{enumerate}
-In Rust, the borrow checker ensures that no data races can occur and it diagnoses them at compile time.
+
+Data races most often result in undefined behavior that can crash a program. However, they can also introduce severe security vulnerabilities, which malicious actors may exploit\footnote{e.g., \href{https://nvd.nist.gov/vuln/detail/cve-2024-35898}{CVE-2024-35898}}.
+
+In Rust, the borrow checker ensures that data races cannot occur by diagnosing them at compile time and preventing the program from compiling if such conditions are detected.
 
 \subsubsection{The Stack and Heap}
-First, it is crucial to first grasp the distinction between the stack and the heap. These are two memory management systems available at runtime~\cite[ch.4]{rustlangRustProgramming}, each with unique characteristics and use cases.
+To understand how Rust manages memory, it is first essential to grasp the distinction between the stack and the heap. These are two memory management systems available at runtime~\cite[ch.4]{rustlangRustProgramming}, each with unique characteristics and use cases.
 
 \begin{definition}[The Stack]
   The stack stores values in a last-in-first-out (LIFO) order, meaning the last value added is the first to be removed. All data stored on the stack must have a fixed, known size at compile time. This gives the stack its \textit{fixed-sized} structure.
@@ -983,22 +989,24 @@ First, it is crucial to first grasp the distinction between the stack and the he
 
 \subsubsection{Performance versus Dynamism}
 
-Between the two systems, there exists a \textit{performance versus dynamism} trade-off. Consider the following code example:
+Between the two memory allocations there exists a \textit{performance versus dynamism} trade-off. Consider the following code example:
 
 \begin{minted}{rust}
   let a: Vec<u8> = vec![1, 2, 3];
   let b: [u8; 3] = [1, 2, 3];
 \end{minted}
 
-This code demonstrates two data types being allocated. The first, \rust{a}, is a vector type, while the second, \rust{b}, is a fixed-size array type. The vector type is always allocated on the heap, whereas the fixed array is allocated on the stack. Pushing  and accessing the stack is faster than for on the heap. Therefore, keeping values on the stack tends to outperform heap allocations. This is because heap allocation involves searching for a suitable location in memory to store the data. Accessing data on the heap is slower as you have to follow a pointer from the stack to allocated data. Note that there are several optimisations you can do when allocating to the heap, like changing the allocator for specific use cases, instantiating the vector with a capacity or the \rust{SmallVec} that dynamically changes from the stack to the heap when allocation surpasses its defined capacity. See~\cite{rustlangPerformanceBook} for more.
+This code demonstrates two data types being allocated. The first, \rust{a}, is a vector type, while the second, \rust{b}, is a fixed-size array type. The vector type is always allocated on the heap, whereas the fixed array is allocated on the stack. Pushing and accessing the stack is faster than for on the heap. Therefore, keeping values on the stack tends to outperform heap allocations. This is because heap allocation involves searching for a suitable location in memory to store the data. 
 
-However, the vector type is far more dynamic. For instance, using the \rust{push} method, you can add more elements to a vector, and the allocator will automatically find additional space on the heap if needed. Conversely, stack allocations in Rust require that the size of the data be known at compile time, which imposes significant restrictions on how dynamic your code can be. This limitation became particularly evident when designing around the different category variants in \autoref{sub:categories}. However, this also ensures at compile time that you cannot access memory outside of the stack, a common vulnerability exposed in C and C++.
+Accessing data on the heap is slower because you have to follow a pointer from the stack to the allocated data. Note that there are several optimisations you can do when allocating to the heap, like changing the allocator for specific use cases, instantiating the vector with a capacity or the \rust{SmallVec} that dynamically changes from the stack to the heap when allocation surpasses its defined capacity. See~\cite{rustlangPerformanceBook} for more.
+
+However, the vector type is far more dynamic. For instance, using the \rust{push} method, you can add more elements to a vector, and the allocator will automatically find additional space on the heap if needed. Conversely, stack allocations in Rust require that the size of the data be known at compile time, which imposes significant restrictions on how dynamic your code can be. This limitation became particularly evident when designing around the different category variants in \autoref{sub:constants}. However, this also ensures at compile time that you cannot access memory outside of the stack, a common vulnerability exposed in C/C++.
 
 Additionally, the stack, due to its fixed-size structure, can only hold a limited amount of data. Attempting to allocate more memory than the stack can accommodate results in a \textit{stack overflow} error. In contrast, the heap offers virtually unlimited storage, as it can dynamically allocate memory as required.
 
 \subsubsection{Ownership and Variable scope}
 Now that we have given a brief introduction to the memory allocation, we can delve into the \textit{ownership system}. This system is a crucial aspect of Rust's memory management, as it ensures that memory is allocated and deallocated correctly. Ownership in Rust follows three rules
-\begin{enumerate}[parsep=0pt, itemsep=0pt]
+\begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
   \item Each value has an \textit{owner}
   \item There can only be one owner at one time
   \item When a owner goes out of scope, the value will be \textit{dropped}.
@@ -1006,7 +1014,7 @@ Now that we have given a brief introduction to the memory allocation, we can del
 First, we consider the \textit{variable scope} in the following example
 \begin{minted}{rust}
 {
-  // d can not be accessed yet because it has not been assigned to the current scope
+  // d is inaccessible before it has been assigned to the current scope
   let d = "Peace is a lie";
   println!("{d}") // Now we can use d
 } // d is dropped here
@@ -1016,12 +1024,15 @@ In this example, the variable \rust{d} comes into the scope and remains valid un
 \subsubsection{Variable and data interaction with \textit{Move}}
 
 To illustrate where Rust differs, we need a data type that is more complex and stored on the heap instead. We will change the example to use a \rust{String} type
+
 \begin{minted}{rust}
   let mut d = String::from("Peace is a lie");
   d.pust_str(", there is only passion."); // We can mutate d
-  println!("{d}"); // prints "Peace is a lie, there is only passion."
+  println!("{d}"); // > "Peace is a lie, there is only passion."
 \end{minted}
+
 A variable instantiated with the \rust{String} type is dynamically allocated on the heap, and a \textit{pointer} is instead saved on the stack. Now consider both types of assignments with a \textit{re-assignment}
+
 \begin{minted}{rust}
   // Case 1: Stack allocated type
   let d = "Through passion, I gain strength"
@@ -1047,34 +1058,30 @@ However, for Case 2; The variable \rust{d} is instead a \textit{pointer} to a he
 
 \subsubsection{Why the Restriction?}
 
-Allowing \rust{d} to be used after the move could lead to undefined behavior. For one, due to the variable scoping, the runtime would drop the data for both \rust{d} and \rust{v}. As these would be pointing to the same data, this would case a \textit{double free} memory safety bug. Furthermore, if multiple pointers were allowed to simultaneously access or modify the heap-allocated data, it could result in data races. To avoid such risks and ensure memory safety, Rust enforces its ownership rules. If you need to continue using \rust{d} after a move, you must explicitly \textit{clone} the heap data before transferring ownership. This approach encourages developers to carefully manage how data is accessed and modified, promoting safe and predictable memory usage.
+Allowing \rust{d} to be used after the move could lead to undefined behavior, such as a \textit{double free} memory safety bug, as both \rust{d} and \rust{v} would attempt to drop the same data. Additionally, simultaneous access or modification of heap-allocated data could cause data races. To prevent such issues, Rust enforces ownership rules. If \rust{d} needs to be used after a move, the heap data must be explicitly \textit{cloned} before transferring ownership, ensuring safe and predictable memory usage.
 
-\subsubsection{Functions and ownership}\label{sub:rustlifetimes} % (fold)
+\subsubsection{Function ownership}\label{sub:rustlifetimes}
 Now that we have covered the basics of ownership, we explore how it interacts with functions. When passing a value to a function, the function takes ownership of the value. This means that the function takes over managing the \textit{lifetime} of the value, ensuring that it is not used after the function call, unless it is copied.
-\begin{minted}{rust}
-  // Case 1: Stack allocated type
-  fn makes_copy(some_integer: i32) { // some_integer comes into scope
-    println!("{some_integer}");
-  } // Here, some_integer goes out of scope. Nothing special happens.
 
-  // Case 2: Heap allocated type
+For stack allocated types, the structure of the stack and known compile time size, nothing special needs to happens when the function exits. However for heap allocated types
+\begin{minted}{rust}
   fn takes_ownership(some_string: String) { // some_string comes into scope
     println!("{some_string}");
   } // Here, some_string goes out of scope and `drop` is called.
     // The memory on the heap is freed.
 \end{minted}
 
-In Case 1, again the structure of the stack and known compile time size, nothing special needs to happen. However, in Case 2, the function \rust{takes_ownership} takes ownership of the \rust{String} value \rust{some_string}. When the function ends, the \rust{String} value is dropped, and the memory on the heap is freed. This is because the function takes ownership of the value, and the value is no longer valid after the function call.
+The function takes ownership of the \rust{String} value \rust{some_string}. When the function ends, the \rust{String} value is dropped, and the memory on the heap is freed. This is because the value is no longer valid after the function call has ended.
 
-However, a function can also take ownership of a value. Here's an example:
+However, a function can also take ownership of a value. Here's an example where the function takes ownership of the value and then transfers the ownership back to a new variable \rust{v} making the old allocation invalid.
 \begin{minted}{rust}
   fn main() {
-    let d = String::from("hello");
-    let (v, len) = calculate_length(d);
-    println!("The length of '{v}' is {len}."); // v is valid
-    println!("The length of '{d}' is {len}."); // d is not valid
-    //                        ^ value borrowed here after move
-    // error[E0382]: borrow of moved value: `d`
+      let d = String::from("hello");
+      let (v, len) = calculate_length(d);
+//                                    - value moved here
+       println!("The length of '{v}' is {len}."); // v is valid
+       println!("The length of '{d}' is {len}."); // d is no longer valid
+//                              ^^^ value borrowed here after move
   }
 
   fn calculate_length(s: String) -> (String, usize) {
@@ -1082,21 +1089,14 @@ However, a function can also take ownership of a value. Here's an example:
     (s, length)
   }
 \end{minted}
-The function \rust{fn calculate_length()} takes a pointer and the ownership of the \rust{String} value \rust{d}. It returns the same pointer and ownership of the value along with the computed value. Notice that the ownership of the value works the same as it did before with variable assignment. The function \rust{calculate_length} takes ownership of the value, and \rust{d} is no longer valid after the function call.
-
 
 \subsubsection{Borrowing with references}
-However, often it is tedious to keep transferring ownership of values, whenever they need to be used in a function. So how can we avoid this boilerplate of returning ownership? Rust provides a way of avoiding this transfer of ownership by using \textit{references}. References allow you to \textit{borrow} the value without taking ownership of it. This is done by using the \rust{&} symbol. Consider the example
+However, often it is tedious to keep transferring ownership of values, whenever they need to be used in a function. Rust provides a way of avoiding this transfer of ownership by using \textit{references}. References allow you to \textit{borrow} the value without taking ownership of it. This is done by using the \rust{&} symbol. Consider the same augmented example
 \begin{minted}{rust}
   fn main() {
     let d = String::from("hello");
     let len = calculate_length(&d);
     println!("The length of '{d}' is {len}."); // d is valid
-  }
-
-  fn calculate_length(s: &String) -> (String, usize) {
-    //                   ^ the function takes a reference to a String with the `&` symbol
-    s.len()
   }
 \end{minted}
 
@@ -1157,46 +1157,43 @@ The \textit{lifetime} of a value on the stack refers to the period during which 
   //                          ^^^^^^^^^^ borrow later used here
   // error[E0597]: `item` does not live long enough
 \end{minted}
-While the Rust compiler, most often can infer the lifetime of a value it can sometimes be necessary to explicitly define the lifetime. This is done by using the \textit{lifetime annotation} \rust{'a}. This is most often used when working with references in structs or functions.
+While the Rust compiler, most often can infer the lifetime of a value it can sometimes be necessary to explicitly define the lifetime. This is done by using the \textit{lifetime annotation} \rust{'a}. Consider the example below
 \begin{minted}{rust}
-  pub fn find(haystack: &[u8], needle: &[u8]) -> Option<&[u8]> {
+  pub fn find(haystack: &[u8], needle: &[u8]) -> Option<&[u8]> 
     //                  -----          -----            ^ expected named lifetime parameter
-    // ...
-  } // error[E0106]: missing lifetime specifier
+    // ... // error[E0106]: missing lifetime specifier
 \end{minted}
-In this example, there are two choices for the output lifetime for the reference returned by the function. The compiler cannot infer which lifetime to use, so it requires the developer to specify it. This is done by adding the lifetime annotation to the function signature.
+There are two choices for the output lifetime for the reference returned by the function. The compiler cannot infer which lifetime to use, so it requires the developer to specify it. This is done by adding the lifetime annotation to the function signature.
 \begin{minted}{rust}
-  pub fn find<'a, 'b>(h: &'a[u8], n: &'b[u8]) -> Option<&'a[u8]> {
-    // ...
-  }
+  pub fn find<'a, 'b>(haystack: &'a[u8], needle: &'b[u8]) -> Option<&'a[u8]>
 \end{minted}
-In the example above we have used the \rust{<'a,'b>} to define that the function accepts 2 generic lifetimes $'a$ and $'b$. These can now be used on the signature of the function to ensure that the lifetime of $h$ is $'a$. Allowing the compiler to easily analyze if the reference being passed as $h$ lives long enough.
-Furthermore, the compiler can determine that the lifetime of the output reference is the same as the input reference \rust{haystack}.
+In the example above, we define two generic lifetimes, \rust{<'a, 'b>}, ensuring that the lifetime of $h$ is $'a$. This allows the compiler to verify that $h$ lives long enough. Additionally, the compiler infers that the output reference shares the same lifetime as the input reference \rust{haystack}.
 
 \subsubsection{Conclusions on Memory Safety in Rust}
-This overview only scratches the surface of the power and features that Rust offers. However, it provides a brief introduction to the core features that make Rust a powerful programming language for developing secure and high-performance software. As mentioned, Rust comes with a steep learning curve, but it is supported by a large and active community that offers extensive documentation and resources. We suggest that the reader explore the official Rust Book~\cite{rustlangRustProgramming} or its community made books, like \textit{Effective Rust}~\cite{lurklurkEffectiveRust} and \textit{The Rust Performance book}~\cite{rustlangPerformanceBook}.
+This overview only touches on the features that make Rust a powerful programming language for developing secure and high-performance software. While Rust has a steep learning curve, its large and active community provides extensive documentation and resources. Readers are encouraged to explore the official Rust Book~\cite{rustlangRustProgramming} or community-authored books such as \textit{Effective Rust}~\cite{lurklurkEffectiveRust} and \textit{The Rust Performance Book}~\cite{rustlangPerformanceBook}.
 
-\subsection{Correctness (Types, Testing and Errors)}
-When creating and iterating on software, it is crucial that you develop in a way that you can continually deliver functional and correct code. There are many patterns that help ensuring this. Rust provides several. In this section we will describe two -- Types and Automated tests.
+\subsection{Correctness (Types, Testing and Error handling)}
+When developing and iterating on software, it is essential to ensure the continuous delivery of functional and correct code. Various patterns can help achieve this, and Rust provides several. In this section, we will focus on three: Types, Automated Tests, and Error Handling.
 
 \subsubsection{The Type System}\label{sub:rusttypes}
-Every value in Rust has a \textit{data type}. Programs written in Rust are \textit{statically typed}, meaning the type of each value must be determined at compile time. The type informs the compiler about what operations the value supports and helps catch errors before they reach runtime~\cite[ch.3.2]{rustlangRustProgramming}. Rust's compiler often infers types automatically, but if it cannot, you must explicitly annotate the type of the value. Consider the following example:
+Every value in Rust has a \textit{data type}. Programs written in Rust are \textit{statically typed}, meaning the type of each value must be determined at compile time. The type informs the compiler about what operations the value supports and helps catch errors before they reach runtime~\cite[ch.3.2]{rustlangRustProgramming}. The Rust compiler often infers types automatically, but if it cannot, you must explicitly annotate the type of the value. Consider the following example:
 
 \begin{minted}{rust} 
   let guess: u32 = "42".parse().expect("Not a number!"); 
 \end{minted}
 
-Here, the \rust{parse} function requires the annotation of the variable \rust{guess} to determine how the string should be parsed. Additionally, if you annotate \rust{guess} with a type that does not implement the \rust{parse} function for strings, the compiler will produce an error. This strict type system ensures that Rust minimizes the possibility of writing incorrect code -- at least in terms of the bounds of the language. While Rust enforces correctness in type usage, ensuring that a program operates semantically as intended, such as adhering to a protocol specification, often requires additional validation methods.
+Here, the \rust{parse} function requires the annotation of the variable \rust{guess} to determine how the string should be parsed. Additionally, if you annotate \rust{guess} with a type that does not implement the \rust{parse} function for strings, the compiler will produce an error. 
+
+The type system ensures that Rust minimizes the possibility of writing incorrect code -- at least in terms of the bounds of the language and the program. While Rust enforces correctness in type usage, ensuring that a program operates semantically as intended, such as adhering to a protocol specification, often requires additional validation methods.
 
 \subsubsection{Automated Testing}
-Say that you are implementing field arithmetic -- \textit{funny enough, we needed to do exactly that!} -- you would want your impletation to follow the properties that define the field. For example \textit{associativity over addition}
+Say that you are implementing field arithmetic -- \textit{funny enough, we needed to do exactly that!} -- you would want your implementation to follow the properties that define the field. For example \textit{associativity over addition}
 \begin{align}
   a + (b + c) = (a + b) + c
 \end{align}
 Such a property is hard to enforce using the type system. However, it is possible to enforce it using \textit{automated testing}. Consider the following examples
-\begin{minted}{rust}
-  // gf256.rs
 
+\begin{minted}{rust}
   fn gf256_add(a: u8, b: u8) -> u8 {
     a ^ b
   }
@@ -1218,7 +1215,8 @@ Such a property is hard to enforce using the type system. However, it is possibl
     }
   }
 \end{minted}
-This is a simple example of the features that Rust provides that to support automated testing. First we create an internal module \rust{mod arithmetic_tests}. Note the annotation, \mintinline{rust}|#[cfg(test)]|. This ensures that the module is only included when running tests and not in the final production code.
+
+This example demonstrates how straightforward automated testing is in Rust. First, we create an internal module, \rust{mod arithmetic_tests}, with the annotation \mintinline{rust}|#[cfg(test)]|. This annotation ensures that the module is included only during testing and excluded from the final production code.
 
 Individual tests are made using the \mintinline{rust}|#[test]| and a function. Then we can use the macro \rust{assert_eq!()} to test whether that our property is upheld.
 
@@ -1228,18 +1226,18 @@ To run the tests in our implementation you simply run the following
   running 1 test
   test gf256::arithmetic_tests::test_add_associativity ... ok
 \end{minted}
-Crucially, this test allows us to continue developing or optimising the finite field while rerunning the tests to verify that the property remains valid. The more rigourous we test our function, the easier we can debug issues or bugs that may arise.
+This test ensures we can continue developing or optimizing the finite field while verifying its validity. Rigorous testing simplifies debugging and helps catch potential issues early.
 
-Writing good tests is a subject extensive enough to warrant its own discussion, and delving into the theory behind it is beyond the scope of this report. From the outset, we designed our implementation with testing in mind. This approach ensures that we can iteratively develop each module and confirm that it adheres to theoretical expectations and the given specification.
+Writing good tests is a broad topic beyond the scope of this report. However, our implementation was designed with testing in mind, enabling iterative development while ensuring each module aligns with theoretical expectations and the given specification.
 
-\subsubsection{Error handling}\label{sub:rusterror} % https://www.lurklurk.org/effective-rust/panic.html
-Testing that functions return the correct values based on \textit{correct} inputs are a crucial part of ensuring correctness. But what happens if you have unexpected inputs? For example on the inputs a user to a CLI\@? This can lead to errors. So how do Rust allow us to deal with errors? There are two ways:
-\begin{itemize}
-  \item Using a \rust{panic}: Stopping the execution of the program.
-  \item Returning a \rust{Result<T, Err>}: A type that wraps the return value with an error value allowing the caller to handle the error.
+\subsubsection{Error handling}\label{sub:rusterror}
+Testing that functions return correct values for \textit{valid} inputs is essential for ensuring correctness. But how should unexpected inputs, such as those provided by a user to a CLI, be handled? In Rust, errors can be managed in two ways:
+\begin{itemize}[itemsep=0pt, topsep=0pt, parsep=0pt]
+  \item \rust{panic}: Stops the program's execution.
+  \item \rust{Result<T, Err>}: Wraps the return value with an error type, allowing the caller to handle the error.
 \end{itemize}
-So when is it appropriate to use a panic? The Rust book~\cite[ch.9.3]{rustlangRustProgramming} provides a good guideline for when to use panic.
-The general rule is that, if your code would end up in a bad state from which it can not recover it should panic. Everywhere else, you should return a \rust{Result} type. In this way the caller can handle the error in the appropriate way for their use case.
+So, when should you use \rust{panic}? You should panic only if your code reaches an unrecoverable state~\cite[ch.9.3]{rustlangRustProgramming}. Otherwise, it is better to use \rust{Result} to enable the caller to handle errors in a way that suits their use case.
+
 \begin{minted}{rust}
   fn sign(message: &[u8], secret_key: &[u8]) -> Result<Vec<u8>, Error> {
     if secret_key.len() == 0 {
@@ -1266,13 +1264,16 @@ The general rule is that, if your code would end up in a bad state from which it
     } 
   }
 \end{minted}
-There might be a number of reasons why a signature could not be generated, but a simple one that we want to relay to a potential user is that the secret key is invalid. In this case, we would return an error with the \textit{SigningError} variant. If a panic was used the caller of the sign function would not be able to recover from the error.
+There are several reasons why a signature might fail to generate, but a straightforward one to communicate to the user is an invalid secret key. In this case, we return an error with the \textit{SigningError} variant. Using a \rust{panic} would prevent the caller from recovering from the error.
 
 \subsection{Maintainable and readable code}
-One of the reasons for choosing Rust is that it provides several tools and features that make it easier to write code that is both maintainable and readable. In this section, we will discuss some of the features that we utilized in our implementation to achieve this goal.
+
+A key goal of this project was to create an implementation that is easy to read, enabling future implementers to understand the protocol. Rust was chosen in one part for its robust set of tools and features, which facilitate writing maintainable and readable code.
 
 \subsubsection{Code Documentation}\label{sub:code-documentation}
-First things first, good written code should either be written in a way so that it is self-explanatory or supply the necessary documentation in order for the reader to quickly grasp the concepts and functionality. Often times you would want to supply documentation in the form of comments, above functions and values to explain what they do and how they work. Furthermore, you would want to supply the user with a \textit{manual} where the user can read about the exposed library.
+First things first, good written code should either be written in a way so that it is self-explanatory or the developer should instead supply the necessary documentation in order for the reader to quickly grasp the concepts and functionality. 
+
+Often times you would want to supply documentation in the form of comments, above functions and variables to explain their purpose and functionality. Furthermore, you would want to supply the user with a \textit{manual} where the user can read about the exposed library.
 
 It can be hard to maintain both of these aspects separately. Rust enables the developer to write both at the same time. Consider the following code in a module
 
@@ -1292,9 +1293,9 @@ It can be hard to maintain both of these aspects separately. Rust enables the de
 
 Adding a triple slash \rust{///} above a function or struct generates documentation for it. Hovering over the function in most Rust-compatible editors, such as \href{https://code.visualstudio.com/docs/languages/rust}{Visual Studio Code}, displays the documentation. Similarly, using \rust{//!} creates top-level documentation for the module.
 
-While these comments enable developers to access documentation directly within the code, Rust also provides a powerful feature to automatically generate comprehensive documentation. By running \href{https://doc.rust-lang.org/cargo/commands/cargo-doc.html}{\texttt{cargo doc}}, you can create a webpage with detailed documentation for the project. The generated documentation for our implementation can be viewed here: \todo{link to the documentation}.
+While these comments enable developers to access documentation directly within the code, Rust also provides a powerful feature to automatically generate comprehensive documentation. By running \href{https://doc.rust-lang.org/cargo/commands/cargo-doc.html}{\texttt{cargo doc}}, you can create a webpage with detailed documentation for the project.
 
-\subsubsection{Modules}\label{sub:rust_modules}
+\subsubsection{Codebase structure and Modules}\label{sub:rust_modules}
 Rust provides a module system that allow you to organize your code into logical units. Making it it easier to understand and maintain the codebase. A module is a collection of related items, such as functions, structs, and constants, that are grouped together.
 
 Modules can be nested, allowing for a hierarchical structure of code.
