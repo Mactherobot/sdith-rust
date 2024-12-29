@@ -31,7 +31,7 @@ jobs:
         run: cargo doc --no-deps
       - name: Add redirect
         working-directory: ./sdith
-        run: echo '<meta http-equiv="refresh" content="0;url=aoc/index.html">' > target/doc/index.html
+        run: echo '<meta http-equiv="refresh" content="0;url=rsdith/index.html">' > target/doc/index.html
       - name: Remove lock file
         working-directory: ./sdith
         run: rm target/doc/.lock
