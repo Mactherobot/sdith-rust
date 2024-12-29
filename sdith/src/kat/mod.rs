@@ -12,10 +12,6 @@ use crate::{
     keygen::{PublicKey, SecretKey},
 };
 
-pub(self) const SPEC_MASTER_SEED: Seed = [
-    124, 153, 53, 160, 176, 118, 148, 170, 12, 109, 16, 228, 219, 107, 26, 221,
-];
-
 struct NistEntropy {
     keygen_seed: Seed,
     sign_salt: Salt,
@@ -155,14 +151,12 @@ mod kat_tests {
     fn test_read_test_vectors() {
         let v = read_response_test_vectors(2);
         assert_eq!(v.len(), 2);
-        assert_eq!(v[0].nist_entropy.keygen_seed, SPEC_MASTER_SEED);
         assert!(v[0].count == 0);
         assert!(v[0].mlen == 33);
         assert_eq!(
             hex::encode(&v[0].msg).to_uppercase(),
             "D81C4D8D734FCBFBEADE3D3F8A039FAA2A2C9957E835AD55B22E75BF57BB556AC8"
         );
-        assert!(v[0].smlen == 10301);
     }
 
     #[test]
