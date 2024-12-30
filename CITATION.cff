@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "Please site as below"
+authors:
+- family-names: "Jensen"
+  given-names: "Magnus"
+- family-names: "Zachariae"
+  given-names: "Hugh Benjamin"
+title: "SDitH Strikes back in Rust"
+version: 1.0.0
+date-released: 2024-12-30
+url: "https://github.com/Mactherobot/sdith-rust"
