@@ -12,7 +12,7 @@ Authors: [Hugh Benjamin Zachariae](https://github.com/arcuo), [Magnus Jensen](ht
 
 ### Report
 
-The report is contained within the [project](https://github.com/Mactherobot/sdith-rust/tree/main/project) folder.
+The [report](report_v1.pdf) is built from the [project](https://github.com/Mactherobot/sdith-rust/tree/main/project) folder.
 
 ### Rust package
 
