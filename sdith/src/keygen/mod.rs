@@ -7,7 +7,7 @@
 //!
 //! `S * Q = P * F`.
 //!
-//! Actual generation functions are located in the [`crate::witness`] module.
+//! Generation functions are found in the [`witness`] module.
 //!
 
 pub mod witness;

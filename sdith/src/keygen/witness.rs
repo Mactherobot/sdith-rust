@@ -43,7 +43,7 @@ pub type PPoly = [[u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
 /// SPoly is a polynomial of degree [`PARAM_CHUNK_M`]
 pub type SPoly = [[u8; PARAM_CHUNK_M]; PARAM_SPLITTING_FACTOR];
 
-/// Syndrom Decoding (SD) Instance struct
+/// Syndrome Decoding (SD) Instance struct
 ///
 /// This structure represents an instance of the SD problem on which the security of the signature scheme relies.
 ///
@@ -79,7 +79,7 @@ pub struct Solution {
     pub p_poly: PPoly,
 }
 
-/// k + 2w
+/// Share of S and polynomials Q and P - k + 2w
 pub const SOLUTION_PLAIN_SIZE: usize = PARAM_K + (PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2);
 
 impl Marshalling<[u8; SOLUTION_PLAIN_SIZE]> for Solution {

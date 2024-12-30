@@ -15,7 +15,7 @@
 //! - The [`subroutines`] module for the subroutines used in the SDitH protocol.
 //! - The [`constants`] module for the constants used in the SDitH protocol.
 //! - The [`utils`] module for utility functions.
-//! - The [`witness`] module for the witness generation in itself a subroutine of the [`keygen`] module.
+//! - The [`witness`](`keygen::witness`) module for the witness generation in itself a subroutine of the [`keygen`] module.
 
 // Allocator features
 #[cfg_attr(feature = "jemalloc", global_allocator)]
