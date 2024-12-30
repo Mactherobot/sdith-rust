@@ -1,18 +1,14 @@
 # SDitH Signature Protocol implementation in Rust
 
-### Thesis 2024-2025
+<p align="center">
+  <img width="250" src="https://github.com/user-attachments/assets/cb47e7e6-cfed-41d2-99a5-5db7e9fc67a4">
+</p>
 
+This is a masters thesis project 2024-25 at Aarhus University, Denmark.
 
+"SDitH signature protocol in Rust"
 
-<div style="display: flex; justify-content: center; margin: 2em;"><img src="https://github.com/user-attachments/assets/cb47e7e6-cfed-41d2-99a5-5db7e9fc67a4" width="250"></div>
-
-This is a masters thesis project at Aarhus University, Denmark.
-
-"SDitH signature protocol in Rust" 
-
-Authors:
--  [Hugh Benjamin Zachariae](https://github.com/arcuo)
--  [Magnus Jensen](https://github.com/Mactherobot)
+Authors: [Hugh Benjamin Zachariae](https://github.com/arcuo), [Magnus Jensen](https://github.com/Mactherobot)
 
 ### Report
 
