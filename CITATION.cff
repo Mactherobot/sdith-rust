@@ -5,7 +5,7 @@ authors:
   given-names: "Magnus"
 - family-names: "Zachariae"
   given-names: "Hugh Benjamin"
-title: "SDitH Strikes back in Rust"
+title: "The SDitH Strikes Back in Rust"
 version: 1.0.0
 date-released: 2024-12-30
 url: "https://github.com/Mactherobot/sdith-rust"

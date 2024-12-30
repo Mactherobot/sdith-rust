@@ -187,7 +187,7 @@ Til slut mener vi, at vores implementering udgør en værdifuld ressource for fr
 
 We would like to extend a huge thanks to our supervisor, Professor Diego F. Aranha, for his unwavering optimism and enthusiasm, which have been invaluable throughout the development of this project. Our weekly meetings have been a source of both valuable insights and great humor. You prove to us that that computer scientists not only solve complex problems but also know how to have fun while doing it.
 
-Furthermore, we would like give a heartfelt thanks to friends, family and partners who have each shown their support in encouragement and food or snack deliveries when needed! Their support has been invaluable in keeping us motivated and focused on our goals (and with full bellies)
+Furthermore, we would like give a heartfelt thanks to friends, family and partners who have each shown their support in encouragement and food or snack deliveries when needed! Their support has been invaluable in keeping us motivated and focused on our goals (and with full bellies).
 
 Finally, we would like to express our gratitude to the authors of the SDitH protocol. Without their work and dedication, this project would not have been possible.
 
@@ -355,7 +355,7 @@ An advantageous property of Galois fields is that they can easily be extended --
     & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1x^2                                 \\
     & = a_0b_0 + (a_0b_1 + a_1b_0)x + a_1b_1(x + 32)                            \\
     & = a_0b_0 + 32a_1b_1 + (a_0b_1 + a_1b_0 + a_1b_1)x
-  \end{split}
+  \end{split}\label{eq:gf256_ext_mul}
 \end{align}
 
 \section{Cryptographic Primitives and protocols}
@@ -825,7 +825,7 @@ The above is a well-known technique from~\cite{Beaver1992efficient} where the co
          & = \sh{xy}
 \end{align*}
 
-Proposals for ZK-PoK proofs -- such as the \textit{Cut-and-Choose} protocol~\cite{katz2018improved,baum2020concretely} -- utilize \autoref{def:Beaver-multiplication}, combined with preprocessing techniques, to achieve promising results (see appendix \autoref{sec:zk-cut-and-choose}).
+Proposals for ZK-PoK proofs -- such as the \textit{Cut-and-Choose} protocol~\cite{katz2018improved,baum2020concretely} -- utilize \autoref{def:Beaver-multiplication}, combined with preprocessing techniques, to achieve promising results (see appendix Appendix \ref{sec:zk-cut-and-choose}).
 
 Building upon these protocols, Baum and Nof~\cite{baum2020concretely} propose a variant that shifts the focus from computing the product to simulating the \textit{verification} of the triple relation instead. This verification is performed by sacrificing another triple. Consider the following protocol, which is based on the MPC protocol described in~\cite{damgaard2012multiparty}.
 
@@ -1665,7 +1665,7 @@ The SDitH protocol establishes a signature scheme by demonstrating the correctne
 
 The construction is highly modular, allowing flexibility and adaptability, as you can tweak the SD instance, the MPC protocol, the MPCitH and Fiat-Shamir transformations. The authors propose two distinct protocol variants: the \textit{hypercube} variant and the \textit{threshold} variant. For this work, we focus on the \textit{threshold} variant~\cite{aguilarsyndrome11,feneuil2023threshold,feneuil2023threshold2}, as it offers significant performance enhancements compared to both the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11,aguilar2023return,feneuil2023threshold2} -- at the cost of slightly larger signature sizes.
 
-This chapter presents a comprehensive specification of the SDitH Signature Scheme in the Threshold variant. The construction is based on the SDitH MPC protocol in \autoref{sec:sdith-mpc}, its transformation into ZK-PoK using MPCitH (detailed in the appendix \autoref{sec:sdith-zkpok}) and finally transformation into a signature scheme in \autoref{sec:sdith-signature}. Additionally, we describe optimizations applied to the protocol, such as avoiding interpolation and utilizing the $d$-split variant of the SD instance. A detailed table summarizing the protocol parameters and security assumptions is provided in \autoref{tab:sdith-protocol-parameters}.
+This chapter presents a comprehensive specification of the SDitH Signature Scheme in the Threshold variant. The construction is based on the SDitH MPC protocol in \autoref{sec:sdith-mpc}, its transformation into ZK-PoK using MPCitH (detailed in the appendix Appendix \ref{sec:sdith-zkpok}) and finally transformation into a signature scheme in \autoref{sec:sdith-signature}. Additionally, we describe optimizations applied to the protocol, such as avoiding interpolation and utilizing the $d$-split variant of the SD instance. A detailed table summarizing the protocol parameters and security assumptions is provided in \autoref{tab:sdith-protocol-parameters}.
 
 \begin{table}[]
   \begin{tabular}{p{0.12\textwidth}p{0.78\textwidth}}
@@ -1810,7 +1810,7 @@ Due to the linearity of the MPC computation, the output shares can be reconstruc
 The nature of an SD instance allows the protocol to seamlessly transform into a \textit{public-key signature scheme}. Here, the pair $(H, y)$ acts as the public key, while the solution to the SD instance $x$ serves as the private key. The keys is then expanded to $(H', y), (s_A, P, Q)$ following the transformations detailed in \autoref{sec:syndrome}. Furthermore, the public key can be optimised for communication by instead sampling $H'$ from a seed $sd_H$ making the secret key $(sd_H, y)$.
 
 \subsubsection{ZK-PoK protocol}
-First, the MPC protocol (\autoref{def:sdith-mpc}) is transformed into a ZK-PoK using the Threshold MPCitH protocols described by~\cite{feneuil2023threshold,feneuil2023threshold2}. This transformation in full lies outside the scope of this report and is deferred to the appendix in \autoref{sec:sdith-zkpok}. Here we leave a short overview of the transformation~\cite{aguilarsyndrome11}.
+First, the MPC protocol (\autoref{def:sdith-mpc}) is transformed into a ZK-PoK using the Threshold MPCitH protocols described by~\cite{feneuil2023threshold,feneuil2023threshold2}. This transformation in full lies outside the scope of this report and is deferred to the appendix in Appendix \ref{sec:sdith-zkpok}. Here we leave a short overview of the transformation~\cite{aguilarsyndrome11}.
 
 The zero-knowledge property of the protocol is guaranteed by the fact that the verifier only receives $\ell$ shares from an $\ell + 1$-private secret-sharing scheme (SSS).
 The soundness of the ZK-PoK protocol relies on the binding property of the commitment scheme and the prover's inability to simulate multiple inconsistent views of the MPC protocol. By incorporating hash consistency checks and commitment verification, the ZK-PoK protocol ensures that a cheating prover cannot deviate significantly from the behavior expected in an honest execution.
@@ -1913,7 +1913,7 @@ These two updates enable the inverse MPC computation by ensuring that the consta
 
 Therefore, we include an input parameter \texttt{with\_offset} in the MPC protocol \autoref{def:sdith-mpc}, denoted $\varphi^1_{\texttt{with\_offset}}$. This parameter determines whether $S_{\texttt{with\_offset}}, Q_{\texttt{with\_offset}}$ is used. Similarly, $\varphi^2_{\texttt{with\_offset}}$ indicates whether the constant derived from the plain outputs, $-\alpha \cdot \beta$, is added to $v$.
 
-The same applies to $\phi^1$ and $\phi^2$ for the inverse MPC computation. For further clarity, a \textit{toy example} illustrating the inverse MPC computation is provided in \autoref{app:toy_example}.
+The same applies to $\phi^1$ and $\phi^2$ for the inverse MPC computation. For further clarity, a \textit{toy example} illustrating the inverse MPC computation is provided in Appendix \ref{app:toy_example}.
 
 \subsubsection{The protocols}
 We introduce the signing and verification protocols in \autoref{def:sdith-sign} and \autoref{def:sdith-verify}, respectively.
@@ -2115,9 +2115,9 @@ For each of the NIST categories the keys and signature sizes are presented in \a
                       & \multicolumn{3}{c}{\textbf{Sizes (in bytes)}}                                \\
     \textbf{Category} & Public key                                    & Secret key & Signature (Max) \\
     \hline
-    I               & $132$                                         & $432$      & $10684$         \\
-    III             & $180$                                         & $628$      & $25964$         \\
-    V              & $244$                                         & $838$      & $45676$         \\
+    I                 & $132$                                         & $432$      & $10684$         \\
+    III               & $180$                                         & $628$      & $25964$         \\
+    V                 & $244$                                         & $838$      & $45676$         \\
     \hline
   \end{tabular}
   \caption{Sizes (in bytes) for the categories in the SDitH protocol.}
@@ -3209,7 +3209,7 @@ To ensure correctness, we created tests to verify the statement above.
 
 \subsubsection{MPC Challenge Generation}
 
-The MPC challenge generated for the ZK-PoK (\autoref{sec:sdith-zkpok}) and the resulting signature scheme (\autoref{sec:sdith-signature}) involves sampling $t$ challenge pairs $(r, \varepsilon)$ for the \autoref{def:sacrifice} protocol.
+The MPC challenge generated for the ZK-PoK (Appendix \ref{sec:sdith-zkpok}) and the resulting signature scheme (\autoref{sec:sdith-signature}) involves sampling $t$ challenge pairs $(r, \varepsilon)$ for the \autoref{def:sacrifice} protocol.
 
 To facilitate this, we encapsulated the values in a \rust{MPCChallenge} struct, providing a convenient interface. The random values are generated using our \rust{PRG} interface, which is initiated with the $h_1$ hash.
 
@@ -3233,7 +3233,7 @@ With all the components in place, we proceeded to implement the MPC protocol as 
 
 Compounding these challenges was the observation that the reference implementation of the MPC protocol incorporated numerous optimizations—such as performing polynomial evaluations outside of the main loop, likely to facilitate the use of SIMD operations in the optimized solution. These optimizations significantly altered the order of certain computations compared to the initial protocol, adding further complexity to aligning our implementation with the expected behavior. This deviation required careful analysis to ensure the correctness of our approach while maintaining compatibility with the optimized reference implementation.
 
-For readers or future implementers facing similar issues, we found it invaluable to develop a \textit{toy example} that reduces the number of parties and repetitions to a minimum. This simplified setting proved extremely useful for debugging and validation. We provide a detailed walkthrough of the underlying mathematical equations, aiding in identifying and resolving implementation discrepancies in \autoref{app:toy_example}.
+For readers or future implementers facing similar issues, we found it invaluable to develop a \textit{toy example} that reduces the number of parties and repetitions to a minimum. This simplified setting proved extremely useful for debugging and validation. We provide a detailed walkthrough of the underlying mathematical equations, aiding in identifying and resolving implementation discrepancies in Appendix \ref{app:toy_example}.
 
 Ultimately, we successfully implemented the MPC protocol -- greatly helped by comparisons of inputs with the reference implementation -- while aligning our implementation more closely with the theoretical specification and still enabling SIMD optimizations through conditional compilation. Our approach involved implementing a base function for the MPC computation, which served as a foundation for both the initial \textit{plain} broadcast computation and the individual party implementation. Notably, we were able to skip computing $v$ for plain values in honest computations, as $v$ would evaluate to $0$ in such cases.
 
@@ -3264,9 +3264,10 @@ As all the subroutines were implemented, the process of signing and verification
     }
 \end{minted}
 
-The setup phase, involving the sampling of the root seed and salt, was left as parameters to the method. In the CLI implementation described later, users can optionally provide their own seed or salt; otherwise, these values are randomly sampled as described in the algorithm.
+For the signing algorithm, we left the setup phase, involving the sampling of the root seed and salt, as parameters to the method. In the CLI implementation described later, users can optionally provide their own seed or salt; otherwise, these values are randomly sampled as described in the algorithm.
 
-We then proceed to follow the algorithm described in \autoref{def:sdith-sign} step-by-step.
+With this implementation, we introduced integration tests for the protocol within the main \texttt{signature} module. The tests include positive scenarios where both signing and verification succeed as intended. Additionally, we implemented negative test cases to account for potential failures, such as incorrect key pairs, invalid witness generation, and corrupted signatures.
+
 
 \section{Finalizing the implementation}\label{sub:final}
 In this section we will discuss our process when finalizing the implementation. We had a few bugs that led us to setup our code to be comparable with the reference implementation. First we will discuss our implementations of the signing and verification algorithms, and how we used the reference implementation to iron out bugs from our own code. Lastly we will discuss how we went about testing our implementation.
@@ -3274,6 +3275,8 @@ In this section we will discuss our process when finalizing the implementation. 
 \subsubsection{Alignment with the Reference Implementation}\label{sub:comparison_with_spec_impl}
 To verify and debug our code, we configured our implementation to align with the reference implementation provided in C. This setup required us to execute the reference code to obtain intermediate data, which we then used to compare internal states between the two implementations. In order to get this to work we ran into the following problems. First we had to setup the same random byte generator to allow our randomness to be the same. Furthermore, during this process, we identified a bug in the calculation of the view-opening challenges. Specifically, the reference implementation neglected to finalize the SHAKE function before squeezing, which posed an issue because the Tiny Keccak Rust library automatically performs this finalization when initializing a hash or XOF.
 Additionally, we discovered that, to produce identical outputs from the XOF, we needed to first rotate the permutation once by supplying an empty vector before invoking the function.
+
+We composed a test suite in the \texttt{kat} module to verify our implementation against the reference implementation. While we conditionally apply some unnecessary hashing operations, allowing us to correctly compare the outputs.
 
 \subsection{Marshalling and reusable testing}\label{sub:testing_our_implementation}
 Many structs in our implementation need to be serialized into byte arrays and subsequently parsed back into their respective structs. For instance, the MPC \rust{Input} type needed to be serialized to facilitate the Shamir's Secret Sharing. To address this, we defined a general trait \rust{Marshalling}:
@@ -3433,7 +3436,7 @@ We measured performance in both cycles per byte and time. Furthermore, we measur
   \centering
   \begin{tabular}{l|l|lll}
     \hline
-    Category                       & Optimisation  & Keygen          & Sign        & Verify          \\
+    Category                     & Optimisation  & Keygen          & Sign        & Verify          \\
     \hline
     \hline
     I \cite{aguilar2023return}   & reference     & $1.07$ ms       & $2.63$ ms   & $0.38$ ms       \\
@@ -3450,12 +3453,12 @@ We measured performance in both cycles per byte and time. Furthermore, we measur
     III                          & simd          & $382.59$ $\mu$s & $6.3998$ ms & $873.75$ $\mu$s \\
     III                          & simd,parallel & $383.29$ $\mu$s & $4.0825$ ms & $874.87$ $\mu$s \\
     \hline
-    V \cite{aguilar2023return}  & reference     & $2.20$ ms       & $13.51$ ms  & $2.05$ ms       \\
+    V \cite{aguilar2023return}   & reference     & $2.20$ ms       & $13.51$ ms  & $2.05$ ms       \\
     \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
-    V                           & base          & $803.73$ $\mu$s & $19.040$ ms & $2.7238$ ms     \\
-    V                           & parallel      & $805.42$ $\mu$s & $8.8069$ ms & $2.8439$ ms     \\
-    V                           & simd          & $676.53$ $\mu$s & $14.255$ ms & $1.8393$ ms     \\
-    V                           & simd,parallel & $673.10$ $\mu$s & $7.4172$ ms & $1.8426$ ms     \\
+    V                            & base          & $803.73$ $\mu$s & $19.040$ ms & $2.7238$ ms     \\
+    V                            & parallel      & $805.42$ $\mu$s & $8.8069$ ms & $2.8439$ ms     \\
+    V                            & simd          & $676.53$ $\mu$s & $14.255$ ms & $1.8393$ ms     \\
+    V                            & simd,parallel & $673.10$ $\mu$s & $7.4172$ ms & $1.8426$ ms     \\
     \hline
   \end{tabular}
   \caption{API benchmarks over each category and optimisation feature flag for \textit{Setup 2}. We ran reference implementation benchmarks as the optimised solution was not compatible with \textit{Setup 2}.}
@@ -3465,7 +3468,7 @@ We measured performance in both cycles per byte and time. Furthermore, we measur
   \centering
   \begin{tabular}{l|l|lll}
     \hline
-    Category                       & Optimisation                  & Keygen          & Sign        & Verify          \\
+    Category                     & Optimisation                  & Keygen          & Sign        & Verify          \\
     \hline
     \hline
     I \cite{aguilar2023return}   & optimized                     & $1.89$ ms       & $2.82$ ms   & $0.96$ ms       \\
@@ -3488,14 +3491,14 @@ We measured performance in both cycles per byte and time. Furthermore, we measur
     III                          & simd,parallel                 & $790.48$ $\mu$s & $8.3999$ ms & $2.2225$ ms     \\
     III                          & simd,parallel (TB)            & $396.58$ $\mu$s & $4.5913$ ms & $1.1621$ ms     \\
     \hline
-    V \cite{aguilar2023return}  & optimized                     & $3.93$ ms       & $14.30$ ms  & $4.98$ ms       \\
-    V \cite{aguilar2023return}  & optimized (TB)                & $1.99$ ms       & $7.20$ ms   & $2.51$ ms       \\
+    V \cite{aguilar2023return}   & optimized                     & $3.93$ ms       & $14.30$ ms  & $4.98$ ms       \\
+    V \cite{aguilar2023return}   & optimized (TB)                & $1.99$ ms       & $7.20$ ms   & $2.51$ ms       \\
     \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
-    V                           & base                          & $1.6175$ ms     & $45.707$ ms & $6.0828$ ms     \\
-    V                           & parallel                      & $1.6190$ ms     & $18.705$ ms & $6.0955$ ms     \\
-    V                           & simd                          & $1.3550$ ms     & $37.560$ ms & $4.5229$ ms     \\
-    V                           & simd,parallel                 & $1.3543$ ms     & $16.364$ ms & $4.5010$ ms     \\
-    V                           & simd,parallel (TB)            & $677.55$ $\mu$s & $9.2047$ ms & $2.3676$ ms     \\
+    V                            & base                          & $1.6175$ ms     & $45.707$ ms & $6.0828$ ms     \\
+    V                            & parallel                      & $1.6190$ ms     & $18.705$ ms & $6.0955$ ms     \\
+    V                            & simd                          & $1.3550$ ms     & $37.560$ ms & $4.5229$ ms     \\
+    V                            & simd,parallel                 & $1.3543$ ms     & $16.364$ ms & $4.5010$ ms     \\
+    V                            & simd,parallel (TB)            & $677.55$ $\mu$s & $9.2047$ ms & $2.3676$ ms     \\
     \hline
   \end{tabular}
   \caption{API benchmarks over each category and optimisation feature flag for \textit{Setup 1}. We ran the optimised reference implementation \cite{aguilar2023return} with and without Turbo Boost enabled.}
@@ -3520,17 +3523,17 @@ Curiously, we observe a larger increase in verification time for our implementat
     \hline
     Implementation                              & Operation & I to III (\%) & III to V (\%) \\
     \hline
-    S1: optimised (TB)~\cite{aguilarsyndrome11} & Keygen    & 17.53             & 74.56              \\
-    S1: optimised (TB)~\cite{aguilarsyndrome11} & Sign      & 144.52            & 101.68             \\
-    S1: optimised (TB)~\cite{aguilarsyndrome11} & Verify    & 157.14            & 99.21              \\
+    S1: optimised (TB)~\cite{aguilarsyndrome11} & Keygen    & 17.53         & 74.56         \\
+    S1: optimised (TB)~\cite{aguilarsyndrome11} & Sign      & 144.52        & 101.68        \\
+    S1: optimised (TB)~\cite{aguilarsyndrome11} & Verify    & 157.14        & 99.21         \\
     \hline
-    S1: simd,parallel (TB)                      & Keygen    & 34.79             & 70.85              \\
-    S1: simd,parallel (TB)                      & Sign      & 146.91            & 100.48             \\
-    S1: simd,parallel (TB)                      & Verify    & 205.57            & 103.73             \\
+    S1: simd,parallel (TB)                      & Keygen    & 34.79         & 70.85         \\
+    S1: simd,parallel (TB)                      & Sign      & 146.91        & 100.48        \\
+    S1: simd,parallel (TB)                      & Verify    & 205.57        & 103.73        \\
     \hline
-    S2: simd,parallel (TB)                      & Keygen    & -10.26            & 75.61              \\
-    S2: simd,parallel (TB)                      & Sign      & 114.92            & 81.68              \\
-    S2: simd,parallel (TB)                      & Verify    & 202.89            & 110.61             \\
+    S2: simd,parallel (TB)                      & Keygen    & -10.26        & 75.61         \\
+    S2: simd,parallel (TB)                      & Sign      & 114.92        & 81.68         \\
+    S2: simd,parallel (TB)                      & Verify    & 202.89        & 110.61        \\
     \hline
   \end{tabular}
   \caption{Running time percentage increases for \textit{Setup 1} (S1) and \textit{Setup 2} (S1). Key Generation, Signing, and Verification between categories \textit{I to III} and \textit{III to V} for rows for the optimised reference implementation \cite{aguilarsyndrome11} and our optimised implementation. Results are negligible between other implementations in \autoref{tab:api_dell_results}}
@@ -3578,11 +3581,11 @@ We were very surprised to observe that including parallelisation for \textit{Set
   \centering
   \begin{tabular}{l|lll}
     \hline
-    Category & Keygen (\%) & Sign (\%) & Verify (\%) \\
+    Category & Keygen (\%) & Sign (\%)  & Verify (\%) \\
     \hline
-    I      & $-69.66$    & $+27.36^*$  & $-22.39$    \\
-    III    & $-65.21$    & $+28.61$  & $-7.77$     \\
-    V     & $-65.95$    & $+27.84$  & $-5.67$     \\
+    I        & $-69.66$    & $+27.36^*$ & $-22.39$    \\
+    III      & $-65.21$    & $+28.61$   & $-7.77$     \\
+    V        & $-65.95$    & $+27.84$   & $-5.67$     \\
     \hline
   \end{tabular}
   \caption{Percentage differences between Optimised reference implementation with TB and our fully optimised implementation with TB for key generation, signing, and verification across categories I, III, and V. * After adjusting the number of threads to 8, the differences where $\approx +13\%$}
@@ -3629,7 +3632,7 @@ For verification, our implementation is slightly faster, particularly for Catego
 
 To show that our implementation is compatible with stable rust, we ran our benchmarks for the \textit{nightly} and \textit{stable} channels. The reason behind this is to argue that our library is production ready, as the nightly is generally not recommended for production environments. Furthermore, we were interested in if there were any optimizations being done in either that could be useful. However, we had to remove our optimization with SIMD as it is not yet a stable Rust feature. We ran our benchmarks with our parallel optimization, as this is done using an external stable crate. The results are shown in \autoref{tab:rust_nightly_vs_stable}.
 
-We see a minor increase ($2\%$) in our keygen when running with stable rust. This is likely due to some overhead introduced by the nightly compiler. However, the difference is negligible. The signing and verification times are identical between the two channels. 
+We see a minor increase ($2\%$) in our keygen when running with stable rust. This is likely due to some overhead introduced by the nightly compiler. However, the difference is negligible. The signing and verification times are identical between the two channels.
 
 \subsubsection{Constant time analysis and Multiplications}
 Since there are no general tools for doing constant time analysis, the analysis must be specific to the protocol. A good starting point is to ask what needs to be protected. For a signature scheme, the main concern is not the message but the secret part of the algorithm, such as the $x$ vector from the syndrome decoding problem, which is the secret key.
@@ -3708,9 +3711,9 @@ We ran a benchmark on the signature size to check if it aligned with the expecte
     \hline
     \textbf{Category} & \textbf{Low \textit{CI 95\%}} & \textbf{Mean} & \textbf{High \textit{CI 95\%}} \\
     \hline
-    I               & $10473.216$ B                 & $10491.816$ B & $10510.416$ B                  \\
-    III             & $25411.584$ B                 & $25439.168$ B & $25476.759$ B                  \\
-    V              & $44520.611$ B                 & $44568.192$ B & $44615.773$ B                  \\
+    I                 & $10473.216$ B                 & $10491.816$ B & $10510.416$ B                  \\
+    III               & $25411.584$ B                 & $25439.168$ B & $25476.759$ B                  \\
+    V                 & $44520.611$ B                 & $44568.192$ B & $44615.773$ B                  \\
     \hline
   \end{tabular}
   \caption{Signature size in bytes for the three categories of the SDitH protocol. The low and high bounds are the 95\% confidence intervals.}\label{tab:sig_size}
@@ -3727,11 +3730,9 @@ In comparison to the reference implementation in C, the decision to adopt Rust a
 
 Rust's feature set contributes extensively to the project's code quality. Its guarantees for memory safety without a garbage collector ensure that potential issues like null pointer dereferencing and data races are mitigated at compile time. Furthermore, the language's expressive type system and ownership model enhance code maintainability, while its documentation and flexibility aligning well with the objectives of this project in terms of creating a readable code base. These attributes not only foster more reliable software but also streamline collaborative development efforts.
 
-\begin{itemize}
-  \item \textit{Conditional compilation} -- Unlike the reference implementation, which is divided into multiple codebases for different categories, our implementation employs Rust's conditional compilation features. This approach consolidates all categories into a single, cohesive codebase, greatly simplifying the overall structure and reducing complexity.
-  \item \textit{Test coverage} -- We extensively utilized Rust's built-in testing framework throughout the development process. This framework not only facilitated debugging but also ensured the correctness of our implementation by providing a robust and reliable means of verification.
-  \item \textit{Debuggable type system} -- Rust's strong and expressive type system enhances both debuggability and code readability, allowing developers to identify and resolve issues more efficiently.
-\end{itemize}
+Unlike the reference implementation, which is divided into multiple codebases for different categories, our implementation employs Rust's conditional compilation features. This approach consolidates all categories into a single, cohesive codebase, greatly simplifying the overall structure and reducing complexity.
+
+We extensively implemented Rust's built-in testing framework throughout the development process. This framework not only facilitated debugging but also ensured the correctness of our implementation by providing a robust and reliable means of verification. It leaves a scaffolding for future works as individual modules are tested in isolation along with integration tests for signing and verification.
 
 \subsubsection{Documentation and code alignment}
 
@@ -3785,8 +3786,11 @@ Moreover, we believe that our implementation makes a meaningful contribution to 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \cleardoublepage
+
 \appendix
-\chapter{Appendix}
+\section*{Appendices}
+\addcontentsline{toc}{chapter}{Appendices}
+\renewcommand{\thesection}{\Alph{section}}
 
 \section{ZK from Cut-and-Choose}\label{sec:zk-cut-and-choose}
 
@@ -3883,182 +3887,75 @@ Our primary objective was to mitigate the strict dependency of the communication
 \end{lemma}
 
 
-\section{Merkle Tree Commitment Revealed Nodes}\label{sub:merkle_tree_revealed_nodes}
+% \section{Merkle Tree Commitment Revealed Nodes}\label{sub:merkle_tree_revealed_nodes}
 
-We chose to follow the definitions for the merkle tree provided in \cite{aguilarsyndrome11}. However, we added a separate method that calculates bottom up the revealed nodes based on the view opening challenges. This is used to know the length of the authentication path that is added to the signature and is needed when parsing the signature for verification. The algorithm uses the queue structure which is also mentioned in the spec, where the tree structure is a 1D array with the last elements being the leaf. First it checks for empty input. Then we initiate an empty list to hold the revealed nodes. Now in order to traverse the tree we will get the $heightIndex$ and $lastIndex$, which are the current layer of the tree, and the index of the 1D array of where the current layer stops. Lastly we need a queue to hold the indexes. Now in order to find the revealed nodes it starts by adding the indexes of the selected leaves to the queue. Then we go through the queue until the next index is $1$ which indicates that we are at the root. In the while loop we first get the current index, and then check if we have gone up a layer in the tree, and if the current node is a left child. If the current node is a left child and it is the last index in the layer, then we can just skip to the next node because we know it has no sibling. If it is not the last node we get the next node as a candidate, if the queue is not empty. If the current node is still the left child, and the next node in the queue is the other child of the same parent we do not need to add this as a revealed node as it is part of the known values. But if the next node is not the right child of the current node we add it as a revealed node. If the current node is not the left child we add the left child to the revealed nodes. And then we add the parent index to the queue. When we exit the while loop we have traversed the tree bottom up adding for each layer the neighbours of the selected leaves. The algorithm is described in pseudocode in \autoref{alg:get-revealed-nodes}.
-
-
-\begin{breakablealgorithm}
-  \caption{Get Revealed Nodes for Selected Leaves in Merkle Tree}\label{alg:get-revealed-nodes}
-  \begin{algorithmic}[1]
-    \Require $selectedLeaves$: List of selected leaf indices
-    \Ensure List of revealed node indices
-
-    \Function{getRevealedNodes}{$selectedLeaves$}
-    \If{$selectedLeaves$ is empty}
-    \State \Return empty list
-    \EndIf
-
-    \State $revealedNodes \gets \text{empty list}$
-    \State $(heightIndex,\; lastIndex) \gets (1 \ll treeHeight,\; treeNodes - 1)$
-    \State $queue \gets \text{empty queue}$
+% We chose to follow the definitions for the merkle tree provided in \cite{aguilarsyndrome11}. However, we added a separate method that calculates bottom up the revealed nodes based on the view opening challenges. This is used to know the length of the authentication path that is added to the signature and is needed when parsing the signature for verification. The algorithm uses the queue structure which is also mentioned in the spec, where the tree structure is a 1D array with the last elements being the leaf. First it checks for empty input. Then we initiate an empty list to hold the revealed nodes. Now in order to traverse the tree we will get the $heightIndex$ and $lastIndex$, which are the current layer of the tree, and the index of the 1D array of where the current layer stops. Lastly we need a queue to hold the indexes. Now in order to find the revealed nodes it starts by adding the indexes of the selected leaves to the queue. Then we go through the queue until the next index is $1$ which indicates that we are at the root. In the while loop we first get the current index, and then check if we have gone up a layer in the tree, and if the current node is a left child. If the current node is a left child and it is the last index in the layer, then we can just skip to the next node because we know it has no sibling. If it is not the last node we get the next node as a candidate, if the queue is not empty. If the current node is still the left child, and the next node in the queue is the other child of the same parent we do not need to add this as a revealed node as it is part of the known values. But if the next node is not the right child of the current node we add it as a revealed node. If the current node is not the left child we add the left child to the revealed nodes. And then we add the parent index to the queue. When we exit the while loop we have traversed the tree bottom up adding for each layer the neighbours of the selected leaves. The algorithm is described in pseudocode in \autoref{alg:get-revealed-nodes}.
 
 
-    \ForAll{$leaf \in selectedLeaves$} \Comment{Add commitments to the queue}
-    \State $val \gets (1 \ll treeHeight) + leaf$
-    \If{$\text{queue.add}(val)$ fails}
-    \State \textbf{panic} ``Could not add element to queue''
-    \EndIf
-    \EndFor
+% \begin{breakablealgorithm}
+%   \caption{Get Revealed Nodes for Selected Leaves in Merkle Tree}\label{alg:get-revealed-nodes}
+%   \begin{algorithmic}[1]
+%     \Require $selectedLeaves$: List of selected leaf indices
+%     \Ensure List of revealed node indices
 
-    \While{$queue.peek() \neq 1$} \Comment{Do until we reach the root}
-    \State $index \gets queue.remove()$
+%     \Function{getRevealedNodes}{$selectedLeaves$}
+%     \If{$selectedLeaves$ is empty}
+%     \State \Return empty list
+%     \EndIf
 
-    \If{$index < heightIndex$}
-    \State $heightIndex \gets heightIndex \gg 1$
-    \State $lastIndex \gets lastIndex \gg 1$
-    \EndIf
+%     \State $revealedNodes \gets \text{empty list}$
+%     \State $(heightIndex,\; lastIndex) \gets (1 \ll treeHeight,\; treeNodes - 1)$
+%     \State $queue \gets \text{empty queue}$
 
-    \State $isLeftChild \gets (index \; \% \; 2 == 0)$
 
-    \If{$isLeftChild \land index == lastIndex$}
-    \Comment{Node has no sibling}
-    \State \textbf{continue}
-    \Else
-    \State $candidateIndex \gets 0$
-    \If{\textbf{not} $queue.isEmpty()$}
-    \State $candidateIndex \gets queue.peek()$
-    \EndIf
+%     \ForAll{$leaf \in selectedLeaves$} \Comment{Add commitments to the queue}
+%     \State $val \gets (1 \ll treeHeight) + leaf$
+%     \If{$\text{queue.add}(val)$ fails}
+%     \State \textbf{panic} ``Could not add element to queue''
+%     \EndIf
+%     \EndFor
 
-    \If{$isLeftChild \land (candidateIndex == index + 1)$}
-    \State $queue.remove()$
-    \ElsIf{$isLeftChild$}
-    \State $revealedNodes.append(index + 1)$
-    \Else
-    \State $revealedNodes.append(index - 1)$
-    \EndIf
-    \EndIf
+%     \While{$queue.peek() \neq 1$} \Comment{Do until we reach the root}
+%     \State $index \gets queue.remove()$
 
-    \State $parentIndex \gets index \gg 1$
-    \If{$queue.add(parentIndex)$ fails}
-    \State \textbf{panic} ``Could not add element to queue''
-    \EndIf
-    \EndWhile
+%     \If{$index < heightIndex$}
+%     \State $heightIndex \gets heightIndex \gg 1$
+%     \State $lastIndex \gets lastIndex \gg 1$
+%     \EndIf
 
-    \State \Return $revealedNodes$
-    \EndFunction
+%     \State $isLeftChild \gets (index \; \% \; 2 == 0)$
 
-  \end{algorithmic}
-\end{breakablealgorithm}
+%     \If{$isLeftChild \land index == lastIndex$}
+%     \Comment{Node has no sibling}
+%     \State \textbf{continue}
+%     \Else
+%     \State $candidateIndex \gets 0$
+%     \If{\textbf{not} $queue.isEmpty()$}
+%     \State $candidateIndex \gets queue.peek()$
+%     \EndIf
 
-\section{MPC computation toy example}\label{app:toy_example}
+%     \If{$isLeftChild \land (candidateIndex == index + 1)$}
+%     \State $queue.remove()$
+%     \ElsIf{$isLeftChild$}
+%     \State $revealedNodes.append(index + 1)$
+%     \Else
+%     \State $revealedNodes.append(index - 1)$
+%     \EndIf
+%     \EndIf
 
-The computation is based on HVZKAoK Protocol using imperfect preprocessing and sacrificing. Section 3.3~\cite{baum2020concretely}.
+%     \State $parentIndex \gets index \gg 1$
+%     \If{$queue.add(parentIndex)$ fails}
+%     \State \textbf{panic} ``Could not add element to queue''
+%     \EndIf
+%     \EndWhile
 
-A toy example of the computation protocol computations, can be seen in~\autoref{fig:mpc}. We have the two computation methods. Here for 1 split and 1 evaluation point. This means that we have only value for each challenge and Beaver triple. Note that any arithmetic is run in GF256, so addition and subtraction are both \texttt{XOR} and multiplication is modulus $x^8 + x^4 + x^3 + x + 1$. Furthermore, for negation we have that $-a = a$.
+%     \State \Return $revealedNodes$
+%     \EndFunction
 
-\begin{figure}[H]
-  \makebox[\textwidth]{
-    \fbox{\begin{minipage}[t]{.45\textwidth}
-        \noindent \texttt{PartyComputation}
-        \begin{flalign*}
-           & \textit{Input: }                                                               \\
-           & (s_a, Q, P, a, b, c), (\overline{\alpha}, \overline{\beta}), (H', y)           \\
-           & (\varepsilon, r), \texttt{with\_offset}                                        \\
-           & \textit{Output: }                                                              \\
-           & (\alpha, \beta, v)                                                             \\\\
-           & Q = Q_1\text{ if \texttt{with\_offset} else }Q_0                               \\
-           & S = (s_a | y + H's_a) \text{ if \texttt{with\_offset} else } (s_a | H's_a)     \\
-           & v = -c                                                                         \\
-           & \alpha = \varepsilon \cdot Q(r) + a                                            \\
-           & \beta = S(r) + b                                                               \\
-           & v \mathrel{{+}{=}} \varepsilon \cdot F(r) \cdot P(r)                           \\
-           & v \mathrel{{+}{=}} \overline{\alpha} \cdot b + \overline{\beta} \cdot a        \\
-           & v \mathrel{{+}{=}} - \alpha \cdot \beta \text{ \ \ \ if \texttt{with\_offset}}
-        \end{flalign*}
-      \end{minipage}}
-    \hfill
-    \noindent
-    \fbox{\begin{minipage}[t]{.45\textwidth}
-        \noindent \texttt{InverseComputation}
-        \begin{flalign*}
-           & \textit{Input: }                                                                \\
-           & (s_a, Q, P), (\alpha, \beta, v), (\overline{\alpha}, \overline{\beta}), (H', y) \\
-           & (\varepsilon, r), \texttt{with\_offset}                                         \\
-           & \textit{Output: }                                                               \\
-           & (a, b, c)                                                                       \\\\
-           & Q = Q_1\text{ if \texttt{with\_offset} else }Q_0                                \\
-           & S = (s_a | y + H's_a) \text{ if \texttt{with\_offset} else } (s_a | H's_a)      \\
-           & c = -v                                                                          \\
-           & a = \alpha - \varepsilon \cdot Q(r)                                             \\
-           & b = \beta - S(r)                                                                \\
-           & c \mathrel{{+}{=}} \varepsilon \cdot F(r) \cdot P(r)                            \\
-           & c \mathrel{{+}{=}} \overline{\alpha} \cdot b + \overline{\beta} \cdot a         \\
-           & c \mathrel{{+}{=}} - \alpha \cdot \beta \text{ \ \ \ if \texttt{with\_offset}}
-        \end{flalign*}
-      \end{minipage}}}
-  \caption{Simplified version of the MPC party computation and inverse computation. $Q_0$ means that $Q$ is completed with a $0$ for leading coefficient. Furthermore, $F$ is precomputed. Note that all arithmetic is done in $\mathbb{F}_q = GF256$. All elements are in $\mathbb{F}_q^\eta$ except for the coefficients of $Q$, $S$ and $P$ which are in $\mathbb{F}_q$.}\label{fig:mpc}
-\end{figure}
-\bigskip
+%   \end{algorithmic}
+% \end{breakablealgorithm}
 
-Note that the
-
-If we first instantiate an input $i$ and one random input $i^*$ (like the \texttt{input\_coef}).Then the input share is generated by adding the two. Similar, but simpler, to the input share generation of Algorithm 12, line 13 of the specification.
-\begin{align*}
-  i                & = (s_a, Q, P, a,b,c)                                             \\
-  i^*              & = ({s_a}^*, Q^*, P^*, a^*,b^*,c^*)                               \\
-  \sh{i} = i + i^* & = ({s_a} + {s_a}^*, Q + Q^*, P + P^*, a + a^*, b + b^*, c + c^*) \\
-                   & = (\sh{s_a}, \sh{Q}, \sh{P}, \sh{a}, \sh{b}, \sh{c})             \\
-  \texttt{chal}    & = (\varepsilon, r)                                               \\
-  \texttt{pk}      & = (H', y)
-\end{align*}
-We also compute the plain broadcast share of the input as per Algorithm 12, line 18. Note that $\overline{v}$ is computed to zero and therefore removed from the computation in the implementation.
-\begin{align*}
-  (\overline{\alpha},\ \overline{\beta})         & =
-  \texttt{PartyComputation}(i,\ (\overline{\alpha}, \overline{\beta}),\ \texttt{chal},\ \texttt{pk},\ \texttt{true})                                                                                            \\\\
-  \overline{\alpha}                         =    & \varepsilon \cdot Q_1(r) + a                                                                                                                                 \\
-  \overline{\beta}                          =    & S_y(r)  + b                                                                                                                                                  \\
-  \overline{v}                            =      & -c + \varepsilon \cdot F(r) \cdot P(r) + \overline{\alpha} \cdot b + \overline{\beta} \cdot a  - \overline{\alpha} \cdot \overline{\beta}                    \\
-  \overline{v}                            =      & -c + \varepsilon \cdot F(r) \cdot P(r) + (\varepsilon \cdot Q_1(r) + a) \cdot b + (S_y(r)  + b) \cdot a  - (\varepsilon \cdot Q_1(r) + a) \cdot (S_y(r) + b) \\
-  \overline{v}                            =      & -c + \varepsilon \cdot F(r) \cdot P(r)                                                                                                                       \\
-                                                 & + \varepsilon \cdot Q_1(r) \cdot b + c + S_y(r) \cdot a + c                                                                                                  \\
-                                                 & - \varepsilon \cdot Q_1(r) \cdot S_y(r) - \varepsilon \cdot Q_1(r) \cdot b - a \cdot S_y(r) - c                                                              \\
-  \overline{v}                                 = & \ 0
-\end{align*}
-We then compute a broadcast share from the randomness and the broadcast, as per Algorithm 12, line 21.
-\begin{align*}
-  (\alpha^*, \beta^*, v^*) & = \texttt{PartyComputation}(i^*, (\overline{\alpha},
-  \overline{\beta}), \texttt{chal}, \texttt{pk}, \texttt{false})                  \\\\
-  \alpha^*                 & = \varepsilon \cdot {Q^*}_0(r) + a^*                 \\
-  \beta^*                  & =  {S^*}_0(r) + b^*
-\end{align*}
-This broadcast share is sent to the verifier along with the truncated input share (removing the Beaver triples). The verifier then needs to recompute the input share Beaver triples using the \texttt{InverseComputation} function. First we add the input share to the broadcast share as per Algorithm 13, line 8.
-\begin{align*}
-  (\alpha', \beta', v') & = (\alpha^*, \beta^*, v^*) + (\overline{\alpha},\ \overline{\beta}, 0)
-  = (\alpha^* + \overline{\alpha}, \beta^* + \overline{\beta}, v^* + 0)                          \\\\
-  \alpha'               & = \varepsilon \cdot {Q^*}_0(r) + a^* + \overline{\alpha}               \\
-                        & = \varepsilon \cdot {Q^*}_0(r) + a^* + \varepsilon \cdot Q_1(r) + a    \\
-  \beta'                & = {S^*}_0(r) + b^* + \overline{\beta}                                  \\
-                        & = {S^*}_0(r) + b^* + S_y(r) + b                                        \\
-\end{align*}
-Next, the verifier computes the inverse of the broadcast share to recompute $(\sh{a}, \sh{b}, \sh{c})$ using the \texttt{InverseComputation} function. This is done as per Algorithm 13, line 10.
-\begin{align*}
-  (a', b', c') & = \texttt{InverseComputation}(\sh{i}, (\alpha', \beta', v'),
-  (\overline{\alpha}, \overline{\beta}), \texttt{chal}, \texttt{pk}, \texttt{true})                                                              \\\\
-  a'           & = \alpha' - \varepsilon \cdot {\sh{Q}}_1(r)                                                                                     \\
-               & = \varepsilon \cdot {Q^*}_0(r) + a^* + \varepsilon \cdot Q_1(r) + a - \varepsilon \cdot {\sh{Q}}_1(r)                           \\
-               & = \varepsilon \cdot {Q^*}_0(r) - \varepsilon \cdot {\sh{Q}}_1(r) + \varepsilon \cdot Q_1(r) + \sh{a}                            \\
-               & = \varepsilon \cdot ({Q^*}_0(r) - {\sh{Q}}_1(r) +  Q_1(r)) + \sh{a}                                                             \\
-               & = \varepsilon \cdot (Q^*_0(r) +  Q^*_0(r)) + \sh{a}                                                   &  & \autoref{eq:mpcpoly} \\
-               & = \sh{a}                                                                                              &  & \autoref{eq:mpcpoly} \\
-  b'           & = \beta' - {\sh{S}}_y(r)                                                                                                        \\
-               & = {S^*}_0(r) + b^* + S_y(r) + b - {\sh{S}}_y(r)                                                                                 \\
-               & = {S^*}_0(r) - {\sh{S}}_y(r) + S_y(r)  + \sh{b}                                                                                 \\
-               & = {S^*}_0(r) - S^*_0(r)  + \sh{b}                                                                     &  & \autoref{eq:mpcpoly} \\
-               & = \sh{b}                                                                                              &  & \autoref{eq:mpcpoly} \\
-\end{align*}
-
-\section{ZK-PoK Protocol}\label{sec:sdith-zkpok}
+\section{Threshold SDitH ZK-PoK Protocol}\label{sec:sdith-zkpok}
 
 To obtain a signature scheme from \autoref{def:sdith-mpc}, two transformations are needed. First, we will transform the MPC protocol into a zero-knowledge proof of knowledge (ZK-PoK) using MPCitH. The ZK-PoK described \autoref{def:sdith-zkpok} in is based on the verification by sacrificing triples strategy for MPCitH~\cite{baum2020concretely} detailed in \autoref{sec:mpc_sacrificing} but has key changes to accommodate the threshold variant of the protocol~\cite{feneuil2023threshold,feneuil2023threshold2}.
 
@@ -4129,6 +4026,109 @@ To obtain a signature scheme from \autoref{def:sdith-mpc}, two transformations a
 \begin{lemma}[Completeness of \autoref{def:sdith-zkpok}]
   Follows from the MPC completeness. Any prover $\mathcal{P}$ that follows the steps of the protocol always succeds in convincing the verifier.
 \end{lemma}
+
+\section{MPC computation toy example}\label{app:toy_example}
+
+The computation is based on \autoref{def:sdith-mpc}. We present a toy example of the computation protocol computations, can be seen in~\autoref{fig:mpc}. We have the two computation methods. Here for 1 split and 1 evaluation point. This means that we have only value for each challenge and Beaver triple. Note that any arithmetic is run in GF256, so addition and subtraction are both \texttt{XOR} and multiplication is modulus $x^8 + x^4 + x^3 + x + 1$. Furthermore, for negation we have that $-a = a$.
+
+\begin{figure}[H]
+  \makebox[\textwidth]{
+    \fbox{\begin{minipage}[t]{.45\textwidth}
+        \noindent \texttt{PartyComputation}
+        \begin{flalign*}
+           & \textit{Input: }                                                               \\
+           & (s_a, Q, P, a, b, c), (\overline{\alpha}, \overline{\beta}), (H', y)           \\
+           & (\varepsilon, r), \texttt{with\_offset}                                        \\
+           & \textit{Output: }                                                              \\
+           & (\alpha, \beta, v)                                                             \\\\
+           & Q = Q_1\text{ if \texttt{with\_offset} else }Q_0                               \\
+           & S = (s_a | y + H's_a) \text{ if \texttt{with\_offset} else } (s_a | H's_a)     \\
+           & v = -c                                                                         \\
+           & \alpha = \varepsilon \cdot Q(r) + a                                            \\
+           & \beta = S(r) + b                                                               \\
+           & v \mathrel{{+}{=}} \varepsilon \cdot F(r) \cdot P(r)                           \\
+           & v \mathrel{{+}{=}} \overline{\alpha} \cdot b + \overline{\beta} \cdot a        \\
+           & v \mathrel{{+}{=}} - \alpha \cdot \beta \text{ \ \ \ if \texttt{with\_offset}}
+        \end{flalign*}
+      \end{minipage}}
+    \hfill
+    \noindent
+    \fbox{\begin{minipage}[t]{.45\textwidth}
+        \noindent \texttt{InverseComputation}
+        \begin{flalign*}
+           & \textit{Input: }                                                                \\
+           & (s_a, Q, P), (\alpha, \beta, v), (\overline{\alpha}, \overline{\beta}), (H', y) \\
+           & (\varepsilon, r), \texttt{with\_offset}                                         \\
+           & \textit{Output: }                                                               \\
+           & (a, b, c)                                                                       \\\\
+           & Q = Q_1\text{ if \texttt{with\_offset} else }Q_0                                \\
+           & S = (s_a | y + H's_a) \text{ if \texttt{with\_offset} else } (s_a | H's_a)      \\
+           & c = -v                                                                          \\
+           & a = \alpha - \varepsilon \cdot Q(r)                                             \\
+           & b = \beta - S(r)                                                                \\
+           & c \mathrel{{+}{=}} \varepsilon \cdot F(r) \cdot P(r)                            \\
+           & c \mathrel{{+}{=}} \overline{\alpha} \cdot b + \overline{\beta} \cdot a         \\
+           & c \mathrel{{+}{=}} - \alpha \cdot \beta \text{ \ \ \ if \texttt{with\_offset}}
+        \end{flalign*}
+      \end{minipage}}}
+  \caption{Simplified version of the MPC party computation and inverse computation. $Q_0$ means that $Q$ is completed with a $0$ for leading coefficient. Furthermore, $F$ is precomputed. Note that all arithmetic is done in $\mathbb{F}_q = GF256$. All elements are in $\mathbb{F}_q^\eta$ except for the coefficients of $Q$, $S$ and $P$ which are in $\mathbb{F}_q$.}\label{fig:mpc}
+\end{figure}
+\bigskip
+
+If we first instantiate an input $i$ and one random input $i^*$ (like the \texttt{input\_coef}).Then the input share is generated by adding the two. Similar, but simpler, to the input share generation of Algorithm 12, line 13 of the specification.
+\begin{align*}
+  i                & = (s_a, Q, P, a,b,c)                                             \\
+  i^*              & = ({s_a}^*, Q^*, P^*, a^*,b^*,c^*)                               \\
+  \sh{i} = i + i^* & = ({s_a} + {s_a}^*, Q + Q^*, P + P^*, a + a^*, b + b^*, c + c^*) \\
+                   & = (\sh{s_a}, \sh{Q}, \sh{P}, \sh{a}, \sh{b}, \sh{c})             \\
+  \texttt{chal}    & = (\varepsilon, r)                                               \\
+  \texttt{pk}      & = (H', y)
+\end{align*}
+We also compute the plain broadcast share of the input as per Algorithm 12, line 18. Note that $\overline{v}$ is computed to zero and therefore removed from the computation in the implementation.
+\begin{align*}
+  (\overline{\alpha},\ \overline{\beta})         & =
+  \texttt{PartyComputation}(i,\ (\overline{\alpha}, \overline{\beta}),\ \texttt{chal},\ \texttt{pk},\ \texttt{true})                                                                                            \\\\
+  \overline{\alpha}                         =    & \varepsilon \cdot Q_1(r) + a                                                                                                                                 \\
+  \overline{\beta}                          =    & S_y(r)  + b                                                                                                                                                  \\
+  \overline{v}                            =      & -c + \varepsilon \cdot F(r) \cdot P(r) + \overline{\alpha} \cdot b + \overline{\beta} \cdot a  - \overline{\alpha} \cdot \overline{\beta}                    \\
+  \overline{v}                            =      & -c + \varepsilon \cdot F(r) \cdot P(r) + (\varepsilon \cdot Q_1(r) + a) \cdot b + (S_y(r)  + b) \cdot a  - (\varepsilon \cdot Q_1(r) + a) \cdot (S_y(r) + b) \\
+  \overline{v}                            =      & -c + \varepsilon \cdot F(r) \cdot P(r)                                                                                                                       \\
+                                                 & + \varepsilon \cdot Q_1(r) \cdot b + c + S_y(r) \cdot a + c                                                                                                  \\
+                                                 & - \varepsilon \cdot Q_1(r) \cdot S_y(r) - \varepsilon \cdot Q_1(r) \cdot b - a \cdot S_y(r) - c                                                              \\
+  \overline{v}                                 = & \ 0
+\end{align*}
+We then compute a broadcast share from the randomness and the broadcast, as per Algorithm 12, line 21.
+\begin{align*}
+  (\alpha^*, \beta^*, v^*) & = \texttt{PartyComputation}(i^*, (\overline{\alpha},
+  \overline{\beta}), \texttt{chal}, \texttt{pk}, \texttt{false})                  \\\\
+  \alpha^*                 & = \varepsilon \cdot {Q^*}_0(r) + a^*                 \\
+  \beta^*                  & =  {S^*}_0(r) + b^*
+\end{align*}
+This broadcast share is sent to the verifier along with the truncated input share (removing the Beaver triples). The verifier then needs to recompute the input share Beaver triples using the \texttt{InverseComputation} function. First we add the input share to the broadcast share as per Algorithm 13, line 8.
+\begin{align*}
+  (\alpha', \beta', v') & = (\alpha^*, \beta^*, v^*) + (\overline{\alpha},\ \overline{\beta}, 0)
+  = (\alpha^* + \overline{\alpha}, \beta^* + \overline{\beta}, v^* + 0)                          \\\\
+  \alpha'               & = \varepsilon \cdot {Q^*}_0(r) + a^* + \overline{\alpha}               \\
+                        & = \varepsilon \cdot {Q^*}_0(r) + a^* + \varepsilon \cdot Q_1(r) + a    \\
+  \beta'                & = {S^*}_0(r) + b^* + \overline{\beta}                                  \\
+                        & = {S^*}_0(r) + b^* + S_y(r) + b                                        \\
+\end{align*}
+Next, the verifier computes the inverse of the broadcast share to recompute $(\sh{a}, \sh{b}, \sh{c})$ using the \texttt{InverseComputation} function. This is done as per Algorithm 13, line 10.
+\begin{align*}
+  (a', b', c') & = \texttt{InverseComputation}(\sh{i}, (\alpha', \beta', v'),
+  (\overline{\alpha}, \overline{\beta}), \texttt{chal}, \texttt{pk}, \texttt{true})                                    \\\\
+  a'           & = \alpha' - \varepsilon \cdot {\sh{Q}}_1(r)                                                           \\
+               & = \varepsilon \cdot {Q^*}_0(r) + a^* + \varepsilon \cdot Q_1(r) + a - \varepsilon \cdot {\sh{Q}}_1(r) \\
+               & = \varepsilon \cdot {Q^*}_0(r) - \varepsilon \cdot {\sh{Q}}_1(r) + \varepsilon \cdot Q_1(r) + \sh{a}  \\
+               & = \varepsilon \cdot ({Q^*}_0(r) - {\sh{Q}}_1(r) +  Q_1(r)) + \sh{a}                                   \\
+               & = \varepsilon \cdot (Q^*_0(r) +  Q^*_0(r)) + \sh{a}                                                   \\
+               & = \sh{a}                                                                                              \\
+  b'           & = \beta' - {\sh{S}}_y(r)                                                                              \\
+               & = {S^*}_0(r) + b^* + S_y(r) + b - {\sh{S}}_y(r)                                                       \\
+               & = {S^*}_0(r) - {\sh{S}}_y(r) + S_y(r)  + \sh{b}                                                       \\
+               & = {S^*}_0(r) - S^*_0(r)  + \sh{b}                                                                     \\
+               & = \sh{b}                                                                                              \\
+\end{align*}
 
 
 \end{document}
