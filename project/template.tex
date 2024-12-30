@@ -3377,9 +3377,7 @@ This chapter presents the benchmarking results of our implementation. As detaile
 We conducted a series of tests to evaluate both the overall performance as well as individual subroutines and optimisation steps
 
 \begin{itemize}[parsep=0pt, itemsep=3pt]
-  \item \textit{Combined benchmarks for the Rust implementation} -- Full benchmarks for our implementation and each optimisation flag.
-
-        We ran benchmarks for our implementation on both setups 1 and 2 \autoref{fig:benchmarking_setups}. We ran all combinations of feature flags for parallelisation, SIMD on the \textit{release} profile. Furthermore, we ran with and without Turbo Boost enabled for setup 1.
+  \item \textit{Combined benchmarks for the Rust implementation} -- Full benchmarks for our implementation and each optimisation flag. We ran benchmarks for our implementation on both setups 1 and 2 \autoref{fig:benchmarking_setups}. We ran all combinations of feature flags for parallelisation, SIMD on the \textit{release} profile. Furthermore, we ran with and without Turbo Boost enabled for setup 1.
   \item \textit{Optimized reference implementation benchmarks} -- For comparison, we benchmarked the reference implementation on setup 1 \autoref{fig:benchmarking_setups}. We used \texttt{clang@15} for compilation, which is the same used by~\cite{aguilarsyndrome11}. We ran both with and without Turbo Boost enabled.
   \item \textit{Rust Nightly vs Stable} -- We ran a comparison between the compiling in the \textit{nightly} and \textit{stable} channels for rust.
   \item \textit{Multiplication algorithms} -- We benchmarked multiplication algorithms for \textit{Lookup} and \textit{Shift-and-Add} unit and integration tests.
