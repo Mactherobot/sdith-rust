@@ -6,7 +6,7 @@
 
 This is a masters thesis project 2024-25 at Aarhus University, Denmark.
 
-"SDitH signature protocol in Rust"
+"The SDitH signature protocol in Rust"
 
 Authors: [Hugh Benjamin Zachariae](https://github.com/arcuo), [Magnus Jensen](https://github.com/Mactherobot)
 
