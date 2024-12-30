@@ -2960,7 +2960,7 @@ for e in 0..PARAM_TAU {
 }
 \end{minted}
 
-The most significant optimisation we gained from parallelisation is hidden in the function in terms of the \rust{get_iterator} function. With the \texttt{parallel} feature flag this function dynamically dispaches either a normal iterator or a parallel iterator from \texttt{rayon}. This allows us to compute the shares in parallel, significantly improving performance while allowing us to disable this feature for testing purposes.
+The most significant optimisation we gained from parallelisation is hidden in the \rust{get_iterator} function. With the \texttt{parallel} feature flag this function dynamically dispaches either a normal iterator or a parallel iterator from \texttt{rayon}. This allows us to compute the shares in parallel, significantly improving performance while allowing us to disable this feature for testing purposes.
 
 \section{Keygen -- Sampling SD instance}\label{sub:witness_generation}
 
