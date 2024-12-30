@@ -189,7 +189,7 @@ We would like to extend a huge thanks to our supervisor, Professor Diego F. Aran
 
 Furthermore, we would like give a heartfelt thanks to friends, family and partners who have each shown their support in encouragement and food or snack deliveries when needed! Their support has been invaluable in keeping us motivated and focused on our goals (and with full bellies)
 
-Finally, we would like to express our gratitude to the authors of the SDitH protocol. Without their work and dedication, this project would not have been possible. 
+Finally, we would like to express our gratitude to the authors of the SDitH protocol. Without their work and dedication, this project would not have been possible.
 
 \vspace{2ex}
 \begin{flushright}
@@ -255,7 +255,7 @@ Furthermore, our choice of Rust was driven by a desire to investigate the langua
 
 \section{Our contributions}
 
-In this report, we present an implementation of the NIST round to candidate, the SDitH protocol. We will be developing the protocol in the Rust programming language which presents a modern alternative C/C++.
+In this report, we present an implementation of the NIST round to candidate, the SDitH protocol. We will be developing the protocol in the Rust programming language which presents a modern alternative C/C++. The
 
 While the NIST standardization has an overarching goal of \textit{selecting a number of acceptable candidate cryptosystems for standardization}~\cite{nistcall}, they also state that the goal of the submitted reference implementation is to promote understanding of the submitted algorithm.
 
@@ -1663,9 +1663,9 @@ The SDitH protocol establishes a signature scheme by demonstrating the correctne
   \item \textbf{Deriving a signature scheme:} Adapt the ZKP into a digital signature scheme using the Fiat-Shamir transformation, as described in \autoref{sec:fiatshamir}.
 \end{enumerate}
 
-The construction is highly modular, allowing flexibility and adaptability, as you can tweak the SD instance, the MPC protocol, the MPCitH and Fiat-Shamir transformations. The authors propose two distinct protocol variants: the \textit{hypercube} variant and the \textit{threshold} variant. For this work, we focus on the \textit{threshold} variant~\cite{aguilarsyndrome11,feneuil2023threshold,feneuil2023threshold2}, as it offers significant performance enhancements compared to both the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11,aguilar2023return,feneuil2023threshold2}, albeit at the cost of slightly larger signature sizes.
+The construction is highly modular, allowing flexibility and adaptability, as you can tweak the SD instance, the MPC protocol, the MPCitH and Fiat-Shamir transformations. The authors propose two distinct protocol variants: the \textit{hypercube} variant and the \textit{threshold} variant. For this work, we focus on the \textit{threshold} variant~\cite{aguilarsyndrome11,feneuil2023threshold,feneuil2023threshold2}, as it offers significant performance enhancements compared to both the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11,aguilar2023return,feneuil2023threshold2} -- at the cost of slightly larger signature sizes.
 
-This chapter presents a comprehensive specification of the SDitH Signature Scheme in the Threshold variant. The construction is based on the SDitH MPC protocol in \autoref{sec:sdith-mpc}, its transformation into ZK-PoK using MPCitH (described in \autoref{sec:sdith-zkpok}) and finally transformation into a signature scheme in \autoref{sec:sdith-signature}. Additionally, we describe optimizations applied to the protocol, such as avoiding interpolation and utilizing the $d$-split variant of the SD instance. A detailed table summarizing the protocol parameters and security assumptions is provided in \autoref{tab:sdith-protocol-parameters}.
+This chapter presents a comprehensive specification of the SDitH Signature Scheme in the Threshold variant. The construction is based on the SDitH MPC protocol in \autoref{sec:sdith-mpc}, its transformation into ZK-PoK using MPCitH (detailed in the appendix \autoref{sec:sdith-zkpok}) and finally transformation into a signature scheme in \autoref{sec:sdith-signature}. Additionally, we describe optimizations applied to the protocol, such as avoiding interpolation and utilizing the $d$-split variant of the SD instance. A detailed table summarizing the protocol parameters and security assumptions is provided in \autoref{tab:sdith-protocol-parameters}.
 
 \begin{table}[]
   \begin{tabular}{p{0.12\textwidth}p{0.78\textwidth}}
@@ -1812,6 +1812,11 @@ The nature of an SD instance allows the protocol to seamlessly transform into a 
 \subsubsection{ZK-PoK protocol}
 First, the MPC protocol (\autoref{def:sdith-mpc}) is transformed into a ZK-PoK using the Threshold MPCitH protocols described by~\cite{feneuil2023threshold,feneuil2023threshold2}. This transformation in full lies outside the scope of this report and is deferred to the appendix in \autoref{sec:sdith-zkpok}. Here we leave a short overview of the transformation~\cite{aguilarsyndrome11}.
 
+The zero-knowledge property of the protocol is guaranteed by the fact that the verifier only receives $\ell$ shares from an $\ell + 1$-private secret-sharing scheme (SSS).
+The soundness of the ZK-PoK protocol relies on the binding property of the commitment scheme and the prover's inability to simulate multiple inconsistent views of the MPC protocol. By incorporating hash consistency checks and commitment verification, the ZK-PoK protocol ensures that a cheating prover cannot deviate significantly from the behavior expected in an honest execution.
+
+\clearpage
+
 \begin{protocol}[SDitH ZK-PoK protocol]
   \label{pro:sdith-zkpok}
   For a $(\ell + 1, N)$-threshold MPC protocol
@@ -1824,9 +1829,6 @@ First, the MPC protocol (\autoref{def:sdith-mpc}) is transformed into a ZK-PoK u
     \item The verifier verifies the consistency of the MPC computation for the revealed parties.
   \end{enumerate}
 \end{protocol}
-
-The zero-knowledge property of the protocol is guaranteed by the fact that the verifier only receives $\ell$ shares from an $\ell + 1$-private secret-sharing scheme (SSS).
-The soundness of the ZK-PoK protocol relies on the binding property of the commitment scheme and the prover's inability to simulate multiple inconsistent views of the MPC protocol. By incorporating hash consistency checks and commitment verification, the ZK-PoK protocol ensures that a cheating prover cannot deviate significantly from the behavior expected in an honest execution.
 
 As outlined in~\cite{feneuil2023threshold}, the general ZK-PoK (without threshold) soundness error is defined as:
 \begin{align*}
@@ -2103,7 +2105,8 @@ Assuming that each field element in $F_q$ is represented by a byte, the signatur
   |\sigma| =
   \lambda + 2d \cdot t \cdot \eta + \tau \cdot \ell \cdot k + 2w + (2d + 1) \cdot t \cdot \eta + \log_2(N / \ell).
 \end{align*}
-For the NIST categories presented in \autoref{tab:secparam} we get the following sizes:
+
+For each of the NIST categories the keys and signature sizes are presented in \autoref{tab:secparam}.
 
 \begin{table}[H]
   \centering
@@ -2112,9 +2115,9 @@ For the NIST categories presented in \autoref{tab:secparam} we get the following
                       & \multicolumn{3}{c}{\textbf{Sizes (in bytes)}}                                \\
     \textbf{Category} & Public key                                    & Secret key & Signature (Max) \\
     \hline
-    One               & $132$                                         & $432$      & $10684$         \\
-    Three             & $180$                                         & $628$      & $25964$         \\
-    Five              & $244$                                         & $838$      & $45676$         \\
+    I               & $132$                                         & $432$      & $10684$         \\
+    III             & $180$                                         & $628$      & $25964$         \\
+    V              & $244$                                         & $838$      & $45676$         \\
     \hline
   \end{tabular}
   \caption{Sizes (in bytes) for the categories in the SDitH protocol.}
@@ -2128,20 +2131,20 @@ The security analysis of the SDitH signature scheme is based on the proposed sta
 With the development of new quantum algorithms and unknowns in the capacities of the future quantum computers, there remain large uncertainties in estimating the security of the algorithms. To combat these uncertainties, NIST proposed for the 2022 stadardization effort, to define the security of submissions in a range of five categories. Each, with an easy-to-analyze cryptographic primitive providing the lower bound for a variety of metrics deemed relevant to practical security.
 
 \begin{definition}\label{def:nistsec}
-  Any attack that breaks the relevant security definition must require computational resources comparable to or greater than those required for key search on a block cipher with a 128-bit (e.g. AES-128), 192-bit (e.g. AES-192) and 256-bit (e.g. AES-256) for categories \textbf{one}, \textbf{three} and \textbf{five} respectively.
+  Any attack that breaks the relevant security definition must require computational resources comparable to or greater than those required for key search on a block cipher with a 128-bit (e.g. AES-128), 192-bit (e.g. AES-192) and 256-bit (e.g. AES-256) for categories \textbf{I}, \textbf{III} and \textbf{V} respectively.
 \end{definition}
 
 In terms of quantum security, the complexity and capability of quantum algorithms are measured in terms of quantum circuit size, i.e. the number of quantum gates in the quantum circuit. In order to estimate the quantum security of the signature protocols, circuit size can be compared to the resources required to break the security of \autoref{def:nistsec}.
 
 \subsubsection{NIST Categories}
 
-The SDitH specification provides security parameters adhering to categories one, three and five. Therefore, according to the proposal by NIST, the SDitH specification provides security metrics in terms of quantum circuit depth to optimal key recovery for AES-128, AES-192 and AES-256 for categories \textbf{one}, \textbf{three} and \textbf{five} respectively. These are estimated to be $2^{143}$, $2^{207}$ and $2^{272}$ classical gates~\cite{nistcall}.
+The SDitH specification provides security parameters adhering to categories I, III and V. Therefore, according to the proposal by NIST, the SDitH specification provides security metrics in terms of quantum circuit depth to optimal key recovery for AES-128, AES-192 and AES-256 for categories \textbf{I}, \textbf{III} and \textbf{V} respectively. These are estimated to be $2^{143}$, $2^{207}$ and $2^{272}$ classical gates~\cite{nistcall}.
 
 \subsubsection{Security Assumptions}
 
 The SDitH protocol is secure under the following assumptions:
 
-Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search (see \autoref{def:nistsec}) in terms of quantum circuit size. For this, $\kappa$ is defined as $143$, $207$ and $272$ for the categories~\cite{nistcall}. Furthermore, the XOF primitive used is secure with 128-bit, 192-bit, 256-bit security levels for each of the categories respectively. Finally, the Hash function used \textit{behaves as a random oracle}. Specifically, security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM)~\cite{aguilarsyndrome11} -- see \autoref{sub:qrom}. 
+Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search (see \autoref{def:nistsec}) in terms of quantum circuit size. For this, $\kappa$ is defined as $143$, $207$ and $272$ for the categories~\cite{nistcall}. Furthermore, the XOF primitive used is secure with 128-bit, 192-bit, 256-bit security levels for each of the categories respectively. Finally, the Hash function used \textit{behaves as a random oracle}. Specifically, security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM)~\cite{aguilarsyndrome11} -- see \autoref{sub:qrom}.
 
 \subsubsection{Security Definition}
 
@@ -2205,7 +2208,6 @@ Similarly, the Beaver triples $a$ and $b$ are adjusted for the $d$-split as foll
 \begin{align*}
   c_j & = \sum_{i=1}^d a_{i,j} \cdot b_{i,j}, \quad j \in [\tau].
 \end{align*}
-
 While the $d$-split variant introduces a slight reduction in security compared to the standard SD problem, this is mitigated by a small increase in the security parameters $m$, and $w$. The primary advantage of this variant lies in its flexibility. We have a bound on the size of the $|\mathbb{F}_q| \geq m/d$. Therefore, the main benefit of introducing the $d$-split version is to let the protocol work on polynomials of smaller degree and/or on specific fields which provides better performance trade-offs~\cite{aguilarsyndrome11}. The increase in parameters are given by
 \begin{align}
   \epsilon_1 \geq \frac{\binom{m/d}{w/d}}{\binom{m}{w}} \cdot \epsilon_d\label{eq:d_split_epsilon}
@@ -2216,15 +2218,7 @@ a proof of this can be found in~\cite[p27]{feneuil2022syndrome}
 
 All parameters provided in \autoref{tab:secparam} and cryptographic primitives in \autoref{tab:hashparam}.
 
-\subsubsection{SD Parameters}
-
-The SD parameters are are calculated to ensure that known attacks like ISD \autoref{eq:sd_cost} have a complexity of at least $2^\kappa$. The field $q$ is chosen due to the fact that it is both convenient to sample, efficient on most architectures and because it yields close to optimal signature sizes~\cite{aguilarsyndrome11}. The splitting parameter $d$ is used to ensure that $m/d \leq q$ for the public $F$ polynomial of degree $m$.
-
-\subsubsection{MPCitH Parameters}
-
-For the MPCitH parameters, $N$ is set to the $q$ which is the maximal according to the field size. $\ell$ is set to $3$ as it provides a good trade-off between signature size and computational overhead~\cite{aguilarsyndrome11}. The parameters $t, \tau$ are given by \autoref{eq:forgery_attack_cost} and \autoref{eq:d_split_epsilon}.
-
-\begin{table}
+\begin{table}[H]
   \centering
   \def\arraystretch{1.5}%  1 is the default, change whatever you need
   \begin{tabular}{cccccccccccccc}
@@ -2238,7 +2232,7 @@ For the MPCitH parameters, $N$ is set to the $q$ which is the maximal according 
   \caption{Security parameters for the SDitH protocol for categories one, three and five~\cite{aguilarsyndrome11}.}\label{tab:secparam}
 \end{table}
 
-\begin{table}
+\begin{table}[H]
   \centering
   \def\arraystretch{1.5}%  1 is the default, change whatever you need
   \begin{tabular}{clll}
@@ -2250,102 +2244,110 @@ For the MPCitH parameters, $N$ is set to the $q$ which is the maximal according 
   \caption{Hash and XOF functions used in the SDitH protocol for categories one, three and five~\cite{aguilarsyndrome11}.}\label{tab:hashparam}
 \end{table}
 
+\subsubsection{SD Parameters}
+
+The SD parameters are are calculated to ensure that known attacks like ISD \autoref{eq:sd_cost} have a complexity of at least $2^\kappa$. The field $q$ is chosen due to the fact that it is both convenient to sample, efficient on most architectures and because it yields close to optimal signature sizes~\cite{aguilarsyndrome11}. The splitting parameter $d$ is used to ensure that $m/d \leq q$ for the public $F$ polynomial of degree $m$.
+
+\subsubsection{MPCitH Parameters}
+
+For the MPCitH parameters, $N$ is set to the $q$ which is the maximal according to the field size. $\ell$ is set to $3$ as it provides a good trade-off between signature size and computational overhead~\cite{aguilarsyndrome11}. The parameters $t, \tau$ are given by \autoref{eq:forgery_attack_cost} and \autoref{eq:d_split_epsilon}.
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \chapter{Implementation}\label{ch:impl}
 
-We set out to implement the SDitH Protocol using a modern, well-maintained language that provides the necessary performance and security for a post-quantum secure signature scheme. To achieve this, we selected Rust~\cite{rustlangRustProgramming,nistsaferlanguages,lurklurkEffectiveRust,rustlangPerformanceBook} as the programming language. As a principle and to give ourselves the ability to manage the protocol effectively, we aimed to develop as much of the project's code as possible independently, minimizing reliance on pre-existing packages. This approach included implementing subroutines for the Galois Finite Field and Merkle Tree Commitment Scheme. However, for cryptographic primitives such as hash functions~\cite{blakethree,tinykeccak}, we utilized external libraries. This reliance is common, as developing such primitives securely often requires an entire dedicated effort and a whole project in itself.
+We set out to implement the SDitH Protocol using a modern, well-maintained language that provides the necessary performance and security for a post-quantum secure signature scheme. To achieve this, we selected Rust~\cite{rustlangRustProgramming,nistsaferlanguages,lurklurkEffectiveRust,rustlangPerformanceBook} as the programming language. To manage the protocol efficiently, we chose to rely as little as possible on external packages and to write most of the subroutines ourselves. This included implementing subroutines for Galois Finite Fields and Merkle Tree Commitment Schemes.
+
+For cryptographic primitives like hash functions~\cite{blakethree,tinykeccak}, we used external libraries. This is a common approach since securely developing cryptographic primitives requires significant effort and is often treated as a standalone project. Furthermore, for developing the CLI we used the \href{https://docs.rs/clap/latest/clap/}{\texttt{clap}} crate which provides a simple and intuitive API for building command line interfaces.
 
 Initially, we aimed to base our implementation solely on the specification. However, this approach proved challenging due to ambiguities in some of the definitions, making it unclear how certain elements should be implemented and making testing the outcomes hard. To address this, we instead aligned our implementation in terms of outputs with the reference implementation. This provided a valuable tool for debugging and figuring out these ambiguities.
 
 This section provides a detailed overview of our implementation. We present a brief walkthrough of the structure and each module in our implementation, detailing how the code aligns with the SDitH specification. Additionally, we describe the steps taken to test and optimize these modules and discuss the challenges encountered during their development.
 
-% Talk about this in benchmarking chapter
-% We can now use the before mentioned criterion package to benchmark the different implementations and see the performance difference:
-
-% \begin{minted}{bash}
-%   $ cargo bench
-% Simple addition         time:   [421.31 ps 425.66 ps 434.68 ps]
-% SIMD addition           time:   [420.70 ps 421.12 ps 421.58 ps]
-% \end{minted}
-% So we see that the SIMD addition is significantly faster than the simple addition. Even more when the data size increases.
-% However, we were still able to utilize this to gain a performance increase in our implementation.
-
 \section{Structure}
-To maintain a clear separation of concerns, we have structured the codebase using Rust modules (\autoref{sub:rust_modules}), ensuring that each component of the protocol is well-organized. As illustrated in \autoref{fig:structure}, the root directory of our project contains several key files:
+To maintain a clear separation of concerns, we have structured the codebase using Rust modules (\autoref{sub:rust_modules}), ensuring that each component of the protocol is well-organized.
 
-\begin{itemize}
+\begin{itemize}[itemsep=2pt, parsep=0pt]
   \item \texttt{Cargo.toml}: Defines the package metadata and its dependencies.
-  \item \texttt{build.rs}: Specifies build steps that are executed before compiling the binary.
-  \item \texttt{README.md}: Provides instructions and information for running the project.
+  \item \texttt{build.rs}: Specifies build steps that are executed before compiling the binary. These mostly include adding warnings on the configuration used for the build -- e.g., NIST category, optimisations enabled etc.
+  \item \texttt{README.md}: Provides instructions and information for running the project. Any reader who is interested to run or develop with the code base are encouraged to read this file along with our \href{https://mactherobot.github.io/sdith-rust}{documentation}.
+  \item \texttt{bencher.py}: Python script to run a collection of benchmarks.
 \end{itemize}
 
 In addition to these files, the directory includes several subdirectories:
 
-\begin{itemize}
-  \item \texttt{benches}: Contains functionality for benchmarking the code.
+\begin{itemize}[itemsep=2pt, parsep=0pt]
+  \item \texttt{benches}, \texttt{examples}: Contains functionality for benchmarking the code. The \texttt{examples} was used to host \textit{dudect} implementation.
   \item \texttt{src}: Hosts the main codebase, structured into several submodules for modularity and clarity.
 \end{itemize}
 
-Within the \texttt{src} directory, the code is further divided into submodules, each serving a distinct purpose:
-
-\begin{itemize}
-  \item \texttt{constants}: Defines parameters and types used throughout the protocol.
-  \item \texttt{kat}: Contains Known Answer Tests (KAT) for verifying implementation correctness.
-  \item \texttt{signature}: Implements the signature protocol.
-  \item \texttt{subroutines}: Provides helper functions supporting various components of the protocol.
-        \begin{itemize}
-          \item Arith: Contains arithmetic operations for finite fields.
-          \item Merkle tree: Implements a Merkle tree commitment scheme
-          \item PRG: Implements a pseudo-random generator.
-          \item MPC: The MPC simulation for the protocol.
-        \end{itemize}
-  \item \texttt{utils}: Offers utility functions used across the codebase.
-\end{itemize}
+Within the \texttt{src} directory, the code is further divided into submodules, each serving a distinct purpose. We aimed to align the modules as closely as possible with their theoretical counterparts described in this report and the specification.
 
 This modular design ensures that each aspect of the protocol is encapsulated within its respective submodule, making the codebase easier to understand, maintain, and extend.
-\begin{figure}[H]
-  \dirtree{%
-    .1 \color{orange}Cargo.toml.
-    .1 \color{orange}build.rs.
-    .1 \color{orange}README.md.
-    .1 benches/.
-    .1 examples/.
-    .1 src/.
-    .2 bin/.
-    .3 cli/\color{orange}cli.rs.
-    .3 profiling/sign.rs.
-    .2 \color{orange}lib.rs.
-    .2 \color{teal}keygen.rs.
-    .2 \color{teal}witness.rs.
-    .2 constants/.
-    .3 \color{teal}params.rs.
-    .3 \color{teal}precomputed.rs.
-    .3 \color{teal}types.rs.
-    .2 kat/\dots.
-    .2 signature/\dots.
-    .3 \color{teal}input.rs.
-    .3 \color{teal}sign.rs.
-    .3 \color{teal}verify.rs.
-    .2 subroutines/\dots.
-    .3 prg/\dots.
-    .3 mpc/\dots.
-    .3 \color{teal}challenge.rs.
-    .3 \color{teal}commitments.rs.
-    .3 \color{teal}hashing.rs.
-    .3 \color{teal}merkle\_tree.rs.
-    .2 utils/.
-    .3 \color{teal}iterator.rs.
-    .3 \color{teal}marshalling.rs.
-  }
-  \caption{The directory structure of the project. \texttt{mod.rs} files are omitted for brevity.}
-  \label{fig:structure}
-\end{figure}
+
+\begin{itemize}[itemsep=2pt, parsep=0pt]
+  \item \texttt{lib.rs}: Entry for the \texttt{rsdith} crate.
+  \item \texttt{bin}: Binary targets for the project. Including the CLI tool and a profiling binary. Details are specified in the \texttt{README.md}.
+  \item \texttt{constants}: Defines parameters and types used throughout the protocol.
+  \item \texttt{kat}: Contains Known Answer Tests (KAT) for verifying implementation correctness against the reference implementation. Only included with the feature flag \texttt{kat}.
+  \item \texttt{signature}: Implements the signature and verification protocols.
+  \item \texttt{subroutines}: Subroutine functions supporting various components of the protocol.
+        \begin{itemize}[itemsep=2pt, parsep=0pt]
+          \item \texttt{arith}: Contains arithmetic operations for finite fields. Currently only has GF256 implementation.
+          \item \texttt{merkle\_tree}: Implements a Merkle tree commitment scheme
+          \item \texttt{prg}: Implements a pseudo-random generator (XOF) and hashing functions for $h_1$ and $h_2$.
+          \item \texttt{mpc}: The MPC simulation for the protocol. This includes separate modules for Beaver triples and input sharing.
+          \item \texttt{challenge}: Generates challenges for the protocol.
+          \item \texttt{commitments}: Functions for committing input shares.
+        \end{itemize}
+  \item \texttt{utils}: Offers utility functions used across the codebase.
+  \item \texttt{keygen}: Key generation. Holds the logic for sampling the witness and solution to the SD instance.
+\end{itemize}
+
+% \begin{figure}[H]
+%   \dirtree{%
+%     .1 \color{orange}Cargo.toml.
+%     .1 \color{orange}build.rs.
+%     .1 \color{orange}README.md.
+%     .1 benches/.
+%     .1 examples/.
+%     .1 src/.
+%     .2 bin/.
+%     .3 cli/\color{orange}cli.rs.
+%     .3 profiling/sign.rs.
+%     .2 \color{orange}lib.rs.
+%     .2 \color{teal}keygen.rs.
+%     .2 \color{teal}witness.rs.
+%     .2 constants/.
+%     .3 \color{teal}params.rs.
+%     .3 \color{teal}precomputed.rs.
+%     .3 \color{teal}types.rs.
+%     .2 kat/\dots.
+%     .2 signature/\dots.
+%     .3 \color{teal}input.rs.
+%     .3 \color{teal}sign.rs.
+%     .3 \color{teal}verify.rs.
+%     .2 subroutines/\dots.
+%     .3 prg/\dots.
+%     .3 mpc/\dots.
+%     .3 \color{teal}challenge.rs.
+%     .3 \color{teal}commitments.rs.
+%     .3 \color{teal}hashing.rs.
+%     .3 \color{teal}merkle\_tree.rs.
+%     .2 utils/.
+%     .3 \color{teal}iterator.rs.
+%     .3 \color{teal}marshalling.rs.
+%   }
+%   \caption{The directory structure of the project. \texttt{mod.rs} files are omitted for brevity.}
+%   \label{fig:structure}
+% \end{figure}
 
 \section{Constants}\label{sub:constants}
-Due to its tunability, the protocol requires a lot of parameters to function. We store these in \textit{constants}. Consider a simple example in the size of the Hash output \rust{PARAM_DIGEST_SIZE}. The type output of a hash function would be a and array of bytes. We would simply type it a follows
+Due to the protocol's ``tunability,'' it requires a significant number of parameters to function. These parameters are stored in \textit{constants}, allowing Rust to allocate items defined by them (e.g. arrays and slices) to the stack for improved performance.
+
+As an example, consider the size of the hash output defined as \rust{PARAM_DIGEST_SIZE}. The type of the hash function's output would be an array of bytes, which can be declared as follows:
 
 \begin{minted}{rust}
   const PARAM_DIGEST_SIZE: usize = 256 / 8;
@@ -2373,6 +2375,8 @@ We introduced three feature flags -- \texttt{category\_one}, \texttt{category\_t
   pub(super) const PARAM_DIGEST_SIZE: usize = 384;
 \end{minted}
 
+\subsubsection{Custom parameters}\label{sub:custom_params}
+
 This technique is particularly useful as it allows users to specify a custom set of parameters. To enable this, we introduce an additional feature flag, \texttt{category\_custom}. This flag, in combination with an environment variable \texttt{SDITH\_CUSTOM\_PARAMS\_PATH}, enables conditional loading of a custom parameters file:
 
 \begin{minted}{rust}
@@ -2382,7 +2386,9 @@ mod cat {
 }
 \end{minted}
 
-This implementation makes the adaptability and tunability of the protocol available, providing users with greater flexibility to tailor the parameters to their specific needs.
+This implementation makes the adaptability and tunability of the protocol accessible, providing users with greater flexibility to tailor the parameters to their specific needs.
+
+Although we did not have the time, we would like to extend this feature in the future with an analysis of the parameters and their impact on signature size, performance, and the resulting security, as calculated using \autoref{eq:sd_cost} and \autoref{eq:forgery_attack_cost}.
 
 \section{Subroutines}\label{sub:subroutines}
 The modularity of the SDitH protocol allowed us to implement its initial components as a set of subroutines.
@@ -2413,6 +2419,8 @@ The \texttt{PRG} struct was designed to produce random bytes and includes straig
 Our initial implementation targeted the NIST Category 1 requirements \cite{aguilarsyndrome11}, which made use of Shake128 \cite{aguilarsyndrome11} as the XOF. However, we needed a more flexible approach to support other variants, such as those used in Category 3 and Category 5. In addition, we wanted the option to substitute the XOF with alternative, potentially more efficient implementations without having to rewrite large portions of the code.
 
 To achieve this flexibility, we introduced a trait that defines a common interface for different XOF implementations. By applying generics, we can easily plug in any XOF that conforms to this trait, making it simple to switch between Shake128 and Blake3 (or any other compatible function) within the same PRG structure.
+
+\clearpage
 
 \begin{minted}{rust}
   // subroutines/prg/xof.rs
@@ -2458,19 +2466,6 @@ The base variant is implemented with Shake and can be adjusted depending on the 
   }
 \end{minted}
 
-In order to explore performance upgrades for the hashing we implemented a separate version of the \rust{SDitHXOF} struct that uses the \texttt{blake3} crate~\cite{blakethree} as the underlying hash function.
-
-\begin{minted}{rust}
-  impl SDitHXOFTrait<blake3::OutputReader> for SDitHXOF<blake3::OutputReader> {
-    fn get_xof() -> blake3::OutputReader {
-        blake3::Hasher::new().finalize_xof()
-    }
-    ...
-  }
-\end{minted}
-
-We only made simple tests for this module, as we trusted the underlying library to correctly implement the primitive according to NIST standards. Instead we simply tested each method individually and made sure that they actually updated the state of the mutable input.
-
 \begin{minted}{rust}
   #[test]
   fn test_prg() {
@@ -2485,7 +2480,9 @@ We only made simple tests for this module, as we trusted the underlying library 
 
 \subsection{Hashing}\label{sec:hashing} % (fold)
 As mentioned in the \nameref{def:sdith-sign}, we need a collision-resistant hash function. For this we also used the tiny-keccak crate. And again due to the different security categories, we had to be able to switch between different implementations of the underlying hash function.
+
 First, as mentioned in the \autoref{sub:constants}, we defined a primitive type for the Hash which we used to define a generic trait:
+
 \begin{minted}{rust}
 pub trait SDitHHashTrait<T> {
     /// Get the hasher for the hash primitive
@@ -2500,7 +2497,25 @@ pub trait SDitHHashTrait<T> {
     fn update(&mut self, data: &[u8]);
 }
 \end{minted}
+
 We then implemented the trait, as was shown in \autoref{sub:prg}, for the following hash primitives \texttt{SHA3-256}, \texttt{SHA3-384} and \texttt{SHA3-512}.
+
+\subsubsection*{Blake3}\label{sub:blake3}
+
+In order to explore performance upgrades for the underlying hashing we implemented a separate version of the \rust{SDitHXOF} and \rust{SDitHHash} structs in order to use the \texttt{blake3} crate~\cite{blakethree} as the underlying hash function.
+
+\begin{minted}{rust}
+  impl SDitHXOFTrait<blake3::OutputReader> for SDitHXOF<blake3::OutputReader> {
+    fn get_xof() -> blake3::OutputReader {
+        blake3::Hasher::new().finalize_xof()
+    }
+    ...
+  }
+\end{minted}
+
+The \texttt{SHA3} implementation required by NIST~\cite{nistcall}, while highly secure, is not optimal in terms of performance due to the numerous rounds required to ensure its robustness. To address this, we introduced a feature flag, \texttt{blake3}, enabling the use of the more efficient \texttt{Blake3} hash function. This change resulted in dramatic performance improvements. However, the SDitH protocol, being heavily reliant on the security of its commitment scheme due to its MPCitH nature, depends critically on the strength of the underlying hash function. Therefore, the \texttt{blake3} feature is restricted to Category I security levels and intended strictly for exploratory purposes.
+
+As anticipated, the performance gains resulting from substituting the hash function were significant -- especially in the Merkle tree generation. As demonstrated in \autoref{tab:blake3}. By profiling, we saw that the computational overhead for Merkle tree construction decreased from $54\%$ to approximately $38\%$ of the total execution time. This reduction aligns closely with the time complexity observed for the MPC computations.
 
 \subsection{Commitments}
 
@@ -2526,7 +2541,8 @@ for a hash $\texttt{Hash}_3$ (\autoref{eq:fiatshamirhash})
 \begin{align*}
   \texttt{node}_i = \texttt{Hash}_3(i, \texttt{node}_{2i}, \texttt{node}_{2i + 1})\text{ and } |\texttt{nodes}| = 2N
 \end{align*}
-While we might have increased legibility by implementing a \textit{pointer based} structure, we experimented with these and it yielded no tangible improvements. Therefore, we opted to retain the array because of its performance benefits and alignment with the specification.
+
+While a \textit{pointer-based} structure might have improved legibility, our experiments showed no significant gains in terms of making the implementation more readable. Furthermore our initial tries introduced some overhead. Nonetheless, we believe this approach could be worth exploring in the future to better support parallelization. For now, we chose to retain the array structure due to its performance advantages and its alignment with the specification.
 
 As the protocol specifies fixed-size trees for each category, we utilized constants from \autoref{sub:constants} to allocate the tree efficiently on the stack.
 
@@ -2556,7 +2572,7 @@ We defined a trait for the Merkle tree with methods derived from the specificati
 
 \subsubsection{Generating the Merkle Tree}\label{sec:new}
 
-We implemented the tree using a bottom-up approach, where child nodes are hashed, and parent nodes are updated iteratively. The root hash is stored at the first index of the array and returned as the global commitment.
+We implemented the tree generation using a bottom-up approach, where child nodes are hashed, and parent nodes are updated iteratively. The root hash is stored at the first index of the array and returned as the global commitment.
 
 To validate the correctness of the Merkle tree implementation, we perform the following steps
 
@@ -2568,7 +2584,7 @@ To validate the correctness of the Merkle tree implementation, we perform the fo
 
 Our initial design adheres to Algorithm~5 described in~\cite[p31]{aguilarsyndrome11}. However, through optimization efforts, it became apparent that the Merkle tree construction presented a significant performance bottleneck during the signing process. Profiling results revealed that this stage consumed approximately $52-54\%$ of the execution time on the main thread, highlighting the need for further optimization.
 
-We introduced batching in the tree construction, inspired by the reference implementation. In this approach, four parent hashes are computed simultaneously, improving efficiency during tree-building.
+To address the performance overhead, we introduced batching in the tree construction, inspired by the reference implementation. This approach computes four parent hashes simultaneously, enhancing efficiency during the tree-building process.
 
 \begin{minted}{rust}
 fn merkle_hash_x4(parent_indexes, left_child_hashes, right_child_hashes, salt);
@@ -2577,12 +2593,6 @@ fn merkle_hash_x4(parent_indexes, left_child_hashes, right_child_hashes, salt);
 As has become standard in our approach, we implemented this functionality as a feature flag, \texttt{merkle\_batching}, and conditionally compiled it into the codebase. The batching approach provided a modest improvement in performance.
 
 We further investigated the possibility of parallelizing the construction of parent hashes, enabled through the feature flag \texttt{merkle\_parallel}. Theoretically, this would allow independent computation of each parent hash, potentially improving efficiency. However, this approach significantly increased implementation complexity and introduced substantial thread allocation overhead, ultimately resulting in a performance regression. Consequently, we decided to retain the sequential approach for its simplicity and better overall performance.
-
-\subsubsection*{Blake3}\label{sub:blake3}
-
-In addition, we explored the use of alternative hash functions. The \texttt{SHA3} implementation required by NIST~\cite{nistcall}, while highly secure, is not optimal in terms of performance due to the numerous rounds required to ensure its robustness. To address this, we introduced a feature flag, \texttt{blake3}, enabling the use of the more efficient \texttt{Blake3} hash function. This change resulted in dramatic performance improvements. However, the SDitH protocol, being heavily reliant on the security of its commitment scheme due to its MPCitH nature, depends critically on the strength of the underlying hash function. Therefore, the \texttt{blake3} feature is restricted to Category I security levels and intended strictly for exploratory purposes.
-
-As anticipated, the performance gains resulting from substituting the hash function were significant. As demonstrated in \autoref{tab:blake3}. By profiling, we saw that the computational overhead for Merkle tree construction decreased to approximately $38\%$ of the total execution time. This reduction aligns closely with the time complexity observed for the MPC computations.
 
 \subsubsection{Computing the authentication paths}\label{sub:auth_path}
 The initial implementation traversed the array in reverse order, identifying missing nodes by verifying parent-child relationships. This approach followed the structure outlined in Algorithm~6 of~\cite[p30]{aguilarsyndrome11}. Ultimately, however, we transitioned to a \textit{queue}-based method implemented in \rust{get_revealed_nodes}:
@@ -2715,7 +2725,7 @@ for (j, (aj, bj)) in ab.enumerate() {
 }
 \end{minted}
 
-To ensure that our arithmetic implementation adheres to the expected properties of a finite field, we created a test suite for the trait. This umbrella test verifies properties such as commutativity, associativity, and distributivity. Here is the implementation:
+To ensure that our arithmetic implementation adheres to the expected properties of a finite field, we created a test suite for the trait. This reusable test verifies properties such as \textit{commutativity}, \textit{associativity}, and \textit{distributivity}.
 
 \begin{minted}{rust}
 pub(super) fn test_field_definitions<T>(prg: PRG)
@@ -2753,7 +2763,7 @@ where
 }
 \end{minted}
 
-This test could then be reused for all \rust{FieldArith} implementations.
+The test could then be reused for all \rust{FieldArith} implementations by simply calling the \rust{test_field_definitions} function with a \rust{PRG} instance.
 
 \begin{minted}{rust}
 #[cfg(test)]
@@ -2861,19 +2871,6 @@ This approach ensures efficiency by reducing redundant computations in the field
 
 Since the $\mathbb{F}_{q^2}$ field is only utilized as a building block for the $\mathbb{F}_{q^4}$ field -- and correctness is primarily validated through tests on $\mathbb{F}_{q^4}$ -- we implemented a minimal test to ensure correctness in $\mathbb{F}_{q^2}$. Instead we only verified that our simple multiplication by 32 was consistent with the regular multiplication.
 
-% \begin{minted}{rust}
-%     fn test_f_256_16_mul_32() {
-%         let mut prg = PRG::init(&[0u8; PARAM_SEED_SIZE], None);
-%         let a: [u8; 2] = prg.sample_field_fq_elements_vec(2).try_into().unwrap();
-%         let n32 = [0u8, 32u8];
-
-%         let mul32 = gf256_ext16_mul32(a);
-%         let expected = gf256_ext16_mul(a, n32);
-
-%         assert_eq!(mul32, expected);
-%     }
-% \end{minted}
-
 \subsubsection{Extending to the 32 bit field $\mathbb{F}_{q^4}$}\label{sec:gf_256_32_bit_field}
 Finally, we extended the field $\mathbb{F}_{q^2}$ to $\mathbb{F}_{q^4}$. The implementation for this extension was similar to that of $\mathbb{F}_{q^2}$, with the primary difference being the use of a specific multiplication function optimized for operations with $32$ elements.
 
@@ -2928,35 +2925,30 @@ After defining the field arithmetic, we implemented the necessary vector operati
 Initially, we developed straightforward implementations of these functions, iterating through the vector and applying field arithmetic to each element. Subsequently, we optimized these operations by implementing SIMD versions of each function -- available through the \texttt{simd} feature flag -- significantly enhancing performance.
 
 \subsection{MPC Inputs and sharing}
-When implementing the signing algorithm, we needed to generate a set of input shares for the MPC simulation. Since this functionality is logically related to the MPC simulation, we decided to implement it within the MPC subroutine.
+When implementing the signing algorithm, one of the key steps involved generating a set of input shares for the MPC simulation. Since this functionality is closely tied to the MPC simulation itself, we incorporated it into the MPC subroutine.
 
-The function takes as input a Pseudo-Random Generator (PRG) and the plain input value. It begins by sampling random coefficients, which are used to compute the input shares. Each share is computed as defined in \autoref{sec:sdith-signature}. Our implementation of this computation is as follows:
+The function accepts the \rust{PRG} and the plain input value as inputs. It begins by sampling random coefficients, which are subsequently used to calculate the input shares. Each share is computed according to the methodology outlined in \autoref{sec:sdith-signature}.
 
 \begin{minted}{rust}
-pub fn compute_share<const SIZE: usize>(
-    plain: &[u8; SIZE],
-    rnd_coefs: &[[u8; SIZE]],
-    fi: u8,
-    skip_loop: bool,
-) -> [u8; SIZE] {
-    let mut share = *rnd_coefs.last().unwrap();
+pub fn compute_input_shares(
+    input_plain: &[u8; INPUT_SIZE],
+    prg: &mut PRG,
+) -> ComputeInputSharesResult {
+    let mut input_shares = Box::new([[[0u8; INPUT_SIZE]; PARAM_N]; PARAM_TAU]);
 
-    // Compute the inner sum Horner method
-    if !skip_loop {
-        for j in (0..(rnd_coefs.len() - 1)).rev() {
-            gf256_mul_scalar_add_vector(&mut share, &rnd_coefs[j], fi);
-        }
+    // Generate coefficients
+    let mut input_coefs = [[[0u8; INPUT_SIZE]; PARAM_L]; PARAM_TAU];
+    input_coefs.iter_mut().for_each(|input_coefs_e| {
+        input_coefs_e
+            .iter_mut()
+            .for_each(|input_coefs_ei| prg.sample_field_fq_elements(input_coefs_ei))
+    });
 
-        // Add the plain to the share
-        gf256_mul_scalar_add_vector(&mut share, plain, fi);
-    }
-
-    share
+    ...
 }
 \end{minted}
 
-In this implementation, we start by initializing the share to the last coefficient. Then, depending on whether we are computing the first share, we may skip adding the plain input and all subsequent terms in the sum.
-We can then create a loop that computes the input share from the generated coefficients. This can be done in parallel, which we will discuss in \autoref{sec:optimizations}.
+To compute the shares, we initialize each share with the value of the last coefficient. For the first share, the algorithm skips adding the plain input and other terms in the summation. We then use a loop to systematically compute each input share using the previously generated coefficients.
 
 \begin{minted}{rust}
 for e in 0..PARAM_TAU {
@@ -2966,9 +2958,9 @@ for e in 0..PARAM_TAU {
             *share = compute_share(input_plain, &input_coefs[e], i as u8, i == 0);
         });
 }
-
-ComputeInputSharesResult(input_shares, input_coefs)
 \end{minted}
+
+The most significant optimisation we gained from parallelisation is hidden in the function in terms of the \rust{get_iterator} function. With the \texttt{parallel} feature flag this function dynamically dispaches either a normal iterator or a parallel iterator from \texttt{rayon}. This allows us to compute the shares in parallel, significantly improving performance while allowing us to disable this feature for testing purposes.
 
 \section{Keygen -- Sampling SD instance}\label{sub:witness_generation}
 
@@ -3276,16 +3268,14 @@ The setup phase, involving the sampling of the root seed and salt, was left as p
 
 We then proceed to follow the algorithm described in \autoref{def:sdith-sign} step-by-step.
 
-\section{Final Implementation}\label{sub:final}
+\section{Finalizing the implementation}\label{sub:final}
 In this section we will discuss our process when finalizing the implementation. We had a few bugs that led us to setup our code to be comparable with the reference implementation. First we will discuss our implementations of the signing and verification algorithms, and how we used the reference implementation to iron out bugs from our own code. Lastly we will discuss how we went about testing our implementation.
-
 
 \subsubsection{Alignment with the Reference Implementation}\label{sub:comparison_with_spec_impl}
 To verify and debug our code, we configured our implementation to align with the reference implementation provided in C. This setup required us to execute the reference code to obtain intermediate data, which we then used to compare internal states between the two implementations. In order to get this to work we ran into the following problems. First we had to setup the same random byte generator to allow our randomness to be the same. Furthermore, during this process, we identified a bug in the calculation of the view-opening challenges. Specifically, the reference implementation neglected to finalize the SHAKE function before squeezing, which posed an issue because the Tiny Keccak Rust library automatically performs this finalization when initializing a hash or XOF.
 Additionally, we discovered that, to produce identical outputs from the XOF, we needed to first rotate the permutation once by supplying an empty vector before invoking the function.
 
-\subsubsection{Marshalling and reusable testing}\label{sub:testing_our_implementation}
-
+\subsection{Marshalling and reusable testing}\label{sub:testing_our_implementation}
 Many structs in our implementation need to be serialized into byte arrays and subsequently parsed back into their respective structs. For instance, the MPC \rust{Input} type needed to be serialized to facilitate the Shamir's Secret Sharing. To address this, we defined a general trait \rust{Marshalling}:
 
 \begin{minted}{rust}
@@ -3314,8 +3304,8 @@ where
 }
 \end{minted}
 
-\section{Optimizations}
-Before presenting the results, we summarize the optimizations applied to our implementation. We begin with the smaller adjustments and progress to the more intricate enhancements.
+\subsection{Optimizations}
+While we discussed optimizations in the individual sections, this section provides a summary of the optimizations applied to our implementation.
 
 To guide our optimization efforts, we utilized the profiler as described in \autoref{ch:prelim:sec:rust:sub:profiling}. This process initially highlighted the computation of shares, a primary component of the signing algorithm. Observing that the computation of each share is independent of the others, we parallelized this task to improve performance.
 
@@ -3323,11 +3313,11 @@ Next, we turned our attention to the MPC computations. Here, we noted that many 
 
 Finally, we examined the creation of the Merkle tree, another significant computational bottleneck due to its reliance on hashing functions. Initially, we attempted to parallelize the Merkle tree construction, but this approach proved slower than the batched solution utilized by the original implementation. The most notable improvement in this area came from switching to a faster hashing algorithm, \texttt{blake3}.
 
-In the conclusion, we will outline additional optimizations that could further enhance the efficiency of the signing and verification algorithms.
-
 \subsection{Feature flags}\label{sub:feature_flags}
 To maintain a baseline implementation while enabling flexibility to switch between different NIST categories, we utilized Rust's feature flags. These flags support conditional compilation, allowing multiple implementations of the same function to coexist in the codebase. This approach made it possible to test individual optimizations in isolation, rather than applying all optimizations simultaneously.
-We created the following set of feature flags:
+
+We created the following set of feature flags
+
 \begin{itemize}[parsep=0pt, itemsep=3pt]
   \item \textbf{Default}: The default feature flag includes all optimizations and is used for the final implementation.
   \item \textbf{Category flags}: We created flags for each NIST category, enabling the selection of a specific category to compile.
@@ -3348,7 +3338,7 @@ We created the following set of feature flags:
         \end{itemize}
 \end{itemize}
 
-\section{Exposing our implementation}
+\subsection{Exposing our implementation}
 After finalizing our implementation, we created a Rust crate, \texttt{rsdith}, to allow for easy integration into other projects. This is useful for other developers to test out the impact of using the SDitH as a signature scheme for their application. Just like we used Blake3 to test different hashes.
 
 Furthermore, in order to interact and use our implementation we create a simple command-line interface (CLI) to allow for easy signing and verification of messages. Such a solution could be useful for a sever setup where the binary could be allocated on the server and used to sign messages, like the use of \textit{OpenSSL}. A CLI also allows for easy demonstration and testing of the implementation.
@@ -3377,6 +3367,8 @@ As a small addition to the crate we created a simple CLI using the crate \textit
   \item \textbf{Verify}: Takes a message file or raw input, a public key file and a signature file or raw input. Outputs whether the signature is valid or not.
   \item \textbf{Parameters}: Outputs the parameters used in the implementation.
 \end{itemize}
+
+We present a more detailed description in both the \href{https://github.com/Mactherobot/sdith-rust/blob/main/sdith/README.md}{README} and our \href{https://mactherobot.github.io/sdith-rust/sdith/index.html}{documentation}.
 
 \chapter{Benchmarking}\label{ch:bench}
 
@@ -3446,26 +3438,26 @@ We measured performance in both cycles per byte and time. Furthermore, we measur
     Category                       & Optimisation  & Keygen          & Sign        & Verify          \\
     \hline
     \hline
-    One \cite{aguilar2023return}   & reference     & $1.07$ ms       & $2.63$ ms   & $0.38$ ms       \\
+    I \cite{aguilar2023return}   & reference     & $1.07$ ms       & $2.63$ ms   & $0.38$ ms       \\
     \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
-    One                            & base          & $482.15$ $\mu$s & $3.3524$ ms & $402.96$ $\mu$s \\
-    One                            & parallel      & $356.68$ $\mu$s & $2.1407$ ms & $406.12$ $\mu$s \\
-    One                            & simd          & $433.14$ $\mu$s & $2.4967$ ms & $285.54$ $\mu$s \\
-    One                            & simd,parallel & $427.11$ $\mu$s & $1.8995$ ms & $288.84$ $\mu$s \\
+    I                            & base          & $482.15$ $\mu$s & $3.3524$ ms & $402.96$ $\mu$s \\
+    I                            & parallel      & $356.68$ $\mu$s & $2.1407$ ms & $406.12$ $\mu$s \\
+    I                            & simd          & $433.14$ $\mu$s & $2.4967$ ms & $285.54$ $\mu$s \\
+    I                            & simd,parallel & $427.11$ $\mu$s & $1.8995$ ms & $288.84$ $\mu$s \\
     \hline
-    Three \cite{aguilar2023return} & reference     & $1.27$ ms       & $6.31$ ms   & $1.15$ ms       \\
+    III \cite{aguilar2023return} & reference     & $1.27$ ms       & $6.31$ ms   & $1.15$ ms       \\
     \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
-    Three                          & base          & $449.60$ $\mu$s & $8.9537$ ms & $1.2467$ ms     \\
-    Three                          & parallel      & $447.91$ $\mu$s & $4.7179$ ms & $1.2217$ ms     \\
-    Three                          & simd          & $382.59$ $\mu$s & $6.3998$ ms & $873.75$ $\mu$s \\
-    Three                          & simd,parallel & $383.29$ $\mu$s & $4.0825$ ms & $874.87$ $\mu$s \\
+    III                          & base          & $449.60$ $\mu$s & $8.9537$ ms & $1.2467$ ms     \\
+    III                          & parallel      & $447.91$ $\mu$s & $4.7179$ ms & $1.2217$ ms     \\
+    III                          & simd          & $382.59$ $\mu$s & $6.3998$ ms & $873.75$ $\mu$s \\
+    III                          & simd,parallel & $383.29$ $\mu$s & $4.0825$ ms & $874.87$ $\mu$s \\
     \hline
-    Five \cite{aguilar2023return}  & reference     & $2.20$ ms       & $13.51$ ms  & $2.05$ ms       \\
+    V \cite{aguilar2023return}  & reference     & $2.20$ ms       & $13.51$ ms  & $2.05$ ms       \\
     \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
-    Five                           & base          & $803.73$ $\mu$s & $19.040$ ms & $2.7238$ ms     \\
-    Five                           & parallel      & $805.42$ $\mu$s & $8.8069$ ms & $2.8439$ ms     \\
-    Five                           & simd          & $676.53$ $\mu$s & $14.255$ ms & $1.8393$ ms     \\
-    Five                           & simd,parallel & $673.10$ $\mu$s & $7.4172$ ms & $1.8426$ ms     \\
+    V                           & base          & $803.73$ $\mu$s & $19.040$ ms & $2.7238$ ms     \\
+    V                           & parallel      & $805.42$ $\mu$s & $8.8069$ ms & $2.8439$ ms     \\
+    V                           & simd          & $676.53$ $\mu$s & $14.255$ ms & $1.8393$ ms     \\
+    V                           & simd,parallel & $673.10$ $\mu$s & $7.4172$ ms & $1.8426$ ms     \\
     \hline
   \end{tabular}
   \caption{API benchmarks over each category and optimisation feature flag for \textit{Setup 2}. We ran reference implementation benchmarks as the optimised solution was not compatible with \textit{Setup 2}.}
@@ -3475,35 +3467,37 @@ We measured performance in both cycles per byte and time. Furthermore, we measur
   \centering
   \begin{tabular}{l|l|lll}
     \hline
-    Category                       & Optimisation       & Keygen          & Sign        & Verify          \\
+    Category                       & Optimisation                  & Keygen          & Sign        & Verify          \\
     \hline
     \hline
-    One \cite{aguilar2023return}   & optimized          & $1.89$ ms       & $2.82$ ms   & $0.96$ ms       \\
-    One \cite{aguilar2023return}   & optimized (TB)     & $0.97$ ms       & $1.46$ ms   & $0.49$ ms       \\
+    I \cite{aguilar2023return}   & optimized                     & $1.89$ ms       & $2.82$ ms   & $0.96$ ms       \\
+    I \cite{aguilar2023return}   & optimized (TB)                & $0.97$ ms       & $1.46$ ms   & $0.49$ ms       \\
     \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
-    One                            & base               & $708.95$ $\mu$s & $7.8733$ ms & $907.32$ $\mu$s \\
-    One                            & parallel           & $709.99$ $\mu$s & $3.5922$ ms & $923.61$ $\mu$s \\
-    One                            & simd               & $584.30$ $\mu$s & $6.4045$ ms & $726.70$ $\mu$s \\
-    One                            & simd,parallel      & $587.76$ $\mu$s & $3.1986$ ms & $719.26$ $\mu$s \\
-    One                            & simd,parallel (TB) & $294.23$ $\mu$s & $1.8595$ ms & $380.30$ $\mu$s \\
+    I                            & base                          & $708.95$ $\mu$s & $7.8733$ ms & $907.32$ $\mu$s \\
+    I                            & parallel                      & $709.99$ $\mu$s & $3.5922$ ms & $923.61$ $\mu$s \\
+    I                            & simd                          & $584.30$ $\mu$s & $6.4045$ ms & $726.70$ $\mu$s \\
+    I                            & simd,parallel                 & $587.76$ $\mu$s & $3.1986$ ms & $719.26$ $\mu$s \\
+    I                            & simd,parallel (TB) 16 cores   & $294.23$ $\mu$s & $1.8595$ ms & $380.30$ $\mu$s \\
+    I                            & simd,parallel (TB) 4 cores    & -               & $1.7540$ ms & -               \\
+    I                            & simd,parallel (TB) 8/12 cores & -               & $1.6387$ ms & -               \\
     \hline
-    Three \cite{aguilar2023return} & optimized          & $2.26$ ms       & $7.10$ ms   & $2.50$ ms       \\
-    Three \cite{aguilar2023return} & optimized (TB)     & $1.14$ ms       & $3.57$ ms   & $1.26$ ms       \\
+    III \cite{aguilar2023return} & optimized                     & $2.26$ ms       & $7.10$ ms   & $2.50$ ms       \\
+    III \cite{aguilar2023return} & optimized (TB)                & $1.14$ ms       & $3.57$ ms   & $1.26$ ms       \\
     \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
-    Three                          & base               & $929.21$ $\mu$s & $20.921$ ms & $2.8104$ ms     \\
-    Three                          & parallel           & $929.56$ $\mu$s & $9.3856$ ms & $2.8974$ ms     \\
-    Three                          & simd               & $790.15$ $\mu$s & $16.898$ ms & $2.2100$ ms     \\
-    Three                          & simd,parallel      & $790.48$ $\mu$s & $8.3999$ ms & $2.2225$ ms     \\
-    Three                          & simd,parallel (TB) & $396.58$ $\mu$s & $4.5913$ ms & $1.1621$ ms     \\
+    III                          & base                          & $929.21$ $\mu$s & $20.921$ ms & $2.8104$ ms     \\
+    III                          & parallel                      & $929.56$ $\mu$s & $9.3856$ ms & $2.8974$ ms     \\
+    III                          & simd                          & $790.15$ $\mu$s & $16.898$ ms & $2.2100$ ms     \\
+    III                          & simd,parallel                 & $790.48$ $\mu$s & $8.3999$ ms & $2.2225$ ms     \\
+    III                          & simd,parallel (TB)            & $396.58$ $\mu$s & $4.5913$ ms & $1.1621$ ms     \\
     \hline
-    Five \cite{aguilar2023return}  & optimized          & $3.93$ ms       & $14.30$ ms  & $4.98$ ms       \\
-    Five \cite{aguilar2023return}  & optimized (TB)     & $1.99$ ms       & $7.20$ ms   & $2.51$ ms       \\
+    V \cite{aguilar2023return}  & optimized                     & $3.93$ ms       & $14.30$ ms  & $4.98$ ms       \\
+    V \cite{aguilar2023return}  & optimized (TB)                & $1.99$ ms       & $7.20$ ms   & $2.51$ ms       \\
     \arrayrulecolor{lightgray}\hline\arrayrulecolor{black}
-    Five                           & base               & $1.6175$ ms     & $45.707$ ms & $6.0828$ ms     \\
-    Five                           & parallel           & $1.6190$ ms     & $18.705$ ms & $6.0955$ ms     \\
-    Five                           & simd               & $1.3550$ ms     & $37.560$ ms & $4.5229$ ms     \\
-    Five                           & simd,parallel      & $1.3543$ ms     & $16.364$ ms & $4.5010$ ms     \\
-    Five                           & simd,parallel (TB) & $677.55$ $\mu$s & $9.2047$ ms & $2.3676$ ms     \\
+    V                           & base                          & $1.6175$ ms     & $45.707$ ms & $6.0828$ ms     \\
+    V                           & parallel                      & $1.6190$ ms     & $18.705$ ms & $6.0955$ ms     \\
+    V                           & simd                          & $1.3550$ ms     & $37.560$ ms & $4.5229$ ms     \\
+    V                           & simd,parallel                 & $1.3543$ ms     & $16.364$ ms & $4.5010$ ms     \\
+    V                           & simd,parallel (TB)            & $677.55$ $\mu$s & $9.2047$ ms & $2.3676$ ms     \\
     \hline
   \end{tabular}
   \caption{API benchmarks over each category and optimisation feature flag for \textit{Setup 1}. We ran the optimised reference implementation \cite{aguilar2023return} with and without Turbo Boost enabled.}
@@ -3526,7 +3520,7 @@ Curiously, we observe a larger increase in verification time for our implementat
   \centering
   \begin{tabular}{l|l|rrr}
     \hline
-    Implementation                              & Operation & One to Three (\%) & Three to Five (\%) \\
+    Implementation                              & Operation & I to III (\%) & III to V (\%) \\
     \hline
     S1: optimised (TB)~\cite{aguilarsyndrome11} & Keygen    & 17.53             & 74.56              \\
     S1: optimised (TB)~\cite{aguilarsyndrome11} & Sign      & 144.52            & 101.68             \\
@@ -3541,7 +3535,7 @@ Curiously, we observe a larger increase in verification time for our implementat
     S2: simd,parallel (TB)                      & Verify    & 202.89            & 110.61             \\
     \hline
   \end{tabular}
-  \caption{Running time percentage increases for \textit{Setup 1} (S1) and \textit{Setup 2} (S1). Key Generation, Signing, and Verification between categories One to Three and Three to Five for rows for the optimised reference implementation \cite{aguilarsyndrome11} and our optimised implementation. Results are negligible between other implementations in \autoref{tab:api_dell_results}}
+  \caption{Running time percentage increases for \textit{Setup 1} (S1) and \textit{Setup 2} (S1). Key Generation, Signing, and Verification between categories \textit{I to III} and \textit{III to V} for rows for the optimised reference implementation \cite{aguilarsyndrome11} and our optimised implementation. Results are negligible between other implementations in \autoref{tab:api_dell_results}}
   \label{tab:api_percentage_increase}
 \end{table}
 
@@ -3554,17 +3548,17 @@ Curiously, we observe a larger increase in verification time for our implementat
     \multirow{2}{*}{Category} & \multirow{2}{*}{Operation} & \multicolumn{2}{c|}{Parallel (\%)} & \multicolumn{2}{c}{SIMD (\%)}                                                   \\
                               &                            & \multicolumn{1}{c}{S1}             & \multicolumn{1}{c}{S2}        & \multicolumn{1}{c}{S1} & \multicolumn{1}{c}{S2} \\
     \hline
-    \multirow{3}{*}{One}
+    \multirow{3}{*}{I}
                               & Keygen                     & $+0.15$                            & $-26.02$                      & $-17.58$               & $-10.16$               \\
                               & Sign                       & $-54.37$                           & $-36.14$                      & $-18.66$               & $-25.52$               \\
                               & Verify                     & $+1.80$                            & $+0.78$                       & $-19.91$               & $-29.14$               \\
     \hline
-    \multirow{3}{*}{Three}
+    \multirow{3}{*}{III}
                               & Keygen                     & $+0.04$                            & $-0.38$                       & $-14.97$               & $-14.90$               \\
                               & Sign                       & $-55.14$                           & $-47.31$                      & $-19.23$               & $-28.52$               \\
                               & Verify                     & $+3.10$                            & $-2.01$                       & $-21.36$               & $-29.83$               \\
     \hline
-    \multirow{3}{*}{Five}
+    \multirow{3}{*}{V}
                               & Keygen                     & $+0.09$                            & $+0.21$                       & $-16.23$               & $-15.83$               \\
                               & Sign                       & $-59.08$                           & $-53.75$                      & $-17.82$               & $-25.13$               \\
                               & Verify                     & $+0.21$                            & $+4.41$                       & $-25.64$               & $-32.47$               \\
@@ -3588,12 +3582,12 @@ We were very surprised to observe that including parallelisation for \textit{Set
     \hline
     Category & Keygen (\%) & Sign (\%) & Verify (\%) \\
     \hline
-    One      & $-69.66$    & $+27.36$  & $-22.39$    \\
-    Three    & $-65.21$    & $+28.61$  & $-7.77$     \\
-    Five     & $-65.95$    & $+27.84$  & $-5.67$     \\
+    I      & $-69.66$    & $+27.36^*$  & $-22.39$    \\
+    III    & $-65.21$    & $+28.61$  & $-7.77$     \\
+    V     & $-65.95$    & $+27.84$  & $-5.67$     \\
     \hline
   \end{tabular}
-  \caption{Percentage differences between Optimised reference implementation with TB and our fully optimised implementation with TB for key generation, signing, and verification across categories one, three, and five.}
+  \caption{Percentage differences between Optimised reference implementation with TB and our fully optimised implementation with TB for key generation, signing, and verification across categories I, III, and V. * After adjusting the number of threads to 8, the differences where $\approx +13\%$}
   \label{tab:optimized_vs_simd_parallel_tb_new}
 \end{table}
 
@@ -3605,9 +3599,19 @@ Practically, key generation is rarely the benchmark used to categorise the perfo
 
 For signing, we observe that the reference implementation outperforms our implementation by approximately $27\%$. From our understanding, it is generally expected that Rust applications can be optimised to the same degree as C applications. Our implementation incorporates parallelisation for the signing operation, which is absent in the reference implementation. However, both the SIMD and parallelisation implementations in our code rely on external crates (\texttt{std::simd} and \texttt{rayon}), meaning we are not directly implementing these operations. This reliance may introduce additional bloat in the binary and less specialized code. While we believe that our implementations significantly improve code readability, they also highlight areas where we have room for more specialized optimisations.
 
-The most time-consuming operation in the signing process is the hashing step. We observed a dramatic improvement in signing performance when using the \texttt{Blake3} hashing algorithm ($1.19$ ms, \autoref{tab:blake3}). This suggests that further optimisation of the hashing process could yield even greater performance benefits.
+We were able to control the number of threads for the \texttt{rayon} package by setting the environment variable
 
-For verification, our implementation is slightly faster, particularly for Category One. Once again, it is difficult to hypothesise the reasons behind this improvement, and this question will be left for future work.
+\begin{minted}{bash}
+  RAYON_NUM_THREADS=12 cargo bench sign
+\end{minted}
+
+Using this approach, we were able to limit the number of threads in the pool. Our performance measurements for signing showed better results with 4 threads, achieving a runtime of $1.7540$ ms, and further improved with 8-12 threads, reaching $1.6387$ ms. This performance difference is likely due to overhead introduced by \texttt{rayon}'s underlying allocation procedures.
+
+Ultimately, we observed an approximate $13.01\%$ increase in runtime compared to the reference implementation in Category I. These results emphasize the necessity for a dedicated parallelization strategy and suggest further exploration in this area would be beneficial. We avoided implementing a default thread count, as it would be highly specific to the system and hardware being used.
+
+The most time-consuming operation in the signing process is the hashing step. We observed a dramatic improvement in signing performance when using the \texttt{Blake3} hashing algorithm ($1.19$ ms ($18.5\%$ versus reference implementation), \autoref{tab:blake3}). This suggests that further optimisation of the hashing process could yield even greater performance benefits.
+
+For verification, our implementation is slightly faster, particularly for Category I. Once again, it is difficult to hypothesise the reasons behind this improvement, and this question will be left for future work.
 
 \subsubsection{Rust Nightly vs Stable}
 
@@ -3627,7 +3631,7 @@ For verification, our implementation is slightly faster, particularly for Catego
 
 To show that our implementation is compatible with stable rust, we ran our benchmarks for the \textit{nightly} and \textit{stable} channels. The reason behind this is to argue that our library is production ready, as the nightly is generally not recommended for production environments. Furthermore, we were interested in if there were any optimizations being done in either that could be useful. However, we had to remove our optimization with SIMD as it is not yet a stable Rust feature. We ran our benchmarks with our parallel optimization, as this is done using an external stable crate. The results are shown in \autoref{tab:rust_nightly_vs_stable}.
 
-We see a minor increase ($2\%$) in our keygen when running with stable rust. This is likely due to some overhead introduced by the nightly compiler. However, the difference is negligible. The signing and verification times are identical between the two channels. This suggests that our implementation is compatible with the rust stable channel, and could be used in production environments. This serves just as a proof of concept and further investigation into constant time runtime and security is needed but this shows that we are not using any specifically insecure features.
+We see a minor increase ($2\%$) in our keygen when running with stable rust. This is likely due to some overhead introduced by the nightly compiler. However, the difference is negligible. The signing and verification times are identical between the two channels. 
 
 \subsubsection{Constant time analysis and Multiplications}
 Since there are no general tools for doing constant time analysis, the analysis must be specific to the protocol. A good starting point is to ask what needs to be protected. For a signature scheme, the main concern is not the message but the secret part of the algorithm, such as the $x$ vector from the syndrome decoding problem, which is the secret key.
@@ -3706,9 +3710,9 @@ We ran a benchmark on the signature size to check if it aligned with the expecte
     \hline
     \textbf{Category} & \textbf{Low \textit{CI 95\%}} & \textbf{Mean} & \textbf{High \textit{CI 95\%}} \\
     \hline
-    One               & $10473.216$ B                 & $10491.816$ B & $10510.416$ B                  \\
-    Three             & $25411.584$ B                 & $25439.168$ B & $25476.759$ B                  \\
-    Five              & $44520.611$ B                 & $44568.192$ B & $44615.773$ B                  \\
+    I               & $10473.216$ B                 & $10491.816$ B & $10510.416$ B                  \\
+    III             & $25411.584$ B                 & $25439.168$ B & $25476.759$ B                  \\
+    V              & $44520.611$ B                 & $44568.192$ B & $44615.773$ B                  \\
     \hline
   \end{tabular}
   \caption{Signature size in bytes for the three categories of the SDitH protocol. The low and high bounds are the 95\% confidence intervals.}\label{tab:sig_size}
@@ -3741,7 +3745,7 @@ Our report includes a detailed overview of the underlying theories and protocols
 
 \subsubsection{Performance}
 
-Our goal was to match the performance of the optimized reference implementation. Overall, we achieved comparable results, with performance gains in key generation and verification (see \autoref{tab:api_percentage_increase}). However, a small performance gap remains in the signing operation.
+Our goal was to match the performance of the optimized reference implementation. Overall, we achieved comparable results, with performance gains in key generation and verification (see \autoref{tab:api_percentage_increase}). However, a small performance gap remains in the signing operation -- $\approx 13\%$ difference after optimising threads for category one.
 
 It is worth to noting that achieving the final performance improvements often requires highly specific and sometimes less readable or understandable implementation techniques, resulting in a trade-off between performance and code readability.
 
@@ -3758,6 +3762,8 @@ Additionally, we aim to explore more specialized and efficient parallelization s
 One of the key strengths of the SDitH protocol is its inherent modularity. Building on this principle, we introduced a feature in our implementation that allows for swapping the \texttt{SHA3} and \texttt{SHAKE} hash functions with the \texttt{Blake3} implementation. This substitution yielded significant performance improvements, further demonstrating the protocol's flexibility and its potential for enabling alternative optimizations.
 
 Our implementation enables developers to manually specify custom parameters (\autoref{sub:constants}), allowing them to experiment with different configurations and tailor the protocol's performance to their specific use cases. We aim to enhance this functionality by adding a script or CLI feature to automatically calculate the security of the SD problem (\autoref{eq:sd_cost}) and the MPCitH parameters (\autoref{eq:forgery_attack_cost}) based on the chosen configuration.
+
+In this context, we would want to map the protocol's performance across various parameters systematically. This analysis seeks to provide a clearer and more comprehensive understanding of how the protocol can be configured for diverse use cases. By presenting these insights, users will be better equipped to make informed decisions regarding the configuration that best aligns with their specific requirements, considering its impact on both security and performance.
 
 Currently, the greatest parallelization gains in our implementation occur during the commitment of input shares. This opens up opportunities for further optimizations, such as playing with the number of parties, adjusting the threshold or the SD instance. We believe that exploring and benchmarking these configurations could provide substantial improvements and represent a promising avenue for future work.
 

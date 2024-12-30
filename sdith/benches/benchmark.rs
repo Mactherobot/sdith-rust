@@ -21,9 +21,9 @@ use gf256::mul_benchmark;
 fn get_config() -> Criterion {
     Criterion::default()
         .significance_level(0.1)
-        .sample_size(250)
+        .sample_size(500)
         .without_plots()
-        .measurement_time(Duration::from_secs(20))
+        .measurement_time(Duration::from_secs(30))
 }
 
 #[cfg(all(target_os = "linux", feature = "cycles_per_byte"))]
@@ -33,7 +33,7 @@ criterion_group! {
     targets = api_benchmark, simd_benchmark, parallel_benchmark, merkle_benchmark, mul_benchmark
 }
 
-#[cfg(not(all(target_os = "linux", feature = "cycles_per_byte")))]
+#[cfg(not(feature = "cycles_per_byte"))]
 criterion_group!(
     name = benches;
     config = get_config();

@@ -8,10 +8,16 @@
 
 This is a masters thesis project at Aarhus University, Denmark.
 
-The thesis is about the implementation of the SDitH signature protocol in Rust. 
+"SDitH signature protocol in Rust" 
 
 Authors:
 -  [Hugh Benjamin Zachariae](https://github.com/arcuo)
 -  [Magnus Jensen](https://github.com/Mactherobot)
 
-Checkout the package [README](sdith/README.md) or the [documentation](https://mactherobot.github.io/sdith-rust) for more information.
+### Report
+
+The report is contained within the [project](https://github.com/Mactherobot/sdith-rust/tree/main/project) folder.
+
+### Rust package
+
+Checkout the `rsdith` package and `sdith` CLI in the [README](sdith/README.md) or the [documentation](https://mactherobot.github.io/sdith-rust) for more information.

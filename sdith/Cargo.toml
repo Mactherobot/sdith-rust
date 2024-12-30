@@ -6,11 +6,8 @@ authors = ["https://github.com/mactherobot", "https://github.com/arcuo"]
 repository = "https://github.com/Mactherobot/sdith-rust"
 documentation = "https://mactherobot.github.io/sdith-rust"
 license-file = "LICENSE.txt"
-license = "Apache-2.0"
 readme = "README.md"
 keywords = ["rust", "sdith", "post-quantum", "cryptography", "signature", "mpc", "mpcith", "zkp", "nist"]
-
-im-a-teapot = false
 
 edition = "2021"
 resolver = "2"
