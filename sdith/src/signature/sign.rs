@@ -15,7 +15,7 @@ use crate::{
         params::{PARAM_L, PARAM_TAU},
         types::{Hash, Salt, Seed},
     },
-    keygen::SecretKey,
+    keygen::{witness::SOLUTION_PLAIN_SIZE, SecretKey},
     subroutines::{
         arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix},
         challenge::{self, MPCChallenge},
@@ -30,14 +30,13 @@ use crate::{
         prg::PRG,
     },
     utils::marshalling::Marshalling,
-    witness::SOLUTION_PLAIN_SIZE,
 };
 
 use super::Signature;
 
 impl Signature {
     /// Sign a `message` using the `secret_key` and the `entropy`
-    /// 
+    ///
     /// # Arguments
     /// - `entropy`: Seed and salt. The "Setup" phase of the SDitH protocol
     /// - `secret_key`: The secret key
@@ -73,7 +72,6 @@ impl Signature {
         // Commit shares
         let (commitments, merkle_trees) = commitments::commit_shares(&input_shares, salt);
 
-
         // # Phase 2: Compute first challenge (MPC challenge)
 
         // h1 = Hash1 (seedH, y, salt, com[1], . . . , com[τ ])
@@ -108,7 +106,7 @@ impl Signature {
         }
 
         // # Phase 4: Compute second challenge (view-opening challenge)
-        
+
         // h2 = Hash_2(msg, salt, h1, broadcast_plain, broadcast_shares[])
         let h2 = Signature::gen_h2(message, &salt, &h1, &broadcast_plain, &broadcast_shares);
 

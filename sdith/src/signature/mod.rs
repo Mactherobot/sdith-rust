@@ -24,7 +24,7 @@ use crate::{
         prg::hashing::{hash_1, hash_2},
     },
     utils::marshalling::Marshalling,
-    witness::SOLUTION_PLAIN_SIZE,
+    keygen::witness::SOLUTION_PLAIN_SIZE,
 };
 
 #[derive(Debug, PartialEq, Eq)]

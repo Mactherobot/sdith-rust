@@ -33,7 +33,6 @@ pub mod keygen;
 pub mod signature;
 pub mod subroutines;
 pub mod utils;
-pub mod witness;
 
 #[cfg(test)]
 mod tests {

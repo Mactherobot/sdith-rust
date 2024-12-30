@@ -3,9 +3,9 @@ use crate::{
         params::{PARAM_M_SUB_K, PARAM_SEED_SIZE},
         types::Seed,
     },
+    keygen::witness::{Solution, SOLUTION_PLAIN_SIZE},
     keygen::{PublicKey, SecretKey},
     utils::marshalling::Marshalling as _,
-    witness::{Solution, SOLUTION_PLAIN_SIZE},
 };
 
 impl PublicKey {

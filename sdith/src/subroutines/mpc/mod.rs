@@ -8,6 +8,7 @@ pub mod input;
 
 use crate::{
     constants::params::{PARAM_M_SUB_K, PARAM_SPLITTING_FACTOR, PARAM_T},
+    keygen::witness::{complete_q, compute_s, compute_s_poly, Solution, SOLUTION_PLAIN_SIZE},
     subroutines::arith::{
         gf256::{
             gf256_ext::{gf256_polynomial_evaluation_in_point_r, FPoint},
@@ -16,7 +17,6 @@ use crate::{
         FieldArith as _,
     },
     utils::marshalling::Marshalling,
-    witness::{complete_q, compute_s, compute_s_poly, Solution, SOLUTION_PLAIN_SIZE},
 };
 
 use beaver::{BeaverA, BeaverB, BeaverC};
@@ -263,13 +263,13 @@ mod mpc_tests {
             },
             types::{hash_default, Seed},
         },
+        keygen::witness::{generate_witness, sample_polynomial_relation},
         subroutines::{
             arith::gf256::gf256_vector::{gf256_add_vector, gf256_add_vector_with_padding},
             challenge::get_powers,
             mpc::broadcast::BroadcastShare,
             prg::PRG,
         },
-        witness::{generate_witness, sample_polynomial_relation},
     };
 
     use super::*;

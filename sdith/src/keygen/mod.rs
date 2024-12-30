@@ -8,6 +8,9 @@
 //! `S * Q = P * F`.
 //!
 //! Actual generation functions are located in the [`crate::witness`] module.
+//!
+
+pub mod witness;
 
 use crate::{
     constants::{
@@ -15,8 +18,9 @@ use crate::{
         types::Seed,
     },
     utils::marshalling::Marshalling,
-    witness::{generate_instance_with_solution, Solution, SOLUTION_PLAIN_SIZE},
 };
+
+use witness::{generate_instance_with_solution, Solution, SOLUTION_PLAIN_SIZE};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Public key for the signature protocol

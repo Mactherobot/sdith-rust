@@ -1,5 +1,6 @@
 //! # SDitH Protocol Command Line Interface
 //! 
+//! ```
 //! Usage: sdith [COMMAND]
 //! 
 //! Commands:
@@ -12,13 +13,44 @@
 //! Options:
 //!   -h, --help     Print help
 //!   -V, --version  Print version
+//! ```
 //! 
 //! ## Build the CLI
 //! 
 //! The CLI can be built with the following command:
 //! 
+//! 
 //! ```
-//! cargo build --release --bin sdith --features [category]
+//! $ cargo build --release --bin sdith --features [category]
+//! ```
+//! 
+//! ## Keygen
+//! 
+//! ```
+//! $ sdith keygen -o key
+//! Seed: wmcuKiOGX/OXRBdC4dimmA==
+//! Public key saved to "key.pub"
+//! Secret key saved to "key"
+//! ```
+//! 
+//! ## Signing
+//! 
+//! ```
+//! $ sdith sign --msg "hello world" --sk key > signature.txt
+//! Signing message.
+//! Reading Secret Key from file: key
+//! Seed: jLsixeA3XNdwoFcIvMWwAw==
+//! Salt: zZma69OYka48jJGwuI3NTD8tpkcNfTdLtP5O43XXgLo=
+//! ```
+//! 
+//! ## Verification
+//! 
+//! ```
+//! $ sdith verify --pk key.pub --signature signature.txt
+//! Verifying message.
+//! Reading Public Key from file: key.pub
+//! Reading Signature from file: signature.txt
+//! Signature is valid: true
 //! ```
 
 use clap::{CommandFactory, Parser};

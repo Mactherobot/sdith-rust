@@ -8,13 +8,13 @@ use rayon::iter::{IndexedParallelIterator as _, ParallelIterator as _};
 
 use crate::{
     constants::params::{PARAM_L, PARAM_N, PARAM_TAU},
+    keygen::witness::{Solution, SOLUTION_PLAIN_SIZE},
     subroutines::{
         arith::gf256::gf256_vector::gf256_mul_scalar_add_vector,
         mpc::beaver::{BeaverTriples, BEAVER_ABPLAIN_SIZE, BEAVER_CPLAIN_SIZE},
         prg::PRG,
     },
     utils::{iterator::get_iterator_mut, marshalling::Marshalling},
-    witness::{Solution, SOLUTION_PLAIN_SIZE},
 };
 
 #[derive(Clone, PartialEq, Eq)]

@@ -208,41 +208,6 @@ mod tests {
         subroutines::prg::PRG,
     };
 
-    /// TODO: remove these tests when we have used the proper test vectors
-    // #[test]
-    // fn test_all_add_cases() {
-    //     // Test all possible addition cases
-    //     // gf256 = galois.GF(2**8, irreducible_poly="x^8 + x^4 + x^3 + x + 1")
-    //     for a in 0..=255 {
-    //         for b in 0..=255 {
-    //             assert_eq!(
-    //                 gf256_add(a, b),
-    //                 ADD_TESTS[b as usize][a as usize],
-    //                 "Failed for a: {}, b: {}",
-    //                 a,
-    //                 b
-    //             );
-    //         }
-    //     }
-    // }
-
-    // #[test]
-    // fn test_all_mul_cases() {
-    //     // Generated from galios package
-    //     // gf256 = galois.GF(2**8, irreducible_poly="x^8 + x^4 + x^3 + x + 1")
-    //     for a in 0..=255 {
-    //         for b in 0..=255 {
-    //             assert_eq!(
-    //                 gf256_mul(a, b),
-    //                 MUL_TESTS[b as usize][a as usize],
-    //                 "Failed for a: {}, b: {}",
-    //                 a,
-    //                 b
-    //             );
-    //         }
-    //     }
-    // }
-
     #[test]
     fn test_gf256_definitions() {
         let mut prg = PRG::init(&[2u8; PARAM_SEED_SIZE], None);

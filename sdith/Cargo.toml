@@ -60,7 +60,7 @@ name = "profiling_sign"
 path = "src/bin/profiling/sign.rs"
 test = false                       # Prevents tests from profiling
 bench = false                      # Prevents benchmarks from profiling
-doc = false
+doc = false                        # Prevents docs from profiling
 
 [[bench]]
 name = "benchmark"
