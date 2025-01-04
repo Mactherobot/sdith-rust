@@ -140,7 +140,7 @@
   \today \\[1ex] Advisor: Diego F. Aranha\\[15ex]}\\[\fill]}
 \epsfig{file=images/logo.eps}\clearpage
 
-\hspace*{-1.3in}
+\hspace*{-1.305in}
 \includegraphics[width=\paperwidth]{images/titleimage.png}
 \clearpage
 
@@ -154,13 +154,13 @@
 \pagestyle{plain}
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
-As part of the ongoing efforts to develop post-quantum cryptographic solutions under the NIST call for standardization, the \textit{Syndrome Decoding in the Head} (SDitH) protocol has emerged as a promising candidate. Combining the modularity and efficiency of the MPC-in-the-Head paradigm with threshold-based MPC techniques, this protocol delivers a code-based, quantum-resilient digital signature.
+As part of the ongoing efforts to develop post-quantum cryptography under the NIST call for standardization, the \textit{Syndrome Decoding in the Head} (SDitH) protocol has emerged as a promising candidate. Combining the modularity and efficiency of the MPC-in-the-Head paradigm with threshold-based MPC techniques, this protocol delivers a code-based, quantum-resilient digital signature.
 
 In this work, we present an implementation of the SDitH protocol in Rust, a modern, memory-safe programming language. Our implementation prioritizes modularity and readability to serve as a comprehensive reference for future developers and the protocol's authors. Additionally, we leveraged modern Rust language features to develop a flexible and maintainable protocol.
 
 This report provides an in-depth review of the theoretical foundations underpinning the protocol, offering readers a thorough understanding of its principles and design. Furthermore, the report outlines the features of the Rust programming language that makes it an ideal choice for implementing the SDitH protocol. We discuss the challenges and limitations of the reference implementation in C, highlighting areas for future improvement.
 
-We performed benchmarking against the optimized reference implementation demonstrated comparable performance in key generation and verification, with a minor performance gap observed in the signing operation. Our analysis points to a need for more specialized optimisations.
+We performed benchmarking against the optimized reference implementation, demonstrating comparable performance in key generation and verification, with a minor performance gap observed in the signing operation. Our analysis points to a need for more specialized optimisations.
 
 Our implementation demonstrates the protocol's flexibility, enabling the exploration of alternative hash functions and customizable parameters. We also propose explorative future optimizations, such as replacing the Merkle Commitment Scheme with Verkle Trees, to address current performance bottlenecks in hashing operations.
 
@@ -169,7 +169,7 @@ In conclusion, we believe that our implementation provides a valuable resource f
 \chapter*{Resum\'e}
 \addcontentsline{toc}{chapter}{Resum\'e}
 
-Som en del af de igangværende bestræbelser på at udvikle \textit{post-quantum} kryptografiske protokoller under NIST's standardiseringsproces står \textit{Syndrome Decoding in the Head} (SDitH) protokollen som en lovende kandidat. Ved at kombinere modularitet og performance fra \textit{MPC-in-the-Hea}d-paradigmet med \textit{threshold MPC} teknikker leverer denne protokol en post-quantum digital signatur baseret på sikkerhedskoder.
+Som en del af de igangværende bestræbelser på at udvikle \textit{post-kvantekryptografi} under NIST's standardiseringsproces står \textit{Syndrome Decoding in the Head} (SDitH) protokollen som en lovende kandidat. Ved at kombinere modularitet og performance fra \textit{MPC-in-the-Hea}d-paradigmet med \textit{threshold MPC} teknikker leverer denne protokol en post-kvante digital signatur baseret på sikkerhedskoder.
 
 I denne rapport præsenterer vi en implementering af SDitH-protokollen i Rust, et moderne og memory-safe programmeringssprog. Vores implementering prioriterer læsbarhed for at give en omfattende reference for fremtidige udviklere og protokollens forfattere. Derudover har vi udnyttet moderne løsninger fra Rust til at udvikle en fleksibel og vedligeholdelsesvenlig protokol.
 
@@ -225,14 +225,15 @@ To mitigate the risks of relying heavily on lattice-based schemes, NIST issued a
 
 A requirement for a post-quantum secure signature scheme is the existence of a computational problem that remains infeasible for quantum computers. Among the proposed candidates, several derive from the family of NP-hard problems in complexity theory.
 
-The advent of public-key cryptosystems by Diffie and Hellman in 1976 revolutionized cryptography, leading to widespread development in this field. While public-key systems primarily advanced through number theory, coding theory -- a distinct branch of information theory predating public-key cryptography -- offered alternative foundations. In 1978, McEliece introduced a code-based public-key scheme based~\cite{mceliece1978public} -- only two years after the foundational breakthroughs in public-key cryptography. This scheme relies on the hardness of decoding random linear codes, a problem rigorously analyzed in subsequent works~\cite{berlekamp1978inherent}.
+The advent of public-key cryptosystems by Diffie and Hellman in 1976 revolutionized cryptography, leading to widespread development in this field. While public-key systems primarily advanced through number theory, coding theory -- a distinct branch of information theory predating public-key cryptography -- offered alternative foundations. In 1978, McEliece introduced a code-based public-key scheme~\cite{mceliece1978public} -- only two years after the foundational breakthroughs in public-key cryptography. This scheme relies on the hardness of decoding random linear codes, a problem rigorously analyzed in subsequent works~\cite{berlekamp1978inherent}.
 
 While the scheme never saw widespread adoption due to its large key sizes, the interest in code-based crypto-schemes has seen a resurgence as it is not vulnerable to known quantum attacks like Shor's algorithm. Recent developments in code-based cryptosystems have shown that the performance needed for code based cryptographic schemes practically is within reach, one such scheme is BIKE~\cite{BIKE_Spec_2024} from the first NIST PQC call. Introductions of linear based codes on finite fields and MPCitH (Multi-Party Computation in the Head) threshold schemes~\cite{baum2020concretely} show promising results.
 
 \subsection{Choosing the SDitH protocol}
-In the Syndrome Decoding in the Head (SDitH) protocol such techniques are combined to define an efficient post-quantum secure signature scheme. It offers a highly modular design, enabling extensive configurability and support for various subroutines. This flexibility is particularly evident as the specification~\cite{aguilarsyndrome11} proposes two variants: the \textit{hypercube} and \textit{threshold} variants, both of which demonstrate significant performance improvements over the original protocol~\cite{feneuil2022syndrome,aguilar2023return,feneuil2023threshold}.
+In the Syndrome Decoding in the Head (SDitH) protocol such techniques are combined to define an efficient post-quantum secure signature scheme. It offers a highly modular design, enabling extensive configurability and support for various subroutines. This flexibility is particularly evident as the specification~\cite{aguilarsyndrome11} proposes two variants: the \textit{hypercube} and \textit{threshold}, both of which demonstrates significant performance improvements over the original protocol~\cite{feneuil2022syndrome,aguilar2023return,feneuil2023threshold}.
 
-The threshold variant, in particular, provides an opportunity to explore and implement several cryptographic primitives, including Merkle Trees~\cite{becker2008merkle}, Linear Secret Sharing (Shamir), Galois Fields~\cite{brownadvanced}, and Multi-Party Computation in the Head (MPCitH)~\cite{ishai2007zero,katz2018improved,baum2020concretely}.
+The threshold variant, in particular, provides an opportunity to explore and implement several cryptographic primitives, including Merkle Trees~\cite{becker2008merkle}, Linear Secret Sharing (Shamir), Galois Fields~\cite{brownadvanced}, and Multi-Party Computation in the Head (MPCitH)~\cite{ishai2007zero,katz2018improved,baum2020concretely}. 
+\todo{(Maybe write about the opposed in the hypercube variant)}
 
 The authors supply a detailed and well-crafted specification, along with a reference implementation in C, which serves as a robust starting point for our work.
 
@@ -255,18 +256,18 @@ Our choice of Rust was driven by a desire to investigate the languages strengths
 
 \section{Our contributions}
 
-In this report, we present an implementation of the NIST round to candidate, the SDitH protocol. We will be developing the protocol in the Rust programming language which presents a modern alternative C/C++. The
+In this report, we present an implementation of the NIST round to candidate, the SDitH protocol. We will be developing the protocol in the Rust programming language which presents a modern alternative to C/C++.
 
 While the NIST standardization has an overarching goal of \textit{selecting a number of acceptable candidate cryptosystems for standardization}~\cite{nistcall}, they also state that the goal of the submitted reference implementation is to promote understanding of the submitted algorithm.
 
-The SDitH protocol is available in two variants~\cite{aguilarsyndrome11}: the \textit{hypercube} and \textit{threshold} variants. Including distinct definitions for the original protocol~\cite{feneuil2022syndrome} alongside these variants within a single specificationcan lead to confusion and complicates the implementation process. To mitigate this issue, we chose to focus exclusively on the threshold variant, striving to provide a more detailed and comprehensive specification for this version of the protocol.
+The SDitH protocol is available in two variants~\cite{aguilarsyndrome11}: the \textit{hypercube} and \textit{threshold} variants. Including distinct definitions for the original protocol~\cite{feneuil2022syndrome} alongside these variants within a single specification can lead to confusion and might complicate the implementation process. To mitigate this issue, we chose to focus exclusively on the threshold variant, striving to provide a more detailed and comprehensive specification for this version of the protocol.
 
 In order to achieve this, we aimed to achieve the following goals
 
 \begin{itemize}
   \item To deliver performance that is comparable to -- or exceeds -- that of the reference implementation. Additionally, we aim to provide a well-documented exploration of the optimizations achievable in Rust.
   \item To provide comprehensive documentation that reflects the theoretical framework outlined in our report and the original specification~\cite{aguilarsyndrome11}, ensuring that future implementers can easily comprehend the protocol and its underlying mechanics. For readability, we emphasized clear, well-documented, and logically structured code supported by Rust's documentation and modular structure.
-  \item To utilise the in-built testing framework of Rust to ensure the correctness of our implementation. We aim to provide a comprehensive test suite that covers all possible scenarios and edge cases.
+  \item To utilise the built-in testing framework of Rust to ensure the correctness of our implementation. We aim to provide a comprehensive test suite that covers all possible scenarios and edge cases.
   \item Given the inherent flexibility and variants of the SDitH protocol, our implementation should leverage Rust's feature flags to enhance modularity and interchangeability. This approach not only supports a high degree of configurability but also ensures that the implementation remains adaptable to future changes and extensions.
 \end{itemize}
 
@@ -323,7 +324,7 @@ Finite fields form the foundation of numerous cryptographic protocols and primit
 \end{definition}
 
 \noindent
-The most commonly known finite fields are the prime fields $\mathbb{F}_p$, widely used in discrete logarithm cryptosystems, such as ECDSA and El-Gamal. These fields can be extended into $\mathbb{F}_{p^n}$, containing $p^n$ elements which we will describe in \autoref{sub:field_extension}. However, prime fields are not efficient for large numbers, due to the modular reduction overhead, a common requirement in protocols such as SDitH. For better efficiency, we require a field that can be represented using low amounts of bits or bytes. One method to achieve this is by constructing fields commonly known as Galois fields. Consider the simplest prime field, also called binary field, $\mathbb{F}_2 = (\{0,1\}, \texttt{XOR}, \texttt{AND}, 0, 1)$. It is straightforward to verify that this field satisfies the properties outlined in \autoref{def:field}.
+The most commonly known finite fields are the prime fields $\mathbb{F}_p$, widely used in discrete logarithm cryptosystems, such as ECDSA and El-Gamal. These fields can be extended into $\mathbb{F}_{p^n}$, containing $p^n$ elements which we will describe in \autoref{sub:field_extension}. However, prime fields are not efficient for large numbers, due to the modular reduction overhead, a common requirement in protocols such as SDitH. For better efficiency, we require a field that can be represented using low amounts of bits or bytes. One method to achieve this is by constructing fields commonly known as Galois fields. Consider the simplest prime field, also called the binary field, $\mathbb{F}_2 = (\{0,1\}, \texttt{XOR}, \texttt{AND}, 0, 1)$. It is straightforward to verify that this field satisfies the properties outlined in \autoref{def:field}.
 
 The Galois field $\mathbb{F}_{2^n}$ is an extension field of $\mathbb{F}_2$, defined as $\mathbb{F}_{2^n}$. We can construct this field by selecting an irreducible polynomial $p(x)$ of degree $n$ with coefficients in $\mathbb{F}_2$. Consequently, $\mathbb{F}_{2^n}$ contains exactly $2^n$ elements. The polynomial $p(x)$ ensures that $\mathbb{F}_{2^n}$ forms a valid field as it defines the modular reduction in multiplication.
 
@@ -382,7 +383,7 @@ To prove the security of hash functions, researchers often rely on models such a
 \subsubsection{Extendable-output (hash) functions (XOF)}\label{sec:xof}
 An \textit{Extendable-Output Function} (XOF) is a function that takes a bit string (also called a message) $\{0,1\}^*$ as input and can produce any desirable length output. Meaning that it can be used to generate an arbitrary amount of pseudorandom data. This is useful in cryptographic protocols where a seeded randomness is needed.
 
-It is formally defined in FIPS 204~\cite{FIPS204_2024}:
+It is formally defined in FIPS 204~\cite{FIPS204_2024} as:
 \begin{definition}
   A function on bit strings in which the output can be extended to any desired length. The approved XOFs from FIPS 202~\cite{FIPS202_2015} are designed to satisfy the following properties:
   \begin{itemize}
@@ -404,7 +405,7 @@ They describe the paradigm by the following steps:
     \item Find a formal definition for $\Pi$ in the model of computation in which all parties -- good and bad alike -- shares the random oracle $O$
     \item Design a protocol $P$ that is secure in the ROM
     \item Prove that $P$ is secure in the ROM
-    \item Replace the random oracle with a hash function $h$ and prove that the protocol is secure in the ROM
+    \item Replace the random oracle with a hash function $h$ and prove that the protocol is still secure
   \end{itemize}
 \end{definition}
 
@@ -413,11 +414,12 @@ We formally define the \textit{classical} ROM as follows:
   The adversary is given access to a random hash function through an oracle $O: \{0,1\}^* \rightarrow \{0,1\}^*$. The adversary can query the oracle $O(x)$ and receive the output. The oracle is stateless and the same input will always yield the same output.
 \end{definition}
 
-This would later be replaced by the concrete hash function when doing a security analysis. As this report is discussing a post quantum setting this would then lead to enabling a quantum attacker to query $h$ based on quantum states instead. This will change the security analysis of the protocol and is discussed in \autoref{sub:qrom}.
+As this report is discussing a post quantum setting this would then lead to enabling a quantum attacker to query $h$ based on quantum states instead. This will change the security analysis of the protocol and is discussed in \autoref{sub:qrom}.
 
 \subsubsection{Quantum-accessible Random Oracle Model (QROM)}\label{sub:qrom}
-When dealing with post-quantum secure protocols, it is relevant to consider the \textit{Quantum Random Oracle Model} (QROM). The extension of the ROM model, defined in~\cite{boneh2011random}, allows the quantum adversary to evaluate the random oracle in superpositions, meaning that the adversary can query with quantum states $|x \rangle = \sum \alpha_x |x \rangle$ and receive back the evaluated state $\sum\alpha_x |O(x)\rangle$. This is called the \textit{quantum(-accessible) random oracle model} (QROM).
+When dealing with post-quantum secure protocols, it is relevant to consider the \textit{Quantum Random Oracle Model} (QROM). This extension of the ROM model, defined in~\cite{boneh2011random}, allows the quantum adversary to evaluate the random oracle in superpositions, meaning that the adversary can query with quantum states $|x \rangle = \sum \alpha_x |x \rangle$ and receive back the evaluated state $\sum\alpha_x |O(x)\rangle$. This is called the \textit{quantum(-accessible) random oracle model} (QROM).
 
+We give the formal definition of the QROM as follows:
 \begin{definition}[Quantum Oracle Model (QROM)]
   Given a random oracle $O$, the associated quantum random oracle $O_Q$ maps a superposition of bit-strings to the superposition of its values when evaluated with $O$.\\
   For every basis vector:
@@ -425,10 +427,10 @@ When dealing with post-quantum secure protocols, it is relevant to consider the 
     O_Q(\langle x,y \rangle) = \langle x,y \oplus O(x) \rangle
   \end{align}
 \end{definition}
+One problem with this approach is the fact that we assume that the hash function becomes an evaluation at a superposition. It can be shown that for certain schemes this will lead to insecure protocols under any choice of hash function.
 
-One problem with this approach is the fact that we assume that the hash function becomes a evaluation at a superposition. This can be shown that for certain schemes this will yield to insecure protocols under any choice of hash function.
-
-For this report we will only be using the ROM and QROM and not describe the further security analysis.
+Note that for this report we will only be using the ROM and QROM and not describe the further security analysis. Furthermore, as this report is not about how quantum algorithms specifically break cryptography, we will not be discussing how qunatum computing works and is left out.
+\todo{ (Maybe give a brief idea as to how this works? or only use words for this section and not give any quantum states.) }
 
 \subsection{Commitment Schemes}
 A commitment scheme allows a \textit{prover} to \textit{commit} to a value and later \textit{open} or reveal the value to a \textit{verifier}. It satisfies the following two properties:
@@ -440,7 +442,7 @@ A commitment scheme allows a \textit{prover} to \textit{commit} to a value and l
   Given a commitment $c$ to a value $v$, the verifier can only recover the value $v$ with negligible probability.
 \end{lemma}
 
-Consider a simple scenario. Alice and Bob are playing a game of \textit{heads or tails}. However each does not trust the other not to cheat
+Consider a simple scenario. Alice and Bob are playing a game of \textit{heads or tails}. However, they do not trust each other not to cheat
 \begin{enumerate}[parsep=0pt, itemsep=0pt]
   \item Bob does not trust Alice not to correct her guess after learning his result
   \item Alice does not trust Bob not to use the knowledge of her guess to cheat
@@ -496,11 +498,11 @@ Conversely, the binding property \autoref{lem:binding} is upheld by the fact tha
 
 % This property is particularly advantageous in protocols like the SDitH threshold protocol, where only a subset of the committed values needs to be opened while keeping the rest concealed. By leveraging this feature, the prover can efficiently prove the validity of the subset without revealing the entire set of commitments.
 
-\subsection{Secret Sharing Schemes (SSS)}
+\subsection{Secret Sharing Schemes}
 
-Secret Sharing Schemes (SSS) are a class of cryptographic primitives that allow a secret to be split into multiple \textit{shares}, each of which can be distributed to different parties. These shares can then be recombined to reconstruct the original secret. SSS was initially invented~\cite{shamir1979share} to alleviate the single-point-of-failure problem for storage. Below we supply a definition of a secret sharing scheme~\cite{cramer2015secure} and the notation used in this report.
+Secret Sharing Schemes (SSS) are a class of cryptographic primitives that allow a secret to be split into multiple \textit{shares}, each of which can be distributed to different parties. These shares can then be recombined to reconstruct the original secret. These schemes were initially invented~\cite{shamir1979share} to alleviate the single-point-of-failure problem for storage. Below we supply a definition of a secret sharing scheme~\cite{cramer2015secure} and the notation used in this report.
 
-\begin{definition}[Secret Sharing Scheme (SSS)]\label{def:ss-share}
+\begin{definition}[Secret Sharing Scheme]\label{def:ss-share}
   We denote a SSS to be a system that ``disperses'' a secret $s$ into a sequence of $N$ pieces of data $\sh{s} = [s_1, \dots, s_n]$, called \textit{shares}, with the following functions:
   \begin{itemize}
     \item \texttt{share}: We denote a function \texttt{share}$_n(s) \rightarrow \sh{s}$ to be a function that takes a secret $s$ and returns a sharing $\sh{s}$ consisting of $n$ shares $s_i$ such that \texttt{open}$(\sh{s}) = s$.
@@ -515,7 +517,7 @@ Secret Sharing Schemes (SSS) are a class of cryptographic primitives that allow 
 
 \subsubsection{Additive SSS and additive homomorphism}\label{sec:additive-sss}
 
-A simple Secret Sharing Scheme (SSS) can be constructed using principles similar to the \textit{one-time pad} encryption. Let $F$ be an Abelian group, and consider a secret $s \in F$ that is split into $n$ shares, $\sh{s} \in F^n$. To generate these shares, sample $n-1$ random elements $[s_1, \dots, s_{n-1}] \in F^{n-1}$ uniformly at random, and compute the last share as:
+A simple SSS can be constructed using principles similar to the \textit{one-time pad} encryption. Let $F$ be an Abelian group, and consider a secret $s \in F$ that is split into $n$ shares, $\sh{s} \in F^n$. To generate these shares, sample $n-1$ random elements $[s_1, \dots, s_{n-1}] \in F^{n-1}$ uniformly at random, and compute the last share as:
 \begin{align*}
   s_n = s - \sum_{i=1}^{n-1} s_i.
 \end{align*}
@@ -530,11 +532,11 @@ A key feature of this construction is that if the parties hold two shared secret
 \end{align*}
 For additive SSS, this property follows directly from its construction.
 
-This property enables straightforward construction of Multi-Party Computation (MPC) protocols on top of the given Secret Sharing Scheme (SSS)\@. However, to support comprehensive arithmetic circuits, including multiplication gates, more advanced protocols are necessary -- detailed in \autoref{sec:mpc_sacrificing}.
+This property enables straightforward construction of Multi-Party Computation (MPC) protocols on top of the given SSS\@. However, to support comprehensive arithmetic circuits, including multiplication gates, more advanced protocols are necessary -- detailed in \autoref{sec:mpc_sacrificing}.
 
 \subsubsection{Threshold SSS}\label{sub:threshold-sss}
 
-In many situations such schemes are not sufficient. In the scheme described above, if a single share is lost, the secret is lost. Imagine the distribution of a secret among a set of locations. The current scheme would not ensure that you do not have a single-point-of-failure. To solve this, we require a SSS that can reconstruct the secret from a subset of shares up to a threshold $\ell$. This is called a $(\ell + 1, N)$-threshold SSS\@.
+In many situations such (N-1)-privacy schemes are not sufficient. In such a scheme, if a single share is lost, the secret can no longer be recovered, and we have again a single-point-of-failure. To solve this, we require a SSS that can reconstruct the secret from a subset of shares up to a threshold $\ell$. This is called a $(\ell + 1, N)$-threshold SSS\@.
 
 There are several ways to solve this problem. We could distribute more than one share to each location. If distributed correctly, we can ensure that only $t \leq N$ parties need to be available. However, there are also other more sophisticated schemes that can be used to ensure that the secret is not lost.
 
@@ -598,7 +600,7 @@ Furthermore, this $(\ell + 1, N)$ threshold scheme is $(+, +)$-homomorphic. This
 
 \subsection{Secure Multi-Party Computation}\label{sec:mpc}
 
-Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following sections we will denote a MPC protocol by $f$ for an $N$-party functionality $f(x, w_1, \dots, w_n)$, a public input $x$ and secret inputs $w_i$ of the party $P_i$. The goal is to compute the function $f$ on the inputs of the $N$ parties while upholding the following properties~\cite{cramer2015secure}
+Secure Multi-Party Computation (MPC) refers to a cryptographic protocol enabling multiple parties to jointly compute a function $f$ represented by a circuit $C$, ensuring that no information about the individual inputs is revealed beyond what can be inferred from the output of $C$. In the following sections we will denote an MPC protocol by $f$ for an $N$-party functionality $f(x, w_1, \dots, w_n)$, a public input $x$ and secret inputs $w_i$ of the party $P_i$. The goal is to compute the function $f$ on the inputs of the $N$ parties while upholding the following properties~\cite{cramer2015secure}
 
 \begin{definition}[Correctness]\label{def:mpc-correctness}
   We say that $\Pi$ realizes a deterministic $N$-party functionality $f(x, w_1, \dots, w_n)$ with perfect correctness if for all inputs $x, w_1, \dots, w_n$, the probability that the output of some player is different from the output of $f$ is negligible in the security parameter $k$, where the probability is over the independent choices of the random inputs $r_1, \dots, r_n$.
@@ -619,7 +621,7 @@ In terms of security needed for the SDitH protocol, we define the following secu
   \item \textbf{Low-threshold security}: The protocol is secure against a coalition of up to $\ell$ parties, where $\ell$ is the threshold. This is also known as an $\ell$-private MPC protocol.
 \end{itemize}
 
-In order to prove the validity of a MPC protocol that have been run in the head, we define the following notion of \textit{consistency}~\cite{ishai2007zero}.
+In order to prove the validity of an MPC protocol that have been run in the head/locally, we define the following notion of \textit{consistency}~\cite{ishai2007zero}.
 
 \begin{definition}[MPC view]\label{def:mpc-view}
   We denote the view $V_i$ of a party $P_i$ in the protocol as $(i, x, r_i, w_i, (m_1, \dots, m_j))$ where $r_i$ is the randomness used by $P_i$, $w_i$ is the secret share, and $(m_1, \dots, m_j)$ are the messages received by $P_i$ in the first $j$ rounds of the protocol.
@@ -639,9 +641,9 @@ In order to prove the validity of a MPC protocol that have been run in the head,
   \end{enumerate}
 \end{lemma}
 
-\textbf{Proof of \autoref{lem:consistency}} The \textit{if} direction is trivial and follows from \autoref{def:mpc-view} and \autoref{def:mpc-consistent-view}.
+\textbf{Proof of \autoref{lem:consistency}} the first statement is trivial and follows from \autoref{def:mpc-view} and \autoref{def:mpc-consistent-view}.
 
-The \textit{only if} direction is shown by the following. Consider $n$ pairwise consistent views $V_1, \dots, V_n$ \autoref{def:mpc-view}. Let us define an MPC protocol $\Pi$ by its \textit{next sent message} function $\Pi_j(i,x,w_i,r_i, (m_1, \dots, m_j)) = m_{j+1}$. The pairwise consistency, \autoref{def:mpc-consistent-view} and $\Pi_j$ implies, by induction that after $d$ rounds, that the actual view of all parties $P_i$ is the same as the view of $P_i$ in the first $d$ rounds. It follows that the views $V_i, \dots, V_n$ are consistent with the full execution of $\Pi$. \qed
+The second statement is shown by the following. Consider $n$ pairwise consistent views $V_1, \dots, V_n$ \autoref{def:mpc-view}. Let us define an MPC protocol $\Pi$ by its \textit{next sent message} function $\Pi_j(i,x,w_i,r_i, (m_1, \dots, m_j)) = m_{j+1}$. The pairwise consistency, \autoref{def:mpc-consistent-view} and $\Pi_j$ implies, by induction that after $d$ rounds, that the actual view of all parties $P_i$ is the same as the view of $P_i$ in the first $d$ rounds. It follows that the views $V_i, \dots, V_n$ are consistent with the full execution of $\Pi$. \qed
 
 This property is crucial as it enables a verifier in the MPCitH framework to validate the protocol's correctness.
 
@@ -650,7 +652,7 @@ This property is crucial as it enables a verifier in the MPCitH framework to val
 The SDitH protocol is built on the computational hardness of the Syndrome Decoding (SD) problem for random linear codes over a finite field (see \autoref{sec:gf256}). Specifically, SDitH utilises a variant of the SD problem, referred to as the \textit{coset weights} problem, first introduced by Berlekamp and McEliece in 1978~\cite{berlekamp1978inherent}. We state the problem as follows:
 
 \begin{definition}\label{def:syndrome}
-  Given $H \in \mathbb{F}^{w\times m}_q$ and $y \in \mathbb{F}^{w}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t.\ wt$(x) \leq w$ and $Hx = y$.
+  Given $H \in \mathbb{F}^{w\times m}_q$ and $y \in \mathbb{F}^{w}_q$. The problem is to find $x \in \mathbb{F}^m_q$ s.t.\ wt$(x) \leq w$, where $wt(x)$ denotes the Hamming weight, and $Hx = y$.
 \end{definition}
 
 Generating such an instance is straightforward: one can construct a uniformly random parity-check matrix $H$ and a codeword $x$ (with $wt(x) \leq w$), and then compute the syndrome $y = Hx$. In the SDitH protocol, the values of the matrix $H$ and the syndrome $y$ are elements of the finite field $\mathbb{F}_q$ explained previously in \autoref{sec:gf256}. The SD problem is well-known to be NP-complete for random instances~\cite{berlekamp1978inherent} also referred to as the \textit{general decoding problem}. To illustrate the computational difficulty, solving the problem using brute force would require $O(\binom{m}{w} q^w)$ operations, which is computationally infeasible for large enough $m$ and $w$.
@@ -729,7 +731,7 @@ This modification significantly improves the efficiency of the MPC protocol and 
 The SDitH protocol construction is built upon the \textit{Multi-Party Computation in the Head} (MPCitH) framework introduced by~\cite{ishai2007zero}. In this section, we provide an introduction to the MPCitH framework and demonstrate how it can be used to construct Zero-Knowledge Proofs of Knowledge (ZK-PoK). These proofs can then be combined with the \hyperref[sec:fiatshamir]{Fiat-Shamir heuristic} to derive a signature scheme. To begin, we first describe the concept of a ZK-PoK.
 
 \subsubsection{Zero-Knowledge Proofs of Knowledge}\label{sec:zk}
-The intuition behind a ZK-PoK is that the prover can convince the verifier that they know a secret $w$, such that $x$ is true, without revealing the secret $w$ to the verifier. For example, this could be someone wanting to prove that they are above the age of 18 without revealing their specific age.
+The intuition behind a ZK-PoK is that a prover can convince a verifier that they know some secret $w$, such that $x$ is true, without revealing the secret $w$ to the verifier. For example, this could be someone wanting to prove that they are above the age of 18 without revealing their specific age.
 
 \begin{definition}
   We denote a ZK-PoK $\Pi_{\mathcal{R}}$ for some \textbf{NP} relation $\mathcal{R} = \{(x, w)\; x \in L, w \in W(x)\}$.
@@ -769,7 +771,7 @@ We will describe the basic construction suggested by Ishai et al~\cite{ishai2007
           \begin{enumerate}[nolistsep]
             \item\label{prop:mpcinth_commit} The views are consistent according to the commitment scheme.
             \item\label{prop:mpcinth_consistent} The views are consistent according to the public input $x$ and the randomness $r_1, \dots, r_n$.
-            \item\label{prop:mpcinth_knowledge} The the output of $\Pi_+$ from the views output \texttt{Accept}.
+            \item\label{prop:mpcinth_knowledge} The output of $\Pi_+$ from the views output \texttt{Accept}.
           \end{enumerate}
   \end{enumerate}
 \end{protocol}
@@ -784,9 +786,9 @@ We will describe the basic construction suggested by Ishai et al~\cite{ishai2007
   The verifier only sees $\ell$ views, and therefore from the definition of the MPC protocol $\Pi_+$ learns nothing of the secret witness $w$.
 \end{lemma}
 
-We consider soundness of the MPCitH framework. We assume that the verifier accepts the relation $\mathcal{R}(x,w)$ for $x \notin L$ -- i.e. the verifier accepts the relation even though the prover has created a false statement. This means that the prover must have cheated on of two ways. First, the prover may have cheated in the underlying MPC protocol which is defined by the error probability $p$.
+We consider soundness of the MPCitH framework. We assume that the verifier accepts the relation $\mathcal{R}(x,w)$ for $x \notin L$ -- i.e. the verifier accepts the relation even though the prover has created a false statement. This means that the prover must have cheated in one of two ways. First, the prover may have cheated in the underlying MPC protocol which is defined by the error probability $p$.
 
-Secondly, the prover could have tampered with the views. In this, the prover must have corrupted one party and creating a inconsistent view. The probability that the prover succeeds with this is at most $1 / N$. This gives us an overall soundness
+Secondly, the prover could have tampered with the views. In this, the prover must have corrupted one party and created a inconsistent view. The probability that the prover succeeds with this is at most $1 / N$. Giving an overall soundness of:
 
 \begin{lemma}[Soundness of MPCitH for $\Pi_+$~\cite{feneuil2022syndrome}]\label{lem:soundness_mpcinth} Given a false positive probability $p$ for the underlying MPC protocol $\Pi_+$, the probability that the verifier outputs \texttt{Accept} for $\mathcal{R}(x,w) \neq 1$ is at most \[ \frac{1}{N} + p - \frac{1}{N} p \]
 \end{lemma}
@@ -829,7 +831,7 @@ Proposals for ZK-PoK proofs -- such as the \textit{Cut-and-Choose} protocol~\cit
 
 Building upon these protocols, Baum and Nof~\cite{baum2020concretely} propose a variant that shifts the focus from computing the product to simulating the \textit{verification} of the triple relation instead. This verification is performed by sacrificing another triple. Consider the following protocol, which is based on the MPC protocol described in~\cite{damgaard2012multiparty}.
 
-
+\newpage
 \begin{protocol}[Verification of a multiplication triple by sacrificing another]\label{def:sacrifice}
   Given an input triple $(x,y,z) \in \mathbb{F}$ random shared triple $(\sh{a}, \sh{b}, \sh{c}) \in \mathbb{F}$, it is possible to verify the correctness of the statement $z = x \cdot y$ without revealing any information on either of the input. Define \texttt{open} according to \autoref{def:ss-share}.
   \begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
@@ -861,7 +863,7 @@ Observe that if both triples are correct multiplication triples (i.e., $z = xy$ 
     & = \varepsilon\Delta_z - \Delta_c = 0 \label{eq:sacrifice-proof}
 \end{align}
 
-Consider the cause where one of $\Delta_z$ or $\Delta_c$ is zero and the other is non-zero. In this case the verifier will not accept from~\ref{eq:sacrifice-proof}. Otherwise, we require that $\varepsilon = \Delta_c \cdot \Delta_z^{-1}$ which happens with probability $\frac{1}{|\mathbb{F}|}$. \qed
+Consider the case where one of $\Delta_z$ or $\Delta_c$ is zero and the other is non-zero. In this case the verifier will not accept from~\ref{eq:sacrifice-proof}. Otherwise, we require that $\varepsilon = \Delta_c \cdot \Delta_z^{-1}$ which happens with probability $\frac{1}{|\mathbb{F}|}$. \qed
 
 Under the MPCitH paradigm, the verifier must issue two challenges. The first challenge is for the randomness used in the MPC protocol computation, denoted by $\varepsilon$, which we refer to as the \textit{MPC challenge}. This challenge ensures that the prover cannot cheat in the computation of the multiplication gates or manipulate the inputs. By doing so, the verifier does not have to recompute the MPC inputs to check the consistency of the committed inputs, thereby significantly reducing the computational overhead for the verifier.
 
@@ -869,9 +871,9 @@ The second challenge is a \textit{view opening challenge} $I \subseteq [N]$, whe
 
 \section{Threshold Computation in the Head (TCitH)}\label{sec:threshold-mpc}
 
-\autoref{def:sacrifice} forms the foundational mechanism underpinning the SDitH protocol. While this approach delivers significant improvements~\cite{baum2020concretely,feneuil2022syndrome} in efficiency and soundness for ZK-PoK protocols, further advancements can be achieved by revisiting the secret sharing schemes utilized within the MPCitH framework. The majority of constructions within the MPCitH framework~\cite{baum2020concretely,feneuil2022syndrome,katz2018improved} rely on $(N-1, N)$ additive secret sharing schemes (SSS).
+\autoref{def:sacrifice} forms the foundational mechanism underpinning the SDitH protocol. While this approach delivers significant improvements~\cite{baum2020concretely,feneuil2022syndrome} in efficiency and soundness for ZK-PoK protocols, further advancements can be achieved by revisiting the secret sharing schemes utilized within the MPCitH framework. The majority of constructions within the MPCitH framework~\cite{baum2020concretely,feneuil2022syndrome,katz2018improved} rely on $(N-1, N)$ additive SSS.
 
-Recently, Feneuil and Rivain~\cite{feneuil2023threshold,feneuil2023threshold2} proposed the application of threshold secret sharing schemes -- see \autoref{sub:threshold-sss}. For low-threshold SSS, their approach dramatically reduces computational overhead, as the prover emulates only $\ell + 1$ parties, while the verifier needs to verify and emulate just $\ell$ parties.
+Recently, Feneuil and Rivain~\cite{feneuil2023threshold,feneuil2023threshold2} proposed the application of threshold SSS -- see \autoref{sub:threshold-sss}. For low-threshold SSS, their approach dramatically reduces computational overhead, as the prover emulates only $\ell + 1$ parties, while the verifier needs to verify and emulate just $\ell$ parties.
 
 \begin{table}[]
   \centering
@@ -888,9 +890,9 @@ We define a threshold MPC protocol based on a $(\ell + 1, N)$-threshold SSS. In 
 
 On the other hand, the TCitH model~\cite{feneuil2023threshold} results in increased flexibility in the number of input shares the prover must open. While the prover still commits to all input sharings, only a subset of these needs to be opened during the protocol.
 
-To facilitate this, a Merkle Tree Commitment Scheme (\autoref{sub:merkle_tree_prelim}) is employed. This scheme enables the prover to efficiently prove the consistency of a subset of committed inputs by providing additionally the authentication path along with the tree root -- introducing the slight increase in communicational complexity.
+To facilitate this, a Merkle Tree Commitment Scheme (\autoref{sub:merkle_tree_prelim}) is employed. This scheme enables the prover to efficiently prove the consistency of a subset of committed inputs -- introducing a slight increase in communicational complexity.
 
-\begin{lemma}[Soundness of TCitH based ZK]
+\begin{lemma}[Soundness of TCitH based ZK-PoK]
   Given a $(\ell +1,N)$-threshold MPC protocol with false positive probability of $p_{\ell}$, we have a soundness error of
   \begin{align*}
     \frac{1}{\binom{N}{\ell}} + p_{\ell} \cdot \frac{\ell \cdot (N - \ell)}{\ell + 1}
@@ -947,13 +949,13 @@ As a result, the protocol's soundness holds under the assumption that the commit
 
 
 \section{Fiat-Shamir Heuristic}\label{sec:fiatshamir}
-To transform any zero-knowledge protocol into a signature scheme, one can use the approach described in~\cite{fiat1986prove}. Here, we outline the general concept.
+To transform any ZK-PoK protocol into a signature scheme, one can use the approach described in~\cite{fiat1986prove}. Here, we outline the general concept.
 
-ZK-PoK interactive protocols, such as the MPCitH protocols discussed above, depend on the verifier to issue a challenge to the prover. This challenge acts as a source of randomness, which the prover cannot not control.
+ZK-PoK interactive protocols, such as the MPCitH protocols discussed above, depend on the verifier to issue a challenge to the prover. This challenge acts as a source of randomness, which the prover cannot control.
 
-To adapt such a protocol into a signature scheme, the prover must eliminate the verifier's role in providing the randomness. This is achieved by allowing the prover to independently generate the challenge using a pseudo-random function, such as a collision-resistant hash function. By modeling the hash function as a random oracle, its security guarantees ensure that the prover cannot manipulate the randomness of the verification challenge. This maintains the fundamental property of ZK interactive protocols while enabling the transformation into a non-interactive signature scheme.
+To adapt such a protocol into a signature scheme, the prover must eliminate the verifier's role in providing the randomness. This is achieved by allowing the prover to independently generate the challenge using a pseudo-random function, such as a collision-resistant hash function. By modeling the hash function as a random oracle, its security guarantees ensure that the prover cannot manipulate the randomness of the verification challenge. This maintains the fundamental property of ZK-PoK interactive protocols while enabling the transformation into a non-interactive signature scheme.
 
-Within the context of the SDitH protocol, the transformation from a ZK to a signature scheme is accomplished by substituting the verifier's \textit{MPC challenge} and \textit{view opening challenge} with the output of hash functions, where these hash functions take as input the prover's prior communications.
+Within the context of the SDitH protocol, the transformation from a ZK-PoK to a signature scheme is accomplished by substituting the verifier's \textit{MPC challenge} and \textit{view opening challenge} with the output of a hash function, where the hash function take as input the prover's prior communications.
 
 \section{The Rust Programming language}\label{sec:rust}
 As a preliminary to our implementation, we need to answer the question: ``Why is Rust a good choice for PQC?''.
@@ -964,8 +966,7 @@ The Rust programming language addresses memory safety through its unique \textit
 
 In addition to its focus on safety, Rust benefits from an extensive library of community-maintained documentation and resources~\cite{rustlangRustProgramming,rustlangPerformanceBook,lurklurkEffectiveRust}. These resources provide invaluable support for developers, enabling them to better understand the language's features and effectively utilize its capabilities.
 
-In this section, we provide an overview of the key features of the Rust programming language that will be utilized in this project. Specifically, how we might leverage Rust's safety mechanisms, performance optimization capabilities, dynamic language features, and robust testing infrastructure.
-
+In this section, we provide an overview of the key features of the Rust programming language that will be utilizing in this project. Specifically, how we might leverage Rust's safety mechanisms, performance optimization capabilities, dynamic language features, and robust testing infrastructure.
 
 \subsection{Cargo - Rust package manager}\label{sec:cargo}
 A Rust program, referred to as a \textit{crate}, is typically compiled using the Rust Compiler with a command such as \texttt{rustc hello.rs}. However, manually managing versions and dependencies can be tedious and error-prone. To simplify this process, Rust provides a \textit{package manager} called Cargo~\cite{rustlangCargo}.
@@ -974,7 +975,7 @@ Cargo is a command-line tool -- run through \texttt{cargo} -- that facilitates t
 
 
 \subsection{Memory safety}\label{sec:rustborrow} % mut references
-Rust guarantees both type safety (\autoref{sub:rusttypes}) and memory safety. While we will not delve into the details, significant progress has been made toward formal proofs of these guarantees~\cite{jung2017rustbelt}. Unlike many other languages that rely on sophisticated garbage collection mechanisms to ensure memory safety, Rust avoids the associated performance overhead through two key features: the \textit{ownership} and \textit{lifetimes}. Along with a compile time functionality called the \textit{borrow checker}, these features ensure the memory safety of Rust programs.
+Rust guarantees both type safety (\autoref{sub:rusttypes}) and memory safety. While we will not delve into the details, significant progress has been made toward formal proofs of these guarantees~\cite{jung2017rustbelt}. Unlike many other languages that rely on sophisticated garbage collection mechanisms to ensure memory safety, Rust avoids the associated performance overhead through two key features: \textit{ownership} and \textit{lifetimes}. Along with a compile time functionality called the \textit{borrow checker}.
 
 While the borrow checker is often the biggest challenge for new Rust developers, it is also the feature that makes Rust exceptionally powerful for secure applications.
 
@@ -1012,11 +1013,11 @@ Between the two memory allocations there exists a \textit{performance versus dyn
   let b: [u8; 3] = [1, 2, 3];
 \end{minted}
 
-This code demonstrates two data types being allocated. The first, \rust{a}, is a vector type, while the second, \rust{b}, is a fixed-size array type. The vector type is always allocated on the heap, whereas the fixed array is allocated on the stack. Pushing and accessing the stack is faster than for on the heap. Therefore, keeping values on the stack tends to outperform heap allocations. This is because heap allocation involves searching for a suitable location in memory to store the data.
+This code demonstrates two data types being allocated. The first, \rust{a}, is a vector type, while the second, \rust{b}, is a fixed-size array type. The vector type is always allocated on the heap, whereas the fixed array is allocated on the stack. Pushing and accessing the stack is faster than using the heap. Therefore, keeping values on the stack tends to outperform heap allocations. This is because heap allocation involves searching for a suitable location in memory to store the data.
 
-Accessing data on the heap is slower because you have to follow a pointer from the stack to the allocated data. Note that there are several optimisations you can do when allocating to the heap, like changing the allocator for specific use cases, instantiating the vector with a capacity or the \rust{SmallVec} that dynamically changes from the stack to the heap when allocation surpasses its defined capacity. See~\cite{rustlangPerformanceBook} for more.
+Furthermore, the heap is slower because you have to follow a pointer from the stack to the allocated data. Note that there are several optimisations you can do when allocating to the heap, like changing the allocator for specific use cases, instantiating the vector with a capacity or the \rust{SmallVec} that dynamically changes from the stack to the heap when allocation surpasses its defined capacity. See~\cite{rustlangPerformanceBook} for more.
 
-However, the vector type is far more dynamic. For instance, using the \rust{push} method, you can add more elements to a vector, and the allocator will automatically find additional space on the heap if needed. Conversely, stack allocations in Rust require that the size of the data be known at compile time, which imposes significant restrictions on how dynamic your code can be. This limitation became particularly evident when designing around the different category variants in \autoref{sub:constants}. However, this also ensures at compile time that you cannot access memory outside of the stack, a common vulnerability exposed in C/C++.
+However, the vector type is far more dynamic. For instance, using the \rust{push} method, you can add more elements to a vector, and the allocator will automatically find additional space on the heap if needed. Conversely, stack allocations in Rust require that the size of the data is known at compile time, which imposes significant restrictions on how dynamic your code can be. This limitation became particularly evident when designing around the different category variants in \autoref{sub:constants}. However, this also ensures at compile time that you cannot access memory outside of the stack, a common vulnerability exposed in C/C++.
 
 Additionally, the stack, due to its fixed-size structure, can only hold a limited amount of data. Attempting to allocate more memory than the stack can accommodate results in a \textit{stack overflow} error. In contrast, the heap offers virtually unlimited storage, as it can dynamically allocate memory as required.
 
@@ -1024,8 +1025,8 @@ Additionally, the stack, due to its fixed-size structure, can only hold a limite
 Now that we have given a brief introduction to the memory allocation, we can delve into the \textit{ownership system}. This system is a crucial aspect of Rust's memory management, as it ensures that memory is allocated and deallocated correctly. Ownership in Rust follows three rules
 \begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
   \item Each value has an \textit{owner}
-  \item There can only be one owner at one time
-  \item When a owner goes out of scope, the value will be \textit{dropped}.
+  \item There can only be one owner at a time
+  \item When an owner goes out of scope, the value will be \textit{dropped}.
 \end{enumerate}
 First, we consider the \textit{variable scope} in the following example
 \begin{minted}{rust}
@@ -1035,7 +1036,7 @@ First, we consider the \textit{variable scope} in the following example
   println!("{d}") // Now we can use d
 } // d is dropped here
 \end{minted}
-In this example, the variable \rust{d} comes into the scope and remains valid until the scope is closed. This is similar to most other programming languages. This works because the string literal \rust{"Peace is a lie"} is of known size and is allocated on the stack, meaning that it can be easily copied on stack and popped when the current scope ends. It also means that while it is efficient and fast, the variable \rust{d} cannot be mutated after the fact.
+In this example, the variable \rust{d} comes into the scope and remains valid until the scope is closed. This is similar to most other programming languages. This works because the string literal \rust{"Peace is a lie"} is of known size at compile time and is allocated on the stack, meaning that it can be easily copied on stack and popped when the current scope ends. It also means that while it is efficient and fast, the variable \rust{d} cannot be mutated after the fact.
 
 \subsubsection{Variable and data interaction with \textit{Move}}
 
@@ -1059,7 +1060,7 @@ A variable instantiated with the \rust{String} type is dynamically allocated on 
   let v = d;
 \end{minted}
 
-For Case 1, if the string literal \rust{d} implements the \textit{Copy} trait. This means that when we assign \rust{let v = d}, its value can copied onto the stack with a negligent performance hit. This means \rust{d} remains accessible after being used or assigned elsewhere because its data was duplicated. Due to the immutability and fixed size of the string literal, this operation is also memory safe.
+For Case 1, if the string literal \rust{d} implements the \textit{Copy} trait. This means that when we assign \rust{let v = d}, its value can be copied onto the stack with a negligent performance hit. This means \rust{d} remains accessible after being used or assigned elsewhere because its data was duplicated. Due to the immutability and fixed size of the string literal, this operation is also memory safe.
 
 However, for Case 2; The variable \rust{d} is instead a \textit{pointer} to a heap-allocated string, it resides on the stack but points to data stored on the heap. When \rust{d} is moved to another variable (e.g., \texttt{v}), the pointer itself is transferred to \texttt{v} and the heap-allocated data remains unchanged. Ownership of the pointer is moved to \texttt{v}. This is called a \textit{move}. After the move, \rust{d} is no longer valid, and any attempt to use it would result in a compile-time error.
 \begin{minted}{rust}
@@ -1074,12 +1075,12 @@ However, for Case 2; The variable \rust{d} is instead a \textit{pointer} to a he
 
 \subsubsection{Why the Restriction?}
 
-Allowing \rust{d} to be used after the move could lead to undefined behavior, such as a \textit{double free} memory safety bug, as both \rust{d} and \rust{v} would attempt to drop the same data. Additionally, simultaneous access or modification of heap-allocated data could cause data races. To prevent such issues, Rust enforces ownership rules. If \rust{d} needs to be used after a move, the heap data must be explicitly \textit{cloned} before transferring ownership, ensuring safe and predictable memory usage.
+Allowing \rust{d} to be used after the move could lead to undefined behavior, such as a \textit{double free} memory safety bug, as both \rust{d} and \rust{v} would attempt to drop the same data. Additionally, simultaneous access or modification of heap-allocated data could cause data races. To prevent such issues, Rust enforces these ownership rules at compile-time. If \rust{d} needs to be used after a move, the heap data must be explicitly \textit{cloned} before transferring ownership, ensuring safe and predictable memory usage.
 
 \subsubsection{Function ownership}\label{sub:rustlifetimes}
 Now that we have covered the basics of ownership, we explore how it interacts with functions. When passing a value to a function, the function takes ownership of the value. This means that the function takes over managing the \textit{lifetime} of the value, ensuring that it is not used after the function call, unless it is copied.
 
-For stack allocated types, the structure of the stack and known compile time size, nothing special needs to happens when the function exits. However for heap allocated types
+For stack allocated types, the structure of the stack and known compile time size, nothing special needs to happen when the function exits. However for heap allocated types
 \begin{minted}{rust}
   fn takes_ownership(some_string: String) { // some_string comes into scope
     println!("{some_string}");
@@ -1234,7 +1235,7 @@ Such a property is hard to enforce using the type system. However, it is possibl
 
 This example demonstrates how straightforward automated testing is in Rust. First, we create an internal module, \rust{mod arithmetic_tests}, with the annotation \mintinline{rust}|#[cfg(test)]|. This annotation ensures that the module is included only during testing and excluded from the final production code.
 
-Individual tests are made using the \mintinline{rust}|#[test]| and a function. Then we can use the macro \rust{assert_eq!()} to test whether that our property is upheld.
+Individual tests are made using the \mintinline{rust}|#[test]| and a function. Then we can use the macro \rust{assert_eq!()} to test whether or not the property is upheld.
 
 To run the tests in our implementation you simply run the following
 \begin{minted}{bash}
@@ -1312,14 +1313,12 @@ Adding a triple slash \rust{///} above a function or struct generates documentat
 While these comments enable developers to access documentation directly within the code, Rust also provides a powerful feature to automatically generate comprehensive documentation. By running \href{https://doc.rust-lang.org/cargo/commands/cargo-doc.html}{\texttt{cargo doc}}, you can create a webpage with detailed documentation for the project. Checkout out the documentation for our project \href{https://mactherobot.github.io/sdith-rust}{here}.
 
 \subsubsection{Codebase structure and Modules}\label{sub:rust_modules}
-Rust provides a module system that allow you to organize your code into logical units. Making it it easier to understand and maintain the codebase. A module is a collection of related items, such as functions, structs, and constants, that are grouped together.
-
-Modules can be nested, allowing for a hierarchical structure of code.
+Rust provides a module system that allow you to organize your code into logical units. Making it easier to understand and maintain the codebase. A module is a collection of related items, such as functions, structs, and constants, that are grouped together. They can be nested, allowing for a hierarchical structure of code.
 If utilized correctly, this can help organize the logic of a program effectively for readability and reuse. For example, encapsulating field arithmetic within a module and separating components into subfolders and subroutines related to the main signature algorithm.
 
 Rust structures modules either directly in the code or through the file system. There are two files that provides the entry points to your program
 \begin{enumerate}
-  \item \texttt{main.rs}: This is the main entry point of the program. It is the first file that is executed when the program is run. You can quickly run the program by running \texttt{cargo run}.
+  \item \texttt{main.rs}: This is the main entry point of the program. It is the first file that is executed. You can quickly run the program by running \texttt{cargo run}.
   \item \texttt{lib.rs}: In the case that you are building code that you want to provide for other developers to use in their own Rust code -- named a \textit{crate} -- this is the entry point for such a library.
 \end{enumerate}
 
@@ -1425,7 +1424,7 @@ fn add<T>(a: T, b: T) -> T {
 Here, the function \rust{add<T>} includes the type parameter \rust{T}, allowing the compiler to infer the type based on the inputs. This enables calling the function with different types. However, the rewritten function would still produce an error, as the compiler cannot guarantee that the input types support the \rust{+} operator. This is where \textit{Traits} come into play.
 
 \subsubsection{Traits}
-Traits provide a way to define shared behavior in an abstract manner, similar to interfaces in other programming languages -- e.g TypeScript. They allow you to specify a set of methods that a type must implement. For example, in Rust, we can restrict a generic type \rust{T} to only those types that implement the \rust{std::ops::Add} trait, which defines the \rust{+} operator. Consider the following function definition:
+Traits provide a way to define shared behavior in an abstract manner, similar to interfaces in other programming languages -- e.g TypeScript and Go. They allow you to specify a set of methods that a type must implement. For example, in Rust, we can restrict a generic type \rust{T} to only those types that implement the \rust{std::ops::Add} trait, which defines the \rust{+} operator. Consider the following function definition:
 
 \begin{minted}{rust}
 use std::ops::Add;
@@ -1490,8 +1489,7 @@ Rust offers a range of features that make it easier to write maintainable and re
 
 Next, we explore additional features employed to create a more dynamic and optimized implementation of the SDitH protocol. Dynamic compilation allows for code generation, linking and configuring the package before building the actual binary.
 
-A good usecase could be facilitating the NIST security parameters. Note that we want the parameters to be constant at compile time, but we do not want to create several instances of functions that use each parameter for each category. Rust's feature flags come in handy.
-
+A good use case could be facilitating the NIST security parameters. Note that we want the parameters to be constant at compile time, but we do not want to create several instances of functions that use each parameter for each category. Rust's feature flags come in handy.
 
 \subsubsection{Feature flags}\label{prelim:feature_flags}
 Rust's feature flag system enables conditional compilation, offering flexibility to optimize or configure code for diverse use cases.
@@ -1548,7 +1546,7 @@ In our implementation, we use feature flags to toggle between different categori
 Achieving \textit{blazingly fast} code requires careful optimization. Fortunately, Rust and its community provide numerous tools to improve performance. In this section, we describe the methods used to measure performance in our implementation and explore techniques in Rust that help enhance it further.
 
 \subsubsection*{Measuring performance}\label{sec:rust_benchmarking}
-There are two techniques that we used in order to investigate the performance of our implementation and  to guide the optimizations that were needed. These are \textit{benchmarking} and \textit{profiling}.
+There are two techniques that we used in order to investigate the performance of our implementation and to guide the optimizations that were needed. These are \textit{benchmarking} and \textit{profiling}.
 
 \subsubsection{Benchmarking}
 Benchmarking involves measuring the performance of a program or specific components of the software. It is commonly used to evaluate efficiency in terms of \textit{speed} and \textit{memory} usage. It often involves running the program multiple times under controlled and repeatable conditions and combining the results into a statistically driven benchmark.
@@ -1613,7 +1611,7 @@ The \textit{rayon}~\cite{rayon} package implements easy-to-use data-parallelisat
 
 Although custom parallelization can sometimes outperform \textit{rayon}, the library provides an intuitive interface that enables parallelization with minimal effort, often requiring just a single line of modification. In this project, we have opted to use \textit{rayon} and reserved custom parallelization for the future.
 
-\subsubsection{Single Instruction Multiple Data (SIMD)}
+\subsubsection{Single Instruction Multiple Data}
 Single Instruction Multiple Data or SIMD for short, is a way to better utilize a CPU when dealing with data in the form of Vectors. It is a way for the CPU to do a single instruction but on multiple data points at the same time by splitting the data into chunks that fit into a single register. This can greatly improve performance when dealing with large amounts of data. Rust has support for SIMD through the \texttt{std::simd} module. This module provides access to a portable abstraction for SIMD operations that is not bound to any particular hardware architecture.
 
 A simple example could be adding two vectors together:
@@ -1887,7 +1885,7 @@ Following from \autoref{thm:sdith-mpc-linear}, for every party $i$, there exists
 This process is referred to as \textit{inverse MPC computation}.
 
 \begin{theorem}[Inverse MPC computation]\label{thm:mpc_inverse}
-  For a MPC protocol \autoref{thm:sdith-mpc-linear} we have a inverse MPC computation with two functions
+  For an MPC protocol \autoref{thm:sdith-mpc-linear} we have an inverse MPC computation with two functions
   \begin{align}
     \phi^1_{r,\varepsilon}        & : (s_A, P, Q, \alpha, \beta, v) \mapsto (a, b), \\
     \phi^2_{r, \varepsilon, a, b} & : (s_A, P, Q, \alpha, \beta, v) \mapsto c,
