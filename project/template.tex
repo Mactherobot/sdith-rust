@@ -233,7 +233,7 @@ While the scheme never saw widespread adoption due to its large key sizes, the i
 In the Syndrome Decoding in the Head (SDitH) protocol such techniques are combined to define an efficient post-quantum secure signature scheme. It offers a highly modular design, enabling extensive configurability and support for various subroutines. This flexibility is particularly evident as the specification~\cite{aguilarsyndrome11} proposes two variants: the \textit{hypercube} and \textit{threshold}, both of which demonstrates significant performance improvements over the original protocol~\cite{feneuil2022syndrome,aguilar2023return,feneuil2023threshold}.
 
 The threshold variant, in particular, provides an opportunity to explore and implement several cryptographic primitives, including Merkle Trees~\cite{becker2008merkle}, Linear Secret Sharing (Shamir), Galois Fields~\cite{brownadvanced}, and Multi-Party Computation in the Head (MPCitH)~\cite{ishai2007zero,katz2018improved,baum2020concretely}. 
-\todo{(Maybe write about the opposed in the hypercube variant)}
+% \todo{(Maybe write about the opposed in the hypercube variant)}
 
 The authors supply a detailed and well-crafted specification, along with a reference implementation in C, which serves as a robust starting point for our work.
 
@@ -430,7 +430,7 @@ We give the formal definition of the QROM as follows:
 One problem with this approach is the fact that we assume that the hash function becomes an evaluation at a superposition. It can be shown that for certain schemes this will lead to insecure protocols under any choice of hash function.
 
 Note that for this report we will only be using the ROM and QROM and not describe the further security analysis. Furthermore, as this report is not about how quantum algorithms specifically break cryptography, we will not be discussing how qunatum computing works and is left out.
-\todo{ (Maybe give a brief idea as to how this works? or only use words for this section and not give any quantum states.) }
+%\todo{ (Maybe give a brief idea as to how this works? or only use words for this section and not give any quantum states.) }
 
 \subsection{Commitment Schemes}
 A commitment scheme allows a \textit{prover} to \textit{commit} to a value and later \textit{open} or reveal the value to a \textit{verifier}. It satisfies the following two properties:
@@ -2515,8 +2515,7 @@ The \texttt{SHA3} implementation required by NIST~\cite{nistcall}, while highly 
 As anticipated, the performance gains resulting from substituting the hash function were significant -- especially in the Merkle tree generation. As demonstrated in \autoref{tab:blake3}. By profiling, we saw that the computational overhead for Merkle tree construction decreased from $54\%$ to approximately $38\%$ of the total execution time. This reduction aligns closely with the time complexity observed for the MPC computations.
 
 \subsection{Commitments}
-
-For the commitment scheme and in order to commit to shares, we utilized the hasher defined earlier.
+For the commitment scheme and in order to commit to shares, we utilized the hasher defined earlier. We supplied it with the following values to be able to commit to a specific \textbf{share}:
 \begin{align*}
    & \texttt{commit\_share}(\texttt{salt}, e, i, \sh{\texttt{share}}) = \texttt{Hash}(0 || salt || e_0 || e_1 || i_0 || i_1 || \sh{\texttt{share}})
 \end{align*}
@@ -2540,8 +2539,6 @@ for a hash $\texttt{Hash}_3$ (\autoref{eq:fiatshamirhash})
 \end{align*}
 
 While a \textit{pointer-based} structure might have improved legibility, our experiments showed no significant gains in terms of making the implementation more readable. Furthermore our initial tries introduced some overhead. Nonetheless, we believe this approach could be worth exploring in the future to better support parallelization. For now, we chose to retain the array structure due to its performance advantages and its alignment with the specification.
-
-As the protocol specifies fixed-size trees for each category, we utilized constants from \autoref{sub:constants} to allocate the tree efficiently on the stack.
 
 We defined a trait for the Merkle tree with methods derived from the specification
 \begin{minted}{rust}
@@ -2567,6 +2564,7 @@ We defined a trait for the Merkle tree with methods derived from the specificati
   }
 \end{minted}
 
+As the protocol specifies fixed-size trees for each category, we utilized constants from \autoref{sub:constants} to allocate the tree efficiently on the stack.
 \subsubsection{Generating the Merkle Tree}\label{sec:new}
 
 We implemented the tree generation using a bottom-up approach, where child nodes are hashed, and parent nodes are updated iteratively. The root hash is stored at the first index of the array and returned as the global commitment.
@@ -2793,7 +2791,7 @@ We explored multiple approaches for implementing multiplication in the field and
         \end{align*}
         Since the field size is relatively small, we can precompute and store the powers of $g$ as well as $\log_g$ values for all field elements. This allows multiplication to be performed through three lookup operations and a single addition, leveraging these precomputed tables.
 
-  \item \textit{Shift-and-Add with Modular Reduction}: This technique -- the one chosen in the reference implementation~\cite{aguilarsyndrome11} -- is particularly provides robust performance in most applications. Importantly, it has no conditional branches making it constant-time.
+  \item \textit{Shift-and-Add with Modular Reduction}: This technique -- the one chosen in the reference implementation~\cite{aguilarsyndrome11} -- in particular, provides robust performance in most applications. Importantly, it has no conditional branches making it constant-time.
 \end{enumerate}
 
 Benchmarking these methods revealed that while the shift-and-add approach was faster overall, the table lookup method yielded slightly better results in the specific context of signing operations. Detailed performance metrics, including constant-time benchmarks, are presented in \autoref{ch:bench}. In the final implementation we left lookup-based multiplication as the default method, but allow the user to switch to the shift-and-add method through the \texttt{mul\_shift\_and\_add} feature flag.
@@ -2805,7 +2803,7 @@ The field extensions were built using a \textit{tower structure} as we first imp
 
 For the $\mathbb{F}_{q^2}$ field, we did not implement the functions as a trait, as they are solely used as sub-functions for the $\mathbb{F}_{q^4}$ field. To represent an element in the $\mathbb{F}_{q^2}$ field, we used a 2-byte array, representing $(a, b) = a + bX$. The field is an extension from the lower field $\mathbb{F}_q$ by the irreducible polynomial $X^2 + X + 32$.
 \begin{align}
-  F_{q^2}[X] = F_q[X] / (X^2 + X + 32)
+  F_{q^2} = F_q[X] / (X^2 + X + 32)
 \end{align}
 with elements in $\mathbb{F}_{q^2}$ represented as $a + bX$.
 
@@ -2844,6 +2842,7 @@ with $bd \cdot 0x20$ accounting for the reduction modulo the irreducible polynom
 \subsubsection*{Optimising Multiplication in $\mathbb{F}_{q^4}$}
 
 The field $\mathbb{F}_{q^2}$ serves as a building block for constructing the next extension $\mathbb{F}_{q^4}$, which is defined as:
+%\todo{Maybe look into representation}
 \begin{align}
   \mathbb{F}_{q^4} = \mathbb{F}_q[Z] / (Z^2 + Z + 32(X))\label{eq:fq4}
 \end{align}
@@ -2864,7 +2863,7 @@ fn gf256_ext16_mul32(_a: [u8; 2]) -> [u8; 2] {
 }
 \end{minted}
 
-This approach ensures efficiency by reducing redundant computations in the field $\mathbb{F}_{q^4}$.
+\noindent This approach ensures efficiency by reducing redundant computations in the field $\mathbb{F}_{q^4}$.
 
 Since the $\mathbb{F}_{q^2}$ field is only utilized as a building block for the $\mathbb{F}_{q^4}$ field -- and correctness is primarily validated through tests on $\mathbb{F}_{q^4}$ -- we implemented a minimal test to ensure correctness in $\mathbb{F}_{q^2}$. Instead we only verified that our simple multiplication by 32 was consistent with the regular multiplication.
 
@@ -2872,7 +2871,7 @@ Since the $\mathbb{F}_{q^2}$ field is only utilized as a building block for the 
 Finally, we extended the field $\mathbb{F}_{q^2}$ to $\mathbb{F}_{q^4}$. The implementation for this extension was similar to that of $\mathbb{F}_{q^2}$, with the primary difference being the use of a specific multiplication function optimized for operations with $32$ elements.
 
 \subsubsection{SIMD Optimization}
-Given the reliance on bitwise operations for addition, we achieved small performance gains by implementing the addition operation using the \texttt{std::simd} module. While there would be a little overhead in the conversions
+Given the reliance on bitwise operations for addition, we achieved small performance gains by implementing the addition operation using the \texttt{std::simd} module. 
 
 \begin{minted}{rust}
 #[cfg(feature = "simd")]
@@ -2884,6 +2883,7 @@ fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
     res.into()
 }
 \end{minted}
+\noindent Note here that we have a conversion to and from the SIMD type, yet it still yielded a better performance. This further shows that even more sophisticated SIMD optimisations could be beneficial for improving performance. 
 
 \subsubsection{Field polynomials}\label{sub:field_polynomials}
 To represent and compute polynomials in the field, we aligned our implementation with the representation used in the reference implementation. Specifically, a polynomial is represented as:
@@ -2893,7 +2893,6 @@ To represent and compute polynomials in the field, we aligned our implementation
 where the coefficients $a_i$ are elements of the field $\mathbb{F}_{q}$.
 
 Initially, we implemented polynomial evaluations using Horner's method. However, since the MPC challenge is reused across all MPC computations, we optimized the process by precomputing the powers of $r$ required for evaluation (as described in \autoref{eq:sdith_mpc_polynomial_eval}) and storing them in the challenge struct (detailed in \autoref{sub:mpc_algo}). This approach enables polynomial evaluation in a single pass, significantly improving performance compared to the naive method of computing the polynomial one coefficient at a time.
-
 \begin{minted}{rust}
   pub fn gf256_polynomial_evaluation_in_point_r(poly_d: &[u8], powers_of_r: &[FPoint]) -> FPoint {
     assert!(powers_of_r.len() >= poly_d.len());
@@ -2957,11 +2956,11 @@ for e in 0..PARAM_TAU {
 }
 \end{minted}
 
-The most significant optimisation we gained from parallelisation is hidden in the \rust{get_iterator} function. With the \texttt{parallel} feature flag this function dynamically dispaches either a normal iterator or a parallel iterator from \texttt{rayon}. This allows us to compute the shares in parallel, significantly improving performance while allowing us to disable this feature for testing purposes.
+The most significant optimisation we gained from parallelisation is hidden in the \rust{get_iterator} function. With the \texttt{parallel} feature flag this function dynamically dispatches either a normal iterator or a parallel iterator from \texttt{rayon}. This allows us to compute the shares in parallel, significantly improving performance while allowing us to disable this feature for testing purposes.
 
 \section{Keygen -- Sampling SD instance}\label{sub:witness_generation}
 
-To create a public and private key pair, we need a witness for the ZK in the form of a syndrome decoding (SD) instance $y = Hx$.
+To create a public and private key pair, we need a witness for the ZK-PoK in the form of a syndrome decoding (SD) instance $y = Hx$.
 
 Recall that the witness is generated in the $d$-split variant, so all the computed values are separated into ``chunks'' and the parameters are divided by $d$ and that the instance is captures in the form of the polynomial relation
 \begin{align*}
@@ -2970,7 +2969,7 @@ Recall that the witness is generated in the $d$-split variant, so all the comput
 
 \subsubsection{Sampling the $x$ vector}
 
-First, we needed to sample an $x$ vector with the required $d$-split hamming weight $w$ and length $m$. The function \rust{sample_non_zero_x_positions} determines the positions of the non-zero coordinates. It samples random coordinates within the range of $x$ until $w$ non-zero coordinates are selected. The function returns the \rust{x_vector} and the positions of the non-zero coordinates, which are used to compute the polynomial $Q$.
+First, we needed to sample an $x$ vector with the required $d$-split hamming weight $w$ and length $m$. The function \rust{sample_non_zero_x_positions} determines the positions of the non-zero elements. It then samples random elements from the field and iteratively goes through the non-zero positions of the \rust{x_vector} and updates the corresponding values with the random field element. The function returns the generated \rust{x_vector} and the positions of the non-zero elements, which are used to compute the polynomial $Q$.
 
 \begin{minted}{rust}
   let positions = sample_non_zero_x_positions(prg);
@@ -2992,7 +2991,7 @@ The polynomial $Q$ is computed based on the positions of the non-zero coordinate
 \begin{align*}
   Q(X) = \prod_{i\in E} Q_i X^i
 \end{align*}
-We iterate over the positions $E$ of the sampled values of $x$ to compute the coefficients of $Q$. The computation for each coefficient is performed following the approach outlined in \autoref{sec:polynomial_representation}.
+We iterate over the non-zero positions $E$ of the sampled values of $x$ to compute the coefficients of $Q$. The computation for each coefficient is performed following the approach outlined in \autoref{sec:polynomial_representation}.
 
 The polynomial is constructed using \textit{backward recurrence} by setting the leading coefficient to $1$ and iterating through the indices in reverse order, i.e., $[i, \dots, 2, 1]$.
 
@@ -3013,11 +3012,11 @@ fn compute_q_prime_chunk<const N: usize>(positions: &[u8; N]) -> [u8; N] {
 \end{minted}
 
 \subsubsection{Computing the Polynomials $S$ and $P$}
-
 Next, we can compute the polynomials $S$ and $P$. Recall, that $S$ is the Lagrangian interpolation of the vector $x$ -- s.t. $S(i) = x_i$ -- while $P = S \cdot Q / F$.
 
 In a naive implementation, we would have the parties of the MPC protocol each locally compute the interpolation of their share of $x$ to obtain $S$. However, this would be computationally expensive and we optimise this by redefining the SD instance, detailed in \autoref{sec:syndrome-avoid-interpolation}.
 
+% \todo{What is m in this context? and maybe we should rename the tmp_poly and the n_poly as these are kinda stolen from the implementation}
 We leverage the \textit{Lagrange interpolation structure} for both $S$ and $P$. $S$ is given by the Lagrange basis polynomial $L_i(X)$ as
 \begin{align*}
   S(X) = \sum_{i=0}^{m-1} x_i \cdot L_i(X)
@@ -3117,6 +3116,7 @@ Witness {
 \end{minted}
 
 \subsubsection{Generating the SD instance and solution}
+%\todo{This seems a bit weird and maybe should be reformulated}
 
 With $Q$, $S$, $P$, and the witness defined, we can construct the syndrome decoding instance and its solution:
 
@@ -3197,8 +3197,7 @@ Additionally we tested the correctness of the polynomial relation generation pro
 Before implementing the rest of the protocol, signing and verification, it was necessary to first develop the underlying MPC simulation subroutine detailed in \autoref{sec:sdith-mpc} -- including the generation of inputs, Beaver triples, and the MPC challenge. Following this, we detail the party computation subroutine, as well as its inverse, which form the core components of the MPC simulation.
 
 \subsubsection{Beaver Triples}
-The generation of $t \cdot d$ Beaver triples for performing the operation verification MPC protocol \autoref{def:sacrifice} begins by sampling $d$ field elements $a$ and $b$, followed by computing the corresponding correlated elements $c = a \cdot b$. When the splitting factor is $d=1$, the inner product reduces to simple multiplications. However, for a higher splitting factor such as $d=2$, the values $c_j$ (where $j \in [1:\tau]$) are computed as:
-:
+The generation of $t \cdot d$, where $t$ is the number of random evaluation points and $d$ is the splitting factor, Beaver triples for performing the operation verification MPC protocol \autoref{def:sacrifice} begins by sampling $d$ field elements $a$ and $b$, followed by computing the corresponding correlated elements $c = a \cdot b$. When the splitting factor is $d=1$, the inner product reduces to simple multiplications. However, for $d > 1$, the values $c_j$ (where $j \in [1:\tau]$) are computed as:
 \begin{align}
   c_j = \sum_{i=1}^{d} a_{ j,i } \cdot b_{j,i}
 \end{align}
@@ -3208,9 +3207,9 @@ To ensure correctness, we created tests to verify the statement above.
 
 The MPC challenge generated for the ZK-PoK (Appendix \ref{sec:sdith-zkpok}) and the resulting signature scheme (\autoref{sec:sdith-signature}) involves sampling $t$ challenge pairs $(r, \varepsilon)$ for the \autoref{def:sacrifice} protocol.
 
-To facilitate this, we encapsulated the values in a \rust{MPCChallenge} struct, providing a convenient interface. The random values are generated using our \rust{PRG} interface, which is initiated with the $h_1$ hash.
+To facilitate this, we encapsulated the values in an \rust{MPCChallenge} struct, providing a convenient interface. The random values are generated using our \rust{PRG} interface, which is initiated with the $h_1$ hash.
 
-Inspired by the reference implementation, we note the fact that the same challenge is reused for each party in the MPC computation and across each repetition $\tau$. Since the $r$ value is used as powers in the polynomial evaluation (\autoref{eq:sdith_mpc_polynomial_eval}), we optimized the process by precomputing the powers of $r$ and storing them in the \rust{powers_of_r} field. This approach enhances computational efficiency while maintaining consistency with the protocol's requirements.
+Inspired by the reference implementation, we note the fact that the same challenge is reused for each party in the MPC computation and across each repetition $\tau$. Since the $r$ value is used as powers in the polynomial evaluation (\autoref{eq:sdith_mpc_polynomial_eval}), we optimized the process by pre-computing the powers of $r$ and storing them in the \rust{powers_of_r} field. This approach enhances computational efficiency while maintaining consistency with the protocol's requirements.
 
 \begin{minted}{rust}
 pub fn get_powers(point: FPoint, out: &mut [FPoint]) {
