@@ -1661,9 +1661,9 @@ The SDitH protocol establishes a signature scheme by demonstrating the correctne
   \item \textbf{Deriving a signature scheme:} Adapt the ZKP into a digital signature scheme using the Fiat-Shamir transformation, as described in \autoref{sec:fiatshamir}.
 \end{enumerate}
 
-The construction is highly modular, allowing flexibility and adaptability, as you can tweak the SD instance, the MPC protocol, the MPCitH and Fiat-Shamir transformations. The authors propose two distinct protocol variants: the \textit{hypercube} variant and the \textit{threshold} variant. For this work, we focus on the \textit{threshold} variant~\cite{aguilarsyndrome11,feneuil2023threshold,feneuil2023threshold2}, as it offers significant performance enhancements compared to both the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11,aguilar2023return,feneuil2023threshold2} -- at the cost of slightly larger signature sizes.
+The construction is highly modular, allowing flexibility and adaptability, as you can tweak the SD instance, the MPC protocol, the MPCitH and Fiat-Shamir transformations. The authors propose two distinct protocol variants: the \textit{hypercube} and the \textit{threshold}. For this work, we focus on the \textit{threshold} variant~\cite{aguilarsyndrome11,feneuil2023threshold,feneuil2023threshold2}, as it offers significant performance enhancements compared to both the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11,aguilar2023return,feneuil2023threshold2} -- at the cost of slightly larger signature sizes.
 
-This chapter presents a comprehensive specification of the SDitH Signature Scheme in the Threshold variant. The construction is based on the SDitH MPC protocol in \autoref{sec:sdith-mpc}, its transformation into ZK-PoK using MPCitH (detailed in the appendix Appendix \ref{sec:sdith-zkpok}) and finally transformation into a signature scheme in \autoref{sec:sdith-signature}. Additionally, we describe optimizations applied to the protocol, such as avoiding interpolation and utilizing the $d$-split variant of the SD instance. A detailed table summarizing the protocol parameters and security assumptions is provided in \autoref{tab:sdith-protocol-parameters}.
+This chapter presents a comprehensive specification of the SDitH Signature Scheme in the Threshold variant. The construction is based on the SDitH MPC protocol in \autoref{sec:sdith-mpc}, its transformation into ZK-PoK using MPCitH (detailed in Appendix \ref{sec:sdith-zkpok}) and finally transformation into a signature scheme in \autoref{sec:sdith-signature}. Additionally, we describe optimizations applied to the protocol, such as avoiding interpolation and utilizing the $d$-split variant of the SD instance. A detailed table summarizing the protocol parameters and security assumptions is provided in \autoref{tab:sdith-protocol-parameters}.
 
 \begin{table}[]
   \begin{tabular}{p{0.12\textwidth}p{0.78\textwidth}}
@@ -1770,7 +1770,7 @@ The initial protocol for the SDitH signature scheme is seen in~\cite[Figure 1]{a
 
 \subsubsection{Threshold variant}\label{sub:sdith-threshold-sss}
 
-The threshold variant of the MPC protocol (\autoref{def:sdith-mpc}) is obtained by incorporating \textit{Shamir's Secret Sharing Scheme} (SSSS), as described in \autoref{sub:shamir}. By replacing the additive secret sharing scheme with Shamir's polynomial-based scheme, the protocol is extended into a $(\ell, N)$-threshold MPC protocol, where any $\ell$ out of $N$ parties can reconstruct the secret, while $\ell-1$ parties gain no information about the secret.
+The threshold variant of the MPC protocol (\autoref{def:sdith-mpc}) is obtained by incorporating \textit{Shamir's Secret Sharing Scheme} (SSSS), as described in \autoref{sub:shamir}. By replacing the additive secret sharing scheme with Shamir's polynomial-based scheme, the protocol is extended into a $(\ell+1, N)$-threshold MPC protocol, where any $\ell+1$ out of $N$ parties can reconstruct the secret, while $\ell$ parties gain no information about the secret.
 
 \begin{theorem}[Linear functions of \autoref{def:sdith-mpc}]\label{thm:sdith-mpc-linear}
   By the definition of the MPC protocol \autoref{def:sdith-mpc}, there exist linear functions
@@ -1808,13 +1808,12 @@ Due to the linearity of the MPC computation, the output shares can be reconstruc
 The nature of an SD instance allows the protocol to seamlessly transform into a \textit{public-key signature scheme}. Here, the pair $(H, y)$ acts as the public key, while the solution to the SD instance $x$ serves as the private key. The keys is then expanded to $(H', y), (s_A, P, Q)$ following the transformations detailed in \autoref{sec:syndrome}. Furthermore, the public key can be optimised for communication by instead sampling $H'$ from a seed $sd_H$ making the secret key $(sd_H, y)$.
 
 \subsubsection{ZK-PoK protocol}
-First, the MPC protocol (\autoref{def:sdith-mpc}) is transformed into a ZK-PoK using the Threshold MPCitH protocols described by~\cite{feneuil2023threshold,feneuil2023threshold2}. This transformation in full lies outside the scope of this report and is deferred to the appendix in Appendix \ref{sec:sdith-zkpok}. Here we leave a short overview of the transformation~\cite{aguilarsyndrome11}.
+First, the MPC protocol (\autoref{def:sdith-mpc}) is transformed into a ZK-PoK using the Threshold MPCitH protocols described by~\cite{feneuil2023threshold,feneuil2023threshold2}. This transformation in full lies outside the scope of this report and is deferred to Appendix \ref{sec:sdith-zkpok}. Here we leave a short overview of the transformation~\cite{aguilarsyndrome11}.
 
-The zero-knowledge property of the protocol is guaranteed by the fact that the verifier only receives $\ell$ shares from an $\ell + 1$-private secret-sharing scheme (SSS).
+The zero-knowledge property of the protocol is guaranteed by the fact that the verifier only receives $\ell$ shares from an ($\ell + 1$)-private SSS.
 The soundness of the ZK-PoK protocol relies on the binding property of the commitment scheme and the prover's inability to simulate multiple inconsistent views of the MPC protocol. By incorporating hash consistency checks and commitment verification, the ZK-PoK protocol ensures that a cheating prover cannot deviate significantly from the behavior expected in an honest execution.
 
 \clearpage
-
 \begin{protocol}[SDitH ZK-PoK protocol]
   \label{pro:sdith-zkpok}
   For a $(\ell + 1, N)$-threshold MPC protocol
@@ -1847,10 +1846,10 @@ To mitigate this, \textit{parallel repetition} is employed to strengthen the sou
 \end{align*}
 with $\lambda$ as the security parameter and $2^{-\lambda}$ as the target soundness error~\cite{aguilarsyndrome11}. This parallel repetition reduces the overall soundness error exponentially with the number of repetitions, achieving a negligible error probability in practice.
 
-To accommodate the repetitions, the authors incorporate a slight modification inspired by the Limbo proof system~\cite{delpech2021limbo}. Specifically, we reuse the same MPC challenges $r$ and $\varepsilon$, as well as the Beaver triples, across all $\tau$ repetitions. This tweak allows us to modify the MPC computation input so that \textit{plain bradcast} value only needs to be computed once.
+To accommodate the repetitions, the authors incorporate a slight modification inspired by the Limbo proof system~\cite{delpech2021limbo}. Specifically, we reuse the same MPC challenges $r$ and $\varepsilon$, as well as the Beaver triples, across all $\tau$ repetitions. This tweak allows us to modify the MPC computation input so that \textit{plain broadcast} value only needs to be computed once.
 
 \subsubsection{Fiat-Shamir transform}
-Next, we apply the \textit{Fiat-Shamir heuristic} -- detailed in \autoref{sec:fiatshamir} -- to transform the challenges of the ZK-PoK protocol into a non-interactive form. This transformation is achieved by having the prover derive the challenges for MPC randomness and opening challenge directly from the commitments of the MPC inputs and the outputs of the MPC computation in the hashes $h_1, h_2$ computed from secure hash functions~\autoref{sec:prelim_hash}.
+Next, we apply the \textit{Fiat-Shamir heuristic} -- detailed in \autoref{sec:fiatshamir} -- to transform the challenges of the ZK-PoK protocol into a non-interactive form. This transformation is achieved by having the prover derive the challenges for MPC randomness and the opening challenge directly from the commitments of the MPC inputs and the outputs of the MPC computation in the hashes $h_1, h_2$ computed with secure hash functions~\autoref{sec:prelim_hash}.
 \begin{align}
   h_n = \texttt{Hash}_n(d) \rightarrow \texttt{Hash}(n || d)\label{eq:fiatshamirhash}
 \end{align}
@@ -1861,7 +1860,7 @@ Finally, we introduce a $\texttt{salt} \in \{0,1\}^{2\lambda}$, which serves as 
 
 \subsubsection{Optimizing Signature Size and Verification}\label{sec:mpc_thresh_tweak}
 In the original SDitH protocol~\cite[Figure 1]{aguilarsyndrome11} -- without threshold SSS -- the signature includes both hashes $h_1, h_2$ and all input shares in $I$, where $|I| = N - 1$.
-To verify the signature, the verifier recomputes the commitments for each share in $I$, and along with the last missing commitment $\texttt{com}_i$ for $i \notin I$, reconstructs $h_1$. The verifier then executes the MPC protocol for the opened shares and recomputes $h_2$ from the resulting output shares.
+To verify the signature, the verifier recomputes the commitments for each share in $I$, and along with the last missing commitment $\texttt{com}_i$ for $i \notin I$, reconstructs $h_1$. The verifier then executes the MPC protocol for the opened shares and recomputes $h_2$ from the resulting output shares. We will now go over some of the techniques applied to optimize the signature size and verification process.
 
 \begin{theorem}[Sharing Redundancy of Shamir's Secret Sharing Scheme]
   The full set of broadcast shares $\sh{\alpha}_i, \sh{\beta}_i, \sh{v}_i$ for $i \in N$ can be deduced from $\ell + 1$ broadcast shares. That is, the full sharing forms a Reed-Solomon code word.
