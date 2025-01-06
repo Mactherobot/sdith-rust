@@ -430,7 +430,7 @@ We give the formal definition of the QROM as follows:
 One problem with this approach is the fact that we assume that the hash function becomes an evaluation at a superposition. It can be shown that for certain schemes this will lead to insecure protocols under any choice of hash function.
 
 Note that for this report we will only be using the ROM and QROM and not describe the further security analysis. Furthermore, as this report is not about how quantum algorithms specifically break cryptography, we will not be discussing how qunatum computing works and is left out.
-%\todo{ (Maybe give a brief idea as to how this works? or only use words for this section and not give any quantum states.) }
+#\todo{ (Maybe give a brief idea as to how this works? or only use words for this section and not give any quantum states.) }
 
 \subsection{Commitment Schemes}
 A commitment scheme allows a \textit{prover} to \textit{commit} to a value and later \textit{open} or reveal the value to a \textit{verifier}. It satisfies the following two properties:
@@ -3303,15 +3303,16 @@ where
 }
 \end{minted}
 
-\subsection{Optimizations}
-While we discussed optimizations in the individual sections, this section provides a summary of the optimizations applied to our implementation.
-
-To guide our optimization efforts, we utilized the profiler as described in \autoref{ch:prelim:sec:rust:sub:profiling}. This process initially highlighted the computation of shares, a primary component of the signing algorithm. Observing that the computation of each share is independent of the others, we parallelized this task to improve performance.
-
-Next, we turned our attention to the MPC computations. Here, we noted that many operations involved vectors. To optimize these, we chunked the data into SIMD (Single Instruction, Multiple Data) vectors, accelerating the vector operations. Despite this, we retained our \rust{FPoint} representation to preserve code readability and maintain extensibility for further optimizations. Given more time, we would have considered adopting SIMD vector types directly to represent points for additional performance gains.
-
-Finally, we examined the creation of the Merkle tree, another significant computational bottleneck due to its reliance on hashing functions. Initially, we attempted to parallelize the Merkle tree construction, but this approach proved slower than the batched solution utilized by the original implementation. The most notable improvement in this area came from switching to a faster hashing algorithm, \texttt{blake3}.
-
+% \subsection{Optimizations}
+% %TODO: Maybe cut this section, it feels like a repeat of the things we discussed 
+% While we discussed optimizations in the individual sections, this section provides a summary of the optimizations applied to our implementation.
+%
+% To guide our optimization efforts, we utilized the profiler as described in \autoref{ch:prelim:sec:rust:sub:profiling}. This process initially highlighted the computation of shares, a primary component of the signing algorithm. Observing that the computation of each share is independent of the others, we parallelized this task to improve performance.
+%
+% Next, we turned our attention to the MPC computations. Here, we noted that many operations involved vectors. To optimize these, we chunked the data into SIMD (Single Instruction, Multiple Data) vectors, accelerating the vector operations. Despite this, we retained our \rust{FPoint} representation to preserve code readability and maintain extensibility for further optimizations. Given more time, we would have considered adopting SIMD vector types directly to represent points for additional performance gains.
+%
+% Finally, we examined the creation of the Merkle tree, another significant computational bottleneck due to its reliance on hashing functions. Initially, we attempted to parallelize the Merkle tree construction, but this approach proved slower than the batched solution utilized by the original implementation. The most notable improvement in this area came from switching to a faster hashing algorithm, \texttt{blake3}.
+%
 \subsection{Feature flags}\label{sub:feature_flags}
 To maintain a baseline implementation while enabling flexibility to switch between different NIST categories, we utilized Rust's feature flags. These flags support conditional compilation, allowing multiple implementations of the same function to coexist in the codebase. This approach made it possible to test individual optimizations in isolation, rather than applying all optimizations simultaneously.
 
@@ -3338,14 +3339,14 @@ We created the following set of feature flags
 \end{itemize}
 
 \subsection{Exposing our implementation}
-After finalizing our implementation, we created a Rust crate, \texttt{rsdith}, to allow for easy integration into other projects. This is useful for other developers to test out the impact of using the SDitH as a signature scheme for their application. Just like we used Blake3 to test different hashes.
+After finalizing our implementation, we created a Rust crate, \texttt{rsdith}, to facilitate easy integration into other projects. This crate is designed to help developers evaluate the impact of using SDitH as a signature scheme in their applications, similar to how we utilized Blake3 for testing different hash functions.
 
-Furthermore, in order to interact and use our implementation we create a simple command-line interface (CLI) to allow for easy signing and verification of messages. Such a solution could be useful for a sever setup where the binary could be allocated on the server and used to sign messages, like the use of \textit{OpenSSL}. A CLI also allows for easy demonstration and testing of the implementation.
+In addition, we developed a simple command-line interface (CLI) to interact with and utilize our implementation. This CLI enables straightforward signing and verification of messages, making it particularly useful in server setups. For instance, the binary could be deployed on a server and used for signing messages, analogous to the functionality provided by \textit{OpenSSL}. Moreover, the CLI serves as a convenient tool for demonstrating and testing the implementation.
 
-We created a README file to explain how to use, test, benchmark and build our implementation. We did this to help other developers understand and run the code for themselves in order to reproduce our benchmarks and test results.
+To assist other developers in using, testing, benchmarking, and building our implementation, we provided a comprehensive README file. This documentation aims to guide users in reproducing our benchmarks and test results, as well as in understanding and working with the codebase.
 
 \subsubsection{Rust crate \texttt{rsdith}}
-To allow for our implementation to be used in other projects, we have created it as a create. This is done creating a \rust{lib.rs} file within the root folder of the project. We tried to adhere to the best practices when creating a crate. For the interested reader, look in the \rust{cargo.toml} file to see how we have setup the crate.
+To allow for our implementation to be used in other projects, we created it as a create. This is done by creating a \rust{lib.rs} file within the root folder of the project. We tried to adhere to the best practices when creating a crate. For the interested reader, look in the \rust{cargo.toml} file to see how we have setup the crate.
 We then exported the following modules:
 \begin{itemize}
   \item \texttt{constants}: Contains all the constants used in the implementation.
@@ -3511,7 +3512,7 @@ The results for \textit{Setup 1} and \textit{Setup 2} are seen in \autoref{tab:a
 
 We begin by comparing the performance across the different categories. As expected, there is a decrease in performance between categories one, three, and five as the parameters increase (\autoref{tab:secparam}). Overall, the increases in running time between the categories are comparable to the reference implementation (\autoref{tab:api_percentage_increase}), indicating that our implementation does not suffer from any disadvantages in terms of scaling with parameter increases.
 
-Curiously, we observe a larger increase in verification time for our implementation between categories one and three. We hypothesize that this difference may be due to variations in compiler optimisations. Future work could include profiling our implementation against the reference implementation to better understand the reason behind of this discrepancy.
+Curiously, we observe a larger increase in verification time for our implementation between categories one and three. We hypothesize that this difference may be due to variations in compiler optimisations. Future work could include profiling our implementation against the reference implementation to better understand the reason behind this discrepancy.
 
 \begin{table}[!ht]
   \centering
@@ -3569,7 +3570,7 @@ Next, we compare the different optimisations (\autoref{tab:base_vs_parallel_simd
 
 For SIMD, we observe a general improvement across all operations of approximately $16$-$20\%$. This aligns with the fact that all operations involve field vector computations -- matrix multiplication and MPC computations -- which are optimised for SIMD.
 
-We were very surprised to observe that including parallelisation for \textit{Setup 2} resulted in a significantly lower key generation time of $-26\%$. This was entirely unexpected, as no parallelisation is utilised in the key generation operation. However, we were able to consistently reproduce this result. This phenomenon highlights the ``magic'' behind compiler optimisation. Some hypotheses could be that the inclusion of the \texttt{rayon} package causes differences memory alignment or how the Rust compiler structures the code, but somehow only on the M2 Darwin architecture. While it has no significant impact on the practicality of our implementation, it is an intriguing result worth noting and for future investigation.
+We were very surprised to observe that including parallelisation for \textit{Setup 2} resulted in a significantly lower key generation time of $-26\%$. This was entirely unexpected, as no parallelisation is utilised in the key generation operation. However, we were able to consistently reproduce this result. This phenomenon highlights the ``magic'' behind compiler optimisation. A hypothesis could be that the inclusion of the \texttt{rayon} package causes differences in memory alignment or how the Rust compiler structures the code, but somehow only on the M2 Darwin architecture. While it has no significant impact on the practicality of our implementation, it is an intriguing result worth noting and for future investigation.
 
 \subsubsection{Comparison of implementations}\label{sub:comparison_implementations}
 
@@ -3661,7 +3662,7 @@ To test this, we used the tool \textit{dudect}~\cite{reparaz2017dude}. It is a t
   \label{tab:mul_dudect}
 \end{table}
 
-\autoref{tab:mul_dudect} presents the results of running the \texttt{dudect} tests. Both implementations exhibit a $t$-statistic below the threshold of 5, suggesting no significant timing leakage. However, the \texttt{Lookup} implementation displays a large standard deviation, indicating uncertainty in the results. This behavior might be attributed to potential timing variance in the table lookup operation, which could depend on the supplied index. Despite these observations, the results remain inconclusive. All tests were conducted with \textit{black box} obfuscation to prevent compiler optimizations based on input. Running the tests without obfuscation yielded consistent results.
+\autoref{tab:mul_dudect} presents the results of running the \texttt{dudect} tests. Both implementations exhibit a $t$-statistic below the threshold of 5, suggesting no significant timing leakage. However, the \texttt{Lookup} implementation displays a large standard deviation, indicating uncertainty in the results. This behavior might be attributed to potential timing variance in the table lookup operation, which could depend on the supplied index. Despite these observations, the results remain inconclusive. All tests were conducted with \textit{black box} obfuscation to prevent compiler optimizations based on input. 
 
 Curiously, we observed confounding results when benchmarking the performance of the \texttt{Lookup} and \texttt{Shift-and-Add} implementations -- \autoref{tab:mul_comparison}. While the \texttt{Shift-and-Add} implementation consistently runs significantly faster than the \texttt{Lookup} implementation, the signing operation is notably faster when using \texttt{Lookup}. Initially, we hypothesized that differences in compiler optimizations might account for this performance discrepancy. However, testing with the lowest level of optimization produced consistent results ($\approx 70$ ms for \texttt{Shift-and-Add} versus $97$ ms for \texttt{Lookup}). These results suggest complexities that require further investigation, which is beyond the scope of this report.
 
@@ -3742,7 +3743,7 @@ Our report includes a detailed overview of the underlying theories and protocols
 
 Our goal was to match the performance of the optimized reference implementation. Overall, we achieved comparable results, with performance gains in key generation and verification (see \autoref{tab:api_percentage_increase}). However, a small performance gap remains in the signing operation -- $\approx 13\%$ difference after optimising threads for category one.
 
-It is worth to noting that achieving the final performance improvements often requires highly specific and sometimes less readable or understandable implementation techniques, resulting in a trade-off between performance and code readability.
+It is worth noting that achieving the final performance improvements often requires highly specific and sometimes less readable or understandable implementation techniques, resulting in a trade-off between performance and code readability.
 
 The most significant performance bottlenecks in our implementation are the Merkle Commitment Scheme, the underlying hashing operations, and the MPC protocol. Targeted parallelization optimizations in these areas could potentially result in substantial performance improvements. While we explored various parallelization strategies, these efforts did not yield significant performance gains. However, we believe that parallelization is a crucial aspect of achieving high-performance in these areas.
 
@@ -3764,13 +3765,14 @@ Currently, the greatest parallelization gains in our implementation occur during
 
 Another potential enhancement involves optimizing the Merkle Commitment Scheme by replacing it with Verkle Trees~\cite{kuszmaul2019verkle, iavich2023verkle}. Although Verkle Trees are theoretically more complex, they avoid reliance on hash functions, which are the most significant performance bottleneck in the current implementation. Additionally, Verkle Trees could improve both signature size and verification time, making them a compelling direction for future exploration.
 
+%TODO: maybe write about doing more security analysis as mentioned in the NIST second round internal report~\cite{alagic2024status}
+
 \subsubsection{Learning and Collaboration}
 Overall, this project has been an invaluable learning experience, enabling us to explore both theoretical and practical aspects of the SDitH protocol. These included gaining an understanding of the foundational protocols that underpin the SDitH protocol and refining our skills in developing and optimizing a Rust codebase.
 
 We hope that the experiences and insights gained during this implementation process will provide valuable feedback to the authors of the protocol, offering constructive suggestions to streamline and improve future implementation efforts.
 
 Moreover, we believe that our implementation makes a meaningful contribution to the documentation and understanding of the SDitH protocol. We hope it will serve as a valuable resource for future researchers and developers, supporting further exploration and innovation in this exciting potentially post-quantum world.
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
