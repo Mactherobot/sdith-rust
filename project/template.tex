@@ -396,24 +396,24 @@ It is formally defined in FIPS 204~\cite{FIPS204_2024} as:
 
 When proving the security of cryptographic protocols that utilize hash functions, it is often beneficial to relax the assumptions about the chosen hash function.
 
-Such a relaxation paradigm was suggested by bellare~\cite{bellare1993random}, known as the \textit{Random Oracle Model} (ROM). This model assumes that the hash function $h$ is instead a random oracle $O$ allowing for a simpler security analysis of a protocol.
+Such a relaxation paradigm was suggested by Bellare~\cite{bellare1993random}, known as the \textit{Random Oracle Model} (ROM). This model assumes that the hash function $h$ is instead a random oracle $O$ allowing for a simpler security analysis of a protocol.
 
 They describe the paradigm by the following steps:
 \begin{definition}[ROM Paradigm]
-  Assume one has a protocol problem $\Pi$ where the problem is independent from the choice of $h$. In order to devise a good protocol $P$ for $\Pi$:
+  Assume one has a protocol problem $\Pi$, this could for example be that of public key encryption or signing of a message, where the problem is independent from the choice of $h$. In order to devise a good protocol $P$ for $\Pi$:
   \begin{itemize}
     \item Find a formal definition for $\Pi$ in the model of computation in which all parties -- good and bad alike -- shares the random oracle $O$
     \item Design a protocol $P$ that is secure in the ROM
     \item Prove that $P$ is secure in the ROM
-    \item Replace the random oracle with a hash function $h$ and prove that the protocol is still secure
+    \item Replace the random oracle with a hash function $h$ 
   \end{itemize}
 \end{definition}
 
 We formally define the \textit{classical} ROM as follows:
 \begin{definition}[Random Oracle Model (ROM)]
-  The adversary is given access to a random hash function through an oracle $O: \{0,1\}^* \rightarrow \{0,1\}^*$. The adversary can query the oracle $O(x)$ and receive the output. The oracle is stateless and the same input will always yield the same output.
+  The adversary is given access to an oracle $O: \{0,1\}^* \rightarrow \{0,1\}^*$, that acts as a completely random hash function. The adversary can query the oracle $O(x)$ and receive the output. The oracle is stateless and the same input will always yield the same output. 
 \end{definition}
-
+This can also be thought of as a black box, that on any input will give a completely random output. 
 As this report is discussing a post quantum setting this would then lead to enabling a quantum attacker to query $h$ based on quantum states instead. This will change the security analysis of the protocol and is discussed in \autoref{sub:qrom}.
 
 \subsubsection{Quantum-accessible Random Oracle Model (QROM)}\label{sub:qrom}
