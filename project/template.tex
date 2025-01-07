@@ -2883,7 +2883,7 @@ fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
     res.into()
 }
 \end{minted}
-\noindent Note here that we have a conversion to and from the SIMD type, yet it still yielded a better performance. This further shows that even more sophisticated SIMD optimisations could be beneficial for improving performance. 
+\noindent Note here that we have a conversion to and from the SIMD type, yet it still yielded a better performance. This might indicate that even more sophisticated SIMD optimisations could be beneficial for improving performance. 
 
 \subsubsection{Field polynomials}\label{sub:field_polynomials}
 To represent and compute polynomials in the field, we aligned our implementation with the representation used in the reference implementation. Specifically, a polynomial is represented as:
