@@ -232,7 +232,7 @@ While the scheme never saw widespread adoption due to its large key sizes, the i
 \subsection{Choosing the SDitH protocol}
 In the Syndrome Decoding in the Head (SDitH) protocol such techniques are combined to define an efficient post-quantum secure signature scheme. It offers a highly modular design, enabling extensive configurability and support for various subroutines. This flexibility is particularly evident as the specification~\cite{aguilarsyndrome11} proposes two variants: the \textit{hypercube} and \textit{threshold}, both of which demonstrate significant performance improvements over the original protocol~\cite{feneuil2022syndrome,aguilar2023return,feneuil2023threshold}.
 
-The threshold variant, in particular, provides an opportunity to explore and implement several cryptographic primitives, including Merkle Trees~\cite{becker2008merkle}, Linear Secret Sharing (Shamir), Galois Fields~\cite{brownadvanced}, and Multi-Party Computation in the Head (MPCitH)~\cite{ishai2007zero,katz2018improved,baum2020concretely}. 
+The threshold variant, in particular, provides an opportunity to explore and implement several cryptographic primitives, including Merkle Trees~\cite{becker2008merkle}, Linear Secret Sharing (Shamir), Galois Fields~\cite{brownadvanced}, and Multi-Party Computation in the Head (MPCitH)~\cite{ishai2007zero,katz2018improved,baum2020concretely}.
 % \todo{(Maybe write about the opposed in the hypercube variant)}
 
 The authors supply a detailed and well-crafted specification, along with a reference implementation in C, which serves as a robust starting point for our work.
@@ -429,8 +429,7 @@ We give the formal definition of the QROM as follows:
 \end{definition}
 One problem with this approach is the fact that we assume that the hash function becomes an evaluation at a superposition. It can be shown that for certain schemes this will lead to insecure protocols under any choice of hash function.
 
-Note that for this report we will only be using the ROM and QROM and not describe the further security analysis. Furthermore, as this report is not about how quantum algorithms specifically break cryptography, we will not be discussing how qunatum computing works and is left out.
-#\todo{ (Maybe give a brief idea as to how this works? or only use words for this section and not give any quantum states.) }
+Note that for this report we will only be using the ROM and QROM and not describe the further security analysis. In this report, we will not be describing the specifics of quantum computing and refer the reader to~\cite{nielsen2010quantumgrover}.
 
 \subsection{Commitment Schemes}
 A commitment scheme allows a \textit{prover} to \textit{commit} to a value and later \textit{open} or reveal the value to a \textit{verifier}. It satisfies the following two properties:
@@ -1661,7 +1660,7 @@ The SDitH protocol establishes a signature scheme by demonstrating the correctne
   \item \textbf{Deriving a signature scheme:} Adapt the ZKP into a digital signature scheme using the Fiat-Shamir transformation, as described in \autoref{sec:fiatshamir}.
 \end{enumerate}
 
-The construction is highly modular, allowing flexibility and adaptability, as you can tweak the SD instance, the MPC protocol, the MPCitH and Fiat-Shamir transformations. The authors propose two distinct protocol variants: the \textit{hypercube} and the \textit{threshold}. For this work, we focus on the \textit{threshold} variant~\cite{aguilarsyndrome11,feneuil2023threshold,feneuil2023threshold2}, as it offers significant performance enhancements compared to both the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11,aguilar2023return,feneuil2023threshold2} -- at the cost of slightly larger signature sizes.
+The construction is highly modular, allowing flexibility and adaptability, as you can tweak the SD instance, the MPC protocol, the MPCitH and Fiat-Shamir transformations. The authors propose two distinct protocols: the \textit{hypercube} and the \textit{threshold} variant. For this report, we focus on the \textit{threshold} variant~\cite{aguilarsyndrome11,feneuil2023threshold,feneuil2023threshold2}, as it offers significant performance enhancements compared to both the initial protocol~\cite{feneuil2022syndrome} and the \textit{hypercube} variant~\cite{aguilarsyndrome11,aguilar2023return,feneuil2023threshold2} -- at the cost of slightly larger signature sizes.
 
 This chapter presents a comprehensive specification of the SDitH Signature Scheme in the Threshold variant. The construction is based on the SDitH MPC protocol in \autoref{sec:sdith-mpc}, its transformation into ZK-PoK using MPCitH (detailed in Appendix \ref{sec:sdith-zkpok}) and finally transformation into a signature scheme in \autoref{sec:sdith-signature}. Additionally, we describe optimizations applied to the protocol, such as avoiding interpolation and utilizing the $d$-split variant of the SD instance. A detailed table summarizing the protocol parameters and security assumptions is provided in \autoref{tab:sdith-protocol-parameters}.
 
@@ -2797,7 +2796,7 @@ We explored multiple approaches for implementing multiplication in the field and
 Benchmarking these methods revealed that while the shift-and-add approach was faster overall, the table lookup method yielded slightly better results in the specific context of signing operations. Detailed performance metrics, including constant-time benchmarks, are presented in \autoref{ch:bench}. In the final implementation we left lookup-based multiplication as the default method, but allow the user to switch to the shift-and-add method through the \texttt{mul\_shift\_and\_add} feature flag.
 
 \subsection{Field Extensions}\label{sub:field_extensions}
-The field extensions were built using a \textit{tower structure} as we first implemented the base field $\mathbb{F}_{q}$ for $q=2^8$ -- also called Rijndael's field. Then, we proceeded to implement a trait for the first extension from \rust{u8} to \rust{[u8; 2]} in $\mathbb{F}_{q^2}$ and next to $\mathbb{F}_{q^4}$.
+The field extensions were built using a \textit{tower structure} as we first implemented the base field $\mathbb{F}_{q}$ for $q=2^8$. This is also referred to as \textit{Rijndael's field}. Then, we proceeded to implement the arithmetic trait for the first extension from \rust{u8} to \rust{[u8; 2]} in $\mathbb{F}_{q^2}$ and next to $\mathbb{F}_{q^4}$.
 
 \subsubsection{Tower construction}
 
@@ -2871,7 +2870,7 @@ Since the $\mathbb{F}_{q^2}$ field is only utilized as a building block for the 
 Finally, we extended the field $\mathbb{F}_{q^2}$ to $\mathbb{F}_{q^4}$. The implementation for this extension was similar to that of $\mathbb{F}_{q^2}$, with the primary difference being the use of a specific multiplication function optimized for operations with $32$ elements.
 
 \subsubsection{SIMD Optimization}
-Given the reliance on bitwise operations for addition, we achieved small performance gains by implementing the addition operation using the \texttt{std::simd} module. 
+Given the reliance on bitwise operations for addition, we achieved small performance gains by implementing the addition operation using the \texttt{std::simd} module.
 
 \begin{minted}{rust}
 #[cfg(feature = "simd")]
@@ -2883,7 +2882,7 @@ fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
     res.into()
 }
 \end{minted}
-\noindent Note here that we have a conversion to and from the SIMD type, yet it still yielded a better performance. This might indicate that even more sophisticated SIMD optimisations could be beneficial for improving performance. 
+\noindent It is worth noting that we have an additional conversion and allocation to and from the SIMD type. However, it still yielded a better performance than the previous implementation. This suggests that exploring more sophisticated SIMD optimizations could further enhance performance.
 
 \subsubsection{Field polynomials}\label{sub:field_polynomials}
 To represent and compute polynomials in the field, we aligned our implementation with the representation used in the reference implementation. Specifically, a polynomial is represented as:
@@ -3662,7 +3661,7 @@ To test this, we used the tool \textit{dudect}~\cite{reparaz2017dude}. It is a t
   \label{tab:mul_dudect}
 \end{table}
 
-\autoref{tab:mul_dudect} presents the results of running the \texttt{dudect} tests. Both implementations exhibit a $t$-statistic below the threshold of 5, suggesting no significant timing leakage. However, the \texttt{Lookup} implementation displays a large standard deviation, indicating uncertainty in the results. This behavior might be attributed to potential timing variance in the table lookup operation, which could depend on the supplied index. Despite these observations, the results remain inconclusive. All tests were conducted with \textit{black box} obfuscation to prevent compiler optimizations based on input. 
+\autoref{tab:mul_dudect} presents the results of running the \texttt{dudect} tests. Both implementations exhibit a $t$-statistic below the threshold of 5, suggesting no significant timing leakage. However, the \texttt{Lookup} implementation displays a large standard deviation, indicating uncertainty in the results. This behavior might be attributed to potential timing variance in the table lookup operation, which could depend on the supplied index. Despite these observations, the results remain inconclusive. All tests were conducted with \textit{black box} obfuscation to prevent compiler optimizations based on input.
 
 Curiously, we observed confounding results when benchmarking the performance of the \texttt{Lookup} and \texttt{Shift-and-Add} implementations -- \autoref{tab:mul_comparison}. While the \texttt{Shift-and-Add} implementation consistently runs significantly faster than the \texttt{Lookup} implementation, the signing operation is notably faster when using \texttt{Lookup}. Initially, we hypothesized that differences in compiler optimizations might account for this performance discrepancy. However, testing with the lowest level of optimization produced consistent results ($\approx 70$ ms for \texttt{Shift-and-Add} versus $97$ ms for \texttt{Lookup}). These results suggest complexities that require further investigation, which is beyond the scope of this report.
 
