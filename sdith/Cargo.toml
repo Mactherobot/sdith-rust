@@ -58,7 +58,7 @@ doctest = false     # Prevents doctests from src/lib.rs
 
 [[bin]]
 name = "sdith"
-path = "src/bin/cli/mod.rs"
+path = "src/bin/cli/main.rs"
 test = false                # Prevents tests from cli
 bench = false               # Prevents benchmarks from cli
 

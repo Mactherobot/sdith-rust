@@ -53,14 +53,48 @@
 //! Signature is valid: true
 //! ```
 
-use clap::{CommandFactory, Parser};
-use cli::Commands;
+use clap::{CommandFactory, Parser, Subcommand};
+use parameters::Parameters;
 use colored::Colorize as _;
+use keygen::Keygen;
+use signing::Signing;
+use verify::Verifying;
 
-mod cli;
+mod parameters;
+mod keygen;
+mod utilities;
+mod signing;
+mod verify;
+
+#[derive(Parser)]
+#[command(version, about("SDitH signature protocol"))]
+#[cfg_attr(
+    not(any(feature = "category_three", feature = "category_five")),
+    command(about("SDitH signature protocol\nNIST Category ONE variant"))
+)]
+#[cfg_attr(
+    feature = "category_three",
+    command(about("SDitH signature protocol\nNIST Category THREE variant"))
+)]
+#[cfg_attr(
+    feature = "category_five",
+    command(about("SDitH signature protocol\nNIST Category FIVE variant"))
+)]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+pub enum Commands {
+    Keygen(Keygen),
+    Sign(Signing),
+    Verify(Verifying),
+    Parameters(Parameters),
+}
 
 fn main() {
-    let cli = cli::Cli::parse();
+    let cli = Cli::parse();
 
     let res = match &cli.command {
         Some(Commands::Keygen(keygen)) => keygen.generate_keys(),
@@ -69,7 +103,7 @@ fn main() {
         Some(Commands::Parameters(parameters)) => parameters.print_info(),
         // Print help
         None => {
-            let _ = cli::Cli::command().print_help();
+            let _ = Cli::command().print_help();
             Ok(())
         }
     };
