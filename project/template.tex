@@ -29,7 +29,7 @@
 \usepackage{arydshln}
 \usepackage{colortbl}
 \usepackage[a4paper, total={6in, 9in}, headsep=0.5in]{geometry}
-\usepackage{mdframed}
+\usepackage[everyline=true]{mdframed}
 \usepackage{listings}
 \usepackage{titlesec}
 \usepackage{tcolorbox}
@@ -212,11 +212,11 @@ The most widely used digital signature schemes rely on public-key cryptography. 
 
 \section{NIST call to action}
 
-In 1994, the discovery of Shor's algorithm~\cite{shor1997} introduced a polynomial-time method for solving these problems using quantum computing. At the time, quantum computers were theoretical constructs. However, in 2001, Chuang et al.~\cite{vandersypen2001experimental,buchmann2004post} successfully implemented Shor's algorithm on a 7-qubit quantum computer. Two decades later, significant advancements in quantum technology have brought us closer to the point where quantum computers could be a reality. The most recent advancements including the Willow chip from Google~\cite{blogMeetWillow}. Reducing the errors exponentially as they scale up using more qubits.
+In 1994, the discovery of Shor's algorithm~\cite{shor1997} introduced a polynomial-time method for solving these problems using quantum computing. At the time, quantum computers were theoretical constructs. However, in 2001, Chuang et al.~\cite{vandersypen2001experimental,buchmann2004post} successfully implemented Shor's algorithm on a 7-qubit quantum computer. Two decades later, significant advancements in quantum technology have brought us closer to the point where quantum computers could be a reality. The most recent advancements including the Willow chip from Google~\cite{blogMeetWillow} which reduces measurement error exponentially as they scale up using more qubits.
 
 In 2016, the National Institute of Standards and Technology (NIST) initiated a call for quantum-resistant public-key cryptosystems~\cite{nistcall}. This effort led to the standardization of three signature schemes: Dilithium~\cite{ducas2018crystals}, Falcon~\cite{fouque2018falcon}, and SPHINCS+~\cite{bernstein2019sphincs+}. Dilithium and Falcon are lattice-based schemes that rely on the hardness of structured lattice problems. They offer efficient key generation, signing, and verification, making them practical for many applications. However, their shared dependence on the same mathematical assumption poses a risk if this assumption is broken.
 
-In contrast, SPHINCS+ is a hash-based signature scheme, relying solely on the security of cryptographic hash functions rather than lattice-based problems. This makes it an important alternative, providing diversity in case lattice assumptions are compromised. Despite its robustness, SPHINCS+ is significantly slower than Dilithium and Falcon, with high computational costs and larger signature sizes, which limits its suitability for real-world applications, other than those that require less frequent signatures -- for example for hardware signing.
+In contrast, SPHINCS+ is a hash-based signature scheme, relying solely on the security of cryptographic hash functions rather than lattice-based problems. This makes it an important alternative, providing diversity in case lattice assumptions are compromised. Despite its robustness, SPHINCS+ is significantly slower than Dilithium and Falcon, with high computational costs and larger signature sizes, which limits its suitability for real-world applications, other than those that require less frequent signatures -- for instance, in the context of firmware signing.
 
 To mitigate the risks of relying heavily on lattice-based schemes, NIST issued a second call in 2022 for quantum-resistant signature schemes based on alternative assumptions, ensuring a more diversified and resilient set of standards for the future.
 
@@ -235,7 +235,7 @@ In the Syndrome Decoding in the Head (SDitH) protocol such techniques are combin
 The threshold variant, in particular, provides an opportunity to explore and implement several cryptographic primitives, including Merkle Trees~\cite{becker2008merkle}, Linear Secret Sharing (Shamir), Galois Fields~\cite{brownadvanced}, and Multi-Party Computation in the Head (MPCitH)~\cite{ishai2007zero,katz2018improved,baum2020concretely}.
 % \todo{(Maybe write about the opposed in the hypercube variant)}
 
-The authors supply a detailed and well-crafted specification, along with a reference implementation in C, which serves as a robust starting point for our work.
+The authors, Aguilar et al, of the SDitH protocol supply a detailed and well-crafted specification, along with a reference implementation in C, which serves as a robust starting point for our work.
 
 Of course, selfishly, a key consideration in our work was the belief that the protocol could be a strong contender for selection as the final ``winner'' in the NIST additional round~\cite{nistcall}. This belief was introduced by our supervisor, a trust that appears to have been well-placed. As we were developing our implementation, the NIST process advanced to the second round, with the SDitH protocol successfully moving forward. The NIST internal report highlights certain features which are valued by the NIST committee of the protocol, such as its flexibility  -- a promising indication for the future of the protocol.
 
@@ -267,7 +267,7 @@ In order to achieve this, we aimed to achieve the following goals
 \begin{itemize}
   \item To deliver performance that is comparable to -- or exceeds -- that of the reference implementation. Additionally, we aim to provide a well-documented exploration of the optimizations achievable in Rust.
   \item To provide comprehensive documentation that reflects the theoretical framework outlined in our report and the original specification~\cite{aguilarsyndrome11}, ensuring that future implementers can easily comprehend the protocol and its underlying mechanics. For readability, we emphasized clear, well-documented, and logically structured code supported by Rust's documentation and modular structure.
-  \item To utilise the built-in testing framework of Rust to ensure the correctness of our implementation. We aim to provide a comprehensive test suite that covers all possible scenarios and edge cases.
+  \item To utilise the built-in testing framework of Rust to ensure the correctness of our implementation. We aim to provide a comprehensive test suite that covers the mathematical properties of the protocol and integration tests to verify the correctness of the implementation.
   \item Given the inherent flexibility and variants of the SDitH protocol, our implementation should leverage Rust's feature flags to enhance modularity and interchangeability. This approach not only supports a high degree of configurability but also ensures that the implementation remains adaptable to future changes and extensions.
 \end{itemize}
 
@@ -377,7 +377,7 @@ The consensus among cryptographic researchers is that quantum computing is expec
 
 In contrast, no known methods have been proposed to reduce the security level for collision resistance. Consequently, protocols that depend on collision-resistant hash functions, such as Merkle Signature or SDitH, remain a viable choice for post-quantum secure protocols.
 
-To prove the security of hash functions, researchers often rely on models such as the Quantum Random Oracle Model (QROM), as described in \autoref{sub:qrom}. However, this approach has the limitation of abstracting hash functions as ideal, even when evaluated in superposition. Research efforts are focused on further establishing the security of hash functions in post-quantum contexts~\cite{dtuPostquantumSecurity}.
+To prove the quantum security of protocols, such as SDitH, that rely on hash functions researchers often rely on models such as the Quantum Random Oracle Model (QROM), as described in \autoref{sub:qrom}. However, this approach has the limitation of abstracting hash functions as ideal, even when evaluated in superposition. Research efforts are focused on further establishing the security of hash functions in post-quantum contexts~\cite{dtuPostquantumSecurity}.
 
 
 \subsubsection{Extendable-output (hash) functions (XOF)}\label{sec:xof}
@@ -387,7 +387,7 @@ It is formally defined in FIPS 204~\cite{FIPS204_2024} as:
 \begin{definition}
   A function on bit strings in which the output can be extended to any desired length. The approved XOFs from FIPS 202~\cite{FIPS202_2015} are designed to satisfy the following properties:
   \begin{itemize}
-    \item \textbf{One-way}: It is computationally infeasible to invert the function on any output.
+    \item \textbf{One-way}: It is computationally infeasible to invert the function on any output for any unknown input.
     \item \textbf{Collision-resistant}: It is computationally infeasible to find two different inputs that produce the same output.
   \end{itemize}
 \end{definition}
@@ -405,15 +405,15 @@ They describe the paradigm by the following steps:
     \item Find a formal definition for $\Pi$ in the model of computation in which all parties -- good and bad alike -- shares the random oracle $O$
     \item Design a protocol $P$ that is secure in the ROM
     \item Prove that $P$ is secure in the ROM
-    \item Replace the random oracle with a hash function $h$ 
+    \item Replace the random oracle with a hash function $h$
   \end{itemize}
 \end{definition}
 
 We formally define the \textit{classical} ROM as follows:
 \begin{definition}[Random Oracle Model (ROM)]
-  The adversary is given access to an oracle $O: \{0,1\}^* \rightarrow \{0,1\}^*$, that acts as a completely random hash function. The adversary can query the oracle $O(x)$ and receive the output. The oracle is stateless and the same input will always yield the same output. 
+  The adversary is given access to an oracle $O: \{0,1\}^* \rightarrow \{0,1\}^*$, that acts as a completely random hash function. The adversary can query the oracle $O(x)$ and receive the output. The oracle is stateless and the same input will always yield the same output.
 \end{definition}
-This can also be thought of as a black box, that on any input will give a completely random output. 
+This can also be thought of as a black box, that on any input will give a completely random output.
 As this report is discussing a post quantum setting this would then lead to enabling a quantum attacker to query $h$ based on quantum states instead. This will change the security analysis of the protocol and is discussed in \autoref{sub:qrom}.
 
 \subsubsection{Quantum-accessible Random Oracle Model (QROM)}\label{sub:qrom}
@@ -535,7 +535,7 @@ This property enables straightforward construction of Multi-Party Computation (M
 
 \subsubsection{Threshold SSS}\label{sub:threshold-sss}
 
-In many situations such (N-1)-privacy schemes are not sufficient. In such a scheme, if a single share is lost, the secret can no longer be recovered, and we have again a single-point-of-failure. To solve this, we require a SSS that can reconstruct the secret from a subset of shares up to a threshold $\ell$. This is called a $(\ell + 1, N)$-threshold SSS\@.
+In many situations such $(N-1)$-privacy schemes are not sufficient. In such a scheme, if a single share is lost, the secret can no longer be recovered, and we have again a single-point-of-failure. To solve this, we require a SSS that can reconstruct the secret from a subset of shares up to a threshold $\ell$. This is called a $(\ell + 1, N)$-threshold SSS\@.
 
 There are several ways to solve this problem. We could distribute more than one share to each location. If distributed correctly, we can ensure that only $t \leq N$ parties need to be available. However, there are also other more sophisticated schemes that can be used to ensure that the secret is not lost.
 
@@ -799,7 +799,7 @@ The basic MPCitH protocol serves as a foundation for constructing ZK-PoK for any
 
 However, due to the small number of parties, the soundness of the resulting protocols is relatively weak. Consequently, a large number of parallel repetitions is required to achieve a negligible soundness error. This significantly increases both the size of the proofs and the communication overhead of the protocols. In this section, we describe a variant of the MPC-in-the-Head protocol that is specifically sound for the addition relation.
 
-In an effort to improve this, Baum and Nof introduced a variant of the framework based on a specialized MPC protocol. This protocol efficiently verifies a product relation $a \cdot b = c$. Their contributions significantly enhanced the efficiency of MPCitH-based ZK-PoK protocols and serve as the foundation for the underlying MPC protocol used in the SDitH protocol.
+In an effort to improve this, Baum and Nof\cite{baum2020concretely} introduced a variant of the framework based on a specialized MPC protocol. This protocol efficiently verifies a product relation $a \cdot b = c$. Their contributions significantly enhanced the efficiency of MPCitH-based ZK-PoK protocols and serve as the foundation for the underlying MPC protocol used in the SDitH protocol.
 
 The underlying MPC protocol is based on arithmetic circuits, where addition operations are straightforward to perform using any $(+,+)$-homomorphic secret sharing scheme.
 
@@ -810,12 +810,13 @@ However, performing multiplication -- which is required for the product relation
 \end{definition}
 
 \begin{protocol}[MPC Multiplication using Beaver triples]\label{def:Beaver-multiplication}
-  Given a $+$-homomorphic additive secret sharing scheme and a preprocessed random Beaver triple $\sh{a}, \sh{b}, \sh{c} $, the parties do the following:
+  Parties seek to compute the product of two shares $\sh{x}, \sh{y}$ secretly, given a $+$-homomorphic additive secret sharing scheme and a preprocessed random Beaver triple $\sh{a}, \sh{b}, \sh{c}$. The parties do the following:
   \begin{enumerate}[parsep=0pt, itemsep=0pt, topsep=0pt]
     \item The parties compute $ \sh{\alpha} = \sh{x} - \sh{a} $ and $ \sh{\beta} = \sh{y} - \sh{b} $.
-    \item The parties run $ \text{open}(\sh{\alpha}) $ and $ \text{open}(\sh{\beta}) $ to obtain $ \alpha $ and $ \beta $.
-    \item Each party computes $ \sh{z} = \sh{c} - \alpha \cdot \sh{b} - \beta \cdot \sh{a} + \alpha \cdot \beta $.
+    \item The parties run $ \texttt{open}(\sh{\alpha}) $ and $ \texttt{open}(\sh{\beta}) $ to obtain $ \alpha $ and $ \beta $.
+    \item Each party computes $\sh{z} = \sh{c} - \alpha \cdot \sh{b} - \beta \cdot \sh{a} + \alpha \cdot \beta $.
   \end{enumerate}
+  \noindent Where $\sh{z} = \sh{xy}$.
 \end{protocol}
 
 
@@ -954,9 +955,9 @@ ZK-PoK interactive protocols, such as the MPCitH protocols discussed above, depe
 
 To adapt such a protocol into a signature scheme, the prover must eliminate the verifier's role in providing the randomness. This is achieved by allowing the prover to independently generate the challenge using a pseudo-random function, such as a collision-resistant hash function. By modeling the hash function as a random oracle, its security guarantees ensure that the prover cannot manipulate the randomness of the verification challenge. This maintains the fundamental property of ZK-PoK interactive protocols while enabling the transformation into a non-interactive signature scheme.
 
-Within the context of the SDitH protocol, the transformation from a ZK-PoK to a signature scheme is accomplished by substituting the verifier's \textit{MPC challenge} and \textit{view opening challenge} with the output of a hash function, where the hash function take as input the prover's prior communications.
+Within the context of the SDitH protocol, the transformation from a ZK-PoK to a signature scheme is accomplished by substituting the verifier's \textit{MPC challenge} and \textit{view opening challenge} with the output of a hash function, where the hash function takes as input the prover's prior communications.
 
-\section{The Rust Programming language}\label{sec:rust}
+\chapter{The Rust Programming language}\label{sec:rust}
 As a preliminary to our implementation, we need to answer the question: ``Why is Rust a good choice for PQC?''.
 
 In 2024, the government of the United States of America took a stance on the future of cyber secure programming languages~\cite{whitehouse2024memorysafe}. In their report, they underline the need for secure building blocks when developing secure software. They point to the fact that \textit{Common Weakness Enumeration} (CWE) data highlights \textit{memory safety vulnerabilities} (MSV) as one of the most pervasive classes of vulnerabilities. MSV's exploit how memory can be accessed, written, allocated, or deallocated in ways that are beyond the scope of the program. Common examples of programming languages that are vulnerable include C and C++, which are widely used due to their high performance. To prevent such vulnerabilities, the report emphasizes the importance of using programming languages that inherently provide memory safety and does not require the developers to manually ensure security.
@@ -967,13 +968,13 @@ In addition to its focus on safety, Rust benefits from an extensive library of c
 
 In this section, we provide an overview of the key features of the Rust programming language that will be utilizing in this project. Specifically, how we might leverage Rust's safety mechanisms, performance optimization capabilities, dynamic language features, and robust testing infrastructure.
 
-\subsection{Cargo - Rust package manager}\label{sec:cargo}
+\section{Cargo - Rust package manager}\label{sec:cargo}
 A Rust program, referred to as a \textit{crate}, is typically compiled using the Rust Compiler with a command such as \texttt{rustc hello.rs}. However, manually managing versions and dependencies can be tedious and error-prone. To simplify this process, Rust provides a \textit{package manager} called Cargo~\cite{rustlangCargo}.
 
 Cargo is a command-line tool -- run through \texttt{cargo} -- that facilitates the management of dependencies, building, testing, and benchmarking of your crate, as well as generating documentation. It is the officially recommended method for managing and building Rust projects.
 
 
-\subsection{Memory safety}\label{sec:rustborrow} % mut references
+\section{Memory safety}\label{sec:rustborrow} % mut references
 Rust guarantees both type safety (\autoref{sub:rusttypes}) and memory safety. While we will not delve into the details, significant progress has been made toward formal proofs of these guarantees~\cite{jung2017rustbelt}. Unlike many other languages that rely on sophisticated garbage collection mechanisms to ensure memory safety, Rust avoids the associated performance overhead through two key features: \textit{ownership} and \textit{lifetimes}. Along with a compile time functionality called the \textit{borrow checker}.
 
 While the borrow checker is often the biggest challenge for new Rust developers, it is also the feature that makes Rust exceptionally powerful for secure applications.
@@ -1188,10 +1189,10 @@ In the example above, we define two generic lifetimes, \rust{<'a, 'b>}, ensuring
 \subsubsection{Conclusions on Memory Safety in Rust}
 This overview only touches on the features that make Rust a powerful programming language for developing secure and high-performance software. While Rust has a steep learning curve, its large and active community provides extensive documentation and resources. Readers are encouraged to explore the official Rust Book~\cite{rustlangRustProgramming} or community-authored books such as \textit{Effective Rust}~\cite{lurklurkEffectiveRust} and \textit{The Rust Performance Book}~\cite{rustlangPerformanceBook}.
 
-\subsection{Correctness (Types, Testing and Error handling)}
+\section{Correctness (Types, Testing and Error handling)}
 When developing and iterating on software, it is essential to ensure the continuous delivery of functional and correct code. Various patterns can help achieve this, and Rust provides several. In this section, we will focus on three: Types, Automated Tests, and Error Handling.
 
-\subsubsection{The Type System}\label{sub:rusttypes}
+\subsection{The Type System}\label{sub:rusttypes}
 Every value in Rust has a \textit{data type}. Programs written in Rust are \textit{statically typed}, meaning the type of each value must be determined at compile time. The type informs the compiler about what operations the value supports and helps catch errors before they reach runtime~\cite[ch.3.2]{rustlangRustProgramming}. The Rust compiler often infers types automatically, but if it cannot, you must explicitly annotate the type of the value. Consider the following example:
 
 \begin{minted}{rust} 
@@ -1202,7 +1203,7 @@ Here, the \rust{parse} function requires the annotation of the variable \rust{gu
 
 The type system ensures that Rust minimizes the possibility of writing incorrect code -- at least in terms of the bounds of the language and the program. While Rust enforces correctness in type usage, ensuring that a program operates semantically as intended, such as adhering to a protocol specification, often requires additional validation methods.
 
-\subsubsection{Automated Testing}
+\subsection{Automated Testing}
 Say that you are implementing field arithmetic -- \textit{funny enough, we needed to do exactly that!} -- you would want your implementation to follow the properties that define the field. For example \textit{associativity over addition}
 \begin{align}
   a + (b + c) = (a + b) + c
@@ -1246,7 +1247,7 @@ This test ensures we can continue developing or optimizing the finite field whil
 
 Writing good tests is a broad topic beyond the scope of this report. However, our implementation was designed with testing in mind, enabling iterative development while ensuring each module aligns with theoretical expectations and the given specification.
 
-\subsubsection{Error handling}\label{sub:rusterror}
+\subsection{Error handling}\label{sub:rusterror}
 Testing that functions return correct values for \textit{valid} inputs is essential for ensuring correctness. But how should unexpected inputs, such as those provided by a user to a CLI, be handled? In Rust, errors can be managed in two ways:
 \begin{itemize}[itemsep=0pt, topsep=0pt, parsep=0pt]
   \item \rust{panic}: Stops the program's execution.
@@ -1282,11 +1283,11 @@ So, when should you use \rust{panic}? You should panic only if your code reaches
 \end{minted}
 There are several reasons why a signature might fail to generate, but a straightforward one to communicate to the user is an invalid secret key. In this case, we return an error with the \textit{SigningError} variant. Using a \rust{panic} would prevent the caller from recovering from the error.
 
-\subsection{Maintainable and readable code}
+\section{Maintainable and readable code}
 
 A key goal of this project was to create an implementation that is easy to read, enabling future implementers to understand the protocol. Rust was chosen in one part for its robust set of tools and features, which facilitate writing maintainable and readable code.
 
-\subsubsection{Code Documentation}\label{sub:code-documentation}
+\subsection{Code Documentation}\label{sub:code-documentation}
 First things first, good written code should either be written in a way so that it is self-explanatory or the developer should instead supply the necessary documentation in order for the reader to quickly grasp the concepts and functionality.
 
 Often times you would want to supply documentation in the form of comments, above functions and variables to explain their purpose and functionality. Furthermore, you would want to supply the user with a \textit{manual} where the user can read about the exposed library.
@@ -1311,7 +1312,7 @@ Adding a triple slash \rust{///} above a function or struct generates documentat
 
 While these comments enable developers to access documentation directly within the code, Rust also provides a powerful feature to automatically generate comprehensive documentation. By running \href{https://doc.rust-lang.org/cargo/commands/cargo-doc.html}{\texttt{cargo doc}}, you can create a webpage with detailed documentation for the project. Checkout out the documentation for our project \href{https://mactherobot.github.io/sdith-rust}{here}.
 
-\subsubsection{Codebase structure and Modules}\label{sub:rust_modules}
+\subsection{Codebase structure and Modules}\label{sub:rust_modules}
 Rust provides a module system that allow you to organize your code into logical units. Making it easier to understand and maintain the codebase. A module is a collection of related items, such as functions, structs, and constants, that are grouped together. They can be nested, allowing for a hierarchical structure of code.
 If utilized correctly, this can help organize the logic of a program effectively for readability and reuse. For example, encapsulating field arithmetic within a module and separating components into subfolders and subroutines related to the main signature algorithm.
 
@@ -1355,7 +1356,7 @@ The example shows a structure with the main entry file which first declares a mo
 \end{itemize}
 In this case, the module \rust{arith} is declared in the file \texttt{arith.rs}. A nested submodule \rust{gf256} is then declared and found in the same recursive way. This structure allows for a clear \textit{separation of concerns} and makes it easier to understand the codebase and reuse code as modules.
 
-\subsubsection{Visibility}
+\subsection{Visibility}
 Modules in Rust allow code to be accessed using paths, such as \rust{use crate::arith::gf256::add}. Rust enforces a strict visibility system to control access based on an item's visibility. By default, items are kept private to their module, but their visibility can be modified using the \rust{pub} keyword:
 \begin{itemize}[parsep=0pt, itemsep=0pt]
   \item \rust{pub}: Fully accessible outside the module.
@@ -1378,7 +1379,7 @@ This system provides fine-grained control, improving code maintainability and pr
   fn functionality_two() // private function
 \end{minted}
 
-\subsubsection{Generics and Traits}
+\subsection{Generics and Traits}
 
 When implementing a program, it is common to encounter functionality that you want to reuse. However, due to the type system or the program's structure, you may end up duplicating code. For example, the authors of the SDitH protocol define their implementation with two field variants -- \rust{GF(256)} and \rust{GF(251)} -- as well as three NIST categories. In their NIST submission, they create separate codebases for each variant, resulting in multiple copies of the protocol. This duplication is compounded by an additional $2\times$ copies for the hypercube variant:
 
@@ -1481,16 +1482,15 @@ fn main() {
 
 Note that with Traits we can define default implementations for functions. For example, the \rust{pow} function is defined in the trait directly. This makes it so that we only need to implement the function for the fields that have a different implementation. With the trait implemented, the \texttt{polynomial} function only has to be defined once and can be used for both fields. This approach promotes code reuse and simplifies future program expansions. To add support for a new field, you only need to implement the \rust{FieldArith} trait for that field, allowing the existing functions to handle it seamlessly.
 
-\subsubsection{Conclusions on Maintainability and Readability}
+\subsection{Conclusions on Maintainability and Readability}
 Rust offers a range of features that make it easier to write maintainable and readable code. In-built linting and code docs facilitate the creation of well-documented code. The module system enables developers to organize code into logical units while controlling visibility between them. Generics and Traits are powerful tools for writing more agnostic and reusable code across different parts of a program.
 
-\subsection{Dynamic compilation}
+\section{Dynamic compilation and Feature flags}\label{prelim:feature_flags}
 
 Next, we explore additional features employed to create a more dynamic and optimized implementation of the SDitH protocol. Dynamic compilation allows for code generation, linking and configuring the package before building the actual binary.
 
-A good use case could be facilitating the NIST security parameters. Note that we want the parameters to be constant at compile time, but we do not want to create several instances of functions that use each parameter for each category. Rust's feature flags come in handy.
+A good use case could be facilitating the NIST security parameters. Note that we want the parameters to be constant at compile time, but we do not want to create several instances of functions that use each parameter for each category. Rust's \textit{feature flags} come in handy.
 
-\subsubsection{Feature flags}\label{prelim:feature_flags}
 Rust's feature flag system enables conditional compilation, offering flexibility to optimize or configure code for diverse use cases.
 
 A use case could again be handling different Galois fields. First, we define a feature flag in the Cargo.toml file:
@@ -1541,10 +1541,10 @@ In the example above we use the feature flag to change which trait is implemente
 
 In our implementation, we use feature flags to toggle between different categories and enable specific optimizations -- like parallelisation or SIMD. This approach allows dynamic testing and comparison of various configurations without the need for manual code changes or duplication.
 
-\subsection{Optimizations in Rust}\label{sub:rust_optimizations}
+\section{Optimizations in Rust}\label{sub:rust_optimizations}
 Achieving \textit{blazingly fast} code requires careful optimization. Fortunately, Rust and its community provide numerous tools to improve performance. In this section, we describe the methods used to measure performance in our implementation and explore techniques in Rust that help enhance it further.
 
-\subsubsection*{Measuring performance}\label{sec:rust_benchmarking}
+\subsection{Measuring performance}\label{sec:rust_benchmarking}
 There are two techniques that we used in order to investigate the performance of our implementation and to guide the optimizations that were needed. These are \textit{benchmarking} and \textit{profiling}.
 
 \subsubsection{Benchmarking}
@@ -1593,7 +1593,7 @@ The release profile was configured to maximize optimization during the compilati
   \item \mintinline{toml}{panic = "abort"}: This setting ensures that the program aborts immediately on a panic, without performing unwinding. If unwinding (e.g., via the \rust{catch_unwind} macro) is not required, setting \texttt{panic} to \texttt{"abort"} reduces binary size and often provides a slight performance boost.
 \end{itemize}
 
-\subsubsection{Parallelisation}
+\subsection{Parallelisation}
 A common optimization technique in modern programming is to leverage the multi-core architecture of modern CPUs by employing \textit{parallelization} or \textit{multi-threading}. This approach allows programs to execute multiple tasks concurrently, significantly improving performance for computationally intensive operations.
 
 In many programming languages, multi-threading support is either limited or not guaranteed, often requiring developers to rely on external libraries or frameworks. However, Rust provides robust and native support for \textit{thread-safe} parallelization. With Rust's ownership system and built-in concurrency primitives, developers can write highly performant parallel code while minimizing risks of common concurrency issues such as data races or deadlocks.
@@ -1610,7 +1610,7 @@ The \textit{rayon}~\cite{rayon} package implements easy-to-use data-parallelisat
 
 Although custom parallelization can sometimes outperform \textit{rayon}, the library provides an intuitive interface that enables parallelization with minimal effort, often requiring just a single line of modification. In this project, we have opted to use \textit{rayon} and reserved custom parallelization for the future.
 
-\subsubsection{Single Instruction Multiple Data}
+\subsection{Single Instruction Multiple Data}
 Single Instruction Multiple Data or SIMD for short, is a way to better utilize a CPU when dealing with data in the form of Vectors. It is a way for the CPU to do a single instruction but on multiple data points at the same time by splitting the data into chunks that fit into a single register. This can greatly improve performance when dealing with large amounts of data. Rust has support for SIMD through the \texttt{std::simd} module. This module provides access to a portable abstraction for SIMD operations that is not bound to any particular hardware architecture.
 
 A simple example could be adding two vectors together:
@@ -1696,8 +1696,8 @@ This chapter presents a comprehensive specification of the SDitH Signature Schem
     \multicolumn{2}{l}{\textbf{Multi-Party Computation}}                                                                                  \\
     $S, Q, P$                    & Polynomials in $\mathbb{F}_q[X]$, witnesses for the syndrome decoding proof.                           \\
     $F$                          & Vanishing polynomial of the set $\{f_1, \ldots, f_m\} \subseteq \mathbb{F}_q$                          \\
-    $a, b, c$                    & Beaver triple satisfying $a_k \cdot b_k = c_k$, $\forall k \in [1 : t]$.                               \\
-    $\alpha, \beta, v$           & Broadcast values (coordinates in $\mathbb{F}_{\text{points}}$).                                        \\
+    $a, b, c$                    & Beaver triple satisfying $a \cdot b = c$.                                                              \\
+    $\alpha, \beta, v$           & Broadcast values in $\mathbb{F}_{\text{points}}$.                                                      \\
     $i$                          & Index of a party in $[1 : N]$.                                                                         \\
     $\sh{v}$                     & Sharing of a value $v$.                                                                                \\
     $p$                          & False positive probability of the MPC protocol.                                                        \\
@@ -1750,7 +1750,7 @@ Let us reason about the false positive probability of the MPC protocol. We shall
 \begin{align*}
   \frac{\max_{\ell \leq m + w -1} \{ \binom{\ell}{i} \binom{\Delta - \ell}{t-i} \}}{\binom{\Delta}{t}}
 \end{align*}
-since $Q\cdot S - P \cdot F$ is a polynomial pf degree at most $m + w -1$. This is following \autoref{lem:schwartz}. Whenever this event occurs, the probability of a false positive is bounded by
+since $Q\cdot S - P \cdot F$ is a polynomial of degree at most $m + w -1$. This is following \autoref{lem:schwartz}. Whenever this event occurs, the probability of a false positive is bounded by
 \begin{align*}
   \left(\frac{1}{\Delta}\right)^{t-i}
 \end{align*}
@@ -1845,7 +1845,7 @@ To mitigate this, \textit{parallel repetition} is employed to strengthen the sou
 \end{align*}
 with $\lambda$ as the security parameter and $2^{-\lambda}$ as the target soundness error~\cite{aguilarsyndrome11}. This parallel repetition reduces the overall soundness error exponentially with the number of repetitions, achieving a negligible error probability in practice.
 
-To accommodate the repetitions, the authors incorporate a slight modification inspired by the Limbo proof system~\cite{delpech2021limbo}. Specifically, we reuse the same MPC challenges $r$ and $\varepsilon$, as well as the Beaver triples, across all $\tau$ repetitions. This tweak allows us to modify the MPC computation input so that \textit{plain broadcast} value only needs to be computed once.
+To accommodate the repetitions, the authors incorporate a slight modification inspired by the Limbo proof system~\cite{delpech2021limbo}. This allows the protocol to reuse the same MPC challenges $r$ and $\varepsilon$, as well as the Beaver triples, across all $\tau$ repetitions. This tweak allows us to modify the MPC computation input so that \textit{plain broadcast} value only needs to be computed once.
 
 \subsubsection{Fiat-Shamir transform}
 Next, we apply the \textit{Fiat-Shamir heuristic} -- detailed in \autoref{sec:fiatshamir} -- to transform the challenges of the ZK-PoK protocol into a non-interactive form. This transformation is achieved by having the prover derive the challenges for MPC randomness and the opening challenge directly from the commitments of the MPC inputs and the outputs of the MPC computation in the hashes $h_1, h_2$ computed with secure hash functions~\autoref{sec:prelim_hash}.
@@ -1915,6 +1915,7 @@ The same applies to $\phi^1$ and $\phi^2$ for the inverse MPC computation. For f
 We introduce the signing and verification protocols in \autoref{def:sdith-sign} and \autoref{def:sdith-verify}, respectively.
 
 \begin{protocol}[SDitH Signing Protocol]\label{def:sdith-sign}
+  \small
   \setlength{\parindent}{0pt}
   \setlength{\parskip}{5pt}
   \titlespacing*{\paragraph}{0pt}{1pt}{1em}
@@ -1937,6 +1938,9 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
     \item Sample a root seed: $sd \leftarrow \{0, 1\}^{\lambda}$.
     \item Initialise \texttt{XOF} from $sd$, \texttt{salt}
   \end{enumerate}
+
+  \newpage
+  \vspace*{-5pt}
   \paragraph{Phase 1} Prepare the MPCitH inputs.
 
   \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
@@ -1977,7 +1981,7 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
 
   \paragraph{Phase 3} Simulation of the MPC Protocol.
   \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
-    \item Compute plain broadcast $\texttt{broad\_plain} \stackrel{\varphi^1_1}{\longleftarrow} \texttt{input\_plain}, r, \varepsilon$\footnote{$\varphi^2$ is skipped as $v = 0$ for an honest execution.}
+    \item Compute plain broadcast $\texttt{broad\_plain} \stackrel{\varphi^1_1}{\longleftarrow} \texttt{input\_plain}, r, \varepsilon$.
     \item For $e \in [\tau]$, compute broadcast shares
           \begin{align*}
             \texttt{broad\_coef}_j^e \stackrel{\varphi^1_0, \varphi^2_0}{\longleftarrow} \texttt{input\_coef}_j^e, r, \varepsilon \quad \text{for each } j \in \ell
@@ -1995,39 +1999,37 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
 
   \paragraph{Phase 5} Building of the signature output the signature $\sigma$ for $e \in [\tau]$ and $i \in I$
   \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
-    \item Compute authentication paths
-          \begin{align*}
-            \texttt{auth}^e = \texttt{MerkleAuthPath}(\{\texttt{com}^e_i\}_{i \in I})
-          \end{align*}
-    \item Compute witness shares
-          \begin{align*}
-            \sh{\texttt{wit}}_i^e = \text{TruncateBeaver}(\texttt{input}^e_i)
-          \end{align*}
+    \item Compute authentication paths $\texttt{auth}^e = \texttt{MerkleAuthPath}(\{\texttt{com}^e_i\}_{i \in I})$.
+    \item Compute witness shares $\sh{\texttt{wit}}_i^e = \text{TruncateBeaver}(\texttt{input}^e_i)$.
     \item Build the signature
-          \begin{align*}
-            \sigma = & \ (\ m \mid \texttt{salt} \mid h_1                                \\
-                     & \mid \texttt{broad\_plain}                                        \\
-                     & \mid \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \\
-                     & \mid \texttt{auth}^e                                              \\
-                     & \mid \sh{\texttt{wit}}_i^e                                        \\
-                     & \mid I\ )
-          \end{align*}
+          \begin{equation*}
+            \sigma = \ (\ m \mid \texttt{salt} \mid h_1
+            \mid \texttt{broad\_plain}
+            \mid \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell
+            \mid \texttt{auth}^e
+            \mid \sh{\texttt{wit}}_i^e
+            \mid I\ )
+          \end{equation*}
   \end{enumerate}
+  Output $\sigma$.
+  \vspace*{1em}
 \end{protocol}
+\newpage
 
 \begin{protocol}[SDitH Verification Protocol]\label{def:sdith-verify}
+  \small
   \setlength{\parindent}{0pt}
   \setlength{\parskip}{5pt}
   \titlespacing*{\paragraph}{0pt}{1pt}{1em}
   Given a public SD instance $pk = (H, y)$, security parameters $\lambda, \tau$, and a signature
-  \begin{align*}
-    \sigma = & \ (\ m \mid \texttt{salt} \mid h_1                                \\
-             & \mid \texttt{broad\_plain}                                        \\
-             & \mid \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell \\
-             & \mid \texttt{auth}^e                                              \\
-             & \mid \sh{\texttt{wit}}_i^e                                        \\
-             & \mid I\ )
-  \end{align*}
+  \begin{equation*}
+    \sigma = \ (\ m \mid \texttt{salt} \mid h_1
+    \mid \texttt{broad\_plain}
+    \mid \texttt{broad\_coef}^e_1, \dots, \texttt{broad\_coef}^e_\ell
+    \mid \texttt{auth}^e
+    \mid \sh{\texttt{wit}}_i^e
+    \mid I\ )
+  \end{equation*}
 
   \paragraph{Assumptions}
   \begin{enumerate}[itemsep=0pt, topsep=0pt, parsep=0pt]
@@ -2066,7 +2068,7 @@ We introduce the signing and verification protocols in \autoref{def:sdith-sign} 
   \end{enumerate}
 
   Output \texttt{Accept} if and only if $h_1 \stackrel{?}{=} \tilde{h_1}$, and \texttt{Reject} otherwise.
-
+  \vspace*{1em}
 \end{protocol}
 
 \subsection{Key and Signature sizes}
@@ -2124,13 +2126,13 @@ For each of the NIST categories the keys and signature sizes are presented in \a
 
 The security analysis of the SDitH signature scheme is based on the proposed standardization requirements from the 2022 NIST call for proposals of non-lattice based signature schemes~\cite{nistcall}. Therefore, as a preliminary, we will describe the reasoning and requirements of the NIST standardization process.
 
-With the development of new quantum algorithms and unknowns in the capacities of the future quantum computers, there remain large uncertainties in estimating the security of the algorithms. To combat these uncertainties, NIST proposed for the 2022 stadardization effort, to define the security of submissions in a range of five categories. Each, with an easy-to-analyze cryptographic primitive providing the lower bound for a variety of metrics deemed relevant to practical security.
+With the potential for new undiscovered quantum algorithms and unknowns in the capacities of the future quantum computers, there remain large uncertainties in estimating the security of the algorithms. In order to deal with these uncertainties, NIST proposed for the 2022 stadardization effort, to define the security of submissions in a range of five categories. Each, with an easy-to-analyze cryptographic primitive providing the lower bound for a variety of metrics deemed relevant to practical security.
 
 \begin{definition}\label{def:nistsec}
   Any attack that breaks the relevant security definition must require computational resources comparable to or greater than those required for key search on a block cipher with a 128-bit (e.g. AES-128), 192-bit (e.g. AES-192) and 256-bit (e.g. AES-256) for categories \textbf{I}, \textbf{III} and \textbf{V} respectively.
 \end{definition}
 
-In terms of quantum security, the complexity and capability of quantum algorithms are measured in terms of quantum circuit size, i.e. the number of quantum gates in the quantum circuit. In order to estimate the quantum security of the signature protocols, circuit size can be compared to the resources required to break the security of \autoref{def:nistsec}.
+The complexity and capability of quantum algorithms are measured in terms of quantum circuit size, i.e. the number of quantum gates in the quantum circuit. In order to estimate the quantum security of the signature protocols, circuit size can be compared to the resources required to break the security of \autoref{def:nistsec}.
 
 \subsubsection{NIST Categories}
 
@@ -2140,7 +2142,7 @@ The SDitH specification provides security parameters adhering to categories I, I
 
 The SDitH protocol is secure under the following assumptions:
 
-Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search (see \autoref{def:nistsec}) in terms of quantum circuit size. For this, $\kappa$ is defined as $143$, $207$ and $272$ for the categories~\cite{nistcall}. Furthermore, the XOF primitive used is secure with 128-bit, 192-bit, 256-bit security levels for each of the categories respectively. Finally, the Hash function used \textit{behaves as a random oracle}. Specifically, security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM)~\cite{aguilarsyndrome11} -- see \autoref{sub:qrom}.
+Syndrome Decoding instances cannot be solved in complexity lower than $2^\kappa$ corresponding to the complexity of breaking AES by exhaustive search (see \autoref{def:nistsec}) in terms of quantum circuit size. For this, $\kappa$ is defined as $143$, $207$ and $272$ for the categories~\cite{nistcall}. Furthermore, the XOF primitive used is secure with 128-bit, 192-bit, 256-bit security levels for each of the categories respectively. Finally, the hash function used by the SDitH protocol \textit{behaves as a random oracle}. Specifically, security holds in Random Oracle Model (ROM) and Quantum Random Oracle Model (QROM)~\cite{aguilarsyndrome11} -- see \autoref{sub:qrom}.
 
 \subsubsection{Security Definition}
 
@@ -2171,19 +2173,21 @@ Therefore, the total cost of a forgery attack is the maximum of the two strategi
 
 \subsubsection{Attacks against the SD problem}
 
-The general syndrome decoding problem \autoref{def:syndrome} is a known \textbf{NP}-hard problem. The most well performing attacks are of the family \textit{Information-Set Decoding} (ISD)~\cite{aguilarsyndrome11,prange1962use}. An information-set decoding algorithm iteratively selects a set $I$ of $k$ indices (the information set) and defines $J = [1, \ldots, m] \setminus I$. A step is successful if the submatrix $H_J$ is invertible and the support of $x$ lies entirely in $J$, allowing $x$ to be computed as $x_J = H_J^{-1} y$, with other entries set to $0$. Successive work by~\cite{stern1989method,peters2009information} gives the following bounds for the complexity of an ISD algorithm. The cost of each iteration is
+The general syndrome decoding problem \autoref{def:syndrome} is known to be \textbf{NP}-hard. The most well performing attacks are of the family \textit{Information-Set Decoding} (ISD)~\cite{aguilarsyndrome11,prange1962use}. An information-set decoding algorithm iteratively selects a set $I$ of $k$ indices (the information set) and defines $J = [1, \ldots, m] \setminus I$. A step is successful if the submatrix $H_J$ is invertible and the support of $x$ lies entirely in $J$, allowing $x$ to be computed as $x_J = H_J^{-1} y$, with other entries set to $0$ (the number denoted by $\delta$). Successive work by~\cite{stern1989method,peters2009information} gives the following bounds for the complexity of an ISD algorithm. The cost of each iteration is
 \begin{align}
   \begin{split}
     & C_{iter} =                                                                                  \\
-    & \frac{1}{2}(n-k)^2(n+k) + \left(\left(\frac{k}{2} - p + 1\right) +
-    \left(\binom{\lfloor k/2 \rfloor}{p} + \binom{k - \lfloor k / 2 \rfloor}{p}\right)(q-1)^p\right) \ell \\
-    & + \frac{q}{q-1}(w-2p+1) 2p \left(1 + \frac{q-2}{q-1}\right)
-    \frac{\binom{\lfloor k/2 \rfloor}{p} + \binom{k - \lfloor k / 2 \rfloor}{p}(q-1)^{2p}}{q^\ell},
+    & \frac{1}{2}(n-k)^2(n+k) + \left(\left(\frac{k}{2} - \rho + 1\right) +
+    \left(\binom{\lfloor k/2 \rfloor}{\rho} + \binom{k - \lfloor k / 2 \rfloor}{\rho}\right)(q-1)^\rho\right) \delta \\
+    & + \frac{q}{q-1}(w-2\rho+1) 2\rho \left(1 + \frac{q-2}{q-1}\right)
+    \frac{\binom{\lfloor k/2 \rfloor}{\rho} + \binom{k - \lfloor k / 2 \rfloor}{\rho}(q-1)^{2\rho}}{q^\delta},
   \end{split}
 \end{align}
-while the success probability for each iteration is
+
+Where parameters $\rho$ defines a number of positions chosen in the the information subsets $X,Y$. The parameter $\rho$ is chosen quite small to minimize the cost of the algorithm and $\delta$ is set to \[ \delta = \log_q\binom{k/2}{\rho} + \rho \log_q(q-1) \] The success probability for each iteration is
+
 \begin{align}
-  p_{succ} \binom{\left\lfloor k/2 \right\rfloor }{p} \binom{k -\left\lfloor k/2 \right\rfloor }{p} \binom{n-k-\ell}{w-2p} / \binom{n}{w},
+  p_{succ} \binom{\left\lfloor k/2 \right\rfloor }{\rho} \binom{k -\left\lfloor k/2 \right\rfloor }{\rho} \binom{n-k-\delta}{w-2\rho} / \binom{n}{w},
 \end{align}
 and a total cost for the ISD algorithm is
 \begin{align}
@@ -2475,7 +2479,7 @@ The base variant is implemented with Shake and can be adjusted depending on the 
 \end{minted}
 
 \subsection{Hashing}\label{sec:hashing} % (fold)
-As mentioned in the \nameref{def:sdith-sign}, we need a collision-resistant hash function. For this we also used the tiny-keccak crate. And again due to the different security categories, we had to be able to switch between different implementations of the underlying hash function.
+As mentioned in the \nameref{def:sdith-sign}, we need a collision-resistant hash function. For this we also used the \texttt{tiny-keccak} crate. And again due to the different security categories, we had to be able to switch between different implementations of the underlying hash function.
 
 First, as mentioned in the \autoref{sub:constants}, we defined a primitive type for the Hash which we used to define a generic trait:
 
@@ -2694,8 +2698,7 @@ As with the \rust{auth_path} function, we manually constructed several test case
 \end{minted}
 
 \subsection{Field Arithmetic Implementation}\label{sub:field_arithmetic}
-To maintain full control over the field arithmetic and avoid dependencies on external libraries,
-we implemented the Galois field operations internally. This approach enabled us to fine-tune the implementation
+To maintain full control over the field arithmetic and avoid dependencies on external libraries, we implemented the Galois field operations internally. This approach enabled us to fine-tune the implementation
 to meet the protocol's unique demands.
 
 We started by defining a \rust{FieldArith} trait encapsulating field arithmetic, including essential operations such as addition and multiplication. This generic structure facilitates implementation across diverse fields. For example, the field $\mathbb{F}_{q^4}$ utilized in the MPC protocol (\autoref{sub:field_extension}, \autoref{def:sdith-mpc}).
@@ -2710,9 +2713,7 @@ impl FieldArith for FPoint {
 }
 \end{minted}
 
-This implementation enables seamless integration of the defined field arithmetic into our codebase.
-As an example, the computation of the inner product for Beaver triples can be expressed concisely as
-
+The trait implementation enables the use of field arithmetic in our codebase and makes it so that we will not have to change any of the utilising code if we were to switch to a different field -- for example the GF251 field proposed by \cite{aguilarsyndrome11}. As an example, the computation of the inner product for Beaver triples can be expressed as follows -- regardless of the field we choose to implement.
 \begin{minted}{rust}
 for (j, (aj, bj)) in ab.enumerate() {
   c[j] = c[j].field_add(aj.field_mul(bj));
@@ -2790,7 +2791,7 @@ We explored multiple approaches for implementing multiplication in the field and
         \end{align*}
         Since the field size is relatively small, we can precompute and store the powers of $g$ as well as $\log_g$ values for all field elements. This allows multiplication to be performed through three lookup operations and a single addition, leveraging these precomputed tables.
 
-  \item \textit{Shift-and-Add with Modular Reduction}: This technique -- the one chosen in the reference implementation~\cite{aguilarsyndrome11} -- in particular, provides robust performance in most applications. Importantly, it has no conditional branches making it constant-time.
+  \item \textit{Shift-and-Add with Modular Reduction}: This technique -- the one chosen in the reference implementation~\cite{aguilarsyndrome11} -- in particular, provides robust performance in most applications. Importantly, it has no conditional branches or random access table lookups, making it resistant to \textit{timing attacks} -- denoted as \textit{constant-time}.
 \end{enumerate}
 
 Benchmarking these methods revealed that while the shift-and-add approach was faster overall, the table lookup method yielded slightly better results in the specific context of signing operations. Detailed performance metrics, including constant-time benchmarks, are presented in \autoref{ch:bench}. In the final implementation we left lookup-based multiplication as the default method, but allow the user to switch to the shift-and-add method through the \texttt{mul\_shift\_and\_add} feature flag.
@@ -3268,7 +3269,8 @@ With this implementation, we introduced integration tests for the protocol withi
 In this section we will discuss our process when finalizing the implementation. We had a few bugs that led us to setup our code to be comparable with the reference implementation. First we will discuss our implementations of the signing and verification algorithms, and how we used the reference implementation to iron out bugs from our own code. Lastly we will discuss how we went about testing our implementation.
 
 \subsubsection{Alignment with the Reference Implementation}\label{sub:comparison_with_spec_impl}
-To verify and debug our code, we configured our implementation to align with the reference implementation provided in C. This setup required us to execute the reference code to obtain intermediate data, which we then used to compare internal states between the two implementations. In order to get this to work we ran into the following problems. First we had to setup the same random byte generator to allow our randomness to be the same. Furthermore, during this process, we identified a bug in the calculation of the view-opening challenges. Specifically, the reference implementation neglected to finalize the SHAKE function before squeezing, which posed an issue because the Tiny Keccak Rust library automatically performs this finalization when initializing a hash or XOF.
+To verify and debug our code, we configured our implementation to align with the reference implementation provided in C. This setup required us to execute the reference code to obtain intermediate data, which we then used to compare internal states between the two implementations. In order to get this to work we ran into the following problems. First we had to setup the same random byte generator to allow our randomness to be the same. Furthermore, during this process, we identified a bug in the calculation of the view-opening challenges. Specifically, the reference implementation neglected to finalize the SHAKE function before squeezing, which posed an issue because the \texttt{tiny-keccak} crate\cite{tinykeccak} automatically performs this finalization when initializing a hash or XOF.
+
 Additionally, we discovered that, to produce identical outputs from the XOF, we needed to first rotate the permutation once by supplying an empty vector before invoking the function.
 
 We composed a test suite in the \texttt{kat} module to verify our implementation against the reference implementation. While we conditionally apply some unnecessary hashing operations, allowing us to correctly compare the outputs.
@@ -3376,8 +3378,8 @@ This chapter presents the benchmarking results of our implementation. As detaile
 We conducted a series of tests to evaluate both the overall performance as well as individual subroutines and optimisation steps
 
 \begin{itemize}[parsep=0pt, itemsep=3pt]
-  \item \textit{Combined benchmarks for the Rust implementation} -- Full benchmarks for our implementation and each optimisation flag. We ran benchmarks for our implementation on both setups 1 and 2 \autoref{fig:benchmarking_setups}. We ran all combinations of feature flags for parallelisation, SIMD on the \textit{release} profile. Furthermore, we ran with and without Turbo Boost enabled for setup 1.
-  \item \textit{Optimized reference implementation benchmarks} -- For comparison, we benchmarked the reference implementation on setup 1 \autoref{fig:benchmarking_setups}. We used \texttt{clang@15} for compilation, which is the same used by~\cite{aguilarsyndrome11}. We ran both with and without Turbo Boost enabled.
+  \item \textit{Combined benchmarks for the Rust implementation} -- Full benchmarks for our implementation and each optimisation flag. We ran benchmarks for our implementation on both setups 1 and 2 \autoref{fig:benchmarking_setups}. We ran all combinations of feature flags for parallelisation, SIMD on the \textit{release} profile. Furthermore, we ran with and without Turbo Boost enabled for \textit{Linux setup}.
+  \item \textit{Optimized reference implementation benchmarks} -- For comparison, we benchmarked the reference implementation on \textit{Linux setup} \autoref{fig:benchmarking_setups}. We used \texttt{clang@15} for compilation, which is the same used by~\cite{aguilarsyndrome11}. We ran both with and without Turbo Boost enabled.
   \item \textit{Rust Nightly vs Stable} -- We ran a comparison between the compiling in the \textit{nightly} and \textit{stable} channels for rust.
   \item \textit{Multiplication algorithms} -- We benchmarked multiplication algorithms for \textit{Lookup} and \textit{Shift-and-Add} unit and integration tests.
   \item \textit{Constant time for multiplication} -- We ran \texttt{dudect} benchmarks for multiplication algorithms.
@@ -3387,13 +3389,13 @@ We conducted a series of tests to evaluate both the overall performance as well 
 
 \section{Testing setup}\label{sub:testing_setup}
 
-Benchmarks were conducted on two machines: a Dell XPS 15 9510 and a MacBook Pro with an M2 Pro chip. These machines represent different architectures, allowing us to observe subtle variations in runtime performance based on hardware differences. Each machine is described in \autoref{fig:benchmarking_setups} as \textit{Setup 1} and \textit{Setup 2} respectively.
+Benchmarks were conducted on two machines: a Dell XPS 15 9510 with \textit{Ubuntu 22.04.5 LTS} and a MacBook Pro with an M2 Pro chip. These machines represent different architectures, allowing us to observe subtle variations in runtime performance based on hardware differences. Each machine is described in \autoref{fig:benchmarking_setups} as \textit{Linux setup} and \textit{Mac setup} respectively.
 
 \begin{figure}[ht]
   \centering
   \fbox{
     \begin{minipage}[t][6cm][t]{.45\textwidth} % Set a fixed height for the boxes
-      \textbf{Setup 1}: Dell XPS 15 9510
+      \textbf{Linux setup}: Dell XPS 15 9510
       \begin{itemize}[label={}, leftmargin=0pt, itemsep=2.5pt, parsep=0pt]
         \item \textbf{CPU}: 11th Gen Intel Core i7-11800H @ 2.30GHz x 16
         \item \textbf{GPU}: GeForce RTX 3050 Ti Mobile
@@ -3408,7 +3410,7 @@ Benchmarks were conducted on two machines: a Dell XPS 15 9510 and a MacBook Pro 
   \hfill
   \fbox{
     \begin{minipage}[t][6cm][t]{.45\textwidth} % Set the same height
-      \textbf{Setup 2}: MacBook Pro (M2 Pro)
+      \textbf{Mac setup}: MacBook Pro (M2 Pro)
       \begin{itemize}[label={}, leftmargin=0pt, itemsep=2.5pt, parsep=0pt]
         \item \textbf{CPU}: Apple M2 Pro (10-core CPU: 6 performance cores, 4 efficiency cores)
         \item \textbf{RAM}: 32GB LPDDR5
@@ -3457,7 +3459,7 @@ We measured performance in both cycles per byte and time. Furthermore, we measur
     V                            & simd,parallel & $673.10$ $\mu$s & $7.4172$ ms & $1.8426$ ms     \\
     \hline
   \end{tabular}
-  \caption{API benchmarks over each category and optimisation feature flag for \textit{Setup 2}. We ran reference implementation benchmarks as the optimised solution was not compatible with \textit{Setup 2}.}
+  \caption{API benchmarks over each category and optimisation feature flag for \textit{Mac setup}. We ran reference implementation benchmarks as the optimised solution was not compatible with \textit{Mac setup}.}
   \label{tab:api_mac_results}
 \end{table}
 \begin{table}[H]
@@ -3497,7 +3499,7 @@ We measured performance in both cycles per byte and time. Furthermore, we measur
     V                            & simd,parallel (TB)            & $677.55$ $\mu$s & $9.2047$ ms & $2.3676$ ms     \\
     \hline
   \end{tabular}
-  \caption{API benchmarks over each category and optimisation feature flag for \textit{Setup 1}. We ran the optimised reference implementation \cite{aguilar2023return} with and without Turbo Boost enabled.}
+  \caption{API benchmarks over each category and optimisation feature flag for \textit{Linux setup}. We ran the optimised reference implementation \cite{aguilar2023return} with and without Turbo Boost enabled.}
   \label{tab:api_dell_results}
 \end{table}
 
@@ -3505,9 +3507,9 @@ We measured performance in both cycles per byte and time. Furthermore, we measur
 
 We ran benchmarks for our implementation on both setups \textit{1} and \textit{2} (\autoref{fig:benchmarking_setups}) using the \textit{release} profile. All combinations of feature flags for parallelisation and SIMD were tested. In order to have a baseline comparison to the reference implementation, we also ran benchmarks for the reference implementation~\cite{aguilar2023return} on both setups. The reference implementation was executed using tag version \href{https://github.com/sdith/sdith/releases/tag/v1.1.0}{\texttt{v1.1.0}}.
 
-For \textit{Setup 1}, we performed benchmarks with and without Turbo Boost (TB) enabled. In contrast, for \textit{Setup 2}, we could only evaluate the ``reference'' implementation due to architectural incompatibilities that prevented running the optimised implementation with SIMD AVX2 optimisations.
+For \textit{Linux setup}, we performed benchmarks with and without Turbo Boost (TB) enabled. In contrast, for \textit{Mac setup}, we could only evaluate the ``reference'' implementation due to architectural incompatibilities that prevented running the optimised implementation with SIMD AVX2 optimisations.
 
-The results for \textit{Setup 1} and \textit{Setup 2} are seen in \autoref{tab:api_dell_results} and \autoref{tab:api_mac_results}, respectively.
+The results for \textit{Linux setup} and \textit{Mac setup} are seen in \autoref{tab:api_dell_results} and \autoref{tab:api_mac_results}, respectively.
 
 We begin by comparing the performance across the different categories. As expected, there is a decrease in performance between categories one, three, and five as the parameters increase (\autoref{tab:secparam}). Overall, the increases in running time between the categories are comparable to the reference implementation (\autoref{tab:api_percentage_increase}), indicating that our implementation does not suffer from any disadvantages in terms of scaling with parameter increases.
 
@@ -3532,7 +3534,7 @@ Curiously, we observe a larger increase in verification time for our implementat
     S2: simd,parallel (TB)                      & Verify    & 202.89        & 110.61        \\
     \hline
   \end{tabular}
-  \caption{Running time percentage increases for \textit{Setup 1} (S1) and \textit{Setup 2} (S1). Key Generation, Signing, and Verification between categories \textit{I to III} and \textit{III to V} for rows for the optimised reference implementation \cite{aguilarsyndrome11} and our optimised implementation. Results are negligible between other implementations in \autoref{tab:api_dell_results}}
+  \caption{Running time percentage increases for \textit{Linux setup} (S1) and \textit{Mac setup} (S1). Key Generation, Signing, and Verification between categories \textit{I to III} and \textit{III to V} for rows for the optimised reference implementation \cite{aguilarsyndrome11} and our optimised implementation. Results are negligible between other implementations in \autoref{tab:api_dell_results}}
   \label{tab:api_percentage_increase}
 \end{table}
 
@@ -3561,7 +3563,7 @@ Curiously, we observe a larger increase in verification time for our implementat
                               & Verify                     & $+0.21$                            & $+4.41$                       & $-25.64$               & $-32.47$               \\
     \hline
   \end{tabular}
-  \caption{Percentage differences between the "base" and each of the "parallel" and "SIMD" optimisations for key generation, signing, and verification across categories for \textit{Setup 1} (S1) and \textit{Setup 2} (S2).}
+  \caption{Percentage differences between the ``base'' and each of the ``parallel'' and ``SIMD'' optimisations for key generation, signing, and verification across categories for \textit{Linux setup} (S1) and \textit{Mac setup} (S2).}
   \label{tab:base_vs_parallel_simd_s1_s2}
 \end{table}
 
@@ -3569,7 +3571,7 @@ Next, we compare the different optimisations (\autoref{tab:base_vs_parallel_simd
 
 For SIMD, we observe a general improvement across all operations of approximately $16$-$20\%$. This aligns with the fact that all operations involve field vector computations -- matrix multiplication and MPC computations -- which are optimised for SIMD.
 
-We were very surprised to observe that including parallelisation for \textit{Setup 2} resulted in a significantly lower key generation time of $-26\%$. This was entirely unexpected, as no parallelisation is utilised in the key generation operation. However, we were able to consistently reproduce this result. This phenomenon highlights the ``magic'' behind compiler optimisation. A hypothesis could be that the inclusion of the \texttt{rayon} package causes differences in memory alignment or how the Rust compiler structures the code, but somehow only on the M2 Darwin architecture. While it has no significant impact on the practicality of our implementation, it is an intriguing result worth noting and for future investigation.
+We were very surprised to observe that including parallelisation for \textit{Mac setup} resulted in a significantly lower key generation time of $-26\%$. This was entirely unexpected, as no parallelisation is utilised in the key generation operation. However, we were able to consistently reproduce this result. This phenomenon highlights the ``magic'' behind compiler optimisation. A hypothesis could be that the inclusion of the \texttt{rayon} package causes differences in memory alignment or how the Rust compiler structures the code, but somehow only on the M2 Darwin architecture. While it has no significant impact on the practicality of our implementation, it is an intriguing result worth noting and for future investigation.
 
 \subsubsection{Comparison of implementations}\label{sub:comparison_implementations}
 
@@ -3622,7 +3624,7 @@ For verification, our implementation is slightly faster, particularly for Catego
     Nightly      & $361.83$ $\mu$s & $2.1434$ $ms$ & $409.90$ $\mu$s \\
     \hline
   \end{tabular}
-  \caption{Benchmarks for the \textit{nightly} and \textit{stable} channels for Rust on \textit{Setup 2}.}
+  \caption{Benchmarks for the \textit{nightly} and \textit{stable} channels for Rust on \textit{Mac setup}.}
   \label{tab:rust_nightly_vs_stable}
 \end{table}
 
@@ -3650,14 +3652,14 @@ To test this, we used the tool \textit{dudect}~\cite{reparaz2017dude}. It is a t
   \begin{tabular}{|l|c|r|r|}
     \hline
     \textbf{Function}      & \textbf{Test}       & \textbf{$t$ Mean (std)} & \textbf{Max} \\ \hline
-    \texttt{Lookup}        & \ref{dudect_test_1} & -0.4813 (28.5514)       & 249.6994     \\
-    \texttt{Lookup}        & \ref{dudect_test_2} & -0.3793 (29.2336)       & 269.1453     \\
-    \texttt{Lookup}        & \ref{dudect_test_3} & -0.4467 (29.4799)       & 249.9463     \\
-    \texttt{Shift-and-Add} & \ref{dudect_test_1} & -0.0258 (1.5587)        & 3.8619       \\
-    \texttt{Shift-and-Add} & \ref{dudect_test_2} & -0.3793 (29.2336)       & 269.1453     \\
-    \texttt{Shift-and-Add} & \ref{dudect_test_3} & -0.4467 (29.4799)       & 249.9463     \\\hline
+    \texttt{Lookup}        & \ref{dudect_test_1} & -0.1527 (25.7867)       & 226.1397     \\
+    \texttt{Lookup}        & \ref{dudect_test_2} & -0.3377 (20.4296)       & 196.4218     \\
+    \texttt{Lookup}        & \ref{dudect_test_3} & -0.0186 (25.7284)       & 240.2633     \\
+    \texttt{Shift-and-Add} & \ref{dudect_test_1} & 0.1467 (1.5569)         & 3.3149       \\
+    \texttt{Shift-and-Add} & \ref{dudect_test_2} & -0.1198 (1.4995)        & 3.3911       \\
+    \texttt{Shift-and-Add} & \ref{dudect_test_3} & 0.0056 (1.5284)         & 3.4232       \\\hline
   \end{tabular}
-  \caption{Running the \texttt{dudect} tool 1000 times and collected averages and standard deviations for the three tests and the two implementations of multiplication. A $t < 5$ indicates that there is no significant difference between the two hypotheses. A $t > 5$ indicates that the difference is significant.}
+  \caption{Running the \texttt{dudect} tool 1000 times on \textit{Linux setup} and collected averages and standard deviations for the three tests and the two implementations of multiplication. A $t < 5$ indicates that there is no significant difference between the two hypotheses. A $t > 5$ indicates that the difference is significant.}
   \label{tab:mul_dudect}
 \end{table}
 
@@ -3665,7 +3667,7 @@ To test this, we used the tool \textit{dudect}~\cite{reparaz2017dude}. It is a t
 
 Curiously, we observed confounding results when benchmarking the performance of the \texttt{Lookup} and \texttt{Shift-and-Add} implementations -- \autoref{tab:mul_comparison}. While the \texttt{Shift-and-Add} implementation consistently runs significantly faster than the \texttt{Lookup} implementation, the signing operation is notably faster when using \texttt{Lookup}. Initially, we hypothesized that differences in compiler optimizations might account for this performance discrepancy. However, testing with the lowest level of optimization produced consistent results ($\approx 70$ ms for \texttt{Shift-and-Add} versus $97$ ms for \texttt{Lookup}). These results suggest complexities that require further investigation, which is beyond the scope of this report.
 
-Given these findings, we have set the \texttt{Lookup} implementation as the default and provided \texttt{Shift-and-Add} as an alternative via the feature flag \texttt{mul\_shift\_and\_add}. This decision is based on the significant performance differences and our belief that the key generation algorithm is the most likely target, with minimal impact from potential non-constant time behavior.
+Given these findings, we have set the \texttt{Lookup} implementation as the default and provided \texttt{Shift-and-Add} as an alternative via the feature flag \texttt{mul\_shift\_and\_add}. This decision is driven by the substantial performance differences and the observation that key generation is the sole operation where non-random data is multiplied frequently enough to have an impact. Additionally, in practical scenarios, key generation is typically performed only once and is rarely exposed to timing side-channel attacks, minimizing the necessity to enforce constant-time behavior.
 
 \begin{table}[h]
   \centering
@@ -3683,7 +3685,7 @@ Given these findings, we have set the \texttt{Lookup} implementation as the defa
 
 \subsubsection{Blake3}
 
-We performed a comparison between the defined \texttt{SHA3} and \texttt{SHAKE} hashing algorithms from \cite{aguilarsyndrome11} and the \texttt{Blake3} implementation. Benchmarks were executed with full optimizations and turbo boost enabled. The results, shown in \autoref{tab:blake3}, indicate that the \texttt{Blake3} implementation is significantly faster, highlighting the hash functionality as a bottleneck in the protocol implementation. For future practical implementations, it is evident that the development of efficient hashing mechanisms for the SDitH protocol should be prioritized.
+We performed a comparison between the defined \texttt{SHA3} and \texttt{SHAKE} hashing algorithms from \cite{aguilarsyndrome11} and the \texttt{Blake3} implementation. Benchmarks were executed with full optimizations and \textbf{Turbo Boost} enabled. The results, shown in \autoref{tab:blake3}, indicate that the \texttt{Blake3} implementation is significantly faster, highlighting the hash functionality as a bottleneck in the protocol implementation. For future practical implementations, it is evident that the development of efficient hashing mechanisms for the SDitH protocol should be prioritized.
 
 \begin{table}[!ht]
   \centering
@@ -3736,7 +3738,7 @@ One of the key reasons for selecting the SDitH protocol was its modular design. 
 
 A significant challenge stemmed from the specification's inclusion of two variants, which shared considerable overlap. This overlap made it difficult to clearly differentiate and implement the specifics of the threshold variant. Furthermore, we identified discrepancies between the specification and the reference implementation, particularly in naming conventions and minor implementation details. To address these challenges, we focused on developing clear and well-documented code, ensuring consistency and clarity throughout the implementation process.
 
-Our report includes a detailed overview of the underlying theories and protocols, along with formal definitions provided in \autoref{def:sdith-sign} and \autoref{def:sdith-verify}. We ensured that our implementation adhered to consistent terminology and closely followed the protocol descriptions, promoting both accuracy and clarity throughout the project.
+Our report includes a detailed overview of the underlying theory and protocols, along with formal definitions provided in \autoref{def:sdith-sign} and \autoref{def:sdith-verify}. We ensured that our implementation adhered to consistent terminology and closely followed the protocol descriptions, promoting both accuracy and clarity throughout the project.
 
 \subsubsection{Performance}
 

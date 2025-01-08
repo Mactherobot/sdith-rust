@@ -1,3 +1,5 @@
+//! Verification
+
 use clap::{Error, Parser};
 use colored::Colorize as _;
 use rsdith::keygen::PublicKey;
