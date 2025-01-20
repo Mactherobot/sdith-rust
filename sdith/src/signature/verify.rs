@@ -40,6 +40,7 @@ impl Signature {
         let h_prime: HPrimeMatrix = gen_hmatrix(public_key.seed_h);
 
         // Signature parsing
+        // This function recomputes the hash `h2` and the resulting view opening challenges from the signature.
         let signature = Signature::parse(signature)?;
         let (salt, h1, broad_plain, broadcast_shares, wit_share, mut auth, view_opening_challenges) = (
             signature.salt,

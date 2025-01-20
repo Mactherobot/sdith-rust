@@ -79,7 +79,7 @@ pub struct Solution {
     pub p_poly: PPoly,
 }
 
-/// Share of S and polynomials Q and P - k + 2w
+/// Share of S and polynomials Q and P: k + 2w
 pub const SOLUTION_PLAIN_SIZE: usize = PARAM_K + (PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2);
 
 impl Marshalling<[u8; SOLUTION_PLAIN_SIZE]> for Solution {

@@ -40,11 +40,12 @@ pub struct Signature {
     pub broadcast_plain: [u8; BROADCAST_PLAIN_SIZE],
     /// The plain broadcast shares computed in the MPC protocol
     pub broadcast_shares: [[[u8; BROADCAST_SHARE_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
-    /// The solution share generated in the signing
-    pub solution_share: [[[u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
     /// The collection of auth values from the merkle tree
     pub auth: [Vec<Hash>; PARAM_TAU],
-    /// Calculated in parsing
+    /// The solution share generated in the signing. 
+    /// These are the inputs to the protocol (S, Q, P polynomials) with beaver triples truncated
+    pub solution_share: [[[u8; SOLUTION_PLAIN_SIZE]; PARAM_L]; PARAM_TAU],
+    /// MPC views opened to the verifier. Calculated in parsing
     pub view_opening_challenges: [[u16; PARAM_L]; PARAM_TAU],
 }
 
@@ -131,6 +132,8 @@ impl Marshalling<Vec<u8>> for Signature {
     }
 
     /// Parse a signature from a byte array of form `(signature_len:[u8; 4] | msg | salt | h1 | broadcast_plain | broadcast_shares | auth)`
+    /// 
+    /// This function recomputes `h2` and the resulting View opening challenges from the signature.
     fn parse(signature_plain: &Vec<u8>) -> Result<Signature, String> {
         // Extract the signature length
         let signature_len = u32::from_le_bytes([
