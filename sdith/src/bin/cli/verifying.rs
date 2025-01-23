@@ -49,7 +49,7 @@ impl Verifying {
             "{}",
             match is_valid {
                 true => "Signature is valid: ".green(),
-                false => "Signature is invalid: ".red(),
+                false => "Signature is valid: ".red(),
             }
         );
 
