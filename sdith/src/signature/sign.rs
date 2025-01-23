@@ -17,7 +17,7 @@ use crate::{
     },
     keygen::{witness::SOLUTION_PLAIN_SIZE, SecretKey},
     subroutines::{
-        arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix},
+        arithmetics::gf256::matrices::{gen_hmatrix, HPrimeMatrix},
         challenge::{self, MPCChallenge},
         commitments::{self},
         merkle_tree::MerkleTreeTrait,
@@ -37,7 +37,7 @@ use super::Signature;
 impl Signature {
     /// Sign a `message` using the `secret_key` and the `entropy`
     ///
-    /// # Arguments
+    /// ## Arguments
     /// - `entropy`: Seed and salt. The "Setup" phase of the SDitH protocol
     /// - `secret_key`: The secret key
     /// - `message`: The message to sign

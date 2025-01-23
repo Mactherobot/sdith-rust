@@ -2,7 +2,10 @@
 //!
 //! Implementations use Horner's method for polynomial evaluation for efficiency.
 
-use crate::subroutines::arith::FieldArith as _;
+use crate::subroutines::arithmetics::{
+    gf256::{extensions::FPoint, vectors::gf256_mul_vector_by_scalar},
+    FieldArith as _,
+};
 
 /// Evaluate a polynomial at a point using Horner's method.
 /// coeffs: Coefficients of the polynomial in increasing order of degree. e.g. [1, 2, 3] represents p(x) = 3x^2 + 2x + 1
@@ -47,6 +50,26 @@ pub fn gf256_monic_polynomial_division(
             monic_polynomial_in[i + 1].field_add(alpha.field_mul(quotient_polynomial_out[i + 1]));
         // Q_i = P_i+1 + alpha * Q_i+1
     }
+}
+
+/// Evaluate the polynomial at a given point in FPoint. See p. 20 of the specification.
+/// Q(r) = Σ_{i=1}^{|Q|} q_i · r^i
+///
+/// # Arguments
+/// * `poly_d` - The polynomial to evaluate coefficients in order [1, 2, 3] represents p(x) = 3x^2 + 2x + 1
+/// * `powers_of_r` - The powers of the point `r`` in the field
+pub fn gf256_polynomial_evaluation_in_point_r(poly_d: &[u8], powers_of_r: &[FPoint]) -> FPoint {
+    assert!(powers_of_r.len() >= poly_d.len());
+    let mut sum = FPoint::default();
+    let degree = poly_d.len();
+    // TODO: can we parallelize this?
+    for i in 0..degree {
+        // sum += r_j^(i-1) * q_poly_d[i]
+        let mut r_i = powers_of_r[i];
+        gf256_mul_vector_by_scalar(&mut r_i, poly_d[i]);
+        sum = sum.field_add(r_i);
+    }
+    sum
 }
 
 #[cfg(test)]

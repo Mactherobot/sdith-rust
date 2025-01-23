@@ -1,8 +1,19 @@
-//! # Rijndaels Galois Field `F_2^8` for [`u8`].
+//! # Galois Field 256 and extension fields
+//!
+//! The field is an implementation of Rijndael's finite field with 256 elements.
+//!
+//! This module supplies [`crate::subroutines::arith::FieldArith`] trait implementations for the field elements in GF(256).
+//!
+//! See implementation for [`FPoint`](extensions::FPoint)
+
+pub mod extensions;
+pub mod matrices;
+pub mod polynomials;
+pub mod vectors;
 
 use std::num::Wrapping;
 
-use crate::subroutines::{arith::FieldArith, prg::PRG};
+use crate::subroutines::{arithmetics::FieldArith, prg::PRG};
 
 /// The primitive polynomial x^4 + x^3 + x + 1 (0b0001_1011)
 #[allow(dead_code)]
@@ -204,7 +215,7 @@ fn gf256_mul_inverse_lookup(a: u8) -> u8 {
 mod tests {
     use super::*;
     use crate::{
-        constants::params::PARAM_SEED_SIZE, subroutines::arith::test_field_definitions,
+        constants::params::PARAM_SEED_SIZE, subroutines::arithmetics::test_field_definitions,
         subroutines::prg::PRG,
     };
 
@@ -271,5 +282,15 @@ mod tests {
         let expected = 218_u8;
 
         assert_eq!(x.field_eval_polynomial(&coeffs), expected);
+    }
+
+    #[test]
+    fn test_param_q_constraint() {
+        // Ensure that the parameter Q is equal to gf256 due to the current field size
+        assert_eq!(
+            crate::constants::params::PARAM_Q,
+            256,
+            "Current implementation uses gf256, therefore we must have that PARAM_Q = 256"
+        );
     }
 }

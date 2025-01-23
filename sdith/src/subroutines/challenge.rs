@@ -17,8 +17,8 @@ use crate::{
         types::{hash_default, Hash},
     },
     subroutines::{
-        arith::{
-            gf256::gf256_ext::{gf256_polynomial_evaluation_in_point_r, FPoint},
+        arithmetics::{
+            gf256::{extensions::FPoint, polynomials::gf256_polynomial_evaluation_in_point_r},
             FieldArith as _,
         },
         prg::PRG,
@@ -146,7 +146,10 @@ pub fn expand_view_challenge_hash(h2: Hash) -> [[u16; PARAM_L]; PARAM_TAU] {
 
 #[cfg(test)]
 mod challenge_tests {
-    use crate::constants::params::{PARAM_DIGEST_SIZE, PARAM_ETA, PARAM_N};
+    use crate::{
+        constants::params::{PARAM_DIGEST_SIZE, PARAM_ETA, PARAM_N},
+        subroutines::arithmetics::FieldArith,
+    };
 
     use super::*;
 

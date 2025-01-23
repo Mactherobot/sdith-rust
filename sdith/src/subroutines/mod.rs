@@ -8,7 +8,7 @@
 //! - [`prg`]: Contains the functions for generating Pseudo Random Generators.
 //! - [`mpc`]: Contains the functions for the Multi-Party Simulationl.
 
-pub mod arith;
+pub mod arithmetics;
 pub mod commitments;
 pub mod merkle_tree;
 pub mod mpc;

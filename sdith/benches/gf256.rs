@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use criterion::{measurement::Measurement, Criterion};
 use rand::Rng as _;
-use rsdith::subroutines::arith::gf256;
+use rsdith::subroutines::arithmetics::gf256;
 
 /// Benchmarking functions that use parallel operations: commit shares, compute input shares
 pub(crate) fn mul_benchmark<M: Measurement>(c: &mut Criterion<M>) {
@@ -12,7 +12,7 @@ pub(crate) fn mul_benchmark<M: Measurement>(c: &mut Criterion<M>) {
         b.iter_batched(
             || (rng.gen::<u8>(), rng.gen::<u8>()),
             #[allow(deprecated)]
-            |(a, b)| gf256::gf256_arith::_mul_lookup(a, b),
+            |(a, b)| gf256::_mul_lookup(a, b),
             criterion::BatchSize::SmallInput,
         )
     });
@@ -20,7 +20,7 @@ pub(crate) fn mul_benchmark<M: Measurement>(c: &mut Criterion<M>) {
     group.bench_function("mul_shift_and_add", |b| {
         b.iter_batched(
             || (rng.gen::<u8>(), rng.gen::<u8>()),
-            |(a, b)| gf256::gf256_arith::_mul_shift_and_add(a, b),
+            |(a, b)| gf256::_mul_shift_and_add(a, b),
             criterion::BatchSize::SmallInput,
         )
     });

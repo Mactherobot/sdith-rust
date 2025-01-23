@@ -5,9 +5,9 @@ use rand::{RngCore as _, SeedableRng as _};
 use rsdith::{
     constants::params::{PARAM_K, PARAM_M_SUB_K, PARAM_SEED_SIZE},
     subroutines::{
-        arith::gf256::{
-            gf256_matrices::{field_mul_matrix_vector, HPrimeMatrix},
-            gf256_vector::{gf256_add_vector, gf256_mul_scalar_add_vector},
+        arithmetics::gf256::{
+            matrices::{field_mul_matrix_vector, HPrimeMatrix},
+            vectors::{gf256_add_vector, gf256_mul_scalar_add_vector},
         },
         prg::PRG,
     },

@@ -16,11 +16,11 @@ use crate::{
         },
         types::Seed,
     },
-    subroutines::arith::{
+    subroutines::arithmetics::{
         gf256::{
-            gf256_matrices::{gen_hmatrix, mul_hmatrix_vector, HPrimeMatrix},
-            gf256_poly::gf256_monic_polynomial_division,
-            gf256_vector::{gf256_add_vector, gf256_mul_vector_by_scalar},
+            matrices::{gen_hmatrix, mul_hmatrix_vector, HPrimeMatrix},
+            polynomials::gf256_monic_polynomial_division,
+            vectors::{gf256_add_vector, gf256_mul_vector_by_scalar},
         },
         FieldArith as _,
     },
@@ -301,7 +301,7 @@ mod test_witness {
         x.iter().fold(0, |a, b| a + (*b != 0) as u64)
     }
 
-    use crate::subroutines::arith::gf256::gf256_poly::{
+    use crate::subroutines::arithmetics::gf256::polynomials::{
         gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
     };
 
@@ -506,7 +506,7 @@ mod test_helpers {
     use crate::{
         constants::params::{PARAM_CHUNK_W, PARAM_SEED_SIZE, PARAM_W},
         subroutines::{
-            arith::gf256::gf256_poly::{
+            arithmetics::gf256::polynomials::{
                 gf256_evaluate_polynomial_horner, gf256_evaluate_polynomial_horner_monic,
             },
             prg::PRG,

@@ -4,7 +4,7 @@
 //!
 //! With the `simd` feature enabled, the operations are performed using SIMD instructions if possible.
 
-use crate::subroutines::arith::FieldArith as _;
+use crate::subroutines::arithmetics::FieldArith as _;
 #[cfg(feature = "simd")]
 use std::simd::{num::SimdUint, u8x32};
 
@@ -74,7 +74,7 @@ pub fn gf256_mul_vector_by_scalar(vz: &mut [u8], scalar: u8) {
     let vz_chunks = vz.chunks_mut(chunk_size);
     let scalar_chunk = u8x32::splat(scalar);
     let one = u8x32::splat(1);
-    let modulus = u8x32::splat(super::gf256_arith::MODULUS);
+    let modulus = u8x32::splat(super::MODULUS);
 
     for vz_chunk in vz_chunks {
         if vz_chunk.len() < chunk_size {
@@ -132,7 +132,7 @@ pub fn gf256_mul_scalar_add_vector(vz: &mut [u8], vx: &[u8], scalar: u8) {
     let mut vx_chunks = vx.chunks(chunk_size);
     let scalar_chunk = u8x32::splat(scalar);
     let one = u8x32::splat(1);
-    let modulus = u8x32::splat(super::gf256_arith::MODULUS);
+    let modulus = u8x32::splat(super::MODULUS);
 
     for vz_chunk in vz_chunks {
         let vx_chunk = vx_chunks.next().unwrap();

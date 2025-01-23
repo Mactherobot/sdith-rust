@@ -7,7 +7,7 @@
 //!
 //! ## XOF
 //! Extendable Output Functions (XOFs) are used to generate pseudorandom values in the fields [F_q](crate::subroutines::arith::FieldArith)
-//! and [F_q^\eta](crate::subroutines::arith::gf256::gf256_ext::FPoint).. The XOFs are implemented in the [`xof`] module.
+//! and [F_q^\eta](crate::subroutines::arith::gf256::extensions::FPoint).. The XOFs are implemented in the [`xof`] module.
 
 pub mod hashing;
 pub mod xof;
@@ -21,7 +21,7 @@ use crate::{
         params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
         types::Seed,
     },
-    subroutines::arith::gf256::gf256_ext::FPoint,
+    subroutines::arithmetics::gf256::extensions::FPoint,
 };
 
 /// Pseudo Random Generator (PRG) struct

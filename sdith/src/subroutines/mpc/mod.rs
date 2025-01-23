@@ -9,10 +9,10 @@ pub mod input;
 use crate::{
     constants::params::{PARAM_M_SUB_K, PARAM_SPLITTING_FACTOR, PARAM_T},
     keygen::witness::{complete_q, compute_s, compute_s_poly, Solution, SOLUTION_PLAIN_SIZE},
-    subroutines::arith::{
+    subroutines::arithmetics::{
         gf256::{
-            gf256_ext::{gf256_polynomial_evaluation_in_point_r, FPoint},
-            gf256_matrices::HPrimeMatrix,
+            extensions::FPoint, matrices::HPrimeMatrix,
+            polynomials::gf256_polynomial_evaluation_in_point_r,
         },
         FieldArith as _,
     },
@@ -265,7 +265,7 @@ mod mpc_tests {
         },
         keygen::witness::{generate_witness, sample_polynomial_relation},
         subroutines::{
-            arith::gf256::gf256_vector::{gf256_add_vector, gf256_add_vector_with_padding},
+            arithmetics::gf256::vectors::{gf256_add_vector, gf256_add_vector_with_padding},
             challenge::get_powers,
             mpc::broadcast::BroadcastShare,
             prg::PRG,

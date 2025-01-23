@@ -14,7 +14,7 @@ use crate::{
     },
     keygen::PublicKey,
     subroutines::{
-        arith::gf256::gf256_matrices::{gen_hmatrix, HPrimeMatrix},
+        arithmetics::gf256::matrices::{gen_hmatrix, HPrimeMatrix},
         challenge::MPCChallenge,
         commitments::{self},
         merkle_tree::{MerkleTree, MerkleTreeTrait as _},
