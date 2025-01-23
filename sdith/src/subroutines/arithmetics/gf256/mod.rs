@@ -12,7 +12,6 @@ pub mod polynomials;
 pub mod vectors;
 
 use std::num::Wrapping;
-
 use crate::subroutines::{arithmetics::FieldArith, prg::PRG};
 
 /// The primitive polynomial x^4 + x^3 + x + 1 (0b0001_1011)
