@@ -2,7 +2,7 @@
 //!
 //! This module contains the subroutines used in the SDitH protocol.
 //!
-//! - [`arith`]: Contains the functions for arithmetic operations.
+//! - [`arithmetics`]: Contains the functions for arithmetic operations.
 //! - [`commitments`]: Contains the functions for generating and verifying commitments.
 //! - [`merkle_tree`]: Contains the functions for generating and verifying Merkle Trees Commitment Scheme.
 //! - [`prg`]: Contains the functions for generating Pseudo Random Generators.

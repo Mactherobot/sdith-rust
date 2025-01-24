@@ -42,7 +42,15 @@ impl Signature {
         // Signature parsing
         // This function recomputes the hash `h2` and the resulting view opening challenges from the signature.
         let signature = Signature::parse(signature)?;
-        let (salt, h1, broad_plain, broadcast_shares, wit_share, mut auth, view_opening_challenges) = (
+        let (
+            salt,
+            h1,
+            broad_plain,
+            broadcast_shares,
+            solution_share,
+            mut auth,
+            view_opening_challenges,
+        ) = (
             signature.salt,
             signature.h1,
             signature.broadcast_plain,
@@ -77,7 +85,7 @@ impl Signature {
                 // Recompute beaver triples
                 let broadcast_share = BroadcastShare::parse(&sh_broadcast[e][li])?;
                 let beaver_triples = mpc::inverse_party_computation(
-                    wit_share[e][li],
+                    solution_share[e][li],
                     &broadcast_share,
                     &chal,
                     h_prime,
@@ -87,7 +95,7 @@ impl Signature {
                 )?;
 
                 let input_share = Input::append_beaver_triples(
-                    wit_share[e][li],
+                    solution_share[e][li],
                     BeaverTriples::new(beaver_triples.0, beaver_triples.1, beaver_triples.2),
                 );
 

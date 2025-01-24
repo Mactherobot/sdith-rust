@@ -2,7 +2,7 @@
 //!
 //! The field is an implementation of Rijndael's finite field with 256 elements.
 //!
-//! This module supplies [`crate::subroutines::arith::FieldArith`] trait implementations for the field elements in GF(256).
+//! This module supplies [`crate::subroutines::arithmetics::FieldArith`] trait implementations for the field elements in GF(256).
 //!
 //! See implementation for [`FPoint`](extensions::FPoint)
 
