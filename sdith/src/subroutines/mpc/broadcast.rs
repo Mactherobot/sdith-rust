@@ -9,7 +9,7 @@
 
 use crate::{
     constants::params::{PARAM_ETA, PARAM_SPLITTING_FACTOR, PARAM_T},
-    subroutines::arith::gf256::gf256_ext::FPoint,
+    subroutines::arithmetics::gf256::extensions::FPoint,
     utils::marshalling::Marshalling,
 };
 

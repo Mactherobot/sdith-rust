@@ -1,3 +1,5 @@
+//! Print parameters
+
 use clap::{Error, Parser};
 use colored::Colorize as _;
 

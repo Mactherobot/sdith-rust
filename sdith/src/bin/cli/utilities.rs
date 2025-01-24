@@ -1,3 +1,6 @@
+//! Utility functions
+
+
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use std::path::Path;
 
@@ -43,11 +46,6 @@ macro_rules! clap_err_result_msg {
   };
 }
 pub(super) use clap_err_result_msg;
-
-
-
-// Utility functions
-
 pub(super) fn print_title(title: &str) {
   eprintln!("{}", title.green().bold());
 }

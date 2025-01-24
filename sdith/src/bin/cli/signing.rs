@@ -1,3 +1,5 @@
+//! Signing
+
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use std::path::Path;
 

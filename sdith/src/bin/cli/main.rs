@@ -58,13 +58,13 @@ use parameters::Parameters;
 use colored::Colorize as _;
 use keygen::Keygen;
 use signing::Signing;
-use verify::Verifying;
+use verifying::Verifying;
 
 mod parameters;
 mod keygen;
 mod utilities;
 mod signing;
-mod verify;
+mod verifying;
 
 #[derive(Parser)]
 #[command(version, about("SDitH signature protocol"))]

@@ -6,8 +6,8 @@
 //! implemented in the [`hashing`] module.
 //!
 //! ## XOF
-//! Extendable Output Functions (XOFs) are used to generate pseudorandom values in the fields [F_q](crate::subroutines::arith::FieldArith)
-//! and [F_q^\eta](crate::subroutines::arith::gf256::gf256_ext::FPoint).. The XOFs are implemented in the [`xof`] module.
+//! Extendable Output Functions (XOFs) are used to generate pseudorandom values in the fields [F_q](crate::subroutines::arithmetics::FieldArith)
+//! and [F_q^\eta](crate::subroutines::arithmetics::gf256::extensions::FPoint).. The XOFs are implemented in the [`xof`] module.
 
 pub mod hashing;
 pub mod xof;
@@ -21,7 +21,7 @@ use crate::{
         params::{PARAM_SALT_SIZE, PARAM_SEED_SIZE},
         types::Seed,
     },
-    subroutines::arith::gf256::gf256_ext::FPoint,
+    subroutines::arithmetics::gf256::extensions::FPoint,
 };
 
 /// Pseudo Random Generator (PRG) struct
@@ -56,7 +56,7 @@ impl PRG {
         }
     }
 
-    /// Sample non-zero random values in the field [F_q](crate::subroutines::arith::FieldArith)
+    /// Sample non-zero random values in the field [F_q](crate::subroutines::arithmetics::FieldArith)
     pub fn sample_field_fq_non_zero(&mut self, output: &mut [u8]) {
         for i in 0..output.len() {
             self.sample_field_fq_elements(&mut output[i..i + 1]);
@@ -66,7 +66,7 @@ impl PRG {
         }
     }
 
-    /// Sample **distinct** random values in the field [F_q](crate::subroutines::arith::FieldArith)
+    /// Sample **distinct** random values in the field [F_q](crate::subroutines::arithmetics::FieldArith)
     ///
     /// The output length must be less than 256
     pub fn sample_field_fq_distinct(&mut self, output: &mut [u8]) -> Result<(), String> {
@@ -90,7 +90,7 @@ impl PRG {
         Ok(())
     }
 
-    /// Sample a random [`Vec`] in the field [F_q](crate::subroutines::arith::FieldArith)
+    /// Sample a random [`Vec`] in the field [F_q](crate::subroutines::arithmetics::FieldArith)
     pub fn sample_field_fq_elements_vec(&mut self, n: usize) -> Vec<u8> {
         let mut f = vec![0u8; n];
         self.xof.squeeze(&mut f);

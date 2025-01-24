@@ -2,10 +2,7 @@
 //!
 //! An element of the field is represented as a pair of bytes `(a,b)` corresponding to `a + bX`
 
-use crate::subroutines::{
-    arith::{gf256::gf256_vector::gf256_mul_vector_by_scalar, FieldArith},
-    prg::PRG,
-};
+use crate::subroutines::{arithmetics::FieldArith, prg::PRG};
 
 const _GF256_16_ONE: [u8; 2] = [1, 0];
 const GF256_32_ONE: [u8; 4] = [1, 0, 0, 0];
@@ -153,26 +150,6 @@ impl FieldArith for FPoint {
     }
 }
 
-/// Evaluate the polynomial at a given point in FPoint. See p. 20 of the specification.
-/// Q(r) = Σ_{i=1}^{|Q|} q_i · r^i
-///
-/// # Arguments
-/// * `poly_d` - The polynomial to evaluate coefficients in order [1, 2, 3] represents p(x) = 3x^2 + 2x + 1
-/// * `powers_of_r` - The powers of the point `r`` in the field
-pub fn gf256_polynomial_evaluation_in_point_r(poly_d: &[u8], powers_of_r: &[FPoint]) -> FPoint {
-    assert!(powers_of_r.len() >= poly_d.len());
-    let mut sum = FPoint::default();
-    let degree = poly_d.len();
-    // TODO: can we parallelize this?
-    for i in 0..degree {
-        // sum += r_j^(i-1) * q_poly_d[i]
-        let mut r_i = powers_of_r[i];
-        gf256_mul_vector_by_scalar(&mut r_i, poly_d[i]);
-        sum = sum.field_add(r_i);
-    }
-    sum
-}
-
 #[inline(always)]
 #[cfg(not(feature = "simd"))]
 fn gf256_ext32_add(a: FPoint, b: FPoint) -> FPoint {
@@ -203,7 +180,8 @@ mod ext32_tests {
     use super::*;
 
     use crate::{
-        constants::params::{PARAM_M, PARAM_SEED_SIZE}, subroutines::{arith::test_field_definitions, challenge::get_powers, prg::PRG},
+        constants::params::{PARAM_M, PARAM_SEED_SIZE},
+        subroutines::{arithmetics::{gf256::polynomials::gf256_polynomial_evaluation_in_point_r, test_field_definitions}, challenge::get_powers, prg::PRG},
     };
 
     #[test]

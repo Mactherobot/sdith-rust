@@ -12,7 +12,7 @@ use crate::{
     subroutines::prg::PRG,
 };
 
-use super::gf256_vector::{gf256_add_vector, gf256_mul_vector_by_scalar};
+use super::vectors::{gf256_add_vector, gf256_mul_vector_by_scalar};
 
 /// H' matrix with dimensions `m-k * k`. The ceil value is only do accommodate the way the spec creates the matrix.
 pub type HPrimeMatrix = [u8; PARAM_M_SUB_K * PARAM_K];
@@ -61,7 +61,7 @@ pub fn gen_hmatrix(seed: Seed) -> HPrimeMatrix {
 #[cfg(test)]
 mod tests {
 
-    use crate::subroutines::arith::FieldArith as _;
+    use crate::subroutines::arithmetics::FieldArith as _;
 
     use super::*;
 
