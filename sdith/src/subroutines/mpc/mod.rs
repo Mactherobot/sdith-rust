@@ -95,7 +95,10 @@ fn _party_computation(
     with_offset: bool,
     compute_v: bool,
 ) -> Result<BroadcastShare, String> {
+    #[cfg(not(feature = "kat"))]
     let input_share = Input::parse(&input_share_plain)?;
+    #[cfg(feature = "kat")]
+    let input_share = Input::parse_kat(&input_share_plain)?;
     let a = input_share.beaver.a;
     let b = input_share.beaver.b;
     let c = input_share.beaver.c;

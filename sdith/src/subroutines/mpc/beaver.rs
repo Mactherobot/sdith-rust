@@ -11,7 +11,8 @@ use crate::{
     subroutines::{
         arithmetics::{gf256::extensions::FPoint, FieldArith as _},
         prg::PRG,
-    }, utils::marshalling::Marshalling,
+    },
+    utils::marshalling::Marshalling,
 };
 
 /// Beaver triple a sized array type
@@ -46,6 +47,8 @@ impl BeaverTriples {
 
             for d in 0..PARAM_SPLITTING_FACTOR {
                 prg.sample_field_fpoint_elements(&mut a[d]);
+            }
+            for d in 0..PARAM_SPLITTING_FACTOR {
                 prg.sample_field_fpoint_elements(&mut b[d]);
             }
 
@@ -78,7 +81,6 @@ impl Marshalling<[u8; BEAVER_ABPLAIN_SIZE + BEAVER_CPLAIN_SIZE]> for BeaverTripl
         let mut offset = 0;
 
         // Serialise a
-
         a.iter().for_each(|ad| {
             ad.iter().for_each(|adi| {
                 adi.iter().for_each(|adij| {

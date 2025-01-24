@@ -84,37 +84,35 @@ pub const SOLUTION_PLAIN_SIZE: usize = PARAM_K + (PARAM_CHUNK_W * PARAM_SPLITTIN
 
 impl Marshalling<[u8; SOLUTION_PLAIN_SIZE]> for Solution {
     fn serialise(&self) -> [u8; SOLUTION_PLAIN_SIZE] {
+        let mut offset = 0;
         let mut serialised = [0u8; PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR * 2];
         serialised[..PARAM_K].copy_from_slice(&self.s_a);
+        offset += PARAM_K;
         for i in 0..PARAM_SPLITTING_FACTOR {
-            serialised[PARAM_K + i * PARAM_CHUNK_W..PARAM_K + (i + 1) * PARAM_CHUNK_W]
-                .copy_from_slice(&self.q_poly[i]);
-        }
-        for i in 0..PARAM_SPLITTING_FACTOR {
-            serialised[PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR + i * PARAM_CHUNK_W
-                ..PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR + (i + 1) * PARAM_CHUNK_W]
-                .copy_from_slice(&self.p_poly[i]);
+            serialised[offset..offset + PARAM_CHUNK_W].copy_from_slice(&self.q_poly[i]);
+            offset += PARAM_CHUNK_W;
+
+            serialised[offset..offset + PARAM_CHUNK_W].copy_from_slice(&self.p_poly[i]);
+            offset += PARAM_CHUNK_W;
         }
         serialised
     }
 
     fn parse(solution_plain: &[u8; SOLUTION_PLAIN_SIZE]) -> Result<Self, String> {
+        let mut offset = 0;
         let mut s_a = [0u8; PARAM_K];
         s_a.copy_from_slice(&solution_plain[..PARAM_K]);
+        offset += PARAM_K;
 
         let mut q_poly = [[0u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
-        for i in 0..PARAM_SPLITTING_FACTOR {
-            q_poly[i].copy_from_slice(
-                &solution_plain[PARAM_K + i * PARAM_CHUNK_W..PARAM_K + (i + 1) * PARAM_CHUNK_W],
-            );
-        }
-
         let mut p_poly = [[0u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
         for i in 0..PARAM_SPLITTING_FACTOR {
-            p_poly[i].copy_from_slice(
-                &solution_plain[PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR + i * PARAM_CHUNK_W
-                    ..PARAM_K + PARAM_CHUNK_W * PARAM_SPLITTING_FACTOR + (i + 1) * PARAM_CHUNK_W],
-            );
+            q_poly[i].copy_from_slice(&solution_plain[offset..offset + PARAM_CHUNK_W]);
+            offset += PARAM_CHUNK_W;
+        }
+        for i in 0..PARAM_SPLITTING_FACTOR {
+            p_poly[i].copy_from_slice(&solution_plain[offset..offset + PARAM_CHUNK_W]);
+            offset += PARAM_CHUNK_W;
         }
 
         Ok(Solution {

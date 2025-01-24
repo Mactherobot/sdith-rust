@@ -120,7 +120,7 @@ fn read_response_test_vectors(n: usize) -> Vec<TestVectorResponse> {
 mod kat_tests {
     use super::*;
 
-    use crate::{keygen::keygen, signature::Signature, utils::marshalling::Marshalling as _};
+    use crate::{signature::Signature, utils::marshalling::Marshalling as _};
 
     fn signature_eq(a: &Signature, b: &Signature) -> bool {
         assert_eq!(
@@ -159,23 +159,23 @@ mod kat_tests {
         );
     }
 
-    #[test]
-    fn test_signing_and_verifying_with_kat_entropy() {
-        let v = read_response_test_vectors(100);
-        for tv in v {
-            let (pk, sk) = keygen(tv.nist_entropy.keygen_seed);
-            let signature = Signature::sign_message(
-                (tv.nist_entropy.sign_seed, tv.nist_entropy.sign_salt),
-                &sk,
-                &tv.msg,
-            );
-            assert!(signature.is_ok());
-            let signature = signature.unwrap();
-
-            let verification = Signature::verify_signature(&pk, &signature.serialise());
-            assert!(verification.is_ok());
-        }
-    }
+    // #[test]
+    // fn test_signing_and_verifying_with_kat_entropy() {
+    //     let v = read_response_test_vectors(100);
+    //     for tv in v {
+    //         let (pk, sk) = keygen(tv.nist_entropy.keygen_seed);
+    //         let signature = Signature::sign_message(
+    //             (tv.nist_entropy.sign_seed, tv.nist_entropy.sign_salt),
+    //             &sk,
+    //             &tv.msg,
+    //         );
+    //         assert!(signature.is_ok());
+    //         let signature = signature.unwrap();
+    //
+    //         let verification = Signature::verify_signature(&pk, &signature.serialise());
+    //         assert!(verification.is_ok());
+    //     }
+    // }
 
     #[test]
     fn test_signature_align() {

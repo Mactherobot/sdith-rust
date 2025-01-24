@@ -7,7 +7,9 @@
 use rayon::iter::{IndexedParallelIterator as _, ParallelIterator as _};
 
 use crate::{
-    constants::params::{PARAM_L, PARAM_N, PARAM_TAU},
+    constants::params::{
+        PARAM_CHUNK_W, PARAM_K, PARAM_L, PARAM_N, PARAM_SPLITTING_FACTOR, PARAM_TAU,
+    },
     keygen::witness::{Solution, SOLUTION_PLAIN_SIZE},
     subroutines::{
         arithmetics::gf256::vectors::gf256_mul_scalar_add_vector,
@@ -39,15 +41,58 @@ impl Marshalling<InputSharePlain> for Input {
     fn serialise(&self) -> InputSharePlain {
         let mut serialised = [0u8; INPUT_SIZE];
         serialised[..SOLUTION_PLAIN_SIZE].copy_from_slice(&self.solution.serialise());
+        #[cfg(feature = "kat")]
+        serialised[..SOLUTION_PLAIN_SIZE].copy_from_slice(&kat_serialise_function(self.solution));
         serialised[SOLUTION_PLAIN_SIZE..].copy_from_slice(&self.beaver.serialise());
         serialised
     }
 
     fn parse(input_plain: &InputSharePlain) -> Result<Input, String> {
-        let solution = Solution::parse(input_plain[..SOLUTION_PLAIN_SIZE].try_into().unwrap())?;
+        #[cfg(not(feature = "kat"))]
+        let solution = Solution::parse(&input_plain[..SOLUTION_PLAIN_SIZE].try_into().unwrap())?;
+        #[cfg(feature = "kat")]
+        let solution = kat_parse_function(&input_plain[..SOLUTION_PLAIN_SIZE].try_into().unwrap());
         let beaver = BeaverTriples::parse(&input_plain[SOLUTION_PLAIN_SIZE..].try_into().unwrap())?;
 
         Ok(Input { solution, beaver })
+    }
+}
+
+#[cfg(feature = "kat")]
+fn kat_serialise_function(solution: Solution) -> [u8; SOLUTION_PLAIN_SIZE] {
+    let mut offset = 0;
+    let mut serialised = [0u8; SOLUTION_PLAIN_SIZE];
+    serialised[..PARAM_K].copy_from_slice(&solution.s_a);
+    offset += PARAM_K;
+    for i in 0..PARAM_SPLITTING_FACTOR {
+        serialised[offset..offset + PARAM_CHUNK_W].copy_from_slice(&solution.q_poly[i]);
+        offset += PARAM_CHUNK_W;
+        serialised[offset..offset + PARAM_CHUNK_W].copy_from_slice(&solution.p_poly[i]);
+        offset += PARAM_CHUNK_W;
+    }
+    serialised
+}
+
+#[cfg(feature = "kat")]
+fn kat_parse_function(solution_plain: &[u8; SOLUTION_PLAIN_SIZE]) -> Solution {
+    let mut offset = 0;
+    let mut s_a = [0u8; PARAM_K];
+    s_a.copy_from_slice(&solution_plain[..PARAM_K]);
+    offset += PARAM_K;
+
+    let mut q_poly = [[0u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
+    let mut p_poly = [[0u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
+    for i in 0..PARAM_SPLITTING_FACTOR {
+        q_poly[i].copy_from_slice(&solution_plain[offset..offset + PARAM_CHUNK_W]);
+        offset += PARAM_CHUNK_W;
+        p_poly[i].copy_from_slice(&solution_plain[offset..offset + PARAM_CHUNK_W]);
+        offset += PARAM_CHUNK_W;
+    }
+
+    Solution {
+        s_a,
+        q_poly,
+        p_poly,
     }
 }
 
@@ -67,6 +112,36 @@ impl Input {
         input[..SOLUTION_PLAIN_SIZE].copy_from_slice(&solution_share);
         input[SOLUTION_PLAIN_SIZE..].copy_from_slice(&beaver_triples.serialise());
         input
+    }
+
+    /// Only used for demoing of KAT
+    pub fn parse_kat(input_plain: &InputSharePlain) -> Result<Input, String> {
+        let solution_plain: [u8; SOLUTION_PLAIN_SIZE] =
+            input_plain[..SOLUTION_PLAIN_SIZE].try_into().unwrap();
+        let mut offset = 0;
+        let mut s_a = [0u8; PARAM_K];
+        s_a.copy_from_slice(&solution_plain[..PARAM_K]);
+        offset += PARAM_K;
+
+        let mut q_poly = [[0u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
+        let mut p_poly = [[0u8; PARAM_CHUNK_W]; PARAM_SPLITTING_FACTOR];
+        for i in 0..PARAM_SPLITTING_FACTOR {
+            q_poly[i].copy_from_slice(&solution_plain[offset..offset + PARAM_CHUNK_W]);
+            offset += PARAM_CHUNK_W;
+        }
+        for i in 0..PARAM_SPLITTING_FACTOR {
+            p_poly[i].copy_from_slice(&solution_plain[offset..offset + PARAM_CHUNK_W]);
+            offset += PARAM_CHUNK_W;
+        }
+
+        let solution = Solution {
+            s_a,
+            q_poly,
+            p_poly,
+        };
+        let beaver = BeaverTriples::parse(&input_plain[SOLUTION_PLAIN_SIZE..].try_into().unwrap())?;
+
+        Ok(Input { solution, beaver })
     }
 }
 
